@@ -1,0 +1,55 @@
+# Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
+# Frontmatter is the source of truth — edit each doc's frontmatter and re-run.
+#
+# schema_version controls lint mode:
+#   1 = grace (missing v2 fields produce warnings, not errors)
+#   2 = enforce (missing v2 fields are errors)
+schema_version: 2
+generated_at: 2026-06-13T00:00:00Z
+generated_from: frontmatter
+total_docs: 6
+
+documents:
+  - path: docs/ARCHITECTURE.md
+    title: CruxControl — Architecture
+    type: planning
+    kind: planning
+    updated: 2026-06-13
+    nav_priority: high
+    consumer_hint: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
+  - path: docs/SPEC.md
+    title: CruxControl — Specification
+    type: planning
+    kind: planning
+    updated: 2026-06-13
+    nav_priority: high
+    consumer_hint: CruxControl capabilities, domain model, constraints, and non-functional requirements
+  - path: docs/VISION.md
+    title: CruxControl — Vision
+    type: planning
+    kind: planning
+    updated: 2026-06-13
+    nav_priority: high
+    consumer_hint: CruxControl vision, problem, audience, principles, and non-goals
+  - path: docs/briefs/data-model.md
+    title: Kilter Board Data Model — Technical Primer
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    consumer_hint: Kilter Board SQLite schema, frames encoding, hold roles, grading system, and the sync/web API
+  - path: docs/briefs/hardware-and-protocol.md
+    title: Kilter Board Fullride 7x10 — Technical Primer
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    consumer_hint: Kilter Board Fullride 7x10 hardware, BLE/Nordic UART packet protocol, LED system, and angle adjustment
+  - path: docs/architecture/history/north-star.md
+    title: CruxControl — North Star Document
+    type: historical
+    kind: historical
+    updated: 2026-06-13
+    status: superseded
+    superseded_by: docs/ARCHITECTURE.md
+    consumer_hint: Original combined ideation doc for CruxControl — superseded by VISION/SPEC/ARCHITECTURE

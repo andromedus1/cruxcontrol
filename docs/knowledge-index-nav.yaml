@@ -1,0 +1,51 @@
+# Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
+# Navigator layer — auto-loaded at session start (capped at 10KB by harness).
+# Provides corpus situational awareness only. Read knowledge-index.yaml for full index.
+
+schema_version: 3
+generated_at: 2026-06-13T00:00:00Z
+generated_from: frontmatter
+total_docs: 6
+
+by_kind:
+  planning: 3
+  research: 2
+  historical: 1
+
+# Substrate items (.work/) exist but the queue is empty — run /research-pipeline:epicize.
+# Query items via .work/bin/work-view (--ready, --blocked, --kind, etc.).
+
+recent:
+  - path: docs/VISION.md
+    title: CruxControl — Vision
+    kind: planning
+    updated: 2026-06-13
+  - path: docs/SPEC.md
+    title: CruxControl — Specification
+    kind: planning
+    updated: 2026-06-13
+  - path: docs/ARCHITECTURE.md
+    title: CruxControl — Architecture
+    kind: planning
+    updated: 2026-06-13
+
+load_bearing:
+  - path: docs/VISION.md
+    title: CruxControl — Vision
+    kind: planning
+  - path: docs/SPEC.md
+    title: CruxControl — Specification
+    kind: planning
+  - path: docs/ARCHITECTURE.md
+    title: CruxControl — Architecture
+    kind: planning
+  - path: docs/briefs/hardware-and-protocol.md
+    title: Kilter Board Fullride 7x10 — Technical Primer
+    kind: research
+  - path: docs/briefs/data-model.md
+    title: Kilter Board Data Model — Technical Primer
+    kind: research
+
+# On-demand layers (Read tool):
+full_index_path: docs/knowledge-index.yaml
+detail_index_path: docs/knowledge-index-detail.yaml

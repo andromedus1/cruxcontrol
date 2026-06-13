@@ -3,7 +3,13 @@ description: Original combined ideation doc for CruxControl — superseded by VI
 type: historical
 kind: historical
 updated: 2026-06-13
-superseded_by: [VISION.md, SPEC.md, ARCHITECTURE.md]
+status: superseded
+superseded_by: docs/ARCHITECTURE.md
+supersession_note: >
+  Split into docs/VISION.md (vision, problem, principles, non-goals),
+  docs/SPEC.md (capabilities, domain model, constraints), and
+  docs/ARCHITECTURE.md (modules, data flow, dependencies, risks). The Phase 0–3
+  roadmap is superseded by epic items in .work/. Retained for provenance.
 summary: >
   The original north-star document that combined vision, capabilities, proposed
   architecture, and a phased roadmap. Its content has been split into the

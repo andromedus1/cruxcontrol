@@ -1,0 +1,78 @@
+# Auto-generated. DO NOT EDIT BY HAND.
+# On-demand layer — load when surfacing a specific doc's full context.
+generated_at: 2026-06-13T00:00:00Z
+generated_from: frontmatter
+schema_version: 2
+
+documents:
+  docs/VISION.md:
+    summary: |
+      CruxControl is a fast, data-owning, web-based replacement for the official
+      Kilter Board app, targeting a home Fullride 7x10. It adds intelligence the
+      official app lacks — ML grade prediction, personalized training, and
+      shareable climbs — while keeping the climber's data local and portable.
+    decisions:
+      - "Web app (not native) so Web Bluetooth, shareable URLs, and cross-device use come for free."
+      - "Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional."
+      - "Scope is the Fullride 7x10 specifically — not a multi-board, multi-tenant product."
+      - "ML grade prediction is the headline differentiator, not a nice-to-have."
+  docs/SPEC.md:
+    summary: |
+      The capability contract for CruxControl: board control over BLE, a fast climb
+      browser with shareable URLs, a visual route editor, a logbook with session
+      tracking, ML grade prediction, a data-acquisition/training pipeline, and
+      personalized recommendations — over a local SQLite catalog synced from the
+      Kilter API, on a Web Bluetooth (Chrome/Edge) offline-first web app.
+    decisions:
+      - "Capabilities are grouped into seven areas; board control + browser are the MVP surface."
+      - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
+      - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
+      - "Grade-prediction target is community consensus difficulty_average from climb_stats."
+  docs/ARCHITECTURE.md:
+    summary: |
+      High-level architecture for CruxControl: an offline-first web app over a local
+      SQLite catalog (synced from the Kilter API), a Web Bluetooth BLE layer driving
+      the board, a climb browser + 2D renderer, a route editor, a logbook/session
+      store, and a Python-side ML pipeline serving in-browser inference. This is the
+      high-level shape; module-level designs are produced per-epic in the substrate.
+    decisions:
+      - "Offline-first SPA with local SQLite (sql.js or OPFS-backed) as the read path."
+      - "BLE isolated behind a Web Bluetooth adapter implementing the API-level-3 packet protocol."
+      - "Sync engine is a separate module wrapping POST /sync with incremental shared_syncs cursors."
+      - "ML training is offline (Python); inference runs in-browser via ONNX.js / TF.js."
+      - "This doc stays high-level; detailed module design lives in epic/feature item bodies."
+    related:
+      - {slug: docs/architecture/history/north-star.md, relationship: refines}
+  docs/briefs/data-model.md:
+    summary: |
+      Technical primer for the Kilter data model: the bundled SQLite database
+      (climbs, climb_stats, holes/placements, layouts/products/sizes), the frames
+      string encoding for hold placements + roles, the grading system, the REST
+      sync protocol at kilterboardapp.com/sync, and the BLE protocol summary.
+    key_findings:
+      - "Climbs encode hold placements + roles as a 'frames' string; roles are start/middle/finish/foot-only."
+      - "climb_stats carries community grades per angle (difficulty_average) — the ML training target."
+      - "POST kilterboardapp.com/sync drives incremental updates via shared_syncs timestamps; BoardLib bootstraps the SQLite DB."
+      - "Schema and sync API are shared across the entire Aurora Climbing board family."
+  docs/briefs/hardware-and-protocol.md:
+    summary: |
+      Technical primer for the Fullride 7x10: board dimensions and hold/LED counts,
+      the BLE communication protocol (service/characteristic UUIDs, packet framing,
+      checksums, multi-packet splitting, API level 3), the LED/hold addressing
+      system, angle adjustment, and the community tooling that documents it.
+    key_findings:
+      - "Fullride 7x10 = 305 bolt-on holds, 450 LEDs, 60 footholds; BLE API level 3."
+      - "Discovery service UUID 4488B571-7806-4DF6-BCFF-A2897E4953FF; write characteristic 6E400002-B5A3-F393-E0A9-E50E24DCCA9E (Nordic UART RX)."
+      - "LED commands use packet framing (0x01/0x02/0x03) with checksums and multi-packet splitting for climbs with many holds."
+      - "All Aurora Climbing boards (Kilter, Tension, Decoy, etc.) share one BLE protocol, app architecture, and DB schema."
+  docs/architecture/history/north-star.md:
+    summary: |
+      The original north-star document that combined vision, capabilities, proposed
+      architecture, and a phased roadmap. Its content has been split into the
+      rolling-foundation docs (VISION/SPEC/ARCHITECTURE) and its Phase 0–3 roadmap
+      migrated to epic items in .work/. Retained for provenance; do not edit.
+    supersession_note: |
+      Split into docs/VISION.md, docs/SPEC.md, and docs/ARCHITECTURE.md. The
+      Phase 0–3 roadmap is superseded by epic items in .work/.
+    related:
+      - {slug: docs/ARCHITECTURE.md, relationship: refines}
