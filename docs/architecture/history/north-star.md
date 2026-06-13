@@ -1,3 +1,16 @@
+---
+description: Original combined ideation doc for CruxControl — superseded by VISION/SPEC/ARCHITECTURE
+type: historical
+kind: historical
+updated: 2026-06-13
+superseded_by: [VISION.md, SPEC.md, ARCHITECTURE.md]
+summary: >
+  The original north-star document that combined vision, capabilities, proposed
+  architecture, and a phased roadmap. Its content has been split into the
+  rolling-foundation docs (VISION.md, SPEC.md, ARCHITECTURE.md) and its Phase 0–3
+  roadmap migrated to epic items in .work/. Retained for provenance; do not edit.
+---
+
 # CruxControl -- North Star Document
 
 ## Vision
