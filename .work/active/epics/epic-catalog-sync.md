@@ -2,7 +2,7 @@
 id: epic-catalog-sync
 kind: epic
 stage: drafting
-tags: [data, needs-brief]
+tags: [data]
 parent: null
 depends_on: [epic-foundation]
 release_binding: null
@@ -29,7 +29,8 @@ exists. It does NOT own how that data is browsed, edited, or logged.
 
 - `docs/briefs/data-model.md` — describes the sync API at a high level
   (`POST /sync`, `shared_syncs`) and names BoardLib as the reference implementation.
-- **[needs-brief]** — *Kilter sync protocol & auth.* The exact request/response
+- **[brief written]** [catalog-sync-api.md](../../../docs/briefs/catalog-sync-api.md)
+  — *Kilter sync protocol & auth.* The exact request/response
   shapes, the incremental cursor mechanics, pagination/conflict handling, and the
   **authentication flow** (login token, what's needed to read ascents/bids and to
   publish climbs) are thin and undocumented officially. The API may drift. **BoardLib**

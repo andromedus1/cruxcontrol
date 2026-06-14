@@ -2,7 +2,7 @@
 id: epic-recommendations
 kind: epic
 stage: drafting
-tags: [ml, needs-brief]
+tags: [ml]
 parent: null
 depends_on: [epic-grade-prediction, epic-logbook]
 release_binding: null
@@ -28,7 +28,8 @@ by the user's history and the predicted-grade signal. It depends on epic-grade-p
 ## Research briefs
 
 - Consumes the grade model from epic-grade-prediction and the history from epic-logbook.
-- **[needs-brief]** — *Recommendation & climbing-training methodology.* Two threads to
+- **[brief written]** [recommendations-and-training.md](../../../docs/briefs/recommendations-and-training.md)
+  — *Recommendation & climbing-training methodology.* Two threads to
   curate: (1) recommendation-system techniques appropriate for a single-user,
   content-feature setting (no large user base — content-based / similarity over hold
   features and predicted grade, not collaborative filtering); (2) climbing

@@ -2,7 +2,7 @@
 id: epic-foundation
 kind: epic
 stage: drafting
-tags: [data, needs-brief]
+tags: [data]
 parent: null
 depends_on: []
 release_binding: null
@@ -31,8 +31,10 @@ intelligence — those are downstream epics that consume this read path.
 
 - `docs/briefs/data-model.md` — SQLite schema, frames encoding, BoardLib bootstrap
   (`boardlib database kilter kilter.db`). Grounds the catalog shape.
-- **[needs-brief]** — *Distributable offline-first PWA with in-browser SQLite.* Thin
-  and load-bearing, now covering three linked threads: (1) in-browser SQLite —
+- **[brief written]** [foundation-pwa-sqlite.md](../../../docs/briefs/foundation-pwa-sqlite.md)
+  — *Distributable offline-first PWA with in-browser SQLite.* Recommends a client-only
+  React + Vite SPA, wa-sqlite OPFSCoopSyncVFS in a Web Worker, and vite-plugin-pwa →
+  Cloudflare Pages static deploy. Covers three linked threads: (1) in-browser SQLite —
   `sql.js` vs OPFS-backed SQLite (wa-sqlite / absurd-sql), query performance over tens
   of thousands of climbs, persistence/versioning of the local DB; (2) offline-first
   PWA — service-worker strategy, installability, app-shell caching; (3) **distribution

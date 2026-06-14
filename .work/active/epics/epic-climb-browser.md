@@ -2,7 +2,7 @@
 id: epic-climb-browser
 kind: epic
 stage: drafting
-tags: [ui, needs-brief]
+tags: [ui]
 parent: null
 depends_on: [epic-foundation]
 release_binding: null
@@ -29,7 +29,8 @@ selection + renderer surface those reuse.
 
 - `docs/briefs/data-model.md` — frames encoding, hold roles/colors, `holes`
   coordinates, `climb_stats` for filterable fields.
-- **[needs-brief]** — *Board rendering & catalog filtering.* The schema is covered but
+- **[brief written]** [board-rendering-and-filtering.md](../../../docs/briefs/board-rendering-and-filtering.md)
+  — *Board rendering & catalog filtering.* The schema is covered but
   the rendering approach is not: mapping `holes`/placements (x, y) to a 2D board
   diagram for the Fullride 7x10 layout (Mainline + Auxiliary sets), role-color
   rendering, and responsive filtering over a local SQLite catalog of tens of thousands

@@ -2,7 +2,7 @@
 id: epic-board-control
 kind: epic
 stage: drafting
-tags: [ble, needs-brief]
+tags: [ble]
 parent: null
 depends_on: [epic-foundation]
 release_binding: null
@@ -32,7 +32,8 @@ foundation + climb-browser).
   service UUID `4488B571-…`, write characteristic `6E400002-…` (Nordic UART RX),
   framing `0x01/0x02/0x03`, checksums, multi-packet splitting, API level 3, role
   colors.
-- **[needs-brief]** — *Web Bluetooth integration patterns.* The packets are known; the
+- **[brief written]** [board-control-web-bluetooth.md](../../../docs/briefs/board-control-web-bluetooth.md)
+  — *Web Bluetooth integration patterns.* The packets are known; the
   thin, risky part is the browser side: Web Bluetooth connection lifecycle, GATT
   service/characteristic discovery, write semantics (with/without response), MTU and
   chunking, reconnection/disconnection handling, and the user-gesture permission flow.
