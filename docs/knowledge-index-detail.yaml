@@ -1,0 +1,176 @@
+# Auto-generated. DO NOT EDIT BY HAND.
+# On-demand layer — load when surfacing a specific doc's full context.
+generated_at: 2026-06-13T00:00:00Z
+generated_from: frontmatter
+schema_version: 2
+
+documents:
+  docs/VISION.md:
+    summary: |
+      CruxControl is a fast, data-owning, web-based replacement for the official
+      Kilter Board app, targeting a home Fullride 7x10. It adds intelligence the
+      official app lacks — ML grade prediction, personalized training, and
+      shareable climbs — while keeping the climber's data local and portable.
+    decisions:
+      - "Web app (not native) so Web Bluetooth, shareable URLs, and cross-device use come for free."
+      - "Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional."
+      - "Scope is the Fullride 7x10 specifically — not a multi-board, multi-tenant product."
+      - "ML grade prediction is the headline differentiator, not a nice-to-have."
+      - "Distributed to friends as a static, installable PWA — no backend, no accounts; each user runs their own client with local data. Framework chosen for distribution robustness."
+  docs/SPEC.md:
+    summary: |
+      The capability contract for CruxControl: board control over BLE, a fast climb
+      browser with shareable URLs, a visual route editor, a logbook with session
+      tracking, ML grade prediction, a data-acquisition/training pipeline, and
+      personalized recommendations — over a local SQLite catalog synced from the
+      Kilter API, on a Web Bluetooth (Chrome/Edge) offline-first web app.
+    decisions:
+      - "Capabilities are grouped into seven areas; board control + browser are the MVP surface."
+      - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
+      - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
+      - "Grade-prediction target is community consensus difficulty_average from climb_stats."
+      - "Playlists are a CruxControl-local construct (no Kilter playlist API): local-first, climb-ID-referenced, shareable, board-playable."
+  docs/ARCHITECTURE.md:
+    summary: |
+      High-level architecture for CruxControl: an offline-first web app over a local
+      SQLite catalog (synced from the Kilter API), a Web Bluetooth BLE layer driving
+      the board, a climb browser + 2D renderer, a route editor, a logbook/session
+      store, and a Python-side ML pipeline serving in-browser inference. This is the
+      high-level shape; module-level designs are produced per-epic in the substrate.
+    decisions:
+      - "Offline-first SPA with local SQLite (sql.js or OPFS-backed) as the read path."
+      - "BLE isolated behind a Web Bluetooth adapter implementing the API-level-3 packet protocol."
+      - "Sync engine is a separate module wrapping POST /sync with incremental shared_syncs cursors."
+      - "ML training is offline (Python); inference runs in-browser via ONNX.js / TF.js."
+      - "Distributed to friends as a static, backendless, installable PWA (no app server/accounts); framework chosen for distribution robustness."
+      - "This doc stays high-level; detailed module design lives in epic/feature item bodies."
+    related:
+      - {slug: docs/architecture/history/north-star.md, relationship: refines}
+  docs/briefs/data-model.md:
+    summary: |
+      Technical primer for the Kilter data model: the bundled SQLite database
+      (climbs, climb_stats, holes/placements, layouts/products/sizes), the frames
+      string encoding for hold placements + roles, the grading system, the REST
+      sync protocol at kilterboardapp.com/sync, and the BLE protocol summary.
+    key_findings:
+      - "Climbs encode hold placements + roles as a 'frames' string; roles are start/middle/finish/foot-only."
+      - "climb_stats carries community grades per angle (difficulty_average) — the ML training target."
+      - "POST kilterboardapp.com/sync drives incremental updates via shared_syncs timestamps; BoardLib bootstraps the SQLite DB."
+      - "Schema and sync API are shared across the entire Aurora Climbing board family."
+  docs/briefs/hardware-and-protocol.md:
+    summary: |
+      Technical primer for the Fullride 7x10: board dimensions and hold/LED counts,
+      the BLE communication protocol (service/characteristic UUIDs, packet framing,
+      checksums, multi-packet splitting, API level 3), the LED/hold addressing
+      system, angle adjustment, and the community tooling that documents it.
+    key_findings:
+      - "Fullride 7x10 = 305 bolt-on holds, 450 LEDs, 60 footholds; BLE API level 3."
+      - "Discovery service UUID 4488B571-7806-4DF6-BCFF-A2897E4953FF; write characteristic 6E400002-B5A3-F393-E0A9-E50E24DCCA9E (Nordic UART RX)."
+      - "LED commands use packet framing (0x01/0x02/0x03) with checksums and multi-packet splitting for climbs with many holds."
+      - "All Aurora Climbing boards (Kilter, Tension, Decoy, etc.) share one BLE protocol, app architecture, and DB schema."
+  docs/briefs/foundation-pwa-sqlite.md:
+    summary: |
+      Foundation-layer decisions for CruxControl as a distributable, offline-first
+      PWA: in-browser SQLite (wa-sqlite OPFSCoopSyncVFS in a Web Worker, IndexedDB
+      fallback), framework (client-only React + Vite SPA), and PWA/static-hosting
+      strategy (vite-plugin-pwa + custom-header-capable static host).
+    key_findings:
+      - "sql.js is in-memory only — unsuitable as the durable catalog read path."
+      - "wa-sqlite OPFSCoopSyncVFS performs past 1GB and avoids the SharedArrayBuffer→COOP/COEP requirement the official @sqlite.org build imposes."
+      - "Any OPFS synchronous SQLite path must run inside a dedicated Web Worker."
+      - "Web Bluetooth is Chromium-only (~77% global), HTTPS + user-gesture gated."
+      - "Recommended: React + Vite SPA, wa-sqlite in a Worker, vite-plugin-pwa, static deploy to Cloudflare Pages."
+    related:
+      - {slug: docs/briefs/data-model.md, relationship: depends-on}
+  docs/briefs/board-control-web-bluetooth.md:
+    summary: |
+      The browser-side integration layer for board control: Web Bluetooth connection
+      lifecycle, disconnect/reconnect (re-retrieve invalidated GATT attributes),
+      GATT operation serialization, secure-context requirement, and a mock-adapter
+      strategy for CI. The LED packet protocol itself is in hardware-and-protocol.md.
+    key_findings:
+      - "requestDevice needs a user gesture; Web Bluetooth works only in secure (HTTPS) contexts."
+      - "GATT attributes are invalidated on disconnect and must be re-retrieved after reconnect."
+      - "Serialize GATT operations; parallel reads/writes can error."
+      - "Grip Connect (TypeScript) is the reference client and supports Aurora/Kilter LED boards."
+    related:
+      - {slug: docs/briefs/hardware-and-protocol.md, relationship: extends}
+  docs/briefs/catalog-sync-api.md:
+    summary: |
+      The Kilter catalog-sync layer: BoardLib is the canonical reference
+      implementation (download then sync; shared/public data only by default, user
+      data needs credentials). Boundary between one-time bootstrap and incremental
+      sync; exact request shapes + publish/auth endpoints must be read from BoardLib.
+    key_findings:
+      - "BoardLib: `boardlib database <board> <path> --username <user>` downloads then syncs."
+      - "Only shared/public data syncs by default; user data (ascents/bids) requires credentials."
+      - "No official sync-API spec — read BoardLib source for endpoints and shared_syncs cursor mechanics."
+      - "This layer also unblocks route publishing and optional ascent sync."
+    related:
+      - {slug: docs/briefs/data-model.md, relationship: extends}
+  docs/briefs/board-rendering-and-filtering.md:
+    summary: |
+      The climb-browser layer: Climbdex is the prime prior-art reference for board
+      rendering (image + hold overlays from holes x,y) and filter-by-hold (URL-param
+      encoded, bookmarkable). Filtering is SQL over the local OPFS catalog; shareable
+      URLs fall out of URL encoding. Exact coordinate math must be read from Climbdex.
+    key_findings:
+      - "Climbdex is the prior-art reference: filter-by-hold over a BoardLib SQLite DB, filter state in URL query params."
+      - "Render = board background image + holds positioned by holes (x,y) per layout/product_size."
+      - "Filtering runs as SQL over the local catalog; shareable URLs from URL-encoded filter + climb id."
+      - "Exact hold coordinate→screen mapping must be read from Climbdex source."
+    related:
+      - {slug: docs/briefs/data-model.md, relationship: extends}
+      - {slug: docs/briefs/foundation-pwa-sqlite.md, relationship: depends-on}
+  docs/briefs/recommendations-and-training.md:
+    summary: |
+      Two threads for epic-recommendations: content-based filtering (item features +
+      predicted grade; needs no other users' data — fits a single-user app), and
+      climbing-training methodology (progressive overload + reduced-variability
+      blocks) that gives circuits, weakness detection, and overload suggestions meaning.
+    key_findings:
+      - "Content-based filtering needs no other users' data — the right fit; collaborative filtering is wrong here."
+      - "Recommendation features come from catalog + grade model (predicted grade, hold features, angle, style); logbook supplies the liked set."
+      - "Progressive overload needs intensity + frequency + deliberate progression; climbing variability undermines it."
+      - "A board + grade model is a structured reduced-variability progression tool — the rationale for circuits/overload/weakness features."
+    related:
+      - {slug: docs/briefs/foundation-pwa-sqlite.md, relationship: depends-on}
+  .research/briefs/kilter-grade-prediction/parent.md:
+    summary: |
+      Synthesis of the Kilter grade-prediction deep-research campaign. Recommends a
+      GBT-first baseline on engineered geometric/move features (per-angle
+      difficulty_average regression), leakage-safe GroupKFold on climb_uuid using the
+      Vilin97/KilterBoard dataset, and GBT→ONNX for single-threaded WASM in-browser
+      inference; deep models (CNN most export-friendly) as a benchmarked co-baseline.
+    decisions:
+      - "Start with engineered features + a gradient-boosted-tree regressor on per-angle difficulty_average."
+      - "Evaluate with GroupKFold grouped on climb_uuid (no climb spans splits); report MAE + within-±1-grade."
+      - "Use Vilin97/KilterBoard (ships UUID-disjoint splits); export GBT→ONNX, run single-threaded WASM via ONNX Runtime Web."
+      - "Carry the move-decomposition contradiction (BetaMove enabler vs Board-to-Board bias-source) unresolved; baseline starts non-decomposed."
+    key_findings:
+      - "No published Kilter-specific grade predictor exists; accuracy band (~42-47% exact / ~84% within ±1 / ~0.87 MAE) is borrowed from MoonBoard, unvalidated on Kilter."
+      - "Vilin97/KilterBoard is ~100K–1M rows — a small CNN is a co-baseline, not a deferred step."
+    related:
+      - {slug: docs/briefs/data-model.md, relationship: depends-on}
+      - {slug: .research/briefs/kilter-grade-prediction/campaign.md, relationship: part-of}
+  .research/briefs/kilter-grade-prediction/campaign.md:
+    summary: |
+      Quality report for the grade-prediction campaign: 6 Sonnet specialists + Opus
+      synthesis + isolated Opus evaluator. Verdict GO (0.84). Records citation-lint
+      (288 citations, 0 broken; 59 thin, 91 advisory flags as quality-checkpoint
+      follow-ups), deferred adversarial-read, and the top-3 design follow-ups.
+    key_findings:
+      - "Evaluator verdict GO (0.84) — fit to ground epic-grade-prediction design."
+      - "Citation chain resolves (0 broken); thin attestations + pattern flags deferred to quality-checkpoint."
+      - "Follow-ups: resolve dataset size, front-load data-acquisition, reconcile loose figures."
+  docs/architecture/history/north-star.md:
+    summary: |
+      The original north-star document that combined vision, capabilities, proposed
+      architecture, and a phased roadmap. Its content has been split into the
+      rolling-foundation docs (VISION/SPEC/ARCHITECTURE) and its Phase 0–3 roadmap
+      migrated to epic items in .work/. Retained for provenance; do not edit.
+    supersession_note: |
+      Split into docs/VISION.md, docs/SPEC.md, and docs/ARCHITECTURE.md. The
+      Phase 0–3 roadmap is superseded by epic items in .work/.
+    related:
+      - {slug: docs/ARCHITECTURE.md, relationship: refines}

@@ -1,3 +1,22 @@
+---
+description: Kilter Board Fullride 7x10 hardware, BLE/Nordic UART packet protocol, LED system, and angle adjustment
+type: brief
+kind: research
+updated: 2026-06-13
+nav_priority: high
+summary: >
+  Technical primer for the Fullride 7x10: board dimensions and hold/LED counts,
+  the BLE communication protocol (service/characteristic UUIDs, packet framing
+  0x01/0x02/0x03, checksums, multi-packet splitting, API level 3 with 3 bytes
+  per hold and 256 colors), the LED/hold addressing system, angle adjustment,
+  and the community tooling that documents all of it.
+key_findings:
+  - "Fullride 7x10 = 305 bolt-on holds, 450 LEDs, 60 footholds; BLE API level 3."
+  - "Discovery service UUID 4488B571-7806-4DF6-BCFF-A2897E4953FF; write characteristic 6E400002-B5A3-F393-E0A9-E50E24DCCA9E (Nordic UART RX)."
+  - "LED commands use packet framing (0x01/0x02/0x03) with checksums and multi-packet splitting for climbs with many holds."
+  - "All Aurora Climbing boards (Kilter, Tension, Decoy, etc.) share one BLE protocol, app architecture, and DB schema."
+---
+
 # Kilter Board Fullride 7x10 -- Technical Primer
 
 ## Table of Contents

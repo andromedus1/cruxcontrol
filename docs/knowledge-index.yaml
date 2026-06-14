@@ -1,0 +1,152 @@
+# Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
+# Frontmatter is the source of truth — edit each doc's frontmatter and re-run.
+#
+# schema_version controls lint mode:
+#   1 = grace (missing v2 fields produce warnings, not errors)
+#   2 = enforce (missing v2 fields are errors)
+schema_version: 2
+generated_at: 2026-06-13T00:00:00Z
+generated_from: frontmatter
+total_docs: 19
+
+documents:
+  - path: docs/ARCHITECTURE.md
+    title: CruxControl — Architecture
+    type: planning
+    kind: planning
+    updated: 2026-06-13
+    nav_priority: high
+    consumer_hint: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
+  - path: docs/SPEC.md
+    title: CruxControl — Specification
+    type: planning
+    kind: planning
+    updated: 2026-06-13
+    nav_priority: high
+    consumer_hint: CruxControl capabilities, domain model, constraints, and non-functional requirements
+  - path: docs/VISION.md
+    title: CruxControl — Vision
+    type: planning
+    kind: planning
+    updated: 2026-06-13
+    nav_priority: high
+    consumer_hint: CruxControl vision, problem, audience, principles, and non-goals
+  - path: docs/briefs/data-model.md
+    title: Kilter Board Data Model — Technical Primer
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    consumer_hint: Kilter Board SQLite schema, frames encoding, hold roles, grading system, and the sync/web API
+  - path: docs/briefs/foundation-pwa-sqlite.md
+    title: "Brief: Distributable Offline-First PWA + In-Browser SQLite (Foundation)"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /brief
+    consumer_hint: Read before designing epic-foundation — framework, in-browser SQLite approach, and PWA/hosting strategy
+  - path: docs/briefs/board-control-web-bluetooth.md
+    title: "Brief: Board Control over Web Bluetooth (Integration Layer)"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /brief
+    consumer_hint: Read before designing epic-board-control — Web Bluetooth lifecycle, reconnect, serialization, mock-adapter testing
+  - path: docs/briefs/catalog-sync-api.md
+    title: "Brief: Catalog Sync & the Kilter API (Sync Engine)"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /brief
+    consumer_hint: Read before designing epic-catalog-sync — BoardLib as reference, shared-vs-user data boundary, auth for publish/ascents
+  - path: docs/briefs/board-rendering-and-filtering.md
+    title: "Brief: Board Rendering & Catalog Filtering (Climb Browser)"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /brief
+    consumer_hint: Read before designing epic-climb-browser — Climbdex prior art, board rendering from holes coords, SQL filtering, shareable URLs
+  - path: docs/briefs/recommendations-and-training.md
+    title: "Brief: Recommendations & Training Methodology"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /brief
+    consumer_hint: Read before designing epic-recommendations — content-based recsys for single user + climbing training methodology
+  - path: .research/briefs/kilter-grade-prediction/parent.md
+    title: "Kilter Grade Prediction — campaign synthesis"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /deep-research
+    consumer_hint: Read before designing epic-grade-prediction — recommended GBT-first approach, evaluation, in-browser path, contradictions
+  - path: .research/briefs/kilter-grade-prediction/feature-engineering.md
+    title: "Kilter Grade Prediction — Feature Engineering"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: frames→(x,y,role) decode + geometric/move features (reach/span, density, height, angle)
+  - path: .research/briefs/kilter-grade-prediction/classical-models.md
+    title: "Kilter Grade Prediction — Classical Models"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: GBT baseline, ordinal-as-regression, SHAP for sandbag detection
+  - path: .research/briefs/kilter-grade-prediction/deep-representation-models.md
+    title: "Kilter Grade Prediction — Deep Representation Models"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: CNN/GNN/sequence; sequencing-via-BetaMove drove MoonBoard gains; CNN most export-friendly
+  - path: .research/briefs/kilter-grade-prediction/evaluation-methodology.md
+    title: "Kilter Grade Prediction — Evaluation Methodology"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: per-angle difficulty_average target, MAE/within-±1 metrics, GroupKFold on climb_uuid (leakage)
+  - path: .research/briefs/kilter-grade-prediction/prior-work-datasets.md
+    title: "Kilter Grade Prediction — Prior Work & Datasets"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: no published Kilter predictor; Vilin97/KilterBoard substrate; MoonBoard accuracy band; label-bias mitigation
+  - path: .research/briefs/kilter-grade-prediction/in-browser-inference.md
+    title: "Kilter Grade Prediction — In-Browser Inference"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: ONNX Runtime Web (WASM); TF.js is NN-only so GBT→ONNX; train/serve skew is the real risk
+  - path: .research/briefs/kilter-grade-prediction/campaign.md
+    title: "Kilter Grade Prediction — Campaign Report"
+    type: program-report
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: campaign quality report — evaluator verdict GO (0.84), lint result, design follow-ups
+  - path: docs/briefs/hardware-and-protocol.md
+    title: Kilter Board Fullride 7x10 — Technical Primer
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    consumer_hint: Kilter Board Fullride 7x10 hardware, BLE/Nordic UART packet protocol, LED system, and angle adjustment
+  - path: docs/architecture/history/north-star.md
+    title: CruxControl — North Star Document
+    type: historical
+    kind: historical
+    updated: 2026-06-13
+    status: superseded
+    superseded_by: docs/ARCHITECTURE.md
+    consumer_hint: Original combined ideation doc for CruxControl — superseded by VISION/SPEC/ARCHITECTURE

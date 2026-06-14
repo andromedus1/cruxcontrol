@@ -1,3 +1,23 @@
+---
+description: Kilter Board SQLite schema, frames encoding, hold roles, grading system, and the sync/web API
+type: brief
+kind: research
+updated: 2026-06-13
+nav_priority: high
+summary: >
+  Technical primer for the Kilter data model: the bundled SQLite database
+  (climbs, climb_stats, holes/placements, layouts/products/sizes), the frames
+  string encoding for hold placements + roles, the grading system
+  (difficulty_average, benchmark_difficulty, ascensionist_count, quality_average),
+  the REST sync protocol at kilterboardapp.com/sync (incremental via shared_syncs
+  timestamps), and the BLE protocol summary.
+key_findings:
+  - "Climbs encode hold placements + roles as a 'frames' string; roles are start/middle/finish/foot-only."
+  - "climb_stats carries community grades per angle (difficulty_average) — the ML training target."
+  - "POST kilterboardapp.com/sync drives incremental updates via shared_syncs timestamps; BoardLib bootstraps the SQLite DB."
+  - "Schema and sync API are shared across the entire Aurora Climbing board family."
+---
+
 # Kilter Board Data Model: A Technical Primer
 
 ## Table of Contents

@@ -1,0 +1,79 @@
+# Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
+# Navigator layer — auto-loaded at session start (capped at 10KB by harness).
+# Provides corpus situational awareness only. Read knowledge-index.yaml for full index.
+
+schema_version: 3
+generated_at: 2026-06-13T00:00:00Z
+generated_from: frontmatter
+total_docs: 19
+
+by_kind:
+  planning: 3
+  research: 15
+  historical: 1
+
+# Substrate items (.work/) by tier. Query individual items via
+# .work/bin/work-view (--ready, --blocked, --kind, etc.).
+substrate_summary:
+  active:
+    epic: 9
+    feature: 0
+    story: 0
+    release: 0
+  backlog: 0
+  archive: 0
+# Ready to work: epic-foundation. The other 8 epics are blocked by depends_on.
+# 5 epics tagged [needs-brief], 1 tagged [needs-research] — research gates design.
+
+recent:
+  - path: docs/VISION.md
+    title: CruxControl — Vision
+    kind: planning
+    updated: 2026-06-13
+  - path: docs/SPEC.md
+    title: CruxControl — Specification
+    kind: planning
+    updated: 2026-06-13
+  - path: docs/ARCHITECTURE.md
+    title: CruxControl — Architecture
+    kind: planning
+    updated: 2026-06-13
+
+load_bearing:
+  - path: docs/VISION.md
+    title: CruxControl — Vision
+    kind: planning
+  - path: docs/SPEC.md
+    title: CruxControl — Specification
+    kind: planning
+  - path: docs/ARCHITECTURE.md
+    title: CruxControl — Architecture
+    kind: planning
+  - path: docs/briefs/hardware-and-protocol.md
+    title: Kilter Board Fullride 7x10 — Technical Primer
+    kind: research
+  - path: docs/briefs/foundation-pwa-sqlite.md
+    title: "Brief: Distributable Offline-First PWA + In-Browser SQLite (Foundation)"
+    kind: research
+  - path: docs/briefs/data-model.md
+    title: Kilter Board Data Model — Technical Primer
+    kind: research
+  - path: docs/briefs/board-control-web-bluetooth.md
+    title: "Brief: Board Control over Web Bluetooth (Integration Layer)"
+    kind: research
+  - path: docs/briefs/catalog-sync-api.md
+    title: "Brief: Catalog Sync & the Kilter API (Sync Engine)"
+    kind: research
+  - path: docs/briefs/board-rendering-and-filtering.md
+    title: "Brief: Board Rendering & Catalog Filtering (Climb Browser)"
+    kind: research
+  - path: docs/briefs/recommendations-and-training.md
+    title: "Brief: Recommendations & Training Methodology"
+    kind: research
+  - path: .research/briefs/kilter-grade-prediction/parent.md
+    title: "Kilter Grade Prediction — campaign synthesis"
+    kind: research
+
+# On-demand layers (Read tool):
+full_index_path: docs/knowledge-index.yaml
+detail_index_path: docs/knowledge-index-detail.yaml
