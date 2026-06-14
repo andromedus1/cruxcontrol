@@ -82,6 +82,59 @@ documents:
       - "Recommended: React + Vite SPA, wa-sqlite in a Worker, vite-plugin-pwa, static deploy to Cloudflare Pages."
     related:
       - {slug: docs/briefs/data-model.md, relationship: depends-on}
+  docs/briefs/board-control-web-bluetooth.md:
+    summary: |
+      The browser-side integration layer for board control: Web Bluetooth connection
+      lifecycle, disconnect/reconnect (re-retrieve invalidated GATT attributes),
+      GATT operation serialization, secure-context requirement, and a mock-adapter
+      strategy for CI. The LED packet protocol itself is in hardware-and-protocol.md.
+    key_findings:
+      - "requestDevice needs a user gesture; Web Bluetooth works only in secure (HTTPS) contexts."
+      - "GATT attributes are invalidated on disconnect and must be re-retrieved after reconnect."
+      - "Serialize GATT operations; parallel reads/writes can error."
+      - "Grip Connect (TypeScript) is the reference client and supports Aurora/Kilter LED boards."
+    related:
+      - {slug: docs/briefs/hardware-and-protocol.md, relationship: extends}
+  docs/briefs/catalog-sync-api.md:
+    summary: |
+      The Kilter catalog-sync layer: BoardLib is the canonical reference
+      implementation (download then sync; shared/public data only by default, user
+      data needs credentials). Boundary between one-time bootstrap and incremental
+      sync; exact request shapes + publish/auth endpoints must be read from BoardLib.
+    key_findings:
+      - "BoardLib: `boardlib database <board> <path> --username <user>` downloads then syncs."
+      - "Only shared/public data syncs by default; user data (ascents/bids) requires credentials."
+      - "No official sync-API spec — read BoardLib source for endpoints and shared_syncs cursor mechanics."
+      - "This layer also unblocks route publishing and optional ascent sync."
+    related:
+      - {slug: docs/briefs/data-model.md, relationship: extends}
+  docs/briefs/board-rendering-and-filtering.md:
+    summary: |
+      The climb-browser layer: Climbdex is the prime prior-art reference for board
+      rendering (image + hold overlays from holes x,y) and filter-by-hold (URL-param
+      encoded, bookmarkable). Filtering is SQL over the local OPFS catalog; shareable
+      URLs fall out of URL encoding. Exact coordinate math must be read from Climbdex.
+    key_findings:
+      - "Climbdex is the prior-art reference: filter-by-hold over a BoardLib SQLite DB, filter state in URL query params."
+      - "Render = board background image + holds positioned by holes (x,y) per layout/product_size."
+      - "Filtering runs as SQL over the local catalog; shareable URLs from URL-encoded filter + climb id."
+      - "Exact hold coordinate→screen mapping must be read from Climbdex source."
+    related:
+      - {slug: docs/briefs/data-model.md, relationship: extends}
+      - {slug: docs/briefs/foundation-pwa-sqlite.md, relationship: depends-on}
+  docs/briefs/recommendations-and-training.md:
+    summary: |
+      Two threads for epic-recommendations: content-based filtering (item features +
+      predicted grade; needs no other users' data — fits a single-user app), and
+      climbing-training methodology (progressive overload + reduced-variability
+      blocks) that gives circuits, weakness detection, and overload suggestions meaning.
+    key_findings:
+      - "Content-based filtering needs no other users' data — the right fit; collaborative filtering is wrong here."
+      - "Recommendation features come from catalog + grade model (predicted grade, hold features, angle, style); logbook supplies the liked set."
+      - "Progressive overload needs intensity + frequency + deliberate progression; climbing variability undermines it."
+      - "A board + grade model is a structured reduced-variability progression tool — the rationale for circuits/overload/weakness features."
+    related:
+      - {slug: docs/briefs/foundation-pwa-sqlite.md, relationship: depends-on}
   docs/architecture/history/north-star.md:
     summary: |
       The original north-star document that combined vision, capabilities, proposed

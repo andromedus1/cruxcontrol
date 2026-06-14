@@ -7,7 +7,7 @@
 schema_version: 2
 generated_at: 2026-06-13T00:00:00Z
 generated_from: frontmatter
-total_docs: 7
+total_docs: 11
 
 documents:
   - path: docs/ARCHITECTURE.md
@@ -46,6 +46,38 @@ documents:
     nav_priority: high
     research_method: /brief
     consumer_hint: Read before designing epic-foundation — framework, in-browser SQLite approach, and PWA/hosting strategy
+  - path: docs/briefs/board-control-web-bluetooth.md
+    title: "Brief: Board Control over Web Bluetooth (Integration Layer)"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /brief
+    consumer_hint: Read before designing epic-board-control — Web Bluetooth lifecycle, reconnect, serialization, mock-adapter testing
+  - path: docs/briefs/catalog-sync-api.md
+    title: "Brief: Catalog Sync & the Kilter API (Sync Engine)"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /brief
+    consumer_hint: Read before designing epic-catalog-sync — BoardLib as reference, shared-vs-user data boundary, auth for publish/ascents
+  - path: docs/briefs/board-rendering-and-filtering.md
+    title: "Brief: Board Rendering & Catalog Filtering (Climb Browser)"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /brief
+    consumer_hint: Read before designing epic-climb-browser — Climbdex prior art, board rendering from holes coords, SQL filtering, shareable URLs
+  - path: docs/briefs/recommendations-and-training.md
+    title: "Brief: Recommendations & Training Methodology"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /brief
+    consumer_hint: Read before designing epic-recommendations — content-based recsys for single user + climbing training methodology
   - path: docs/briefs/hardware-and-protocol.md
     title: Kilter Board Fullride 7x10 — Technical Primer
     type: brief
