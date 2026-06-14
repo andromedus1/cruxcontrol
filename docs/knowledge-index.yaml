@@ -7,7 +7,7 @@
 schema_version: 2
 generated_at: 2026-06-13T00:00:00Z
 generated_from: frontmatter
-total_docs: 11
+total_docs: 19
 
 documents:
   - path: docs/ARCHITECTURE.md
@@ -78,6 +78,63 @@ documents:
     nav_priority: high
     research_method: /brief
     consumer_hint: Read before designing epic-recommendations — content-based recsys for single user + climbing training methodology
+  - path: .research/briefs/kilter-grade-prediction/parent.md
+    title: "Kilter Grade Prediction — campaign synthesis"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /deep-research
+    consumer_hint: Read before designing epic-grade-prediction — recommended GBT-first approach, evaluation, in-browser path, contradictions
+  - path: .research/briefs/kilter-grade-prediction/feature-engineering.md
+    title: "Kilter Grade Prediction — Feature Engineering"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: frames→(x,y,role) decode + geometric/move features (reach/span, density, height, angle)
+  - path: .research/briefs/kilter-grade-prediction/classical-models.md
+    title: "Kilter Grade Prediction — Classical Models"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: GBT baseline, ordinal-as-regression, SHAP for sandbag detection
+  - path: .research/briefs/kilter-grade-prediction/deep-representation-models.md
+    title: "Kilter Grade Prediction — Deep Representation Models"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: CNN/GNN/sequence; sequencing-via-BetaMove drove MoonBoard gains; CNN most export-friendly
+  - path: .research/briefs/kilter-grade-prediction/evaluation-methodology.md
+    title: "Kilter Grade Prediction — Evaluation Methodology"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: per-angle difficulty_average target, MAE/within-±1 metrics, GroupKFold on climb_uuid (leakage)
+  - path: .research/briefs/kilter-grade-prediction/prior-work-datasets.md
+    title: "Kilter Grade Prediction — Prior Work & Datasets"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: no published Kilter predictor; Vilin97/KilterBoard substrate; MoonBoard accuracy band; label-bias mitigation
+  - path: .research/briefs/kilter-grade-prediction/in-browser-inference.md
+    title: "Kilter Grade Prediction — In-Browser Inference"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: ONNX Runtime Web (WASM); TF.js is NN-only so GBT→ONNX; train/serve skew is the real risk
+  - path: .research/briefs/kilter-grade-prediction/campaign.md
+    title: "Kilter Grade Prediction — Campaign Report"
+    type: program-report
+    kind: research
+    updated: 2026-06-13
+    research_method: /deep-research
+    consumer_hint: campaign quality report — evaluator verdict GO (0.84), lint result, design follow-ups
   - path: docs/briefs/hardware-and-protocol.md
     title: Kilter Board Fullride 7x10 — Technical Primer
     type: brief

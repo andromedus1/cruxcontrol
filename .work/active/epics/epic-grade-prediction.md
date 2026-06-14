@@ -2,7 +2,7 @@
 id: epic-grade-prediction
 kind: epic
 stage: drafting
-tags: [ml, needs-research]
+tags: [ml]
 parent: null
 depends_on: [epic-foundation]
 release_binding: null
@@ -31,16 +31,30 @@ model.
 
 - `docs/briefs/data-model.md` — `climb_stats.difficulty_average` (the training target),
   `holes` coordinates, frames encoding (the raw feature source).
-- **[needs-research]** — *ML grade-prediction approaches.* This is genuinely open and
-  warrants **`/research-pipeline:deep-research`** (not just a brief): the approach space
-  is wide — feature engineering from frames (move distances, hold density, height,
-  spacing), gradient-boosted trees on engineered features, a CNN over a 2D board-image
-  representation, a graph neural network (holds as nodes, moves as edges), and sequence
-  models over ordered placements. Facets to decompose: feature engineering, each model
-  family, evaluation/validation methodology (per-angle, benchmark vs consensus), and
-  **prior work** (HuggingFace datasets `Vilin97/KilterBoard`, `stfamod/Kilter-Board-Dataset`;
-  any published Kilter/MoonBoard grade-prediction work). Run the campaign before
-  `/epic-design`.
+- **[research done]** [.research/briefs/kilter-grade-prediction/parent.md](../../../.research/briefs/kilter-grade-prediction/parent.md)
+  — deep-research campaign (6 specialists + synthesis + evaluator; verdict GO, 0.84).
+  **Recommended spine:** decode `frames`→(x,y,role) geometry → engineer geometric/move
+  features (reach/span, esp. largest hand move; angle as a first-class feature) → fit a
+  **gradient-boosted-tree regressor** on per-angle `difficulty_average` → evaluate with
+  **GroupKFold grouped on `climb_uuid`** (no climb spans splits) on the **Vilin97/KilterBoard**
+  dataset (ships UUID-disjoint splits) → export **GBT→ONNX**, run single-threaded WASM via
+  ONNX Runtime Web. SHAP/TreeExplainer → sandbag detection. Per-facet briefs:
+  feature-engineering, classical-models, deep-representation-models, evaluation-methodology,
+  prior-work-datasets, in-browser-inference (same directory). Campaign report:
+  [campaign.md](../../../.research/briefs/kilter-grade-prediction/campaign.md).
+
+  **Design follow-ups from the evaluator (address in `/epic-design`):**
+  1. Measure Vilin97's actual row count (parent says ~100K–1M, not ~10K); if large,
+     treat a small role-channel CNN as a **co-baseline**, not a deferred next step.
+  2. Front-load a **data-acquisition workstream** — BoardLib pull, frames-decode
+     validation, near-duplicate detection (for the grouped split), label hygiene
+     (kilterbench flash-log mitigation).
+  3. **Contradiction to carry, not resolve:** move-decomposition (BetaMove→GradeNet)
+     drove MoonBoard's best results but Board-to-Board deliberately avoids it and still
+     hits regression SOTA — baseline starts non-decomposed; revisit move features as an
+     experiment. There is **no published Kilter-specific predictor** (prior art is
+     MoonBoard); the ~42–47% exact / ~84% within ±1 / ~0.87 MAE band is borrowed and
+     unvalidated on Kilter — validate empirically.
 
 ## Foundation references
 

@@ -135,6 +135,34 @@ documents:
       - "A board + grade model is a structured reduced-variability progression tool — the rationale for circuits/overload/weakness features."
     related:
       - {slug: docs/briefs/foundation-pwa-sqlite.md, relationship: depends-on}
+  .research/briefs/kilter-grade-prediction/parent.md:
+    summary: |
+      Synthesis of the Kilter grade-prediction deep-research campaign. Recommends a
+      GBT-first baseline on engineered geometric/move features (per-angle
+      difficulty_average regression), leakage-safe GroupKFold on climb_uuid using the
+      Vilin97/KilterBoard dataset, and GBT→ONNX for single-threaded WASM in-browser
+      inference; deep models (CNN most export-friendly) as a benchmarked co-baseline.
+    decisions:
+      - "Start with engineered features + a gradient-boosted-tree regressor on per-angle difficulty_average."
+      - "Evaluate with GroupKFold grouped on climb_uuid (no climb spans splits); report MAE + within-±1-grade."
+      - "Use Vilin97/KilterBoard (ships UUID-disjoint splits); export GBT→ONNX, run single-threaded WASM via ONNX Runtime Web."
+      - "Carry the move-decomposition contradiction (BetaMove enabler vs Board-to-Board bias-source) unresolved; baseline starts non-decomposed."
+    key_findings:
+      - "No published Kilter-specific grade predictor exists; accuracy band (~42-47% exact / ~84% within ±1 / ~0.87 MAE) is borrowed from MoonBoard, unvalidated on Kilter."
+      - "Vilin97/KilterBoard is ~100K–1M rows — a small CNN is a co-baseline, not a deferred step."
+    related:
+      - {slug: docs/briefs/data-model.md, relationship: depends-on}
+      - {slug: .research/briefs/kilter-grade-prediction/campaign.md, relationship: part-of}
+  .research/briefs/kilter-grade-prediction/campaign.md:
+    summary: |
+      Quality report for the grade-prediction campaign: 6 Sonnet specialists + Opus
+      synthesis + isolated Opus evaluator. Verdict GO (0.84). Records citation-lint
+      (288 citations, 0 broken; 59 thin, 91 advisory flags as quality-checkpoint
+      follow-ups), deferred adversarial-read, and the top-3 design follow-ups.
+    key_findings:
+      - "Evaluator verdict GO (0.84) — fit to ground epic-grade-prediction design."
+      - "Citation chain resolves (0 broken); thin attestations + pattern flags deferred to quality-checkpoint."
+      - "Follow-ups: resolve dataset size, front-load data-acquisition, reconcile loose figures."
   docs/architecture/history/north-star.md:
     summary: |
       The original north-star document that combined vision, capabilities, proposed

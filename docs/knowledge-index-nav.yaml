@@ -5,11 +5,11 @@
 schema_version: 3
 generated_at: 2026-06-13T00:00:00Z
 generated_from: frontmatter
-total_docs: 11
+total_docs: 19
 
 by_kind:
   planning: 3
-  research: 7
+  research: 15
   historical: 1
 
 # Substrate items (.work/) by tier. Query individual items via
@@ -69,6 +69,9 @@ load_bearing:
     kind: research
   - path: docs/briefs/recommendations-and-training.md
     title: "Brief: Recommendations & Training Methodology"
+    kind: research
+  - path: .research/briefs/kilter-grade-prediction/parent.md
+    title: "Kilter Grade Prediction — campaign synthesis"
     kind: research
 
 # On-demand layers (Read tool):
