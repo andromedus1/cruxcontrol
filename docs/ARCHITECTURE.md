@@ -43,7 +43,10 @@ feature item bodies in `.work/`, not here. Capabilities are in
    local drafts + publish via the Sync Engine.
 7. **Logbook & Sessions** — local store of ascents/attempts/sessions with
    analytics; optional push to the Kilter API via the Sync Engine.
-8. **ML Pipeline** — offline (Python): feature extraction from the catalog →
+8. **Playlists** — local store of user-curated, ordered climb-reference lists;
+   reuses the renderer + shareable-URL routing, and drives the BLE Adapter for
+   board play-through. A CruxControl-local construct (no Kilter counterpart).
+9. **ML Pipeline** — offline (Python): feature extraction from the catalog →
    training dataset → grade-prediction model. Exports a model for in-browser
    inference (ONNX.js / TF.js); feeds prediction + recommendation features back
    into the app.

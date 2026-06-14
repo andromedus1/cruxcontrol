@@ -15,6 +15,7 @@ decisions:
   - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
   - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
   - "Grade-prediction target is community consensus difficulty_average from climb_stats."
+  - "Playlists are a CruxControl-local construct (no Kilter playlist API): local-first, climb-ID-referenced, shareable, board-playable."
 ---
 
 # CruxControl — Specification
@@ -72,6 +73,18 @@ operates over, and the constraints it must satisfy. The *why* lives in
 - Weakness detection: which hold types/positions the user struggles with.
 - Progressive overload: suggest slightly harder versions of sent climbs.
 
+### 8. Playlists (Curated Climb Lists)
+- Create named, hand-picked, **manually reorderable** lists of climbs.
+- A playlist is a CruxControl-local construct (Kilter has no playlist concept);
+  it references climbs by stable Kilter climb ID so a shared playlist resolves
+  against any local catalog.
+- Shareable URL per playlist (like shareable climb URLs).
+- **Play-through on the board:** when connected, step through the playlist
+  climb-by-climb, lighting each in turn. Without a board connection the playlist
+  is still fully usable for browsing/sharing.
+- Distinct from auto-generated circuits (Capability 7, algorithmic) and from
+  session tracking (Capability 4, logging attempts).
+
 ## Domain Model
 
 The model mirrors the official Kilter SQLite schema (see
@@ -86,6 +99,9 @@ The model mirrors the official Kilter SQLite schema (see
   `benchmark_difficulty`, `ascensionist_count`, `quality_average`.
 - **Ascent / Bid** — logged sends and attempts (auth-gated for personal data).
 - **Session** — a grouping of attempts/ascents over a single board session.
+- **Playlist** — a CruxControl-local, user-named, ordered list of climb
+  references (by stable Kilter climb ID); shareable and board-playable. Not a
+  Kilter schema entity.
 
 ## Constraints & Non-Functional Requirements
 

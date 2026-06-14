@@ -16,13 +16,13 @@ by_kind:
 # .work/bin/work-view (--ready, --blocked, --kind, etc.).
 substrate_summary:
   active:
-    epic: 8
+    epic: 9
     feature: 0
     story: 0
     release: 0
   backlog: 0
   archive: 0
-# Ready to work: epic-foundation. The other 7 epics are blocked by depends_on.
+# Ready to work: epic-foundation. The other 8 epics are blocked by depends_on.
 # 5 epics tagged [needs-brief], 1 tagged [needs-research] — research gates design.
 
 recent:

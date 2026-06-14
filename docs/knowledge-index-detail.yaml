@@ -28,6 +28,7 @@ documents:
       - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
       - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
       - "Grade-prediction target is community consensus difficulty_average from climb_stats."
+      - "Playlists are a CruxControl-local construct (no Kilter playlist API): local-first, climb-ID-referenced, shareable, board-playable."
   docs/ARCHITECTURE.md:
     summary: |
       High-level architecture for CruxControl: an offline-first web app over a local
