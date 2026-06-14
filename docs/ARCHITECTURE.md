@@ -11,11 +11,11 @@ summary: >
   store, and a Python-side ML pipeline serving in-browser inference. This is the
   high-level shape; module-level designs are produced per-epic in the substrate.
 decisions:
-  - "Offline-first SPA with local SQLite (sql.js or OPFS-backed) as the read path."
+  - "Offline-first React + Vite SPA (TypeScript) with local SQLite (wa-sqlite OPFSCoopSyncVFS in a Web Worker, IndexedDB fallback) as the read path."
   - "BLE isolated behind a Web Bluetooth adapter implementing the API-level-3 packet protocol."
   - "Sync engine is a separate module wrapping POST /sync with incremental shared_syncs cursors."
-  - "ML training is offline (Python); inference runs in-browser via ONNX.js / TF.js."
-  - "Distributed to friends as a static, backendless, installable PWA (no app server/accounts); framework chosen for distribution robustness."
+  - "ML training is offline (Python); inference runs in-browser via ONNX Runtime Web (WASM)."
+  - "Distributed to friends as a static, backendless, installable PWA (no app server/accounts); React + Vite chosen for distribution robustness."
   - "This doc stays high-level; detailed module design lives in epic/feature item bodies."
 ---
 
@@ -28,7 +28,8 @@ feature item bodies in `.work/`, not here. Capabilities are in
 
 ## Module Map
 
-1. **Data Layer** — local SQLite catalog (`sql.js` or OPFS-backed), the read
+1. **Data Layer** — local SQLite catalog via `wa-sqlite` (OPFSCoopSyncVFS) in a
+   Web Worker (IndexedDB fallback), behind the `CatalogPort` interface — the read
    path for all climb/hold/stats queries. Schema mirrors the official Kilter DB.
 2. **Sync Engine** — wraps `POST kilterboardapp.com/sync`, drives incremental
    updates via `shared_syncs` cursors, and bootstraps from a BoardLib-downloaded
@@ -49,7 +50,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    board play-through. A CruxControl-local construct (no Kilter counterpart).
 9. **ML Pipeline** — offline (Python): feature extraction from the catalog →
    training dataset → grade-prediction model. Exports a model for in-browser
-   inference (ONNX.js / TF.js); feeds prediction + recommendation features back
+   inference (ONNX Runtime Web / WASM); feeds prediction + recommendation features back
    into the app.
 
 ## Data Flow
@@ -76,8 +77,9 @@ so the rest of the app is testable without hardware or network.
 
 ## Conventions
 
-- **Ports & adapters at the edges.** BLE and the Kilter API sit behind adapter
-  interfaces; the UI and domain never call Web Bluetooth or `fetch` directly.
+- **Ports & adapters at the edges.** BLE, the Kilter API, and the local catalog
+  (`CatalogPort`) sit behind adapter interfaces; the UI and domain never call Web
+  Bluetooth, `fetch`, or `wa-sqlite` directly.
 - **Single source of truth.** The local SQLite catalog is the read model; the
   logbook store is the source of truth for personal data.
 - **Generated over hand-written.** Catalog data, feature tables, and the model
@@ -85,30 +87,34 @@ so the rest of the app is testable without hardware or network.
 - **Offline-first.** Every read works without network; sync is a background
   reconciliation, not a precondition.
 - **Static, backendless distribution.** The whole app is client-side and ships as a
-  static, installable PWA hosted on static infra (e.g. Cloudflare Pages / Netlify /
-  Vercel). No application server, no accounts, no shared database — each friend's
-  client is fully independent with browser-local storage. The only "backends" the
-  client talks to are the Kilter sync API (over the network) and the board (over BLE).
+  static, installable PWA hosted on Cloudflare Pages. No application server, no
+  accounts, no shared database — each friend's client is fully independent with
+  browser-local storage. The only "backends" the client talks to are the Kilter sync
+  API (over the network) and the board (over BLE).
 
 ## Key Dependencies
 
+The architecture's intended dependency set. Each is installed as its epic/feature
+lands — today only React 19 + Vite 6 (the scaffold) are installed; wa-sqlite,
+vite-plugin-pwa, ONNX Runtime Web, and the Cloudflare Pages deploy arrive with their
+respective foundation/ML features.
+
 | Dependency | Role |
 |---|---|
+| React 19 + Vite 6 (TypeScript) | Client-only SPA framework + build tooling |
+| `wa-sqlite` (OPFSCoopSyncVFS) | In-browser SQLite read path (in a Web Worker; IndexedDB fallback) |
+| `vite-plugin-pwa` (Workbox) | Service worker + manifest — offline shell, installability |
 | Web Bluetooth API | Browser → board BLE (Chromium only) |
-| `sql.js` / OPFS | In-browser SQLite read path |
 | BoardLib (Python) | Bootstrap the SQLite catalog; sync-protocol reference |
 | Kilter sync API | Incremental catalog + optional logbook sync |
-| ONNX.js / TensorFlow.js | In-browser grade-prediction inference |
+| ONNX Runtime Web (WASM) | In-browser grade-prediction inference (GBT→ONNX export) |
+| Cloudflare Pages (static host) | Distribute the installable PWA to friends; no app server |
 | Climbdex / Grip Connect / fake_kilter_board | Reference implementations (search, BLE, protocol) |
 
-| Static PWA host (Cloudflare Pages / Netlify / Vercel) | Distribute the installable app to friends; no app server |
-
-Web app framework (React / SvelteKit / etc.) is **not yet chosen** — it is a
-design decision deferred to the foundation epic. The deciding criterion is
-**distribution robustness**: a stable, installable, statically-hostable PWA with
-strong ecosystem support for Web Bluetooth, in-browser SQLite, and in-browser ML
-inference. No SSR/server runtime is needed (Web Bluetooth requires a client
-context), so a client-rendered SPA + PWA tooling is the expected shape.
+**Framework: React 19 + Vite 6, TypeScript, client-only SPA** — chosen for
+distribution robustness (static bundle, no server runtime, deepest ecosystem for
+Web Bluetooth + in-browser SQLite + ONNX inference). No SSR is used (Web Bluetooth
+requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundation-pwa-sqlite.md).
 
 ## Biggest Risks
 
@@ -123,4 +129,4 @@ context), so a client-rendered SPA + PWA tooling is the expected shape.
 
 ## History
 
-- [history/north-star.md](architecture/history/north-star.md) — original combined ideation doc (superseded).
+- [Original north-star ideation doc (superseded)](architecture/history/north-star.md).

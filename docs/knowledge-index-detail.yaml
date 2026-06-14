@@ -25,7 +25,7 @@ documents:
       personalized recommendations — over a local SQLite catalog synced from the
       Kilter API, on a Web Bluetooth (Chrome/Edge) offline-first web app.
     decisions:
-      - "Capabilities are grouped into seven areas; board control + browser are the MVP surface."
+      - "Capabilities are grouped into eight areas; board control + browser are the MVP surface."
       - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
       - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
       - "Grade-prediction target is community consensus difficulty_average from climb_stats."
@@ -38,11 +38,11 @@ documents:
       store, and a Python-side ML pipeline serving in-browser inference. This is the
       high-level shape; module-level designs are produced per-epic in the substrate.
     decisions:
-      - "Offline-first SPA with local SQLite (sql.js or OPFS-backed) as the read path."
+      - "Offline-first React + Vite SPA (TypeScript) with local SQLite (wa-sqlite OPFSCoopSyncVFS in a Web Worker, IndexedDB fallback) as the read path."
       - "BLE isolated behind a Web Bluetooth adapter implementing the API-level-3 packet protocol."
       - "Sync engine is a separate module wrapping POST /sync with incremental shared_syncs cursors."
-      - "ML training is offline (Python); inference runs in-browser via ONNX.js / TF.js."
-      - "Distributed to friends as a static, backendless, installable PWA (no app server/accounts); framework chosen for distribution robustness."
+      - "ML training is offline (Python); inference runs in-browser via ONNX Runtime Web (WASM)."
+      - "Distributed to friends as a static, backendless, installable PWA (no app server/accounts); React + Vite chosen for distribution robustness."
       - "This doc stays high-level; detailed module design lives in epic/feature item bodies."
     related:
       - {slug: docs/architecture/history/north-star.md, relationship: refines}
