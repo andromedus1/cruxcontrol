@@ -1,0 +1,14 @@
+[project]
+name = "cruxcontrol-ml"
+version = "0.0.0"
+description = "Offline ML training pipeline for CruxControl grade prediction."
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Placeholder. The grade-prediction pipeline (feature extraction → training →
+# ONNX export) is implemented under epic-grade-prediction. See
+# .research/briefs/kilter-grade-prediction/parent.md for the recommended approach.

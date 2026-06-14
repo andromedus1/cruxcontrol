@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-scaffold
 kind: feature
-stage: implementing
+stage: review
 tags: []
 parent: epic-foundation
 depends_on: []
@@ -173,3 +173,29 @@ export interface CatalogPort {
 ## Risks
 - **React 19 / ESLint 9 flat-config churn** — both are current but evolve; pin exact versions in `package.json` and commit the lockfile. **Fallback**: drop to React 18.3 if a 19-specific issue blocks (the app shell uses no 19-only APIs).
 - **Port shape vs wa-sqlite reality** — `query()` returns `Row[]`; if wa-sqlite's result shape needs columns/values separately, the adapter maps to this shape (the port stays consumer-shaped). Low risk — the port is intentionally minimal.
+
+## Implementation notes (2026-06-13)
+
+Implemented all 6 units. **Verification (all green):** `typecheck` ✓, `lint` ✓, `test` ✓
+(4/4: App heading + MockCatalogPort seed/empty/close), `build` ✓ (→ `web/dist`, 194 kB / 60.85 kB gzip).
+
+Files: root `package.json` (npm workspaces) · `.gitignore` · `.nvmrc` · `README.md` ·
+`web/{package.json,vite.config.ts,tsconfig.json,index.html,eslint.config.js,.prettierrc.json}` ·
+`web/src/{main,App,App.test,test-setup}.tsx?` · `web/src/data/{port,mock-port,port.test}.ts` ·
+`ml/{pyproject.toml,README.md}` · `package-lock.json`.
+
+**Deviations from the design (intentional):**
+- **Lint/format config lives in `web/`** (`web/eslint.config.js`, `web/.prettierrc.json`),
+  not repo root — cleaner with the JS tooling all in the `web` workspace.
+- **Single `tsconfig.json`** (no project references / `tsc -b`); build is
+  `tsc --noEmit && vite build` — less fragile than the references setup.
+- **Vitest bumped 2 → 3** (`^3.0.0`, resolved 3.2.6) and `vite.config.ts` imports
+  `defineConfig` from `vitest/config`. Vitest 2.1 nested its own Vite 5, conflicting with the
+  app's Vite 6 `Plugin` types; Vitest 3 + Vite 6 is the matched pair and dedupes Vite to 6.4.3.
+- Added `@eslint/js` + `globals` devDeps (needed by the flat config) and an
+  `argsIgnorePattern: '^_'` no-unused-vars rule (intentionally-unused params like the mock's `_params`).
+
+**Follow-up for gate-security (not blocking the scaffold):** `npm install` reports 6
+advisories (2 moderate, 3 high, 1 critical) in the transitive dependency tree. Triage at the
+release security gate (`aw:gate-security`) — likely deep dev-only transitive deps; do not
+`audit fix --force` blindly (breaking changes).

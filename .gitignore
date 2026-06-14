@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+web/dist/
+*.tsbuildinfo
+
+# Local / env
+*.local
+.env
+.env.*
+!.env.example
+
+# Test / coverage
+coverage/
+
+# OS / editor
+.DS_Store
+
+# Python (/ml)
+ml/.venv/
+ml/__pycache__/
+ml/**/__pycache__/
+*.pyc
+
+# Local catalog snapshots (fetched/generated, not committed)
+*.db
+*.sqlite
+*.sqlite3
