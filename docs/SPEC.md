@@ -11,7 +11,7 @@ summary: >
   personalized recommendations — over a local SQLite catalog synced from the
   Kilter API, on a Web Bluetooth (Chrome/Edge) offline-first web app.
 decisions:
-  - "Capabilities are grouped into seven areas; board control + browser are the MVP surface."
+  - "Capabilities are grouped into eight areas; board control + browser are the MVP surface."
   - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
   - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
   - "Grade-prediction target is community consensus difficulty_average from climb_stats."
@@ -122,7 +122,7 @@ The model mirrors the official Kilter SQLite schema (see
   friend can open from a URL with no setup and no backend. Each user runs an
   independent client with browser-local data; there is no shared server or accounts.
   Distribution robustness — stable across mainstream Chromium browsers/devices,
-  installable, trivially hostable on static infra (e.g. Cloudflare Pages / Netlify /
-  Vercel static) — is a hard requirement, including as a framework-selection criterion.
+  installable, trivially hostable on static infra (Cloudflare Pages) — is a hard
+  requirement; it was the criterion by which the framework (React + Vite) was chosen.
 - **Per-user isolation.** One user's local data (logbook, playlists, drafts) is never
   visible to another; sharing is explicit and URL-based (climbs, playlists).

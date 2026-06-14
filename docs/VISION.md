@@ -66,7 +66,8 @@ server-backed, multi-tenant product (no accounts, no backend user data).
 - **Distributable by default.** The app ships as a hosted, installable PWA a
   friend can open from a URL — no per-user setup, no backend. Robustness for
   distribution (stability across browsers/devices, easy install, no server to
-  operate) is a first-class selection criterion, including for the framework.
+  operate) is a first-class principle — and the criterion by which the framework
+  (React + Vite) was chosen.
 
 ## Non-Goals
 
