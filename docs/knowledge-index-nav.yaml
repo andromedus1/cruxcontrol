@@ -12,8 +12,18 @@ by_kind:
   research: 2
   historical: 1
 
-# Substrate items (.work/) exist but the queue is empty — run /research-pipeline:epicize.
-# Query items via .work/bin/work-view (--ready, --blocked, --kind, etc.).
+# Substrate items (.work/) by tier. Query individual items via
+# .work/bin/work-view (--ready, --blocked, --kind, etc.).
+substrate_summary:
+  active:
+    epic: 8
+    feature: 0
+    story: 0
+    release: 0
+  backlog: 0
+  archive: 0
+# Ready to work: epic-foundation. The other 7 epics are blocked by depends_on.
+# 5 epics tagged [needs-brief], 1 tagged [needs-research] — research gates design.
 
 recent:
   - path: docs/VISION.md
