@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-scaffold
 kind: feature
-stage: review
+stage: done
 tags: []
 parent: epic-foundation
 depends_on: []
@@ -199,3 +199,13 @@ Files: root `package.json` (npm workspaces) · `.gitignore` · `.nvmrc` · `READ
 advisories (2 moderate, 3 high, 1 critical) in the transitive dependency tree. Triage at the
 release security gate (`aw:gate-security`) — likely deep dev-only transitive deps; do not
 `audit fix --force` blindly (breaking changes).
+
+## Review record (2026-06-13)
+
+**Verdict: Approve.** Deep lane, substrate mode, **inline** review (no separate fresh-context
+reviewer dispatched — recorded as a limitation; the scaffold is small and its verification is
+objective). All 6 units' acceptance criteria verified met against re-run output (typecheck=0,
+lint=0, test 4/4, build→web/dist). Ports & Adapters upheld (`port.ts` has zero runtime deps).
+No foundation-doc drift. **Blockers: 0. Important: 0.** The npm-audit advisories are recorded
+above for the release `gate-security` (intentionally deferred, not a review blocker). Advanced
+`review → done`.
