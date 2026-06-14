@@ -1,7 +1,7 @@
 ---
 id: epic-foundation
 kind: epic
-stage: drafting
+stage: implementing
 tags: [data]
 parent: null
 depends_on: []
@@ -76,11 +76,26 @@ screens are established at **epic-climb-browser** (the first product UI surface)
 - `docs/SPEC.md` — Capability 6 (Data Acquisition), Constraints (offline-first,
   browser support).
 
-## Anticipated child features
+## Decomposition
 
-Provisional — `/epic-design` decides the real decomposition:
-- App skeleton + build tooling + framework selection (distribution-robust)
-- Local SQLite read path (load DB, run schema queries)
-- Catalog bootstrap from a BoardLib-produced `kilter.db`
-- Offline-first PWA shell (service worker, installability, instant load)
-- Static hosting + deploy (CI/CD to a static PWA host) — the distribution spine
+Split by capability, not layer. `scaffold` is the gate (monorepo + app skeleton +
+the data-layer port everything depends on); once it lands, `ci-deploy`, `sqlite-readpath`,
+and `pwa-shell` parallelize off it; `catalog-bootstrap` completes the read path last. The
+trickiest, most load-bearing feature is `sqlite-readpath` (the wa-sqlite Worker), which is
+why it's isolated and on the critical path to the catalog.
+
+### Child features
+- `epic-foundation-scaffold` — monorepo `/web`+`/ml`, React+Vite+TS skeleton, Vitest/lint, data-layer port stub — depends on: `[]`
+- `epic-foundation-ci-deploy` — GitHub Actions CI + Cloudflare Pages deploy + branch protection — depends on: `[epic-foundation-scaffold]`
+- `epic-foundation-sqlite-readpath` — wa-sqlite OPFSCoopSyncVFS in a Web Worker + data-layer port impl + IDB fallback — depends on: `[epic-foundation-scaffold]`
+- `epic-foundation-pwa-shell` — vite-plugin-pwa, manifest, service worker, install, offline shell — depends on: `[epic-foundation-scaffold]`
+- `epic-foundation-catalog-bootstrap` — fetch-on-first-run `kilter.db` → OPFS + first-run UX + BoardLib snapshot — depends on: `[epic-foundation-sqlite-readpath]`
+
+### Decomposition risks
+- **wa-sqlite Worker (sqlite-readpath) is the riskiest unit** — OPFS sync-access-handle behavior varies by browser; the IDB fallback and a fixture-DB test suite mitigate. Build it before catalog-bootstrap commits to a load path.
+- **Cloudflare Pages deploy needs an external account + API token** (ci-deploy) — the workflow is authored/validated without the secret; the deploy step is gated until the user provides it. Not a code blocker.
+
+### UI alignment
+Infrastructure epic — no net-new product screens (only an app shell + first-run loading
+state). The design system (`/ux-ui-design:palette`) and first real screens land at
+`epic-climb-browser`. (Autopilot delegation can't run the mockup skills; nothing to defer here.)
