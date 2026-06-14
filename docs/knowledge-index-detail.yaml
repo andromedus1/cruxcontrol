@@ -16,6 +16,7 @@ documents:
       - "Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional."
       - "Scope is the Fullride 7x10 specifically — not a multi-board, multi-tenant product."
       - "ML grade prediction is the headline differentiator, not a nice-to-have."
+      - "Distributed to friends as a static, installable PWA — no backend, no accounts; each user runs their own client with local data. Framework chosen for distribution robustness."
   docs/SPEC.md:
     summary: |
       The capability contract for CruxControl: board control over BLE, a fast climb
@@ -41,6 +42,7 @@ documents:
       - "BLE isolated behind a Web Bluetooth adapter implementing the API-level-3 packet protocol."
       - "Sync engine is a separate module wrapping POST /sync with incremental shared_syncs cursors."
       - "ML training is offline (Python); inference runs in-browser via ONNX.js / TF.js."
+      - "Distributed to friends as a static, backendless, installable PWA (no app server/accounts); framework chosen for distribution robustness."
       - "This doc stays high-level; detailed module design lives in epic/feature item bodies."
     related:
       - {slug: docs/architecture/history/north-star.md, relationship: refines}

@@ -14,6 +14,7 @@ decisions:
   - "Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional."
   - "Scope is the Fullride 7x10 specifically — not a multi-board, multi-tenant product."
   - "ML grade prediction is the headline differentiator, not a nice-to-have."
+  - "Distributed to friends as a static, installable PWA — no backend, no accounts; each user runs their own client with local data. Framework chosen for distribution robustness."
 ---
 
 # CruxControl — Vision
@@ -43,9 +44,12 @@ better client is buildable without first-party cooperation.
 
 ## Who It's For
 
-Andrew Clark — owner of a home Kilter Board Fullride 7x10. The first and primary
-user is the owner of a single home board. The design optimizes for that case
-rather than a commercial, multi-tenant audience.
+Andrew Clark — owner of a home Kilter Board Fullride 7x10 — and a small circle of
+**friends he distributes the app to**. Each user runs their own client against their
+own Kilter board, keeps their own local data, and shares climbs/playlists by URL.
+The design optimizes for this "distribute to friends" case: a hosted, installable
+PWA that any friend can open and use — but explicitly NOT a commercial,
+server-backed, multi-tenant product (no accounts, no backend user data).
 
 ## Principles
 
@@ -59,11 +63,17 @@ rather than a commercial, multi-tenant audience.
   defining features, designed in from the architecture, not bolted on.
 - **Web platform.** Web Bluetooth makes a no-install, shareable, cross-device
   client possible — lean into it.
+- **Distributable by default.** The app ships as a hosted, installable PWA a
+  friend can open from a URL — no per-user setup, no backend. Robustness for
+  distribution (stability across browsers/devices, easy install, no server to
+  operate) is a first-class selection criterion, including for the framework.
 
 ## Non-Goals
 
-- **Not a commercial / multi-tenant product.** No accounts system, billing, or
-  hosting other people's boards (at least not initially).
+- **Not a server-backed / multi-tenant product.** The app is distributed to
+  friends as a static, hosted PWA, but there is no backend: no accounts, no
+  billing, no server-side user data, no hosting of other people's boards. Each
+  user's data stays in their own browser.
 - **Not multi-board at the start.** The Fullride 7x10 layout is the target;
   other Aurora boards (Tension, Decoy, etc.) share the platform but are out of
   initial scope.

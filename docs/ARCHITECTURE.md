@@ -15,6 +15,7 @@ decisions:
   - "BLE isolated behind a Web Bluetooth adapter implementing the API-level-3 packet protocol."
   - "Sync engine is a separate module wrapping POST /sync with incremental shared_syncs cursors."
   - "ML training is offline (Python); inference runs in-browser via ONNX.js / TF.js."
+  - "Distributed to friends as a static, backendless, installable PWA (no app server/accounts); framework chosen for distribution robustness."
   - "This doc stays high-level; detailed module design lives in epic/feature item bodies."
 ---
 
@@ -83,6 +84,11 @@ so the rest of the app is testable without hardware or network.
   come from pipelines, not manual curation.
 - **Offline-first.** Every read works without network; sync is a background
   reconciliation, not a precondition.
+- **Static, backendless distribution.** The whole app is client-side and ships as a
+  static, installable PWA hosted on static infra (e.g. Cloudflare Pages / Netlify /
+  Vercel). No application server, no accounts, no shared database — each friend's
+  client is fully independent with browser-local storage. The only "backends" the
+  client talks to are the Kilter sync API (over the network) and the board (over BLE).
 
 ## Key Dependencies
 
@@ -95,8 +101,14 @@ so the rest of the app is testable without hardware or network.
 | ONNX.js / TensorFlow.js | In-browser grade-prediction inference |
 | Climbdex / Grip Connect / fake_kilter_board | Reference implementations (search, BLE, protocol) |
 
+| Static PWA host (Cloudflare Pages / Netlify / Vercel) | Distribute the installable app to friends; no app server |
+
 Web app framework (React / SvelteKit / etc.) is **not yet chosen** — it is a
-design decision deferred to the foundation epic.
+design decision deferred to the foundation epic. The deciding criterion is
+**distribution robustness**: a stable, installable, statically-hostable PWA with
+strong ecosystem support for Web Bluetooth, in-browser SQLite, and in-browser ML
+inference. No SSR/server runtime is needed (Web Bluetooth requires a client
+context), so a client-rendered SPA + PWA tooling is the expected shape.
 
 ## Biggest Risks
 

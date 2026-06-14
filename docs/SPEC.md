@@ -118,3 +118,11 @@ The model mirrors the official Kilter SQLite schema (see
   [briefs/hardware-and-protocol.md](briefs/hardware-and-protocol.md)).
 - **Reproducible pipelines.** Catalog sync and model training must re-run as the
   catalog grows — not one-off scripts.
+- **Distributable PWA.** The app ships as a static, hosted, installable PWA that a
+  friend can open from a URL with no setup and no backend. Each user runs an
+  independent client with browser-local data; there is no shared server or accounts.
+  Distribution robustness — stable across mainstream Chromium browsers/devices,
+  installable, trivially hostable on static infra (e.g. Cloudflare Pages / Netlify /
+  Vercel static) — is a hard requirement, including as a framework-selection criterion.
+- **Per-user isolation.** One user's local data (logbook, playlists, drafts) is never
+  visible to another; sharing is explicit and URL-based (climbs, playlists).

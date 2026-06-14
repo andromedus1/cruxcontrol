@@ -18,23 +18,28 @@ updated: 2026-06-13
 The substrate every other epic builds on: a working web-app skeleton and a local,
 queryable Kilter catalog. This epic stands up the build tooling and framework, the
 in-browser SQLite read path (the single source of truth for all climb/hold/stats
-queries), and the one-time bootstrap of the catalog from BoardLib.
+queries), the one-time bootstrap of the catalog from BoardLib, and the **distribution
+spine** — packaging the client as a static, installable PWA that friends can open
+from a URL with no setup and no backend.
 
-When this epic is done, the app loads instantly offline and can run schema-faithful
-queries against the full Kilter catalog locally. It does NOT cover browsing UI,
-rendering, BLE, ongoing sync, or any intelligence — those are downstream epics that
-consume this read path.
+When this epic is done, the app loads instantly offline, can run schema-faithful
+queries against the full Kilter catalog locally, and is deployable as a hosted,
+installable PWA. It does NOT cover browsing UI, rendering, BLE, ongoing sync, or any
+intelligence — those are downstream epics that consume this read path.
 
 ## Research briefs
 
 - `docs/briefs/data-model.md` — SQLite schema, frames encoding, BoardLib bootstrap
   (`boardlib database kilter kilter.db`). Grounds the catalog shape.
-- **[needs-brief]** — *In-browser SQLite & offline-first architecture.* Thin and
-  load-bearing: `sql.js` vs OPFS-backed SQLite (e.g. wa-sqlite / absurd-sql), query
-  performance over tens of thousands of climbs, persistence/versioning of the local
-  DB, service-worker/PWA offline strategy. Run `/research-pipeline:brief` on this
-  before `/epic-design`. (Web framework choice — React vs SvelteKit — is a
-  feature-design architectural-options decision, not a research topic.)
+- **[needs-brief]** — *Distributable offline-first PWA with in-browser SQLite.* Thin
+  and load-bearing, now covering three linked threads: (1) in-browser SQLite —
+  `sql.js` vs OPFS-backed SQLite (wa-sqlite / absurd-sql), query performance over tens
+  of thousands of climbs, persistence/versioning of the local DB; (2) offline-first
+  PWA — service-worker strategy, installability, app-shell caching; (3) **distribution
+  robustness** — framework selection (React/Vite, SvelteKit, etc.) judged on stable
+  static-PWA distribution to friends, ecosystem support for Web Bluetooth + in-browser
+  SQLite + ONNX/TF.js, and trivially-hostable static deploy (Cloudflare Pages /
+  Netlify / Vercel). Run `/research-pipeline:brief` before `/epic-design`.
 
 ## Foundation references
 
@@ -46,7 +51,8 @@ consume this read path.
 ## Anticipated child features
 
 Provisional — `/epic-design` decides the real decomposition:
-- App skeleton + build tooling + framework selection
+- App skeleton + build tooling + framework selection (distribution-robust)
 - Local SQLite read path (load DB, run schema queries)
 - Catalog bootstrap from a BoardLib-produced `kilter.db`
-- Offline-first shell (service worker, instant load)
+- Offline-first PWA shell (service worker, installability, instant load)
+- Static hosting + deploy (CI/CD to a static PWA host) — the distribution spine
