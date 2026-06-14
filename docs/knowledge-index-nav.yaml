@@ -5,11 +5,11 @@
 schema_version: 3
 generated_at: 2026-06-13T00:00:00Z
 generated_from: frontmatter
-total_docs: 6
+total_docs: 7
 
 by_kind:
   planning: 3
-  research: 2
+  research: 3
   historical: 1
 
 # Substrate items (.work/) by tier. Query individual items via
@@ -51,6 +51,9 @@ load_bearing:
     kind: planning
   - path: docs/briefs/hardware-and-protocol.md
     title: Kilter Board Fullride 7x10 — Technical Primer
+    kind: research
+  - path: docs/briefs/foundation-pwa-sqlite.md
+    title: "Brief: Distributable Offline-First PWA + In-Browser SQLite (Foundation)"
     kind: research
   - path: docs/briefs/data-model.md
     title: Kilter Board Data Model — Technical Primer

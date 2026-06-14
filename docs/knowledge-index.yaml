@@ -7,7 +7,7 @@
 schema_version: 2
 generated_at: 2026-06-13T00:00:00Z
 generated_from: frontmatter
-total_docs: 6
+total_docs: 7
 
 documents:
   - path: docs/ARCHITECTURE.md
@@ -38,6 +38,14 @@ documents:
     updated: 2026-06-13
     nav_priority: high
     consumer_hint: Kilter Board SQLite schema, frames encoding, hold roles, grading system, and the sync/web API
+  - path: docs/briefs/foundation-pwa-sqlite.md
+    title: "Brief: Distributable Offline-First PWA + In-Browser SQLite (Foundation)"
+    type: brief
+    kind: research
+    updated: 2026-06-13
+    nav_priority: high
+    research_method: /brief
+    consumer_hint: Read before designing epic-foundation — framework, in-browser SQLite approach, and PWA/hosting strategy
   - path: docs/briefs/hardware-and-protocol.md
     title: Kilter Board Fullride 7x10 — Technical Primer
     type: brief

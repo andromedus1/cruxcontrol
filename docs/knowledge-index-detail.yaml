@@ -68,6 +68,20 @@ documents:
       - "Discovery service UUID 4488B571-7806-4DF6-BCFF-A2897E4953FF; write characteristic 6E400002-B5A3-F393-E0A9-E50E24DCCA9E (Nordic UART RX)."
       - "LED commands use packet framing (0x01/0x02/0x03) with checksums and multi-packet splitting for climbs with many holds."
       - "All Aurora Climbing boards (Kilter, Tension, Decoy, etc.) share one BLE protocol, app architecture, and DB schema."
+  docs/briefs/foundation-pwa-sqlite.md:
+    summary: |
+      Foundation-layer decisions for CruxControl as a distributable, offline-first
+      PWA: in-browser SQLite (wa-sqlite OPFSCoopSyncVFS in a Web Worker, IndexedDB
+      fallback), framework (client-only React + Vite SPA), and PWA/static-hosting
+      strategy (vite-plugin-pwa + custom-header-capable static host).
+    key_findings:
+      - "sql.js is in-memory only — unsuitable as the durable catalog read path."
+      - "wa-sqlite OPFSCoopSyncVFS performs past 1GB and avoids the SharedArrayBuffer→COOP/COEP requirement the official @sqlite.org build imposes."
+      - "Any OPFS synchronous SQLite path must run inside a dedicated Web Worker."
+      - "Web Bluetooth is Chromium-only (~77% global), HTTPS + user-gesture gated."
+      - "Recommended: React + Vite SPA, wa-sqlite in a Worker, vite-plugin-pwa, static deploy to Cloudflare Pages."
+    related:
+      - {slug: docs/briefs/data-model.md, relationship: depends-on}
   docs/architecture/history/north-star.md:
     summary: |
       The original north-star document that combined vision, capabilities, proposed
