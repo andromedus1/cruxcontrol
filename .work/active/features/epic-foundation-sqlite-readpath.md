@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-sqlite-readpath
 kind: feature
-stage: review
+stage: done
 tags: [data]
 parent: epic-foundation
 depends_on: [epic-foundation-scaffold]
@@ -396,3 +396,25 @@ build emits `catalog.worker-*.js`, the `wa-sqlite-*.js` glue chunk, and the
 hashed `wa-sqlite-*.wasm` asset (no `optimizeDeps.exclude` needed). Also added
 `@types/node` (devDep) + `"node"` to `tsconfig` `types` for the Node test's
 `node:` imports.
+
+## Review record
+
+**Verdict: Approve with comments** (deep, fresh-context review, 2026-06-14;
+autopilot). Orchestrator re-verified green: typecheck, lint, 20/20 tests, build.
+Reviewer confirmed against the *installed* wa-sqlite v1.0.0 source: `CatalogPort`
+unchanged; row-mapping + BLOB copy-out + BigInt→Number narrowing correct; READONLY
+open; `vfs_register` dedup guard sound; fail-fast `UnsupportedEnvironmentError`;
+test honesty passes (real SQL keystone test, real Comlink/MessageChannel port test,
+deferred OPFS/Worker coverage flagged honestly — no gamed tests).
+
+- **Important (filed, not bouncing):** worker + `.wasm` bundling under `vite build`
+  is configured but unexercised (nothing imports `SqliteCatalogPort` from the app
+  entry yet; the "throwaway entry" verification isn't reproducible in CI). Filed as
+  `epic-foundation-verify-worker-build` (depends_on catalog-bootstrap, the first real
+  consumer). Acceptable defer per reviewer.
+- **Nits (optional, recorded):** (1) the defensive `finalize` in `catalog-db.ts` is a
+  harmless no-op guarded by `mapStmtToDB`, but its comment is inaccurate (the generator
+  owns statement lifecycle) — drop it or fix the comment. (2) `mapColumnValue` evaluates
+  `column_type` twice per cell — cosmetic perf trivia.
+
+Advanced `review → done`.
