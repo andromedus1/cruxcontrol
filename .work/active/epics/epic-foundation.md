@@ -8,7 +8,7 @@ depends_on: []
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-14
 ---
 
 # Foundation: Web App Scaffolding + Local Catalog
@@ -90,6 +90,7 @@ why it's isolated and on the critical path to the catalog.
 - `epic-foundation-sqlite-readpath` — wa-sqlite OPFSCoopSyncVFS in a Web Worker + data-layer port impl + IDB fallback — depends on: `[epic-foundation-scaffold]`
 - `epic-foundation-pwa-shell` — vite-plugin-pwa, manifest, service worker, install, offline shell — depends on: `[epic-foundation-scaffold]`
 - `epic-foundation-catalog-bootstrap` — fetch-on-first-run `kilter.db` → OPFS + first-run UX + BoardLib snapshot — depends on: `[epic-foundation-sqlite-readpath]`
+- `epic-foundation-sqlite-idb-fallback` — `IDBBatchAtomicVFS` fallback + runtime VFS selection for non-OPFS browsers; split out of `sqlite-readpath` during feature-design (deferred — board control needs Chromium anyway) — depends on: `[epic-foundation-sqlite-readpath]`
 
 ### Decomposition risks
 - **wa-sqlite Worker (sqlite-readpath) is the riskiest unit** — OPFS sync-access-handle behavior varies by browser; the IDB fallback and a fixture-DB test suite mitigate. Build it before catalog-bootstrap commits to a load path.
