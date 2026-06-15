@@ -8,7 +8,7 @@ depends_on: [epic-foundation-scaffold]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-14
 ---
 
 # Offline-First PWA Shell
@@ -40,3 +40,13 @@ in OPFS (catalog-bootstrap). Independent of the SQLite read path; can be built i
 ## Foundation references
 - `docs/ARCHITECTURE.md` — Conventions (offline-first; static backendless distribution).
 - `docs/SPEC.md` — Constraints (Distributable PWA, offline-first).
+
+## Design decisions
+
+Captured during `feature-design --only-questions` (2026-06-14):
+
+1. **Service-worker updates = auto-update (silent).** Use vite-plugin-pwa
+   `registerType: 'autoUpdate'`; a new SW activates and the app picks up the new
+   version on next load, with no reload prompt. Friend-friendly and needs no UI
+   (the design system doesn't exist until `epic-climb-browser`). Accepted tradeoff:
+   a user mid-session keeps the old version until they reload.

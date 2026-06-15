@@ -2,13 +2,13 @@
 id: epic-foundation-ci-deploy
 kind: feature
 stage: drafting
-tags: [infra]
+tags: [infra, needs-research]
 parent: epic-foundation
 depends_on: [epic-foundation-scaffold]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-14
 ---
 
 # CI + Cloudflare Pages Deploy
@@ -44,3 +44,16 @@ catalog-bootstrap) or implement app features.
 - Cloudflare Pages needs a CF account + project + API token (GitHub Actions secret) — flag
   as a setup prerequisite the user must provide; the workflow can be authored and validated
   (build/test) without the deploy secret, with the deploy step gated until the secret exists.
+
+## Design decisions
+
+Captured during `feature-design --only-questions` (2026-06-14):
+
+1. **Deploy mechanism = OPEN — pending research.** The choice between (a) GitHub
+   Actions + wrangler/cloudflare-pages-action (CI gates deploy; config in-repo) and
+   (b) Cloudflare's native Git integration (CF builds/deploys on push; config in CF
+   dashboard) is not yet decided. User asked for a deeper research pass on the best
+   path for a distributable static PWA before locking it. Feature tagged
+   `[needs-research]`; resolve via `/research` (deploy-mechanism brief) then design.
+   Open sub-questions for the research: monorepo `/web` subdir build, preview
+   deployments per-PR, how CI-green gates the deploy, and secret/permission surface.

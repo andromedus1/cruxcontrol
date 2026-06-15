@@ -8,7 +8,7 @@ depends_on: [epic-foundation-sqlite-readpath]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-14
 ---
 
 # Catalog Bootstrap (fetch-on-first-run)
@@ -41,3 +41,22 @@ implement incremental sync (epic-catalog-sync) or browsing UI.
 ## Foundation references
 - `docs/ARCHITECTURE.md` — Module Map §1 (Data Layer), §2 (Sync Engine boundary).
 - `docs/SPEC.md` — Capability 6 (Data Acquisition).
+
+## Design decisions
+
+Captured during `feature-design --only-questions` (2026-06-14):
+
+1. **Snapshot scope = pruned to the Fullride 7x10.** The BoardLib step emits only
+   the layout(s)/sizes/holds + shared tables (climbs, climb_stats, placements, holes,
+   leds, placement_roles, difficulty_grades, …) relevant to the Fullride 7x10, not
+   the full ~85MB catalog. Aligns with VISION's single-board scope, shrinks the
+   one-time download, and is what makes same-origin hosting viable (decision 2).
+   Re-pruning is needed only if multi-board is ever scoped in (a known, accepted
+   `Layout specificity` risk in ARCHITECTURE).
+2. **Snapshot host = same-origin static asset.** Build the pruned snapshot in CI,
+   compress it (gzip), and publish it into the `/web` Cloudflare Pages output at a
+   versioned path; the client fetches it from the same origin on first run. Zero
+   extra infra/secrets, simplest CORS. **Constraint:** the compressed snapshot must
+   fit Cloudflare Pages' ~25 MiB per-file limit — verify the pruned+gzipped size in
+   design; if it exceeds the limit, fall back to Cloudflare R2 (the runner-up).
+   Pairs with the version marker so `epic-catalog-sync` can later update the OPFS DB.
