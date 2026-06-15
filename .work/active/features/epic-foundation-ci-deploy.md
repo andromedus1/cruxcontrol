@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-ci-deploy
 kind: feature
-stage: implementing
+stage: review
 tags: [infra]
 parent: epic-foundation
 depends_on: [epic-foundation-scaffold]
@@ -133,3 +133,50 @@ and set branch protection on `main` (PRs required + CI checks must pass). Includ
   first Actions run surfaces env differences.
 - **Workers project name collision** — `cruxcontrol` must be unique on the account;
   adjustable in `wrangler.jsonc`.
+
+## Implementation notes
+
+Implemented 2026-06-14 on branch `feat/ci-deploy`. Authored three files plus this item.
+
+**Files:**
+- `.github/workflows/ci.yml` — CI + gated deploy.
+- `web/wrangler.jsonc` — Workers Static Assets config (name `cruxcontrol`,
+  `compatibility_date 2026-06-01`, `assets.directory ./dist`,
+  `not_found_handling single-page-application`).
+- `docs/DEPLOY.md` — user setup steps (token, secrets, branch protection).
+
+**Job structure (deviation from the unit text, noted):** the design's Unit 2 wrote
+`needs: [lint, typecheck, test, build]`, which assumed four separate jobs. The prompt
+explicitly offered the simpler/cheaper option of one `web` job with sequential steps.
+I took that: a single `web` job runs `npm ci` then lint → typecheck → test → build as
+ordered steps (fail-fast within the job), so `deploy` declares `needs: [web]`. Same gate
+semantics (any failing web step blocks deploy), one checkout + one `npm ci` instead of four.
+The required status-check context is therefore the `web` job name —
+`web (lint / typecheck / test / build)` — documented in DEPLOY.md's branch-protection command.
+
+**Triggers:** `pull_request` (all branches) + `push` to `main`.
+
+**ml lane:** real, minimal stub — `actions/setup-python@v5` (3.11) then
+`python -m compileall ml`, labeled as a stub. `ml/` currently has only `README.md` +
+`pyproject.toml` (no `.py` sources), so this compiles zero files and passes cleanly today;
+it becomes a real smoke check once grade-prediction adds sources. No `expect(true)` fakery.
+Chose `compileall` over `ruff` because ruff isn't a declared dependency yet (deps `[]`).
+
+**deploy job (the secret wall):** `needs: [web]`,
+`if: github.ref == 'refs/heads/main' && github.event_name == 'push'`; checkout →
+setup-node (`node-version-file: .nvmrc`, `cache: npm`) → `npm ci` →
+`npm run build -w @cruxcontrol/web` → `cloudflare/wrangler-action@v3`
+(`apiToken`/`accountId` from secrets, `workingDirectory: web`, `command: deploy`). The two
+secrets do not exist, so the deploy step would fail with a clear auth error — it cannot
+silently half-deploy. This is the designed stop point.
+
+**Validation performed:**
+- `python3 -c "import yaml; yaml.safe_load(...)"` parses the workflow; verified jobs
+  `[web, ml, deploy]`, `deploy.needs == [web]`, and the `if` expression.
+- All four web scripts pass locally from repo root after `npm ci`:
+  `lint`, `typecheck`, `test`, `build` (`-w @cruxcontrol/web`).
+- `actionlint` not installed; validated keys/`needs`/`if`/expression syntax by hand.
+
+**Stopped at the secret wall:** no real deploy was attempted; no secrets invented. The
+deploy job is authored and valid YAML, gated to main-push, and inert until the user adds
+`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` and sets branch protection per DEPLOY.md.
