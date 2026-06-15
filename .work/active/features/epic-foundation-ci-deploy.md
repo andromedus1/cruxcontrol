@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-ci-deploy
 kind: feature
-stage: drafting
+stage: implementing
 tags: [infra]
 parent: epic-foundation
 depends_on: [epic-foundation-scaffold]
@@ -73,3 +73,63 @@ research pass (2026-06-14), after an initial `--only-questions` pass left it ope
 Open implementation sub-questions (for feature-design / implement): exact monorepo
 `workingDirectory` vs `deploy web/dist`, preview-deploy wiring specifics, and verifying
 the Workers Static Assets per-file size limit for the catalog snapshot.
+
+## Implementation Units
+
+### Unit 1: CI workflow
+**File**: `.github/workflows/ci.yml`
+- Triggers: `pull_request` + `push` to `main`.
+- **web jobs** (working-directory `web` or `-w @cruxcontrol/web`): `lint`, `typecheck`,
+  `test`, `build`. Node 20+ (`.nvmrc`), `npm ci` at repo root (workspace), cache npm.
+  These run NOW (no secrets needed) and are the CI-green gate.
+- **`ml` job lane (stub)**: a minimal Python lane (e.g. `ruff --version` / `python -m
+  compileall ml` or a clear placeholder step) so the lane exists for epic-grade-prediction.
+  Non-blocking-minimal but real (no `expect(true)`-style fakery).
+**Acceptance**:
+- [ ] Workflow is valid (actionlint clean) and the web jobs pass with the current repo.
+- [ ] Jobs run on PR and on push to main.
+
+### Unit 2: Workers deploy job (gated)
+**File**: `.github/workflows/ci.yml` (deploy job) + `web/wrangler.jsonc`
+```jsonc
+// web/wrangler.jsonc
+{ "name": "cruxcontrol", "compatibility_date": "2026-06-01",
+  "assets": { "directory": "./dist", "not_found_handling": "single-page-application" } }
+```
+- `deploy` job: `needs: [lint, typecheck, test, build]`, `if: github.ref == 'refs/heads/main' && github.event_name == 'push'`, uses `cloudflare/wrangler-action@v3` with
+  `apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}`, `accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}`,
+  `workingDirectory: web`, `command: deploy`. **THE SECRET WALL** — this job needs the two
+  secrets (token from the `Edit Cloudflare Workers` template). Author + validate the YAML;
+  the deploy executes only once the user adds secrets. Guard so a missing secret produces a
+  clear failure, not a silent half-deploy (document that secrets are required).
+**Acceptance**:
+- [ ] `wrangler.jsonc` is valid and points assets at `dist` with SPA fallback.
+- [ ] deploy job is well-formed, `needs:` the CI jobs, main-push-only.
+
+### Unit 3: Setup docs (the user's manual steps)
+**File**: `docs/DEPLOY.md` (or a section) — exact steps: create the `Edit Cloudflare
+Workers` API token, add `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` repo secrets,
+and set branch protection on `main` (PRs required + CI checks must pass). Include the
+`gh api` / `gh ruleset` command for branch protection so it's one copy-paste.
+**Acceptance**:
+- [ ] DEPLOY.md lists token creation, both secrets, and the branch-protection command.
+
+## Implementation Order
+1. Unit 1 (CI jobs) — real value now, gates everything.
+2. Unit 2 (wrangler.jsonc + gated deploy job).
+3. Unit 3 (DEPLOY.md setup steps).
+
+## Testing
+- `actionlint` on the workflow (install or use the Go binary if available; else careful
+  YAML validation). The web jobs are "tested" by the fact that `lint`/`typecheck`/`test`/
+  `build` already pass locally — the workflow just runs them in CI.
+- No app-code tests here (infra/config feature).
+
+## Risks
+- **Secret wall (expected stop):** the deploy job can't run until the user provides
+  secrets + sets branch protection. This is the flagged hand-off point, not a defect.
+- **First CI run on the PR that adds the workflow** may behave slightly differently than
+  local — **Fallback:** keep jobs simple (`npm ci` + the existing scripts), iterate if the
+  first Actions run surfaces env differences.
+- **Workers project name collision** — `cruxcontrol` must be unique on the account;
+  adjustable in `wrangler.jsonc`.
