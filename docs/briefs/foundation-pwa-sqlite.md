@@ -6,7 +6,7 @@ slug: foundation-pwa-sqlite
 research_method: /brief
 verification_status: attested
 provenance: agent-synthesis
-updated: 2026-06-13
+updated: 2026-06-14
 nav_priority: high
 blocks_phase: epic-foundation
 summary: |
@@ -145,7 +145,10 @@ surface rather than a silent failure.
 - **Install:** listen for `beforeinstallprompt` where supported; provide manual
   install instructions elsewhere. Installability + offline shell are the bar
   Lighthouse audits against.
-- **Hosting:** any static HTTPS host. **Cloudflare Pages** is the recommended default
+- **Hosting:** any static HTTPS host. *(Superseded — the deploy target/mechanism is now
+  resolved by the [cloudflare-deploy brief](../../.research/briefs/cloudflare-deploy/parent.md):
+  Cloudflare **Workers Static Assets** + GitHub Actions, not Pages. The points below
+  remain valid background.)* **Cloudflare Pages** was the original recommended default
   — free, fast, and supports custom headers (so the option to switch to the official
   SQLite-Wasm build later, with its COOP/COEP needs, stays open). Netlify/Vercel
   static are equivalent. Plain GitHub Pages works for the wa-sqlite path but cannot

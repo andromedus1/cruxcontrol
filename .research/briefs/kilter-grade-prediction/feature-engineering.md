@@ -8,7 +8,7 @@ provenance: agent-synthesis
 verification_status: attested
 confidence: speculative
 status: draft
-updated: 2026-06-13
+updated: 2026-06-14
 summary: >
   A climb is converted to ML features in two stages. First, decode the frames
   string (pXXXXrXX tokens) through the board's SQLite tables (placements →
@@ -30,7 +30,7 @@ key_findings:
   - Two representations dominate prior MoonBoard work — a one-hot 18×11 hold
     grid, and a sequenced per-move vector. Sequencing the holds is consistently
     reported as the single most predictive choice. [frontiers-grading-bias-survey]{3}
-  - BetaMove's 22-dim per-move vector is the most concrete reusable feature recipe:
+  - BetaMove's 22-dim per-move vector is the most concrete reusable feature recipe —
     target hold position, relative distance to the previous two holds, difficulty
     scale of all three holds, foot placement, and a per-move success score.
     [duh-chang-moonboardrnn]{1}
