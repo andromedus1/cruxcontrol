@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-06-13
+updated: 2026-06-14
 nav_priority: high
 summary: >
   High-level architecture for CruxControl: an offline-first web app over a local
@@ -87,7 +87,7 @@ so the rest of the app is testable without hardware or network.
 - **Offline-first.** Every read works without network; sync is a background
   reconciliation, not a precondition.
 - **Static, backendless distribution.** The whole app is client-side and ships as a
-  static, installable PWA hosted on Cloudflare Pages. No application server, no
+  static, installable PWA hosted on Cloudflare Workers (Static Assets). No application server, no
   accounts, no shared database — each friend's client is fully independent with
   browser-local storage. The only "backends" the client talks to are the Kilter sync
   API (over the network) and the board (over BLE).
@@ -96,7 +96,7 @@ so the rest of the app is testable without hardware or network.
 
 The architecture's intended dependency set. Each is installed as its epic/feature
 lands — today only React 19 + Vite 6 (the scaffold) are installed; wa-sqlite,
-vite-plugin-pwa, ONNX Runtime Web, and the Cloudflare Pages deploy arrive with their
+vite-plugin-pwa, ONNX Runtime Web, and the Cloudflare Workers deploy arrive with their
 respective foundation/ML features.
 
 | Dependency | Role |
@@ -108,7 +108,7 @@ respective foundation/ML features.
 | BoardLib (Python) | Bootstrap the SQLite catalog; sync-protocol reference |
 | Kilter sync API | Incremental catalog + optional logbook sync |
 | ONNX Runtime Web (WASM) | In-browser grade-prediction inference (GBT→ONNX export) |
-| Cloudflare Pages (static host) | Distribute the installable PWA to friends; no app server |
+| Cloudflare Workers (Static Assets) | Distribute the installable PWA to friends; no app server. Deployed via GitHub Actions + `cloudflare/wrangler-action`, CI-gated. See [cloudflare-deploy brief](../.research/briefs/cloudflare-deploy/parent.md) |
 | Climbdex / Grip Connect / fake_kilter_board | Reference implementations (search, BLE, protocol) |
 
 **Framework: React 19 + Vite 6, TypeScript, client-only SPA** — chosen for

@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-06-13
+updated: 2026-06-14
 nav_priority: high
 summary: >
   The capability contract for CruxControl: board control over BLE, a fast climb
@@ -122,7 +122,7 @@ The model mirrors the official Kilter SQLite schema (see
   friend can open from a URL with no setup and no backend. Each user runs an
   independent client with browser-local data; there is no shared server or accounts.
   Distribution robustness — stable across mainstream Chromium browsers/devices,
-  installable, trivially hostable on static infra (Cloudflare Pages) — is a hard
+  installable, trivially hostable on static infra (Cloudflare Workers Static Assets) — is a hard
   requirement; it was the criterion by which the framework (React + Vite) was chosen.
 - **Per-user isolation.** One user's local data (logbook, playlists, drafts) is never
   visible to another; sharing is explicit and URL-based (climbs, playlists).

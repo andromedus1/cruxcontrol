@@ -54,9 +54,10 @@ Captured during `feature-design --only-questions` (2026-06-14):
    Re-pruning is needed only if multi-board is ever scoped in (a known, accepted
    `Layout specificity` risk in ARCHITECTURE).
 2. **Snapshot host = same-origin static asset.** Build the pruned snapshot in CI,
-   compress it (gzip), and publish it into the `/web` Cloudflare Pages output at a
-   versioned path; the client fetches it from the same origin on first run. Zero
-   extra infra/secrets, simplest CORS. **Constraint:** the compressed snapshot must
-   fit Cloudflare Pages' ~25 MiB per-file limit — verify the pruned+gzipped size in
-   design; if it exceeds the limit, fall back to Cloudflare R2 (the runner-up).
+   compress it (gzip), and publish it into the `/web` Cloudflare Workers Static Assets
+   output at a versioned path; the client fetches it from the same origin on first run.
+   Zero extra infra/secrets, simplest CORS. **Constraint:** the compressed snapshot must
+   fit the Workers Static Assets per-file size limit (Pages' is ~25 MiB; verify the
+   Workers figure) — check the pruned+gzipped size in design; if it exceeds the limit,
+   fall back to Cloudflare R2 (the runner-up).
    Pairs with the version marker so `epic-catalog-sync` can later update the OPFS DB.
