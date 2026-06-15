@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-sqlite-readpath
 kind: feature
-stage: implementing
+stage: review
 tags: [data]
 parent: epic-foundation
 depends_on: [epic-foundation-scaffold]
@@ -304,3 +304,95 @@ export class CatalogQueryError extends Error {
 - **Comlink error fidelity**: custom error subclasses may degrade to plain `Error`
   across the Comlink boundary. **Fallback**: re-wrap into `CatalogQueryError` at the
   main-thread adapter using the message string.
+
+## Implementation notes
+
+Implemented 2026-06-14 on `feat/sqlite-readpath`. All five units built; full
+verification (typecheck / lint / test / build) green; 20 tests pass (16 new).
+
+### Spike result — the riskiest assumption did NOT hold as written, but the path is sound
+
+The design assumed the **async** wa-sqlite build (`wa-sqlite-async.mjs`) paired
+with `OPFSCoopSyncVFS` (browser) and `MemoryAsyncVFS` (Node tests). At
+wa-sqlite **v1.0.0** the API and VFS lineup differ from the older examples the
+brief referenced:
+
+- **There is no `OPFSCoopSyncVFS`.** The current OPFS sync-access-handle VFS is
+  **`AccessHandlePoolVFS`** (`wa-sqlite/src/examples/AccessHandlePoolVFS.js`),
+  which explicitly targets the **synchronous** build and uses
+  `FileSystemSyncAccessHandle` (exactly what `isOpfsSyncAccessSupported` probes).
+- Because `AccessHandlePoolVFS` is sync-build, I standardized on the **sync
+  build** (`wa-sqlite/dist/wa-sqlite.mjs` → `SQLite.Factory`) for *both* runtimes
+  and paired the Node test with **`MemoryVFS`** (sync), not `MemoryAsyncVFS`.
+  Using one build for both keeps the engine identical across browser and CI. The
+  wrapper API (`open_v2`/`prepare`/`step`/…) is Promise-returning regardless of
+  build, so `CatalogDb` is async either way.
+- **Node WASM loading**: the Emscripten loader tries to `fetch()` the `.wasm`,
+  which fails over a `file://` URL in Node. Fixed by injecting the wasm bytes via
+  a new `configureSqliteWasm(bytes)` hook (`catalog-db.ts`); the test reads the
+  bytes with `createRequire(...).resolve('wa-sqlite/dist/wa-sqlite.wasm')`
+  (`import.meta.resolve` is unavailable under Vite's SSR transform). In the
+  browser, Vite serves the `.wasm` and the default loader resolves it.
+
+The keystone spike (real wa-sqlite + `MemoryVFS` + fixture, real SELECTs incl.
+params/JOIN/NULL/typed values/BLOB) is **green in CI**, so the engine is proven
+even though the exact build/VFS names changed.
+
+### Actual wa-sqlite v1.0.0 API used
+
+- Module: `import SQLiteESMFactory from 'wa-sqlite/dist/wa-sqlite.mjs'` (sync
+  build), `import * as SQLite from 'wa-sqlite'` → `SQLite.Factory(module)`.
+- Query path: `sqlite3.statements(db, sql)` (async iterable of stmt ptrs, which
+  auto-finalizes per iteration) → `bind_collection(stmt, params)` →
+  `column_names` → `step` (=== `SQLITE_ROW`) → `column(stmt, i)` switched on
+  `column_type` (NULL→null, INTEGER/FLOAT→number with BigInt narrowed, TEXT→
+  string, BLOB→copied Uint8Array). `vfs_register(vfs, false)` + `open_v2(file,
+  flags, vfs.name)` + `close(db)`.
+- VFS naming: the VFS dictates its own name (`MemoryVFS.name === 'memory'`,
+  `AccessHandlePoolVFS.name === 'AccessHandlePool'` — a fixed getter, not
+  settable), so `VfsBinding.name` is set from `vfs.name`. `vfs_register` throws
+  on a duplicate name, so `CatalogDb` guards with a per-API `WeakMap` of
+  registered names (`registerVfsOnce`).
+
+### Files
+
+- `errors.ts` — `CatalogQueryError` (carries `.sql`, chains cause).
+- `catalog-config.ts` — `CATALOG_DB_FILENAME` (shared with catalog-bootstrap).
+  (Dropped the planned `OPFS_VFS_NAME` const: the VFS supplies its own name.)
+- `catalog-db.ts` — the Worker-agnostic engine (Unit 1) + `configureSqliteWasm`.
+- `catalog-db-api.ts` — the `CatalogDbApi` Comlink surface, split out so the
+  main-thread port imports the *type* without pulling Worker code into the bundle.
+- `opfs-support.ts` — `isOpfsSyncAccessSupported()`.
+- `catalog.worker.ts` — Worker host: `AccessHandlePoolVFS` + `CatalogDb` READONLY
+  + Comlink `expose`. Missing/un-bootstrapped DB → `null` connection →
+  `isReady()` false (no throw).
+- `sqlite-catalog-port.ts` — `SqliteCatalogPort` + `UnsupportedEnvironmentError`.
+  `create()` takes an optional `WorkerFactory` (defaults to the Vite module
+  Worker) for testability; re-wraps lost errors into `CatalogQueryError`.
+- `wa-sqlite-vfs.d.ts` — ambient types for the untyped `AccessHandlePoolVFS.js`.
+- `__fixtures__/catalog-fixture.sql` — Kilter-subset seed (climbs / climb_stats /
+  difficulty_grades, mirroring data-model.md).
+
+### Tested in CI vs deferred
+
+- **In CI**: keystone `catalog-db.test.ts` (real SQL engine, row mapping, value
+  typing, NULL, JOIN, `CatalogQueryError`, close semantics — 7 tests);
+  `opfs-support.test.ts` (false in jsdom, true when both globals stubbed — 4);
+  `sqlite-catalog-port.test.ts` (`create()` fail-fast gate + delegation/
+  termination via a real Comlink endpoint over a `MessageChannel` fake Worker —
+  5).
+- **Deferred (cannot run in jsdom/Node — decision 2)**: real OPFS persistence,
+  the real module Worker, and `AccessHandlePoolVFS`. Verified manually in a
+  browser / by a later e2e pass and exercised for real by catalog-bootstrap.
+  Marked explicitly with comments in `catalog.worker.ts` and the port test.
+
+### Vite config change (required, minimal)
+
+Set `worker: { format: 'es' }` in `web/vite.config.ts`. The catalog Worker
+dynamically imports the wa-sqlite WASM glue, which makes the worker bundle
+code-split; Vite's default `worker.format: 'iife'` cannot code-split and
+`vite build` **fails** without this. Verified via a throwaway entry that the
+build emits `catalog.worker-*.js`, the `wa-sqlite-*.js` glue chunk, and the
+hashed `wa-sqlite-*.wasm` asset (no `optimizeDeps.exclude` needed). Also added
+`@types/node` (devDep) + `"node"` to `tsconfig` `types` for the Node test's
+`node:` imports.
