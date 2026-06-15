@@ -2,12 +2,14 @@
 
 CruxControl ships as a static SPA to **Cloudflare Workers (Static Assets)**. CI
 (`.github/workflows/ci.yml`) runs lint / typecheck / test / build on every PR and
-on push to `main`; the `deploy` job runs **only on push to `main`** and **only
-after the `web` CI lane is green** (`needs: [web]`).
+on push to `main`; the `deploy` job runs **only on push to `main`**, **only
+after the `web` CI lane is green** (`needs: [web]`), and **only once you opt in**
+by setting the repo variable `ENABLE_DEPLOY=true` (step 3 below).
 
-The deploy job is inert until you complete the one-time setup below. Without the
-two repo secrets it will fail with a clear authentication error — it cannot do a
-silent half-deploy.
+The deploy job is inert until you complete the one-time setup below. The
+`ENABLE_DEPLOY` gate keeps `main` green until you're ready — without it the deploy
+job is simply skipped (not failed). Once enabled, a missing secret fails with a
+clear authentication error rather than a silent half-deploy.
 
 ## 1. Create a Cloudflare API token
 
@@ -35,7 +37,19 @@ gh secret set CLOUDFLARE_ACCOUNT_ID  --repo andromedus1/cruxcontrol   # paste th
 The Worker name is `cruxcontrol` (see `web/wrangler.jsonc`); it must be unique on
 the account. Change it there if it collides.
 
-## 3. Protect the `main` branch
+## 3. Enable deploys (opt-in variable)
+
+The `deploy` job is gated on a repo **variable** so `main` stays green until you're
+ready. Once the secrets above exist, flip it on:
+
+```sh
+gh variable set ENABLE_DEPLOY --body true --repo andromedus1/cruxcontrol
+```
+
+Until `ENABLE_DEPLOY=true`, the deploy job is skipped on every push to `main`
+(green, not red). Set it back to `false` (or delete it) to pause deploys.
+
+## 4. Protect the `main` branch
 
 Require PRs and require the CI checks to pass before merge (no direct or
 force-pushes to `main`). The status check name is **`web (lint / typecheck /
@@ -62,9 +76,10 @@ JSON
 > least once. If the API rejects the context as unknown, open one PR first so the
 > `web` job reports, then apply the protection rule.
 
-## 4. Verify
+## 5. Verify
 
-After the secrets exist and branch protection is on, merge a PR to `main`. The
+After the secrets exist, `ENABLE_DEPLOY=true` is set, and branch protection is on,
+merge a PR to `main`. The
 `web` lane runs, and on success the `deploy` job builds `web/dist` and runs
 `wrangler deploy` against Cloudflare Workers. The app is then live at the
 Worker's `*.workers.dev` URL (or a custom domain you bind in Cloudflare).

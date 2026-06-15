@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-ci-deploy
 kind: feature
-stage: review
+stage: done
 tags: [infra]
 parent: epic-foundation
 depends_on: [epic-foundation-scaffold]
@@ -180,3 +180,22 @@ silently half-deploy. This is the designed stop point.
 **Stopped at the secret wall:** no real deploy was attempted; no secrets invented. The
 deploy job is authored and valid YAML, gated to main-push, and inert until the user adds
 `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` and sets branch protection per DEPLOY.md.
+
+## Review record
+
+**Verdict: Approve with comments** (inline review, 2026-06-14; autopilot). Workflow YAML
+parses (jobs: web, ml, deploy); `wrangler.jsonc` valid; the web CI scripts pass locally.
+
+- **Important (fixed in review):** the deploy job originally ran on every push to main and
+  would fail until secrets exist → a perpetually-red `main`. Added an opt-in gate
+  `vars.ENABLE_DEPLOY == 'true'` so the deploy job is *skipped* (green) until the user adds
+  secrets and flips the variable. Updated `docs/DEPLOY.md` with a new step 3 (`gh variable
+  set ENABLE_DEPLOY --body true`) and renumbered the rest.
+- **Secret wall (expected):** live deploy still requires `CLOUDFLARE_API_TOKEN` +
+  `CLOUDFLARE_ACCOUNT_ID` (`Edit Cloudflare Workers` token) and `ENABLE_DEPLOY=true`;
+  branch protection is a user admin step. All documented in DEPLOY.md. **This is the
+  flagged hand-off — no live deploy was attempted.**
+- ml lane is a real `compileall` stub (zero files today), honestly labeled.
+
+Advanced `review → done`. NOTE: once this lands on main, CI runs on subsequent PRs;
+branch protection should be set so the `web` check actually gates merges.

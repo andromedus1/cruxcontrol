@@ -56,9 +56,13 @@ jobs:
   deploy:
     name: deploy (Cloudflare Workers Static Assets)
     runs-on: ubuntu-latest
-    # Gate: only deploy after the CI lane is green, and only on push to main.
+    # Gate: only deploy after the CI lane is green, only on push to main, and
+    # only once deploy is explicitly enabled (repo variable ENABLE_DEPLOY=true).
+    # The variable gate keeps main GREEN until the user has added the Cloudflare
+    # secrets and opted in — otherwise every push to main would show a red deploy
+    # job. See docs/DEPLOY.md.
     needs: [web]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.ENABLE_DEPLOY == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
