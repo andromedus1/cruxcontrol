@@ -2,12 +2,8 @@
 
 ## In plain terms
 
-A **Kilter Board** is an interactive climbing wall: a grid of plastic holds with LEDs
-behind them. You pick a climb, the right holds light up, and you try to get to the top
-using only those holds. Normally you drive the board with Kilter's official phone app.
-
-That app is slow, hard to get your data out of, and not very smart. **CruxControl is a
-replacement for it** — a web app (it runs in your browser, nothing to install from an
+**CruxControl is a
+replacement for a board control app** — a web app (it runs in your browser, nothing to install from an
 app store) that talks to a home Kilter Board over Bluetooth and does the same job, but
 faster and with extra features the official app doesn't have:
 
