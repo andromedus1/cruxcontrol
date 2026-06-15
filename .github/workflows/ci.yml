@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  web:
+    name: web (lint / typecheck / test / build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint -w @cruxcontrol/web
+
+      - name: Typecheck
+        run: npm run typecheck -w @cruxcontrol/web
+
+      - name: Test
+        run: npm test -w @cruxcontrol/web
+
+      - name: Build
+        run: npm run build -w @cruxcontrol/web
+
+  ml:
+    name: ml (stub lane)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Stub lane for epic-grade-prediction. The ml/ project is a pyproject.toml
+      # placeholder today (no .py sources yet), so this compiles whatever Python
+      # exists under ml/ as a real, non-fake smoke check. Replace with ruff/pytest
+      # once the grade-prediction pipeline lands.
+      - name: Compile-check ml sources (stub)
+        run: python -m compileall ml
+
+  deploy:
+    name: deploy (Cloudflare Workers Static Assets)
+    runs-on: ubuntu-latest
+    # Gate: only deploy after the CI lane is green, only on push to main, and
+    # only once deploy is explicitly enabled (repo variable ENABLE_DEPLOY=true).
+    # The variable gate keeps main GREEN until the user has added the Cloudflare
+    # secrets and opted in — otherwise every push to main would show a red deploy
+    # job. See docs/DEPLOY.md.
+    needs: [web]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.ENABLE_DEPLOY == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web
+        run: npm run build -w @cruxcontrol/web
+
+      # SECRET WALL: requires repo secrets CLOUDFLARE_API_TOKEN and
+      # CLOUDFLARE_ACCOUNT_ID (token from the "Edit Cloudflare Workers" template).
+      # Until those exist this step fails clearly; see docs/DEPLOY.md.
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: web
+          command: deploy
