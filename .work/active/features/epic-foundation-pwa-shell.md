@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-pwa-shell
 kind: feature
-stage: review
+stage: done
 tags: []
 parent: epic-foundation
 depends_on: [epic-foundation-scaffold]
@@ -193,3 +193,17 @@ all green. Build emits `dist/sw.js` + `dist/manifest.webmanifest`, 11 precache e
 **Deviations:** none material. The install hook needed no `virtual:pwa-register` mock (it
 doesn't import that module); the build test self-builds rather than relying on a prior build
 step, making it self-contained in CI.
+
+## Review record
+
+**Verdict: Approve** (deep-ish inline review, 2026-06-14; autopilot — config-heavy,
+lower-risk feature). Orchestrator re-verified: lint clean, 24/24 tests, `vite build`
+emits `dist/sw.js` + `dist/manifest.webmanifest` (11 precache entries, **zero `.db`**).
+Read the core source: `useInstallPrompt` handles the `beforeinstallprompt` lifecycle
+correctly (preventDefault, single-use consume, `appinstalled` reset, listener cleanup);
+`registerServiceWorker` is a clean autoUpdate registration; `vite.config.ts` matches the
+design (manifest with maskable icon, Workbox allowlist + `*.db`/`*.db.gz` globIgnore,
+navigateFallback, cleanupOutdatedCaches, devOptions off; preserves `worker:{format:'es'}`).
+The `check-pwa-build` test self-builds and verifies the `.db`-exclusion guard by injection
+— honest, not gamed. Lighthouse not run in CI; installability prerequisites asserted
+instead. No blockers, no above-nit findings. Advanced `review → done`.
