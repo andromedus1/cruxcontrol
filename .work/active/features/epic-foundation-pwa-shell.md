@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-pwa-shell
 kind: feature
-stage: implementing
+stage: review
 tags: []
 parent: epic-foundation
 depends_on: [epic-foundation-scaffold]
@@ -132,3 +132,64 @@ expose `canInstall=false` and let the (future) UI show manual steps. App entry c
   ref; mock the virtual module in unit tests so they don't need a real SW.
 - **Workbox accidentally precaching large assets** — **Fallback**: explicit `globPatterns`
   allowlist + `globIgnores` for `*.db*`; assert in the build test.
+
+## Implementation notes
+
+Implemented all 3 units as designed. `vite-plugin-pwa@1.3.0` installed as a dev dep in
+`@cruxcontrol/web`.
+
+**Unit 1 — plugin/manifest (`web/vite.config.ts`):** Added `VitePWA({...})` to `plugins`,
+preserving the existing `worker: { format: 'es' }` block. `registerType: 'autoUpdate'`,
+`generateSW` mode (default). Manifest: name/short_name 'CruxControl', description,
+`start_url '/'`, `scope '/'`, `display 'standalone'`, theme+background `#1e293b`, three icons
+(192, 512, 512-maskable). Workbox: `globPatterns: ['**/*.{js,css,html,svg,woff2,wasm,png,ico}']`
+(the wa-sqlite `.wasm` is a small code chunk and is fine to precache), `globIgnores:
+['**/*.db', '**/*.db.gz']` so the catalog DB is NEVER precached, `navigateFallback:
+'index.html'`, `cleanupOutdatedCaches: true`, `devOptions: { enabled: false }`. Verified the
+build emits `dist/sw.js` + `dist/manifest.webmanifest` with 11 precache entries and zero `.db`
+references.
+
+**Unit 2 — placeholder icons:** Generated deterministically by
+`web/scripts/gen-placeholder-icons.mjs` — a dependency-free PNG encoder (hand-rolled IHDR/IDAT/
+IEND chunks, CRC-32 table, Node built-in `zlib.deflateSync`, RGBA, filter type 0). It draws a
+solid slate (`#1e293b`) background with two scaled 5×7 bitmap "C" glyphs ("CC") kept inside the
+central safe zone for the maskable variant. Output is byte-for-byte reproducible. Produced
+`web/public/icons/{icon-192,icon-512,icon-512-maskable}.png` at exactly 192×192 / 512×512 /
+512×512 (verified via `file` + PNG header parse) plus a placeholder `web/public/favicon.svg`.
+`web/public/icons/README.md` documents that these are placeholders to replace at
+`epic-climb-browser`. `index.html` references the favicon, an apple-touch-icon, and theme-color.
+
+**Unit 3 — registration + install hook:**
+- `web/src/pwa/register-sw.ts`: `registerServiceWorker()` calls `registerSW({ immediate: true })`
+  from `virtual:pwa-register`. Wired into `web/src/main.tsx` (called once before render).
+- `web/src/pwa/use-install-prompt.ts`: `useInstallPrompt()` hook returning `{ canInstall,
+  promptInstall }`. Captures `beforeinstallprompt` (preventDefault + stash deferred event),
+  exposes `canInstall`, calls `.prompt()` on demand and consumes the single-use event; also
+  listens for `appinstalled` to reset. Manual-instructions fallback = `canInstall` stays false
+  on browsers that never fire the event (iOS/desktop Safari) — the future UI shows manual steps.
+- `web/src/vite-env.d.ts` (created): triple-slash refs to `vite/client` and
+  `vite-plugin-pwa/client` so `virtual:pwa-register` typechecks.
+
+**Tests:**
+- `web/src/pwa/use-install-prompt.test.ts`: `canInstall` false→true on a synthesized
+  `beforeinstallprompt`; `promptInstall()` invokes the deferred `.prompt()` once and flips
+  `canInstall` back to false; no-op when nothing deferred. No real SW needed — the hook is
+  pure DOM-event logic, so no `virtual:pwa-register` mock was required for this test.
+- Build-artifact assertion: `web/scripts/check-pwa-build.mjs` exports `checkPwaBuild(distDir)`
+  which asserts (1) `manifest.webmanifest` exists with name/start_url/icons incl. a maskable,
+  (2) every declared icon file exists in `dist/`, (3) `dist/sw.js` exists, (4) the generated SW
+  precache references NO `*.db`/`*.db.gz`. Runnable standalone (`node scripts/check-pwa-build.mjs`)
+  and exercised in CI by `web/src/pwa/check-pwa-build.test.ts`, which runs `vite build` into
+  `dist/` first if a build isn't already present (120s timeout) so the assertion is genuine, not
+  skipped. Verified the `.db` guard is real by injecting a `kilter.db` precache ref → the check
+  exits non-zero. Lighthouse is NOT run in CI; this asserts the installability prerequisites
+  (manifest + icons + SW) instead, noted in the script header comment.
+- `web/scripts/check-pwa-build.d.mts`: hand declaration for the `.mjs` so the test typechecks
+  under strict TS (`scripts/` is outside `tsconfig.include`).
+
+**Verification (clean `dist/`):** typecheck, lint, test (24 passing across 7 files), and build
+all green. Build emits `dist/sw.js` + `dist/manifest.webmanifest`, 11 precache entries, no `.db`.
+
+**Deviations:** none material. The install hook needed no `virtual:pwa-register` mock (it
+doesn't import that module); the build test self-builds rather than relying on a prior build
+step, making it self-contained in CI.
