@@ -61,3 +61,66 @@ Captured during `feature-design --only-questions` (2026-06-14):
    Workers figure) — check the pruned+gzipped size in design; if it exceeds the limit,
    fall back to Cloudflare R2 (the runner-up).
    Pairs with the version marker so `epic-catalog-sync` can later update the OPFS DB.
+
+## Snapshot generation — DONE (2026-06-14, autopilot)
+
+Proven end-to-end. `web/scripts/build-catalog-snapshot.py` runs BoardLib then prunes:
+
+- **Source**: `boardlib database kilter` → full shared catalog **198 MB** (344,504 climbs;
+  bigger than the brief's ~85 MB — the catalog has grown).
+- **Fullride 7x10 identity (verified against the live catalog)**: product **7** (Homewall),
+  layout **8** (Homewall/Fullride), product_size **17** ("7x10 Full Ride LED Kit"),
+  sets **{26 Mainline, 27 Auxiliary}** — matches the brief's 165+140 holds.
+- **Pruned**: 23,156 climbs · 43,740 climb_stats · 472 placements · 3,294 holes · 305 leds ·
+  4 placement_roles · grades/products/sizes/angles/layouts/sets. User + cache tables
+  (ascents, bids, circuits, walls, users, climb_cache_fields 208k, climb_random_positions,
+  beta_links 32k) dropped.
+- **Size**: 12.4 MB raw → **5.1 MB gzipped** → fits the ~25 MiB Workers Static Assets
+  per-file limit comfortably. Decision confirmed: **same-origin static asset** under
+  `web/public/catalog/` (no R2 needed). `integrity_check` ok; joins sane.
+- **Artifacts**: `web/public/catalog/manifest.json` (committed — version, sha256, sizes,
+  filter) + `kilter-7x10.v1.db.gz` (**gitignored** — regenerable via the script; sha256
+  `68d6d86aad984aca5cf9967d24c818d5bdf2984631b1fe9b9fa1fd30c0edbbbf`). The binary is kept
+  out of git history to avoid bloat; CI/dev runs the script (or it's restored locally).
+
+## Client bootstrap — DESIGNED; blocked on a VFS-import spike
+
+Flow: first run → fetch `manifest.json` → if no local catalog or `version` differs, fetch
+`kilter-7x10.v<N>.db.gz` → verify sha256 → `DecompressionStream('gzip')` → hand bytes to
+the SQLite worker to install into OPFS → record installed version → ready. First-run
+loading UX (progress for the ~5 MB one-time download). This extends the read-only worker
+with a one-time **write/import** capability (the current `CatalogPort` is query-only).
+
+### ⚠️ Spike / Blocker — how to import bytes into the persisted VFS
+
+`epic-foundation-sqlite-readpath` ships **`AccessHandlePoolVFS`** (wa-sqlite v1.0.0). That
+VFS stores the DB in an **opaque handle pool** and exposes **no `importDb`/import method**
+(verified in `node_modules/wa-sqlite/src/examples/AccessHandlePoolVFS.js`). So you cannot
+bootstrap by writing the downloaded `.db` bytes to an OPFS file — there is no plain file to
+write. Options to resolve before implementing:
+
+1. **Switch the persisted VFS to `OriginPrivateFileSystemVFS`** (also shipped by wa-sqlite).
+   It stores each DB as a **normal OPFS file**, so bootstrap = write the decompressed bytes
+   to that OPFS file (OPFS `createWritable`/sync access handle) *before* opening — trivial,
+   robust. **Cost**: revises readpath's merged VFS choice (re-review readpath; confirm sync
+   access-handle perf is comparable). *Recommended pending a perf check.*
+2. **Keep `AccessHandlePoolVFS`, import via copy**: open the downloaded bytes in a
+   `MemoryVFS`/`MemoryAsyncVFS` DB (e.g. `sqlite3.deserialize` if exposed), ATTACH the
+   AccessHandlePoolVFS target, and `INSERT INTO target SELECT * FROM source` per table (or a
+   backup-API copy if wa-sqlite exposes one). More moving parts; verify `deserialize`/backup
+   availability in v1.0.0.
+3. **Hybrid**: a build/CI step pre-bakes the AccessHandlePoolVFS pool layout — brittle, not
+   recommended.
+
+This is a genuine cross-feature architectural decision (it can revise readpath), so it
+warrants a focused `feature-design`/spike pass, not an inline rush. Until resolved, this
+feature stays **drafting**.
+
+### Remaining implementation units (after the spike)
+- Worker/port: add `installCatalog(bytes)` (one-time write path) per the chosen VFS option.
+- `web/src/data/catalog/bootstrap.ts`: manifest fetch + version check + download + sha256
+  verify + gunzip (`DecompressionStream`) + call `installCatalog` + persist installed
+  version (e.g. localStorage/IDB marker).
+- First-run loading UI (minimal, pre-design-system).
+- Tests: version-diff logic, sha256 mismatch handling, gunzip, install idempotence; a Node
+  test that imports the real (gitignored) fixture snapshot if present, else a tiny synthetic.
