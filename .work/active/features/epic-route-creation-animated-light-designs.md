@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-animated-light-designs
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble, data]
 parent: epic-route-creation
 depends_on:
@@ -98,9 +98,9 @@ Validate unique IDs, palette length 1–8, packed colors, period 250–10,000 ms
 intensity 0–1, and assignment references.
 
 **Acceptance criteria**:
-- [ ] Existing v1 drafts reopen unchanged with no effects.
-- [ ] V2 effects and membership round-trip exactly.
-- [ ] Corrupt groups and dangling references surface typed corruption errors.
+- [x] Existing v1 drafts reopen unchanged with no effects.
+- [x] V2 effects and membership round-trip exactly.
+- [x] Corrupt groups and dangling references surface typed corruption errors.
 
 ### Unit 2: Deterministic animation frame engine
 
@@ -122,9 +122,9 @@ interpolate saved palettes; alternate uses stable placement ordering for opposit
 phases. Results quantize into the existing API3 byte.
 
 **Acceptance criteria**:
-- [ ] Every effect is deterministic at boundary timestamps.
-- [ ] Static holds never change and output order remains assignment order.
-- [ ] Empty/one-color palettes, full intensity, and cycle wrap are covered.
+- [x] Every effect is deterministic at boundary timestamps.
+- [x] Static holds never change and output order remains assignment order.
+- [x] Empty/one-color palettes, full intensity, and cycle wrap are covered.
 
 ### Unit 3: Editor authoring and simplified controls
 
@@ -145,8 +145,8 @@ current Advanced Light color from the palette. Effect tools only alter existing 
 Hold Tool retains Cycle, Erase, Eyedropper, Advanced Light. Remove Save now.
 
 **Acceptance criteria**:
-- [ ] Applying/removing an effect preserves base color; unassigned holds are no-ops.
-- [ ] Direct role buttons and Save now are absent; cycle and autosave still work.
+- [x] Applying/removing an effect preserves base color; unassigned holds are no-ops.
+- [x] Direct role buttons and Save now are absent; cycle and autosave still work.
 
 ### Unit 4: Shared visual and BLE playback lifecycle
 
@@ -158,9 +158,9 @@ Preview the shared generated frame at capped cadence. Light Draft starts BLE pla
 Stop, visibility loss, disconnect, and unmount cancel timers and prevent later frames.
 
 **Acceptance criteria**:
-- [ ] Screen and transport use the same frame generator.
-- [ ] Slow writes remain bounded; Stop settles the static base frame.
-- [ ] Lifecycle exits schedule no later frames.
+- [x] Screen and transport use the same frame generator.
+- [x] Slow writes remain bounded; Stop settles the static base frame.
+- [x] Lifecycle exits schedule no later frames.
 
 ## Implementation order
 
@@ -184,3 +184,14 @@ design animates while semantic climb holds stay static.
 - **Stepped API2 fades**: 2/2/2 reduction necessarily produces visible steps.
 - **Background throttling**: visibility loss stops rather than faking reliability.
 - **Mode complexity**: effects remain separate from the four ordinary hold tools.
+
+## Implementation summary
+
+- Completed child checkpoints: persistence `e301da9`, deterministic engine `8298c93`, and editor/runtime `e6bb5f9`.
+- Draft schema v2 stores normalized effect groups and optional assignment membership, while pure decoding migrates v1 drafts to empty groups without rewriting storage.
+- One deterministic `renderAnimationFrame` now drives both the continuously animated SVG preview and API-aware BLE playback.
+- The BLE scheduler runs at a maximum 6 FPS for API2 and 10 FPS for API3, waits for each preview write before scheduling another, and cancels on Stop, clear, disconnect, visibility loss, and unmount.
+- The editor saves multiple effect groups with kind, palette, period, and intensity; effect painting/removal preserves each hold's base color. Eyedropper still samples only that base color.
+- Hold Tool now exposes Cycle, Erase, Eyedropper, and Advanced Light. Direct semantic role buttons and Save now were removed; coalesced autosave and recovery actions remain.
+- Integrated verification: 41 Vitest files / 256 tests pass, ESLint passes, and TypeScript plus the production Vite/PWA build pass.
+- Review boundary: implementation is ready for independent review. A Pixel 8 + physical Fullride animation smoke remains pending and should confirm visual cadence/stepping on the API2 controller before final acceptance.
