@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import type { KeyboardEvent, MouseEvent } from 'react';
+import type { KeyboardEvent, MouseEvent, TouchEvent } from 'react';
 import { apiLevel3ColorHex } from '../domain/boards/colors';
 import type { BoardDefinition, ClimbRole } from '../domain/boards/definition';
 import type { BoardPlacementId } from '../domain/boards/types';
@@ -14,6 +14,7 @@ export interface BoardRendererProps {
   readonly assignments?: readonly BoardHoldAssignment[];
   readonly interactionMode?: 'view' | 'select';
   readonly scale?: number;
+  readonly onScaleChange?: (scale: number) => void;
   readonly labelledBy?: string;
   readonly onPlacementActivate?: (placementId: BoardPlacementId) => void;
 }
@@ -51,6 +52,7 @@ export function BoardRenderer({
   assignments = [],
   interactionMode = 'view',
   scale = 1,
+  onScaleChange,
   labelledBy,
   onPlacementActivate,
 }: BoardRendererProps) {
@@ -64,6 +66,13 @@ export function BoardRenderer({
   );
   const [focused, setFocused] = useState(definition.placements[0]?.id ?? null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const gestureRef = useRef<
+    | { mode: 'pan'; x: number; y: number; moved: boolean }
+    | { mode: 'pinch'; distance: number; scale: number; moved: boolean }
+    | null
+  >(null);
+  const suppressClickRef = useRef(false);
   const holdRefs = useRef(new Map<BoardPlacementId, SVGGElement>());
   const title = `${definition.manufacturer} ${definition.model}, ${definition.layout} ${definition.size}`;
 
@@ -99,6 +108,10 @@ export function BoardRenderer({
 
   const onPointerActivate = (event: MouseEvent<SVGSVGElement>) => {
     if (interactionMode !== 'select') return;
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
     const svg = svgRef.current;
     const matrix = svg?.getScreenCTM();
     if (!svg || !matrix) return;
@@ -113,8 +126,80 @@ export function BoardRenderer({
     }
   };
 
+  const touchDistance = (event: TouchEvent<HTMLDivElement>) => {
+    const first = event.touches[0]!;
+    const second = event.touches[1]!;
+    return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+  };
+
+  const onTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    if (!onScaleChange) return;
+    if (event.touches.length >= 2) {
+      gestureRef.current = { mode: 'pinch', distance: touchDistance(event), scale, moved: false };
+    } else if (event.touches.length === 1) {
+      const touch = event.touches[0]!;
+      gestureRef.current = { mode: 'pan', x: touch.clientX, y: touch.clientY, moved: false };
+    }
+  };
+
+  const onTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    const viewport = viewportRef.current;
+    const gesture = gestureRef.current;
+    if (!onScaleChange || !viewport || !gesture) return;
+    event.preventDefault();
+    if (event.touches.length >= 2) {
+      const distance = touchDistance(event);
+      const base =
+        gesture.mode === 'pinch'
+          ? gesture
+          : { mode: 'pinch' as const, distance, scale, moved: false };
+      const nextScale = Math.min(3, Math.max(1, base.scale * (distance / base.distance)));
+      const bounds = viewport.getBoundingClientRect();
+      const midpointX = (event.touches[0]!.clientX + event.touches[1]!.clientX) / 2 - bounds.left;
+      const midpointY = (event.touches[0]!.clientY + event.touches[1]!.clientY) / 2 - bounds.top;
+      const contentX = (viewport.scrollLeft + midpointX) / scale;
+      const contentY = (viewport.scrollTop + midpointY) / scale;
+      onScaleChange(nextScale);
+      viewport.scrollLeft = contentX * nextScale - midpointX;
+      viewport.scrollTop = contentY * nextScale - midpointY;
+      gestureRef.current = { ...base, moved: base.moved || Math.abs(distance - base.distance) > 3 };
+    } else if (event.touches.length === 1 && gesture.mode === 'pan') {
+      const touch = event.touches[0]!;
+      const deltaX = touch.clientX - gesture.x;
+      const deltaY = touch.clientY - gesture.y;
+      viewport.scrollLeft -= deltaX;
+      viewport.scrollTop -= deltaY;
+      gestureRef.current = {
+        mode: 'pan',
+        x: touch.clientX,
+        y: touch.clientY,
+        moved: gesture.moved || Math.hypot(deltaX, deltaY) > 3,
+      };
+    }
+  };
+
+  const onTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    if (!onScaleChange) return;
+    const moved = gestureRef.current?.moved ?? false;
+    if (event.touches.length === 1) {
+      const touch = event.touches[0]!;
+      gestureRef.current = { mode: 'pan', x: touch.clientX, y: touch.clientY, moved };
+      return;
+    }
+    gestureRef.current = null;
+    suppressClickRef.current = moved;
+  };
+
   return (
-    <div className="board-renderer__viewport" data-scale={scale}>
+    <div
+      ref={viewportRef}
+      className={`board-renderer__viewport${onScaleChange ? ' board-renderer__viewport--gestures' : ''}`}
+      data-scale={scale}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
+    >
       <div
         className="board-renderer__surface"
         style={{

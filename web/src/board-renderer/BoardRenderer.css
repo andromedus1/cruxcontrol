@@ -3,6 +3,9 @@
   overflow: auto;
   overscroll-behavior: contain;
 }
+.board-renderer__viewport--gestures {
+  touch-action: none;
+}
 
 .board-renderer__surface {
   min-width: 100%;
@@ -12,6 +15,9 @@
   width: 100%;
   height: 100%;
   touch-action: manipulation;
+}
+.board-renderer__viewport--gestures .board-renderer {
+  touch-action: inherit;
 }
 .board-renderer__panel {
   fill: var(--board-plywood, #c8aa78);

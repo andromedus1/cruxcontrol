@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { kilterFullride7x10Definition } from '../domain/boards/definitions/kilter-fullride-7x10';
 import { draftRevision, localDraftId } from '../drafts/codec';
@@ -19,7 +19,7 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByLabelText('red channel')).toHaveAttribute('max', '7');
     expect(screen.getByLabelText('blue channel')).toHaveAttribute('max', '3');
     expect(screen.getByRole('button', { name: 'Connect & light' })).toBeDisabled();
-    expect(document.querySelector('.board-renderer__viewport')).toHaveAttribute('data-scale', '2.5');
+    expect(document.querySelector('.board-renderer__viewport')).toHaveAttribute('data-scale', '1');
   });
 
   it('cycles, directly assigns, and erases through the roving keyboard surface', () => {
@@ -35,23 +35,24 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByRole('button', { name: /^Hold 1, Unselected/ })).toBeInTheDocument();
   });
 
-  it('switches from the compact 2.5 board to the wide scale-1 board', () => {
-    let desktop = false;
-    const listeners = new Set<EventListener>();
-    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
-      get matches() { return query.includes('min-width') ? desktop : !desktop; },
-      media: query,
-      onchange: null,
-      addEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => { if (typeof listener === 'function') listeners.add(listener); },
-      removeEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => { if (typeof listener === 'function') listeners.delete(listener); },
-      addListener: () => undefined,
-      removeListener: () => undefined,
-      dispatchEvent: () => true,
-    }));
+  it('starts fitted and supports controls and pinch zoom in the editor', () => {
     render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()} />);
-    expect(document.querySelector('.board-renderer__viewport')).toHaveAttribute('data-scale', '2.5');
-    desktop = true;
-    act(() => { for (const listener of listeners) listener(new Event('change')); });
-    expect(document.querySelector('.board-renderer__viewport')).toHaveAttribute('data-scale', '1');
+    const viewport = document.querySelector('.board-renderer__viewport')!;
+    expect(viewport).toHaveAttribute('data-scale', '1');
+    expect(screen.getByLabelText('Board zoom')).toHaveTextContent('100%');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
+    expect(viewport).toHaveAttribute('data-scale', '1.5');
+
+    fireEvent.touchStart(viewport, {
+      touches: [{ clientX: 100, clientY: 100 }, { clientX: 200, clientY: 100 }],
+    });
+    fireEvent.touchMove(viewport, {
+      touches: [{ clientX: 50, clientY: 100 }, { clientX: 250, clientY: 100 }],
+    });
+    expect(viewport).toHaveAttribute('data-scale', '3');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fit' }));
+    expect(viewport).toHaveAttribute('data-scale', '1');
   });
 });
