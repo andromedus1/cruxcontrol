@@ -1,7 +1,7 @@
 ---
 id: epic-climb-browser-fullride-renderer
 kind: feature
-stage: implementing
+stage: review
 tags: [ui]
 parent: epic-climb-browser
 depends_on: [epic-universal-board-platform-domain-definition]
@@ -425,3 +425,33 @@ and offer little safe parallelism.
   consequential direction, while remaining renderer choices are reversible and do
   not change source data or redistribution authority.
 - Child stories: none — one tightly coupled visual/interaction implementation stride.
+
+## Implementation notes
+
+- Execution capability: highest-capability/xhigh, inherited from autopilot because
+  catalog-space geometry, dense SVG accessibility, and visual identity all meet in
+  this feature.
+- Review weight: standard, from the feature design and project convention.
+- Files changed: `web/src/board-renderer/{types,geometry,scene,hold-artwork,
+  BoardRenderer,index}` plus colocated CSS and six focused test files.
+- Tests added/removed: added pure transform, nearest-hit, navigation, scene
+  validation, deterministic artwork, responsive SVG semantics/interaction,
+  generated Fullride integration, and immutable PNG integrity coverage; removed none.
+- Simplification: one pure transform serves rendering and hit testing; one scene
+  index validates all assignments before rendering; one deterministic artwork
+  selector avoids a runtime asset system or screenshot dependency.
+- Discrepancies from design: none.
+- Adjacent issues parked: none.
+
+## Implementation evidence
+
+- The generated definition renders 305 placement-addressed SVG hold groups, and the
+  fixture exercises all eight original archetypes across those positions.
+- Side-by-side visual calibration against the selected hybrid mock and preserved
+  Fullride screenshot confirms the tall 7x10 proportion, complete placement field,
+  subdued neutral context, and high-contrast selected overlays. Calibration retains
+  catalog centers and uses only the designed four-unit logical gutter and bounded
+  original artwork sizing.
+- The checked-in screenshot remains 1126x1584 with SHA-256
+  `a1e17430dd42eb7c81021834405a87d5a90bf9d14bca9af408553380f0a00bb0`;
+  production renderer source does not import or embed it.
