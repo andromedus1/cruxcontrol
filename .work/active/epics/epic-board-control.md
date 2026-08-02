@@ -1,7 +1,7 @@
 ---
 id: epic-board-control
 kind: epic
-stage: drafting
+stage: implementing
 tags: [ble]
 parent: null
 depends_on: [epic-universal-board-platform]
@@ -67,9 +67,41 @@ and does NOT own the catalog or selection UI.
 - `docs/SPEC.md` — Capability 1 (Board Control); Constraints (Chromium-only, protocol
   fidelity).
 
-## Anticipated child features
+## UI alignment deferred
 
-Provisional:
-- BLE adapter: scan + connect + GATT lifecycle (behind a mockable port)
-- LED command encoder (frames → API-level-3 packets, checksums, splitting)
-- "Play this climb" integration (browser selection → board)
+This epic introduces a compact connection/status control and light/clear actions.
+Because decomposition is running under autopilot, interactive screen selection is not
+available. The features inherit `.mockups/design-system/`; a later
+`epic-design --only-questions epic-board-control` pass may add dedicated mocks, while
+feature design can fall back to the locked compact, touch-safe component language.
+
+## Decomposition
+
+Split at the two real technical boundaries, then compose them into one user-visible
+capability. The pure protocol codec and browser Bluetooth session can be designed and
+implemented independently; the light-scenes feature joins them and owns the physical
+acceptance checkpoint. This keeps protocol correctness testable without hardware and
+prevents Web Bluetooth lifecycle details from leaking into route creation.
+
+### Child features
+
+- `epic-board-control-protocol-codec` — deterministic API-level-3 scene encoding,
+  framing, checksums, partitioning, and transport chunks — depends on: `[]`
+- `epic-board-control-bluetooth-session` — explicit Web Bluetooth connection lifecycle,
+  serialized writes, capability states, and deterministic mock adapter — depends on:
+  `[]`
+- `epic-board-control-light-scenes` — user-visible connect/light/clear orchestration and
+  Fullride hardware verification — depends on:
+  `[epic-board-control-protocol-codec, epic-board-control-bluetooth-session]`
+
+### Decomposition risks
+
+- Real controller behavior can diverge from reverse-engineered framing or browser BLE
+  assumptions even when byte-level tests pass. The final integration feature therefore
+  carries an explicit physical-board checkpoint and records observed controller name,
+  API level, write behavior, and any corrections.
+- Web Bluetooth failures are stateful and platform-specific. Keeping a single session
+  owner, serializing all operations, and exercising disconnect/failure transitions
+  through the mock reduces—not eliminates—this risk.
+- Fullride placement-to-LED mapping is owned by the board definition upstream; this
+  epic accepts LED-addressed scenes and must not duplicate geometry or catalog logic.
