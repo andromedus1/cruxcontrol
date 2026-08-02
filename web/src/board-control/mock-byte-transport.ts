@@ -37,7 +37,7 @@ export class MockBoardByteTransport implements BoardByteTransport {
         : { supported: true },
     );
     this.devices = Object.freeze(
-      (options?.devices ?? [{ id: 'mock-board', name: 'Mock Kilter Board' }]).map(freezeDevice),
+      (options?.devices ?? [{ id: 'mock-board', name: 'Mock Kilter Board@3' }]).map(freezeDevice),
     );
     this.state = this.capability.supported
       ? Object.freeze({ status: 'disconnected', device: null })

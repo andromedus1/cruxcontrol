@@ -113,6 +113,20 @@ describe('Fullride light controller', () => {
     expect(Object.isFrozen(controller.getState().lastAppliedScene)).toBe(true);
   });
 
+  it('uses API level 2 when the connected controller name has no API suffix', async () => {
+    const transport = new MockBoardByteTransport({
+      devices: [{ id: 'physical-controller-shape', name: 'Kilter Board' }],
+    });
+    const controller = createFullrideLightController({ definition, transport });
+    await controller.requestAndConnect();
+
+    await controller.light(customScene(0, 0xff));
+
+    expect(writeOperations(transport)[0].chunks).toEqual([
+      new Uint8Array([0x01, 0x03, 0xb3, 0x02, 0x50, 0x00, 0xfc, 0x03]),
+    ]);
+  });
+
   it('sends a 305-placement scene as one ordered multi-write batch', async () => {
     const transport = new MockBoardByteTransport();
     const controller = createFullrideLightController({ definition, transport });

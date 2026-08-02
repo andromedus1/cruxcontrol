@@ -1,4 +1,5 @@
 import { encodeApiLevel3Scene, type ApiLevel3Light } from './api-level-3-codec.ts';
+import { apiLevelForAuroraDeviceName, encodeApiLevel2Scene } from './api-level-2-codec.ts';
 import {
   BoardTransportError,
   type BoardByteTransport,
@@ -134,7 +135,12 @@ export function createFullrideLightController(
   const apply = async (task: ExplicitTask | PreviewTask, operation: LightOperation) => {
     publish(state.transport, operation, state.lastAppliedScene, null);
     try {
-      await options.transport.writeBatch(encodeApiLevel3Scene(task.resolved.lights));
+      const deviceName = state.transport.status === 'connected' ? state.transport.device.name : null;
+      const writes =
+        apiLevelForAuroraDeviceName(deviceName) === 3
+          ? encodeApiLevel3Scene(task.resolved.lights)
+          : encodeApiLevel2Scene(task.resolved.lights);
+      await options.transport.writeBatch(writes);
       publish(state.transport, 'idle', task.resolved.scene, null);
       if ('operation' in task) task.resolve();
       else task.resolve(APPLIED);
