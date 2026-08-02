@@ -37,10 +37,18 @@ export function summarizeCapacityTrace(
   trace: readonly CapacityTraceEvent[],
   requestedFps: number,
 ): CapacityTraceSummary {
+  const renderedFrames = new Set(
+    trace
+      .filter(
+        (event): event is CapacityTraceEvent & { frameIndex: number } =>
+          event.stage === 'rendered' && event.frameIndex !== undefined,
+      )
+      .map(({ frameIndex }) => frameIndex),
+  );
   const starts = new Map<number, number>();
   const durations: number[] = [];
   for (const event of trace) {
-    if (event.frameIndex === undefined) continue;
+    if (event.frameIndex === undefined || !renderedFrames.has(event.frameIndex)) continue;
     if (event.stage === 'batch-started') starts.set(event.frameIndex, event.atMs);
     if (event.stage === 'batch-settled') {
       const start = starts.get(event.frameIndex);
@@ -55,7 +63,10 @@ export function summarizeCapacityTrace(
   return Object.freeze({
     requestedFps,
     effectiveFps: elapsed > 0 ? ((appliedFrames - 1) * 1000) / elapsed : appliedFrames,
-    attemptedFrames: trace.filter(({ stage }) => stage === 'batch-started').length,
+    attemptedFrames: trace.filter(
+      ({ stage, frameIndex }) =>
+        stage === 'batch-started' && frameIndex !== undefined && renderedFrames.has(frameIndex),
+    ).length,
     appliedFrames,
     missedDueFrames: Math.max(0, scheduled.length - appliedFrames),
     p50BatchMs: percentile(durations, 0.5),

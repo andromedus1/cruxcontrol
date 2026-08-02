@@ -38,3 +38,15 @@ and post-campaign one-light/clear recovery evidence are durably recorded.
   168 and 252 failed, API-level-2's 127-light packet boundary is the leading hypothesis;
   the UI now exposes 126/127/128 and nearby values for confirmation. The displayed API
   level, exact result timing, trace export, and boundary cases remain to be recorded.
+- The diagnostic reports API level 2. At 127 lights, one packet / 260 framed bytes / 13
+  BLE writes completed with the full pattern correct and p95 batch duration 2,280.7 ms at
+  20 ms inter-chunk pacing. At 128, the first 127-light section was replaced by the final
+  one-light packet. This establishes an exact reliable full-scene ceiling of 127 lights
+  for the measured controller path; no case above 127 should be used by product policy.
+- The initial result said “3 frames” because trace summaries included clear-before and
+  clear-after batches. The diagnostic summary now counts only batches with a corresponding
+  rendered scene event; the recorded 2,280.7 ms remains the scene p95 because it was the
+  longest of those batches.
+- A 20-light, 2 FPS animation at 20 ms inter-chunk pacing completed with the expected
+  visible behavior and clean clear. Exact trace-derived effective FPS and latency remain
+  pending local trace retrieval before this point is classified against pass criteria.
