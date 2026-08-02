@@ -1,7 +1,7 @@
 ---
 id: epic-climb-browser-local-climb-viewer
 kind: feature
-stage: implementing
+stage: review
 tags: [ui]
 parent: epic-climb-browser
 depends_on: [epic-climb-browser-fullride-renderer]
@@ -414,3 +414,29 @@ typed: `BoardRenderer` and `BoardLightController`. The accepted hybrid mockups a
 route-creation ownership decisions resolve the UI direction. Cross-model advisory
 review was skipped as this is a reversible, standard-weight presentation feature with
 no new persistence, protocol, or external-system boundary.
+
+## Implementation notes
+
+- Execution capability: high/xhigh; the feature crosses responsive dialog semantics,
+  renderer composition, and an asynchronous external controller, while remaining one
+  cohesive presentation boundary.
+- Review weight: standard, from the caller and project convention. Implementation
+  stops at review for the autopilot orchestrator's independent pass.
+- Files changed: `web/src/climb-browser/{types,light-scene,use-board-light-state,
+  BoardControlBar,ClimbDetail,LocalClimbViewer,index}.ts(x)`,
+  `web/src/climb-browser/LocalClimbViewer.css`, `web/src/App.tsx`, and the associated
+  test/setup files.
+- Tests added: pure key/scene projection coverage; truthful detail, explicit connect,
+  exact light scene, and clear-board behavior; controlled selection, validation,
+  empty/create, stale-selection, and integrated renderer coverage; updated app empty
+  workspace assertion. These protect source/controller boundaries and accessible
+  product behavior without mocking the renderer.
+- Simplification: one controlled selection and one detail/renderer tree serve both
+  sheet and split layouts; no router, persistence adapter, catalog service, duplicate
+  controller state, or sample climb layer was introduced.
+- Discrepancies from design: production CSS imports the committed token source
+  directly rather than duplicating its variables; native dialog methods receive a
+  jsdom-only standards-shaped polyfill because jsdom does not implement them.
+- Adjacent issues parked: none.
+- Verification: `npm test` (27 files, 168 tests), `npm run typecheck`, `npm run lint`,
+  and `npm run build` all pass in `web/`.

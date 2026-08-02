@@ -1,0 +1,46 @@
+@import '../../../.mockups/design-system/tokens.css';
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--color-bg-primary); color: var(--color-text-primary); font-family: var(--font-sans); }
+button { font: inherit; }
+.button { min-height: 44px; padding: var(--space-2) var(--space-4); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); font-weight: var(--font-weight-semibold); cursor: pointer; }
+.button--primary { background: var(--color-accent); color: var(--color-bg-secondary); border-color: var(--color-accent); }
+.button--secondary { color: var(--color-text-primary); background: var(--color-bg-tertiary); }
+.button:disabled { cursor: not-allowed; opacity: .46; }
+.button:focus-visible, .climb-row:focus-visible, .climb-sheet__close:focus-visible { outline: 3px solid var(--color-info); outline-offset: 3px; }
+.local-climb-viewer { min-height: 100dvh; background: var(--color-bg-primary); }
+.climb-list-pane { padding: max(var(--space-4), env(safe-area-inset-top)) var(--space-4) var(--space-6); }
+.workspace-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-4); }
+.workspace-header h1, .climb-detail h2, .climb-detail h1 { margin: 0; line-height: var(--line-height-tight); }
+.eyebrow { margin: 0 0 var(--space-1); color: var(--color-text-secondary); font: var(--font-weight-semibold) var(--font-size-xs)/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.climb-list { list-style: none; padding: 0; margin: var(--space-3) 0; display: grid; gap: var(--space-2); }
+.climb-row { display: grid; width: 100%; min-height: 68px; grid-template-columns: 1fr auto; gap: 2px var(--space-3); text-align: left; padding: var(--space-3); color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-secondary); cursor: pointer; }
+.climb-row[aria-current=true] { border-color: var(--color-accent); box-shadow: inset 3px 0 var(--color-accent); }
+.climb-row__name { min-width: 0; overflow-wrap: anywhere; font-weight: var(--font-weight-semibold); }
+.climb-row__meta, .climb-row__holds { color: var(--color-text-secondary); font: var(--font-size-xs)/1.4 var(--font-mono); }
+.climb-row__holds { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.climb-empty, .no-selection { max-width: 32rem; margin: 14vh auto 0; text-align: center; color: var(--color-text-secondary); }
+.climb-empty h2 { color: var(--color-text-primary); }.climb-empty__symbol { font-size: 3rem; margin: 0; color: var(--color-accent); }
+.climb-sheet { width: min(100%, 46rem); max-height: 92dvh; margin: auto 0 0; padding: 0; color: var(--color-text-primary); border: 1px solid var(--color-border-strong); border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--color-bg-secondary); }
+.climb-sheet::backdrop { background: rgba(20, 19, 24, .66); }
+.climb-sheet__close { position: sticky; z-index: 2; top: var(--space-2); float: right; width: 44px; height: 44px; margin: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-full); background: var(--color-bg-tertiary); color: var(--color-text-primary); font-size: var(--font-size-xl); cursor: pointer; }
+.climb-detail { padding: var(--space-4); }
+.board-control-bar { display: flex; min-height: 44px; align-items: center; gap: var(--space-2); margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-4); padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-border); background: var(--color-bg-tertiary); font: var(--font-size-xs)/1.3 var(--font-mono); }
+.board-control-bar__status { flex: 1; }.connection-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-text-tertiary); }.connection-dot--connected { background: var(--color-success); }.connection-dot--error { background: var(--color-danger); }
+.climb-detail__header { display: flex; justify-content: space-between; align-items: start; gap: var(--space-3); }
+.angle-badge { flex: none; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--color-accent-muted); font: var(--font-weight-semibold) var(--font-size-sm)/1.4 var(--font-mono); }
+.climb-meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); margin: var(--space-3) 0; font: var(--font-size-sm)/1.4 var(--font-mono); }.climb-meta dt { color: var(--color-text-secondary); }.climb-meta dd { margin: 0 var(--space-3) 0 0; }
+.climb-detail__description { color: var(--color-text-secondary); }.climb-detail__board { margin: var(--space-4) auto; max-width: 34rem; }
+.role-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); list-style: none; padding: 0; margin: var(--space-3) 0; font: var(--font-size-xs)/1.3 var(--font-mono); }.role-legend li { display: inline-flex; align-items: center; gap: 6px; }.role-legend span { width: 12px; height: 12px; border-radius: 50%; }.role-legend__custom { background: conic-gradient(#98bb6c, #7e9cd8, #d27e99, #e6c384, #98bb6c); }
+.climb-detail__actions { position: sticky; bottom: 0; margin: var(--space-4) calc(-1 * var(--space-4)) calc(-1 * var(--space-4)); padding: var(--space-3) var(--space-4) max(var(--space-3), env(safe-area-inset-bottom)); border-top: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-bg-secondary) 94%, transparent); backdrop-filter: blur(8px); }.climb-detail__actions .button { width: 100%; }.action-status { min-height: 1.4em; margin: 0 0 var(--space-2); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+
+@media (min-width: 900px) {
+  .local-climb-viewer { display: grid; grid-template-columns: minmax(18rem, 32%) 1fr; }
+  .climb-list-pane { min-height: 100dvh; border-right: 1px solid var(--color-border); }
+  .climb-detail-pane { min-width: 0; padding: var(--space-6); }
+  .climb-sheet[open] { position: static; display: block; width: 100%; max-width: 58rem; max-height: none; margin: 0 auto; border-radius: var(--radius-lg); }
+  .climb-sheet__close { display: none; }
+  .climb-detail { padding: var(--space-6); }.board-control-bar { margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) var(--space-6); padding-inline: var(--space-6); }
+  .climb-detail__actions { margin-inline: calc(-1 * var(--space-6)); margin-bottom: calc(-1 * var(--space-6)); padding-inline: var(--space-6); }
+}
+@media (prefers-reduced-motion: no-preference) { .climb-sheet { animation: sheet-in 160ms ease-out; } @keyframes sheet-in { from { opacity: 0; transform: translateY(16px); } } }
