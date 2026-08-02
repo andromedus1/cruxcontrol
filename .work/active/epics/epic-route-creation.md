@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation
 kind: epic
-stage: review
+stage: done
 tags: [ui]
 parent: null
 depends_on: [epic-climb-browser, epic-board-control]
@@ -123,3 +123,53 @@ coordination overhead without an independently useful capability.
 - The epic is ready for its separate aggregate review. Physical Fullride/Android
   Chrome BLE evidence remains an explicit manual checkpoint and is not claimed by
   either child review.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve with comments
+
+**Blockers**: none unresolved. Fixed inline: the real-Chromium smoke now proves
+autosave rather than bypassing it with explicit Save, reloads and reopens exact
+semantic and custom-color state, then edits and persists both kinds again; application
+composition now detects stored definition, layout-revision, angle, and placement
+incompatibility before projection so an old draft remains stored unchanged and gets an
+explicit recovery notice instead of crashing or silently rendering against the wrong
+board.
+
+**Important**: none
+
+**Nits**: none
+
+**Rejected**: requiring Kilter community publication or automated physical BLE proof
+to block this local create-save-light milestone. Publication is explicitly deferred by
+the locked user decision, while powered-board/Android-Chrome behavior remains a real
+manual acceptance checkpoint rather than evidence CI can honestly fabricate.
+
+**Notes**: Aggregate substrate epic review at effective weight `standard`; exactly one
+independent balanced same-harness fresh-context pass ran, and no second independent
+pass ran after fixes. The pass reviewed the epic and locked user decisions, both child
+feature review records, application/runtime composition, versioned IndexedDB draft
+codec/repository/projection, editor reducer and semantic/custom assignment model,
+coalescing autosave and conflict recovery, responsive workspace and exact 3/3/2-bit
+color control, the complete renderer and light-scene seams, controller/transport
+contracts, foundation assertions, and real-browser evidence without repeating child
+line review.
+
+The corrected snapshot traces an unrestricted empty or unconventional local draft
+through create, optimistic autosave, reload/reopen, subsequent semantic and exact
+custom-color edits, retry/reload/save-copy recovery, and explicit Light Draft or
+opt-in/default-off latest-state Live Preview. Local user content stays entirely in
+browser IndexedDB; editor/rendering code performs no provider publication, auth,
+catalog, network, direct Bluetooth, or placement-to-LED work. Unsupported Bluetooth
+degrades explicitly while responsive 390×844 and 1440×900 coverage preserves the
+roving-keyboard board surface, 2.5×/1× renderer scales, named controls, status/live
+regions, 44 px actions, sticky safe-area footer, and reduced-motion behavior.
+
+Full verification passed `npm test` (38 files, 218 tests), `npm run typecheck`, `npm
+run lint`, `npm run build`, and `npm -w web run test:e2e` (2 Chromium tests). The
+browser pass covers autosave/reload/reopen and exact `#FF6DAA` → `#24DBAA` custom
+color persistence at 1440×900 plus compact keyboard/sticky-action behavior at
+390×844. Controller fakes cover connect/light/clear, error/disconnect recovery,
+bounded duplicate gestures, and latest-frame-wins preview. Physical BLE remains
+pending on a powered Fullride 7×10 with Android Chrome; this approval makes no claim
+that the hardware checkpoint has passed.

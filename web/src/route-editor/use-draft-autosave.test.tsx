@@ -109,6 +109,36 @@ describe('useDraftAutosave', () => {
     expect(result.current.state.saveStatus).toBe('saved');
   });
 
+  it('reloads the stored revision after a conflict and retries ordinary failures', async () => {
+    const conflict = new DraftConflictError(initial.id, draftRevision(1), draftRevision(2));
+    const stored = saved({ ...draftContent(), name: 'Other tab' }, 2);
+    const update = vi.fn<LocalDraftRepository['update']>()
+      .mockRejectedValueOnce(conflict)
+      .mockRejectedValueOnce(new Error('Storage temporarily unavailable'))
+      .mockImplementation(async (_id, revision, content) => saved(content, Number(revision) + 1));
+    const drafts = repository(update);
+    vi.mocked(drafts.get).mockResolvedValue(stored);
+    const { result } = renderHook(() => useHarness(drafts));
+
+    act(() => result.current.dispatch({ type: 'set-name', value: 'Conflicting edit' }));
+    await act(async () => { await result.current.controls.saveNow(); });
+    expect(result.current.state.saveStatus).toBe('conflict');
+
+    await act(async () => { await result.current.controls.reloadStored(); });
+    expect(result.current.state.content.name).toBe('Other tab');
+    expect(result.current.state.draft.revision).toBe(2);
+    expect(result.current.state.saveStatus).toBe('saved');
+
+    act(() => result.current.dispatch({ type: 'set-name', value: 'Retry me' }));
+    await act(async () => { await result.current.controls.saveNow(); });
+    expect(result.current.state.saveStatus).toBe('error');
+    expect(result.current.state.persistenceError?.message).toBe('Storage temporarily unavailable');
+
+    await act(async () => { await result.current.controls.retry(); });
+    expect(result.current.state.content.name).toBe('Retry me');
+    expect(result.current.state.saveStatus).toBe('saved');
+  });
+
   it('cancels pending autosave on unmount and remains live under StrictMode effect replay', async () => {
     vi.useFakeTimers();
     const update = vi.fn<LocalDraftRepository['update']>(async (_id, revision, content) => saved(content, Number(revision) + 1));
