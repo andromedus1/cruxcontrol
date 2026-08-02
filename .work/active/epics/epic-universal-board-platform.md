@@ -1,7 +1,7 @@
 ---
 id: epic-universal-board-platform
 kind: epic
-stage: implementing
+stage: review
 tags: [data]
 parent: null
 depends_on: [epic-foundation-sqlite-readpath, epic-foundation-pwa-shell]
@@ -80,9 +80,9 @@ allowing the two downstream seams to develop in parallel after the definition la
 - `epic-universal-board-platform-installation-contracts` — installation registry,
   capabilities, and provider/controller ports — depends on:
   `[epic-universal-board-platform-domain-definition]`
-- `epic-universal-board-platform-catalog-domain` — typed domain catalog queries and
-  Kilter SQLite projection — depends on:
-  `[epic-universal-board-platform-domain-definition]`
+- Deferred backlog: `epic-universal-board-platform-catalog-domain` — typed community
+  catalog queries and Kilter SQLite projection. It is outside the local
+  create-save-light milestone and will return with catalog acquisition work.
 
 ### Decomposition risks
 
@@ -96,3 +96,14 @@ allowing the two downstream seams to develop in parallel after the definition la
 - **Raw-SQL leakage would defeat the boundary.** The existing `CatalogPort` is
   intentionally low-level; its Kilter projection must become the sole query path for
   product modules rather than a parallel convenience wrapper.
+
+## Child features reviewed and complete
+
+- `epic-universal-board-platform-domain-definition` — verified Fullride identity,
+  305-placement geometry/LED mapping, semantic roles, and full color contracts.
+- `epic-universal-board-platform-installation-contracts` — immutable configured
+  installation/capability composition for one active Fullride controller.
+
+The catalog-domain feature was moved to backlog because community-catalog data is
+explicitly excluded from this milestone; the completed contracts are sufficient for
+local drafts, rendering, and physical control.
