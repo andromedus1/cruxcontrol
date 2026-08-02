@@ -2,20 +2,22 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-06-14
+updated: 2026-08-02
 nav_priority: high
 summary: >
-  The capability contract for CruxControl: board control over BLE, a fast climb
-  browser with shareable URLs, a visual route editor, a logbook with session
-  tracking, ML grade prediction, a data-acquisition/training pipeline, and
-  personalized recommendations — over a local SQLite catalog synced from the
-  Kilter API, on a Web Bluetooth (Chrome/Edge) offline-first web app.
+  The capability contract for a Kilter-first, multi-board-capable CruxControl:
+  local board inventory, provider-aware catalogs, BLE control, climb browsing and
+  editing, logbook/session tracking, grade prediction, and recommendations in an
+  offline-first client.
 decisions:
   - "Capabilities are grouped into eight areas; board control + browser are the MVP surface."
   - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
   - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
   - "Grade-prediction target is community consensus difficulty_average from climb_stats."
   - "Playlists are a CruxControl-local construct (no Kilter playlist API): local-first, climb-ID-referenced, shareable, board-playable."
+  - "Every climb and layout identity is namespaced by provider and immutable board/layout revision; bare vendor IDs never cross domain boundaries."
+  - "The Fullride 7x10 is the acceptance board for the first milestone; additional providers are installed on demand."
+  - "Android/desktop Chromium provide Web Bluetooth control; iOS direct control is a later native-bridge capability."
 ---
 
 # CruxControl — Specification
@@ -26,20 +28,31 @@ operates over, and the constraints it must satisfy. The *why* lives in
 
 ## Capabilities
 
+### 0. Board Inventory & Setup
+- Browse the board models and layout revisions supported by installed providers.
+- Configure one or more local board installations: board/layout, supported angle,
+  installed hold sets, catalog source, and compatible controller profile.
+- Make the active installation explicit throughout browsing, editing, playlists,
+  and board control.
+- Install or remove provider/layout catalogs independently and show capability
+  availability: browse, control, create, publish, import, and sync.
+
 ### 1. Board Control (BLE)
-- Connect to the Kilter Board via the Web Bluetooth API.
+- Connect to the active board through a capability-selected controller adapter.
+- The first adapter controls the Kilter Fullride 7x10 via Web Bluetooth.
 - Light up holds for any selected climb using the Nordic UART protocol (API level 3).
 - Support the full color role system: Start (green), Middle (cyan), Finish
   (magenta), Foot-only (orange).
 - Handle multi-packet messages for climbs with many holds.
 
 ### 2. Climb Browser
-- Fast, responsive browsing of the full Kilter climb catalog.
+- Fast, responsive browsing of the active board's installed community catalog.
 - Filtering: grade range, angle, quality, ascent count, setter, hold count,
   grade-consensus accuracy.
 - Shareable URLs for individual climbs (a major gap in the official app).
 - Visual 2D board renderer showing hold positions and roles.
-- Fullride 7x10 layout specifically (Mainline + Auxiliary sets).
+- Fullride 7x10 layout first (Mainline + Auxiliary sets); renderers consume board
+  definitions rather than hard-coded vendor coordinates.
 
 ### 3. Route Creation & Editing
 - Visual editor: create climbs by tapping holds on the board diagram.
@@ -66,6 +79,11 @@ operates over, and the constraints it must satisfy. The *why* lives in
   (`holes`), and placement→hole→LED mappings.
 - Incremental sync via `shared_syncs` timestamps.
 - Pipeline: SQLite → feature extraction → training dataset → model.
+- Add providers independently through import/sync adapters. Each import records
+  source, retrieval time, provider-native identity, layout revision, and policy
+  metadata; user data requires an explicit export or authorization flow.
+- Preserve source-native payloads and grades alongside normalized query fields.
+- Install catalogs per provider/layout on demand rather than bundling a universal DB.
 
 ### 7. Personalized Training & Recommendations
 - Recommend climbs by grade range, preferred style, and progression.
@@ -100,8 +118,18 @@ The model mirrors the official Kilter SQLite schema (see
 - **Ascent / Bid** — logged sends and attempts (auth-gated for personal data).
 - **Session** — a grouping of attempts/ascents over a single board session.
 - **Playlist** — a CruxControl-local, user-named, ordered list of climb
-  references (by stable Kilter climb ID); shareable and board-playable. Not a
+  references (by namespaced provider + layout revision + source climb ID);
+  shareable and board-playable. Not a
   Kilter schema entity.
+
+- **BoardDefinition** — vendor/model/layout revision, geometry, placements, roles,
+  angle rules, grade systems, and controller-compatible LED mapping.
+- **BoardInstallation** — a user's configured physical board bound to one immutable
+  definition and zero or more compatible provider/controller adapters.
+- **ProviderClimbId** — provider namespace + source climb ID + layout revision; the
+  stable cross-module identity for climbs, links, logbook entries, and playlists.
+- **CatalogProvenance** — source, retrieval time, native payload/version, and usage
+  constraints retained with imported data.
 
 ## Constraints & Non-Functional Requirements
 
@@ -109,8 +137,9 @@ The model mirrors the official Kilter SQLite schema (see
   (Chrome/Edge); other browsers can browse but not drive the board.
 - **Offline-first.** The catalog and logbook must be usable without network;
   load must be instant from local storage.
-- **Single-board scope.** The Fullride 7x10 layout is the target; the schema is
-  general but the UI/renderer targets this layout.
+- **Kilter-first acceptance scope.** The Fullride 7x10 is the first end-to-end
+  acceptance board. Core identities and ports support multiple boards, but other
+  providers do not block that milestone.
 - **Data ownership.** The logbook is the source of truth locally; Kilter sync is
   optional and reversible.
 - **Protocol fidelity.** BLE packets must implement framing, checksums, and
@@ -126,3 +155,9 @@ The model mirrors the official Kilter SQLite schema (see
   requirement; it was the criterion by which the framework (React + Vite) was chosen.
 - **Per-user isolation.** One user's local data (logbook, playlists, drafts) is never
   visible to another; sharing is explicit and URL-based (climbs, playlists).
+- **Provider policy.** Acquisition uses public or user-authorized sources and does
+  not bypass access controls. Import capability and redistribution are separate
+  decisions recorded per provider.
+- **Mobile capability.** Responsive browsing/editing/logging works on modern phones.
+  Direct BLE control requires Web Bluetooth (Android Chromium) or a future native
+  iOS CoreBluetooth bridge; unsupported transports degrade explicitly to browse-only.

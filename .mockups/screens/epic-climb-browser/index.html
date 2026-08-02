@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CruxControl climb-browser options</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#090618;color:#dcd7ba;font:14px/1.4 system-ui,sans-serif}
+    header{padding:14px 18px;border-bottom:1px solid #54546d}header p{margin:4px 0 0;color:#938aa9}
+    nav{display:flex;gap:8px;padding:12px 18px;overflow:auto;background:#1f1f28;border-bottom:1px solid #54546d}
+    button{min-height:44px;padding:8px 14px;border:1px solid #54546d;border-radius:7px;background:#2a2a37;color:#dcd7ba;white-space:nowrap;cursor:pointer}
+    button[aria-selected="true"]{border-color:#e6c384;background:#49473e;color:#e6c384;font-weight:700}
+    main{display:grid;grid-template-columns:minmax(430px,780px) minmax(240px,360px);gap:18px;justify-content:center;padding:18px}
+    .stage{min-width:0;text-align:center}.stage iframe{width:100%;height:820px;border:1px solid #54546d;border-radius:10px;background:#1f1f28}
+    aside{padding:18px;border:1px solid #54546d;border-radius:10px;background:#1f1f28;align-self:start;position:sticky;top:18px}aside h2{margin-top:0;color:#e6c384}aside p{color:#a6a182}aside a{color:#7e9cd8}
+    @media(max-width:850px){main{grid-template-columns:1fr;padding:8px}.stage iframe{height:780px}aside{position:static;order:-1}}
+  </style>
+</head>
+<body>
+  <header><strong>CruxControl · climb-browser options</strong><p>Switch tabs to view each mock at a readable size. Option 3 also demonstrates its wide-screen split layout.</p></header>
+  <nav aria-label="Mockup options">
+    <button aria-selected="true" data-file="option-1.html" data-title="Option 1 — List → bottom sheet" data-copy="Thumb-friendly continuity. Inspect and light a climb without losing list position.">1 · Bottom sheet</button>
+    <button aria-selected="false" data-file="option-2.html" data-title="Option 2 — Dedicated board detail" data-copy="Maximum board-diagram space and the clearest single-climb focus.">2 · Full detail</button>
+    <button aria-selected="false" data-file="option-3.html" data-title="Option 3 — Responsive field console" data-copy="A split list-and-board workspace on wider screens that collapses to a disciplined phone list.">3 · Field console</button>
+    <button aria-selected="false" data-file="option-4.html" data-title="Option 4 — Session-forward browse" data-copy="Keeps the current climb and queue visible while searching for additions.">4 · Queue forward</button>
+    <button aria-selected="false" data-file="option-hybrid.html" data-title="Chosen — Responsive hybrid" data-copy="Phone bottom sheet, wide split console, and a dedicated full-detail route.">✓ Chosen hybrid</button>
+  </nav>
+  <main>
+    <section class="stage"><iframe id="preview" src="option-1.html" title="Option 1 preview"></iframe></section>
+    <aside><h2 id="title">Option 1 — List → bottom sheet</h2><p id="copy">Thumb-friendly continuity. Inspect and light a climb without losing list position.</p><a id="direct" href="option-1.html" target="_blank">Open this option directly ↗</a></aside>
+  </main>
+  <script>
+    const preview=document.querySelector('#preview'),title=document.querySelector('#title'),copy=document.querySelector('#copy'),direct=document.querySelector('#direct');
+    document.querySelectorAll('nav button').forEach(button=>button.addEventListener('click',()=>{
+      document.querySelectorAll('nav button').forEach(item=>item.setAttribute('aria-selected','false'));
+      button.setAttribute('aria-selected','true');preview.src=button.dataset.file;preview.title=button.dataset.title+' preview';
+      title.textContent=button.dataset.title;copy.textContent=button.dataset.copy;direct.href=button.dataset.file;
+    }));
+  </script>
+</body>
+</html>

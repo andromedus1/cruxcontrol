@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Climb browser — chosen responsive hybrid</title>
+    <link rel="stylesheet" href="../../design-system/tokens.css" />
+    <link rel="stylesheet" href="../../design-system/components.css" />
+    <link rel="stylesheet" href="../../design-system/motion.css" />
+    <style>
+      .mock-meta {
+        padding: 8px 14px;
+        background: #090618;
+        color: #dcd7ba;
+        font: 12px/1.4 system-ui;
+      }
+      .app {
+        min-height: 760px;
+      }
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(320px, 38%) 1fr;
+        min-height: 700px;
+      }
+      .rail {
+        border-right: 1px solid var(--color-border);
+        background: var(--color-bg-secondary);
+      }
+      .tools {
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+      }
+      .selected {
+        background: var(--color-accent-muted);
+      }
+      .detail {
+        padding: 20px;
+        display: grid;
+        grid-template-columns: minmax(300px, 560px) minmax(220px, 1fr);
+        gap: 20px;
+      }
+      .board {
+        position: relative;
+        min-height: 560px;
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        background:
+          radial-gradient(
+            circle at 22% 80%,
+            var(--color-role-start) 0 8px,
+            transparent 9px
+          ),
+          radial-gradient(
+            circle at 43% 58%,
+            var(--color-role-middle) 0 8px,
+            transparent 9px
+          ),
+          radial-gradient(
+            circle at 70% 24%,
+            var(--color-role-finish) 0 8px,
+            transparent 9px
+          ),
+          radial-gradient(
+            circle at 63% 87%,
+            var(--color-role-foot) 0 8px,
+            transparent 9px
+          ),
+          radial-gradient(
+              circle,
+              var(--color-border-strong) 0 6px,
+              transparent 7px
+            )
+            8px 12px / 46px 46px,
+          repeating-linear-gradient(
+            90deg,
+            transparent 0 47px,
+            var(--color-border) 48px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            transparent 0 47px,
+            var(--color-border) 48px
+          ),
+          var(--color-bg-secondary);
+      }
+      .board::after {
+        content: "Schematic holds — exact Fullride reference image and placement transform land with the renderer";
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+        max-width: 250px;
+        padding: 5px 7px;
+        border-radius: var(--radius-sm);
+        background: color-mix(in srgb, var(--color-bg-primary) 88%, transparent);
+        color: var(--color-text-secondary);
+        font: 10px/1.35 var(--font-mono);
+      }
+      .mobile-sheet {
+        display: none;
+      }
+      .detail h1 {
+        margin: 6px 0;
+      }
+      .detail-link {
+        display: inline-block;
+        margin-top: 12px;
+      }
+      @media (max-width: 720px) {
+        .app {
+          position: relative;
+          overflow: hidden;
+          max-width: 430px;
+          margin: auto;
+        }
+        .workspace {
+          display: block;
+        }
+        .rail {
+          border: 0;
+        }
+        .detail {
+          display: none;
+        }
+        .mobile-sheet {
+          display: block;
+          position: absolute;
+          left: 0;
+          bottom: 0;
+          width: 100%;
+          padding: 12px;
+          background: var(--color-bg-secondary);
+          border: 1px solid var(--color-border);
+          border-radius: 16px 16px 0 0;
+          box-shadow: 0 -16px 45px #0007;
+        }
+        .sheet-grid {
+          display: grid;
+          grid-template-columns: 115px 1fr;
+          gap: 12px;
+        }
+        .sheet-board {
+          height: 145px;
+          border: 1px solid var(--color-border);
+          border-radius: 8px;
+          background:
+            radial-gradient(
+              circle at 25% 78%,
+              var(--color-role-start) 0 5px,
+              transparent 6px
+            ),
+            radial-gradient(
+              circle at 52% 58%,
+              var(--color-role-middle) 0 5px,
+              transparent 6px
+            ),
+            radial-gradient(
+              circle at 70% 35%,
+              var(--color-role-finish) 0 5px,
+              transparent 6px
+            ),
+            radial-gradient(
+              circle at 66% 86%,
+              var(--color-role-foot) 0 5px,
+              transparent 6px
+            ),
+            radial-gradient(
+                circle,
+                var(--color-border-strong) 0 3px,
+                transparent 4px
+              )
+              4px 5px / 22px 22px,
+            var(--color-bg-tertiary);
+        }
+        .mobile-sheet h2 {
+          margin: 0;
+        }
+        .mobile-sheet p {
+          margin: 3px 0;
+          color: var(--color-text-secondary);
+          font-size: 13px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="mock-meta">
+      <strong>Chosen hybrid</strong> · phone bottom sheet + wide split console +
+      dedicated full detail
+    </header>
+    <main class="app">
+      <div class="top-bar">
+        <b>Fullride 7×10 / 40°</b
+        ><span class="board-status board-status--connected">CONNECTED</span>
+      </div>
+      <div class="workspace">
+        <aside class="rail">
+          <div class="tools">
+            <input class="input" placeholder="Search name or setter" />
+            <div class="filter-chips">
+              <button class="filter-chip filter-chip--active">V4–V7</button
+              ><button class="filter-chip filter-chip--active">40°</button
+              ><button class="filter-chip">4★+</button>
+            </div>
+          </div>
+          <div class="climb-row selected">
+            <div>
+              <div class="climb-row__name">Crimp Odyssey</div>
+              <div class="climb-row__meta">Nat · 214 ascents · 12 holds</div>
+            </div>
+            <div class="metric">V6<br />4.2★</div>
+          </div>
+          <div class="climb-row">
+            <div>
+              <div class="climb-row__name">Warm Tea</div>
+              <div class="climb-row__meta">Maya · 87 ascents · 9 holds</div>
+            </div>
+            <div class="metric">V4<br />4.6★</div>
+          </div>
+          <div class="climb-row">
+            <div>
+              <div class="climb-row__name">Paper Lantern</div>
+              <div class="climb-row__meta">Finn · 301 ascents · 11 holds</div>
+            </div>
+            <div class="metric">V5<br />4.4★</div>
+          </div>
+        </aside>
+        <section class="detail">
+          <div class="board"></div>
+          <div>
+            <span class="badge">V6</span>
+            <h1>Crimp Odyssey</h1>
+            <p style="color: var(--color-text-secondary)">
+              Nat · 12 holds · consensus stable
+            </p>
+            <div class="role-legend">
+              <span class="role role--start">Start</span
+              ><span class="role role--middle">Middle</span
+              ><span class="role role--finish">Finish</span
+              ><span class="role role--foot">Foot only</span>
+            </div>
+            <button class="btn btn-primary btn--block">Light this climb</button
+            ><button
+              class="btn btn-secondary btn--block"
+              style="margin-top: 8px"
+            >
+              Add to playlist</button
+            ><a class="detail-link" href="option-2.html"
+              >Open full climb detail →</a
+            >
+          </div>
+        </section>
+      </div>
+      <aside class="mobile-sheet motion-enter">
+        <div class="sheet-grid">
+          <div class="sheet-board"></div>
+          <div>
+            <h2>Crimp Odyssey</h2>
+            <p>V6 · 40° · 4.2★</p>
+            <button class="btn btn-primary btn--block">Light this climb</button
+            ><a class="detail-link" href="option-2.html">Full details →</a>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </body>
+</html>

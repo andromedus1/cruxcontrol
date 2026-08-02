@@ -1,3 +1,17 @@
+---
+description: Read when configuring or troubleshooting CruxControl's Cloudflare deployment
+type: planning
+kind: planning
+updated: 2026-08-02
+summary: >
+  Operator runbook for the CI-gated Cloudflare Workers Static Assets deployment,
+  including secrets, opt-in enablement, branch protection, and verification.
+decisions:
+  - "Deploy only from a green main-branch CI run after explicit ENABLE_DEPLOY opt-in."
+  - "Use least-scope Cloudflare credentials stored as GitHub repository secrets."
+  - "Protect main and ship application changes through pull requests."
+---
+
 # Deploy
 
 CruxControl ships as a static SPA to **Cloudflare Workers (Static Assets)**. CI

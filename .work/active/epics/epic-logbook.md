@@ -8,10 +8,20 @@ depends_on: [epic-climb-browser]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-08-02
 ---
 
 # Logbook & Sessions
+
+## Mockups
+
+- Inherits locked design system: `.mockups/design-system/`
+
+## Design decisions
+
+- **First-milestone persistence**: attempts, sends, notes, and session grouping are
+  local-first and exportable.
+- **Provider synchronization**: account-backed logbook sync is deferred.
 
 ## Brief
 

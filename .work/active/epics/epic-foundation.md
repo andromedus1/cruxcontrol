@@ -8,7 +8,7 @@ depends_on: []
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-14
+updated: 2026-08-02
 ---
 
 # Foundation: Web App Scaffolding + Local Catalog
@@ -64,6 +64,12 @@ feature-design pass — do not re-ask.
 - **Language**: TypeScript throughout `/web` (robustness for distribution).
 - **CI/remote**: repo is `andromedus1/cruxcontrol`; foundation includes a GitHub Actions
   CI (build/test/lint) + branch protection so all subsequent features merge via PR.
+- **First-milestone browser support**: Android and desktop Chromium only. The drafted
+  IndexedDB fallback remains deferred; Safari/Firefox/iOS browse support is not part of
+  the first autopilot scope. — confirmed 2026-08-02.
+- **First-run catalog setup**: show snapshot source, download size, and offline-storage
+  effect, then automatically download/install the Fullride 7x10 snapshot after user
+  confirmation. — confirmed 2026-08-02.
 
 ## UI alignment
 
@@ -92,7 +98,9 @@ why it's isolated and on the critical path to the catalog.
 - `epic-foundation-sqlite-readpath` — wa-sqlite OPFSCoopSyncVFS in a Web Worker + data-layer port impl + IDB fallback — depends on: `[epic-foundation-scaffold]`
 - `epic-foundation-pwa-shell` — vite-plugin-pwa, manifest, service worker, install, offline shell — depends on: `[epic-foundation-scaffold]`
 - `epic-foundation-catalog-bootstrap` — fetch-on-first-run `kilter.db` → OPFS + first-run UX + BoardLib snapshot — depends on: `[epic-foundation-sqlite-readpath]`
-- `epic-foundation-sqlite-idb-fallback` — `IDBBatchAtomicVFS` fallback + runtime VFS selection for non-OPFS browsers; split out of `sqlite-readpath` during feature-design (deferred — board control needs Chromium anyway) — depends on: `[epic-foundation-sqlite-readpath]`
+- Deferred backlog: `epic-foundation-sqlite-idb-fallback` — `IDBBatchAtomicVFS`
+  fallback for browse-only Safari/Firefox; explicitly outside the first Android/desktop
+  Chromium milestone.
 
 ### Decomposition risks
 - **wa-sqlite Worker (sqlite-readpath) is the riskiest unit** — OPFS sync-access-handle behavior varies by browser; the IDB fallback and a fixture-DB test suite mitigate. Build it before catalog-bootstrap commits to a load path.

@@ -1,0 +1,11 @@
+/*
+ * CruxControl motion — generated 2026-08-02
+ * Attitude: productive + calm; touch-first; motion-light
+ * Input-gating budget: instant 80ms / quick 180ms; ambient 600ms background only
+ * Principles: press compression + restrained settle; hold beat omitted
+ * Reduced motion: required
+ */
+:root{--motion-emphasized:cubic-bezier(.2,0,0,1);--motion-standard:cubic-bezier(.4,0,.2,1);--motion-productive:cubic-bezier(0,0,.2,1);--motion-expressive:cubic-bezier(.34,1.3,.64,1);--motion-linear:linear;--dur-instant:80ms;--dur-quick:180ms;--dur-ambient:600ms;--squash-on-press:.98;--follow-through-settle:translateY(-2px)}
+.motion-press{transition:transform var(--dur-instant) var(--motion-productive)}.motion-press:active{transform:scale(var(--squash-on-press))}.motion-enter{animation:motion-enter var(--dur-quick) var(--motion-emphasized) both}.motion-settle{animation:motion-settle var(--dur-quick) var(--motion-expressive) both}.motion-progress{transition:width var(--dur-quick) var(--motion-productive)}
+@keyframes motion-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes motion-settle{0%{opacity:0;transform:translateY(6px)}75%{opacity:1;transform:var(--follow-through-settle)}100%{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){:root{--dur-instant:1ms;--dur-quick:1ms;--dur-ambient:1ms}.motion-enter,.motion-settle{animation:none}.motion-press:active{transform:none}}

@@ -8,7 +8,7 @@ depends_on: [epic-foundation-sqlite-readpath]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-14
+updated: 2026-08-02
 ---
 
 # Catalog Bootstrap (fetch-on-first-run)
@@ -44,12 +44,17 @@ implement incremental sync (epic-catalog-sync) or browsing UI.
 
 ## Design decisions
 
+- **First-run consent**: present catalog source, download size, and offline-storage
+  impact, then install automatically after explicit confirmation. Generate reproducible
+  snapshots now, but do not publicly deploy community climb data until its
+  redistribution basis is verified. — confirmed 2026-08-02.
+
 Captured during `feature-design --only-questions` (2026-06-14):
 
 1. **Snapshot scope = pruned to the Fullride 7x10.** The BoardLib step emits only
    the layout(s)/sizes/holds + shared tables (climbs, climb_stats, placements, holes,
    leds, placement_roles, difficulty_grades, …) relevant to the Fullride 7x10, not
-   the full ~85MB catalog. Aligns with VISION's single-board scope, shrinks the
+   the full ~85MB catalog. Aligns with the Fullride-first milestone, shrinks the
    one-time download, and is what makes same-origin hosting viable (decision 2).
    Re-pruning is needed only if multi-board is ever scoped in (a known, accepted
    `Layout specificity` risk in ARCHITECTURE).

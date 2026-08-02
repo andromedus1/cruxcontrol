@@ -8,10 +8,16 @@ depends_on: [epic-grade-prediction, epic-logbook]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-08-02
 ---
 
 # Personalized Training & Recommendations
+
+## Design decisions
+
+- **Delivery status**: deferred with grade prediction. The reliable Kilter wall-session
+  loop and broader catalog acquisition precede recommendation work. — confirmed
+  2026-08-02.
 
 ## Brief
 

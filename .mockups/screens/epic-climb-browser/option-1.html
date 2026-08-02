@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Climb browser — List to sheet</title>
+    <link rel="stylesheet" href="../../design-system/tokens.css" />
+    <link rel="stylesheet" href="../../design-system/components.css" />
+    <link rel="stylesheet" href="../../design-system/motion.css" />
+    <style>
+      .mock-meta {
+        padding: 8px 14px;
+        background: #090618;
+        color: #dcd7ba;
+        font: 12px/1.4 system-ui;
+      }
+    .app {
+      position: relative;
+      overflow: hidden;
+      max-width: 430px;
+        min-height: 760px;
+        margin: auto;
+        background: var(--color-bg-primary);
+      }
+      .tools {
+        position: sticky;
+        top: 0;
+        padding: 12px;
+        background: var(--color-bg-primary);
+        display: grid;
+        gap: 8px;
+      }
+      .list {
+        background: var(--color-bg-secondary);
+      }
+    .sheet {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+        padding: 12px;
+        background: var(--color-bg-secondary);
+        border: 1px solid var(--color-border);
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -16px 45px #0007;
+      }
+      .grab {
+        width: 38px;
+        height: 4px;
+        border-radius: 3px;
+        background: var(--color-border-strong);
+        margin: 0 auto 10px;
+      }
+      .sheet-grid {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 14px;
+      }
+      .board {
+        height: 155px;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        background:
+          radial-gradient(
+            circle at 25% 78%,
+            var(--color-role-start) 0 5px,
+            transparent 6px
+          ),
+          radial-gradient(
+            circle at 52% 58%,
+            var(--color-role-middle) 0 5px,
+            transparent 6px
+          ),
+          radial-gradient(
+            circle at 70% 35%,
+            var(--color-role-finish) 0 5px,
+            transparent 6px
+          ),
+          linear-gradient(
+            80deg,
+            var(--color-bg-tertiary),
+            var(--color-bg-secondary)
+          );
+      }
+      .sheet h2 {
+        margin: 0;
+      }
+      .sheet p {
+        margin: 3px 0;
+        color: var(--color-text-secondary);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="mock-meta">
+      <strong>Option 1 — List → bottom sheet</strong> · thumb-friendly
+      continuity; never loses scroll position
+    </header>
+    <main class="app">
+      <div class="top-bar">
+        <b>Climbs</b
+        ><span class="board-status board-status--connected">CONNECTED</span>
+      </div>
+      <section class="tools">
+        <input class="input" placeholder="Search name or setter" />
+        <div class="filter-chips">
+          <button class="filter-chip filter-chip--active">V4–V7</button
+          ><button class="filter-chip filter-chip--active">40°</button
+          ><button class="filter-chip">4★+</button
+          ><button class="filter-chip">Unsent</button>
+        </div>
+      </section>
+      <div class="list">
+        <div class="climb-row">
+          <div>
+            <div class="climb-row__name">Crimp Odyssey</div>
+            <div class="climb-row__meta">Nat · 214 ascents · 12 holds</div>
+          </div>
+          <div class="climb-row__metrics">
+            <span class="metric">V6</span><span class="metric">4.2★</span>
+          </div>
+        </div>
+        <div class="climb-row">
+          <div>
+            <div class="climb-row__name">Warm Tea</div>
+            <div class="climb-row__meta">Maya · 87 ascents · 9 holds</div>
+          </div>
+          <div class="climb-row__metrics">
+            <span class="metric">V4</span><span class="metric">4.6★</span>
+          </div>
+        </div>
+        <div class="climb-row">
+          <div>
+            <div class="climb-row__name">Paper Lantern</div>
+            <div class="climb-row__meta">Finn · 301 ascents · 11 holds</div>
+          </div>
+          <div class="climb-row__metrics">
+            <span class="metric">V5</span><span class="metric">4.4★</span>
+          </div>
+        </div>
+      </div>
+      <nav class="bottom-nav">
+        <a class="nav-item nav-item--active">Climbs</a
+        ><a class="nav-item">Create</a><a class="nav-item">Session</a
+        ><a class="nav-item">More</a>
+      </nav>
+      <aside class="sheet motion-enter">
+        <div class="grab"></div>
+        <div class="sheet-grid">
+          <div class="board"></div>
+          <div>
+            <h2>Crimp Odyssey</h2>
+            <p><span class="badge">V6</span> 40° · 4.2★</p>
+            <p>Start low left. Finish high right.</p>
+            <button class="btn btn-primary btn--block motion-press">
+              Light this climb
+            </button>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </body>
+</html>

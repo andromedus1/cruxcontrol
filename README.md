@@ -52,7 +52,7 @@ no backend, no accounts; each user runs their own client with local data.
 npm install          # installs the web workspace
 npm run dev          # vite dev server
 npm run build        # static production build → web/dist
-npm test             # vitest (44 tests)
+npm test             # vitest (24 tests)
 npm run typecheck    # tsc --noEmit (strict)
 npm run lint         # eslint
 npm run format       # prettier --write

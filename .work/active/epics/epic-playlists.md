@@ -8,10 +8,21 @@ depends_on: [epic-climb-browser]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-08-02
 ---
 
 # Playlists: Curated Climb Lists
+
+## Mockups
+
+- Inherits locked design system: `.mockups/design-system/`
+
+## Design decisions
+
+- **Identity and portability**: ordered local lists reference stable namespaced climb
+  IDs and share through portable links/files.
+- **Board use**: a connected client can step through and light playlist climbs; all
+  browsing, ordering, and sharing remains usable without a board connection.
 
 ## Brief
 

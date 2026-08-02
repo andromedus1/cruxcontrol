@@ -2,21 +2,23 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-06-14
+updated: 2026-08-02
 nav_priority: high
 summary: >
-  High-level architecture for CruxControl: an offline-first web app over a local
-  SQLite catalog (synced from the Kilter API), a Web Bluetooth BLE layer driving
-  the board, a climb browser + 2D renderer, a route editor, a logbook/session
-  store, and a Python-side ML pipeline serving in-browser inference. This is the
-  high-level shape; module-level designs are produced per-epic in the substrate.
+  High-level architecture for a Kilter-first climbing-board platform: typed board
+  definitions and namespaced identities, independent catalog providers and
+  controller profiles, on-demand local catalogs, and a Fullride 7x10 first slice.
 decisions:
-  - "Offline-first React + Vite SPA (TypeScript) with local SQLite (wa-sqlite OPFSCoopSyncVFS in a Web Worker, IndexedDB fallback) as the read path."
+  - "Offline-first React + Vite SPA (TypeScript) with local SQLite (wa-sqlite AccessHandlePoolVFS in a Web Worker, IndexedDB fallback) as the read path."
   - "BLE isolated behind a Web Bluetooth adapter implementing the API-level-3 packet protocol."
   - "Sync engine is a separate module wrapping POST /sync with incremental shared_syncs cursors."
   - "ML training is offline (Python); inference runs in-browser via ONNX Runtime Web (WASM)."
   - "Distributed to friends as a static, backendless, installable PWA (no app server/accounts); React + Vite chosen for distribution robustness."
   - "This doc stays high-level; detailed module design lives in epic/feature item bodies."
+  - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
+  - "Provider-native records and provenance are retained beside the normalized read model."
+  - "Catalogs are installed per provider/layout; a universal bundled database is rejected."
+  - "A native iOS shell, if prioritized, exposes a narrow CoreBluetooth transport bridge to the shared application core."
 ---
 
 # CruxControl — Architecture
@@ -28,27 +30,31 @@ feature item bodies in `.work/`, not here. Capabilities are in
 
 ## Module Map
 
-1. **Data Layer** — local SQLite catalog via `wa-sqlite` (OPFSCoopSyncVFS) in a
-   Web Worker (IndexedDB fallback), behind the `CatalogPort` interface — the read
-   path for all climb/hold/stats queries. Schema mirrors the official Kilter DB.
-2. **Sync Engine** — wraps `POST kilterboardapp.com/sync`, drives incremental
-   updates via `shared_syncs` cursors, and bootstraps from a BoardLib-downloaded
-   DB. Owns all network I/O against the Kilter API.
-3. **BLE Adapter** — Web Bluetooth layer. Encapsulates scan/connect and encodes
-   LED commands per the API-level-3 packet protocol (framing, checksums,
-   multi-packet splitting). The only module that talks to the board.
-4. **Board Renderer** — 2D visual board for the Fullride 7x10 layout: hold
-   positions, role colors, selection. Shared by browser, editor, and player.
-5. **Climb Browser** — fast filtered browsing + shareable-URL routing over the
+1. **Board Domain & Installation Registry** — provider-neutral identities for
+   board definitions, immutable layout revisions, installations, climbs, roles,
+   grades, and capabilities. It binds a local installation to compatible catalog
+   and controller adapters.
+2. **Data Layer** — on-demand local SQLite catalogs via `wa-sqlite`
+   (`AccessHandlePoolVFS`) in a Web Worker (IndexedDB fallback), behind domain query
+   ports. Native records and provenance sit beside a normalized read model.
+3. **Catalog Providers** — source-specific import/sync adapters. Kilter is first;
+   later Aurora-family and MoonBoard providers are separately researched. Network,
+   auth, reconciliation, and policy metadata remain outside domain and UI code.
+4. **Controller Profiles & Transports** — profiles own discovery and command
+   encoding; transports own platform I/O. The first pair is Aurora API-level-3 over
+   Web Bluetooth. A future iOS shell may supply CoreBluetooth behind the same port.
+5. **Board Renderer** — definition-driven geometry, role colors, and selection.
+   Fullride 7x10 is the first validated definition, not a renderer constant.
+6. **Climb Browser** — fast filtered browsing + shareable-URL routing over the
    Data Layer; drives the renderer and the BLE Adapter to play a climb.
-6. **Route Editor** — tap-to-place visual editor producing `frames` strings;
-   local drafts + publish via the Sync Engine.
-7. **Logbook & Sessions** — local store of ascents/attempts/sessions with
+7. **Route Editor** — tap-to-place visual editor producing a normalized climb;
+   provider adapters own source-native encoding and optional publication.
+8. **Logbook & Sessions** — local store of ascents/attempts/sessions with
    analytics; optional push to the Kilter API via the Sync Engine.
-8. **Playlists** — local store of user-curated, ordered climb-reference lists;
+9. **Playlists** — local store of user-curated, ordered namespaced climb references;
    reuses the renderer + shareable-URL routing, and drives the BLE Adapter for
    board play-through. A CruxControl-local construct (no Kilter counterpart).
-9. **ML Pipeline** — offline (Python): feature extraction from the catalog →
+10. **ML Pipeline** — offline (Python): feature extraction from the catalog →
    training dataset → grade-prediction model. Exports a model for in-browser
    inference (ONNX Runtime Web / WASM); feeds prediction + recommendation features back
    into the app.
@@ -56,53 +62,56 @@ feature item bodies in `.work/`, not here. Capabilities are in
 ## Data Flow
 
 ```
-Kilter API ──POST /sync──▶ Sync Engine ──▶ Local SQLite (Data Layer)
-                                              │
-                  ┌───────────────────────────┼───────────────────────┐
-                  ▼                            ▼                        ▼
-            Climb Browser              Route Editor              ML Pipeline
-                  │                            │                  (offline, Python)
-                  ▼                            ▼                        │
-            Board Renderer ◀───────────────────┘                        ▼
-                  │                                            exported model
-                  ▼                                                     │
-             BLE Adapter ──Web Bluetooth──▶ Physical Board               ▼
-                                                          in-browser inference
-  Logbook & Sessions ◀── user logs ──▶ (optional) Sync Engine ──▶ Kilter API
+Provider source ──▶ Catalog adapter ──▶ native + normalized local catalog
+                                                │
+Board definition ──▶ Installation registry ─────┼──▶ Browser / Editor / Logbook
+         │                                      │              │
+         └──────────────────────────────▶ Renderer              ▼
+                                                   controller command
+                                                           │
+                               Controller profile ◀────────┘
+                                         │
+                             Web Bluetooth transport ──▶ Physical board
+                             (future: native iOS bridge)
 ```
 
-The catalog read path (SQLite) is fully offline. Only the Sync Engine and BLE
-Adapter cross a boundary (network and Bluetooth respectively); both are isolated
-so the rest of the app is testable without hardware or network.
+Catalog reads are fully offline. Only provider adapters and controller transports
+cross network/device boundaries, so domain, rendering, browsing, editing, and
+logging remain testable without hardware or network.
 
 ## Conventions
 
-- **Ports & adapters at the edges.** BLE, the Kilter API, and the local catalog
-  (`CatalogPort`) sit behind adapter interfaces; the UI and domain never call Web
-  Bluetooth, `fetch`, or `wa-sqlite` directly.
+- **Ports & adapters at real edges.** Provider APIs, catalog storage, and controller
+  transports sit behind typed interfaces; UI/domain never call Web Bluetooth,
+  `fetch`, `wa-sqlite`, or provider-native SQL directly.
+- **Three-axis composition.** Board definitions, catalog providers, and controller
+  profiles vary independently and meet only through an explicit installation.
+- **Namespaced immutable identity.** Links and user data reference provider + source
+  ID + layout revision, never a bare climb ID or mutable display name.
+- **Preserve source truth.** Normalized tables are query projections. Native payloads,
+  grades, versions, attribution, and provenance remain available for reconciliation.
 - **Single source of truth.** The local SQLite catalog is the read model; the
   logbook store is the source of truth for personal data.
 - **Generated over hand-written.** Catalog data, feature tables, and the model
   come from pipelines, not manual curation.
 - **Offline-first.** Every read works without network; sync is a background
   reconciliation, not a precondition.
-- **Static, backendless distribution.** The whole app is client-side and ships as a
+- **Static-first distribution.** The initial app is client-side and ships as a
   static, installable PWA hosted on Cloudflare Workers (Static Assets). No application server, no
   accounts, no shared database — each friend's client is fully independent with
   browser-local storage. The only "backends" the client talks to are the Kilter sync
-  API (over the network) and the board (over BLE).
+  API (over the network) and the board (over BLE). A narrowly scoped service is
+  allowed later only for a provider or collaboration constraint demonstrated by research.
 
 ## Key Dependencies
 
-The architecture's intended dependency set. Each is installed as its epic/feature
-lands — today only React 19 + Vite 6 (the scaffold) are installed; wa-sqlite,
-vite-plugin-pwa, ONNX Runtime Web, and the Cloudflare Workers deploy arrive with their
-respective foundation/ML features.
+The architecture's intended dependency set. React, Vite, wa-sqlite, Comlink, and
+vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 
 | Dependency | Role |
 |---|---|
 | React 19 + Vite 6 (TypeScript) | Client-only SPA framework + build tooling |
-| `wa-sqlite` (OPFSCoopSyncVFS) | In-browser SQLite read path (in a Web Worker; IndexedDB fallback) |
+| `wa-sqlite` (`AccessHandlePoolVFS`) | In-browser SQLite read path (in a Web Worker; IndexedDB fallback) |
 | `vite-plugin-pwa` (Workbox) | Service worker + manifest — offline shell, installability |
 | Web Bluetooth API | Browser → board BLE (Chromium only) |
 | BoardLib (Python) | Bootstrap the SQLite catalog; sync-protocol reference |
@@ -125,7 +134,18 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
 - **ML signal quality.** Whether hold-placement features predict consensus grade
   well enough to be useful is an open empirical question — validate early.
 - **Layout specificity.** Hard-coding to the Fullride 7x10 trades generality for
-  speed; revisit only if multi-board support is ever scoped in.
+  speed; definitions must carry geometry and revisions before browser/editor work
+  spreads those assumptions.
+- **Provider access and rights.** APIs and exports are unstable, and technical access
+  does not establish redistribution permission. Every provider needs explicit policy,
+  provenance, refresh, and deletion handling.
+- **False universality.** Aurora-family controllers share machinery, but layouts,
+  firmware generations, and MoonBoard protocols differ. Compatibility is declared
+  and tested per controller profile.
+- **Catalog scale.** Multiple community catalogs can exceed practical bundle/browser
+  limits, so catalogs are partitioned and installed per provider/layout.
+- **iOS control.** WebKit does not expose Web Bluetooth. Direct iPhone control needs
+  a native CoreBluetooth bridge; the web client remains useful in browse-only mode.
 
 ## History
 

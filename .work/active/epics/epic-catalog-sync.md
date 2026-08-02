@@ -4,19 +4,24 @@ kind: epic
 stage: drafting
 tags: [data]
 parent: null
-depends_on: [epic-foundation]
+depends_on: [epic-universal-board-platform]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-08-02
+research_refs:
+  - docs/briefs/data-model.md
+  - docs/briefs/catalog-sync-api.md
+  - .research/analysis/landscapes/climbing-board-ecosystem.md
 ---
 
 # Catalog Sync: Incremental Updates from the Kilter API
 
 ## Brief
 
-Keeps the local catalog fresh after the one-time BoardLib bootstrap. This epic owns
-the sync engine: the `POST kilterboardapp.com/sync` protocol, incremental updates
+Keeps the first Kilter provider catalog fresh after the BoardLib bootstrap. This epic
+implements the universal catalog-provider contract and owns the Kilter sync engine:
+the `POST kilterboardapp.com/sync` protocol, incremental updates
 driven by `shared_syncs` timestamps, and (optionally) the authenticated paths needed
 for personal data and publishing. It is the only module that performs network I/O
 against the Kilter API.

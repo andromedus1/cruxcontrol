@@ -8,7 +8,7 @@ depends_on: [epic-foundation]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-08-02
 ---
 
 # Grade Prediction (ML)
@@ -69,3 +69,10 @@ Provisional (firmed up after the research campaign):
 - Model training + evaluation (per the chosen approach)
 - Model export + in-browser inference (ONNX.js / TF.js)
 - Sandbag/soft-route divergence surfacing
+
+## Design decisions
+
+- **Delivery status**: deferred until catalog acquisition across additional board
+  communities is researched and available. Broader data acquisition should precede
+  training so model scope and transferability can be reconsidered with real data. —
+  confirmed 2026-08-02.

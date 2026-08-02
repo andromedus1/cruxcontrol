@@ -4,7 +4,7 @@ kind: epic
 stage: drafting
 tags: [ui]
 parent: null
-depends_on: [epic-climb-browser, epic-catalog-sync]
+depends_on: [epic-climb-browser, epic-board-control]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
@@ -43,14 +43,15 @@ updated: 2026-08-02
 
 ## Brief
 
-The authoring capability: a visual editor to create climbs by tapping holds on the
-board diagram, assigning roles (start/middle/finish/foot-only), saving drafts locally,
-and publishing to the Kilter API. Reuses the board renderer + selection surface from
-epic-climb-browser and the authenticated publish path from epic-catalog-sync.
+The first-milestone authoring capability: a visual editor to create climbs by tapping
+holds on the board diagram, assigning roles (start/middle/finish/foot-only) or custom
+light colors, saving unrestricted drafts locally, and lighting them on the configured
+board. Reuses the board renderer from epic-climb-browser and the transport from
+epic-board-control. Kilter publishing remains deferred.
 
-When done, a user can build a new climb visually, persist it as a local draft, and
-publish it. It does NOT introduce a new renderer or a new API client — it composes the
-ones the browser and sync epics provide.
+When done, a user can build a new climb visually, persist it as a local draft in any
+state, and light it. It does NOT introduce a new renderer or transport — it composes
+the ones the browser and board-control epics provide.
 
 ## Research briefs
 
@@ -73,4 +74,5 @@ Provisional:
 - Tap-to-place editor producing valid frames strings
 - Role assignment UI (start/middle/finish/foot-only)
 - Local draft persistence
-- Publish flow via the sync/auth client
+- Advanced full-color lighting and optional connected Live Preview
+- Kilter publish flow remains deferred

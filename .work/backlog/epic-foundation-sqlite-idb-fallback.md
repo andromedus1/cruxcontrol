@@ -8,10 +8,16 @@ depends_on: [epic-foundation-sqlite-readpath]
 release_binding: null
 gate_origin: null
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-08-02
 ---
 
 # In-Browser SQLite — IndexedDB Fallback VFS
+
+## Backlog status
+
+Deferred from the first Android/desktop Chromium milestone by user decision on
+2026-08-02. Promote through `/agile-workflow:scope` when browse-only Safari/Firefox
+support becomes a delivery priority.
 
 ## Brief
 

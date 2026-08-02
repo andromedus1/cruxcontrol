@@ -4,33 +4,52 @@
 # schema_version controls lint mode:
 #   1 = grace (missing v2 fields produce warnings, not errors)
 #   2 = enforce (missing v2 fields are errors)
+# Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-06-15T01:47:56Z
+generated_at: 2026-08-02T15:36:17Z
 generated_from: frontmatter
-total_docs: 20
+total_docs: 23
 
 documents:
+  # ── planning ──────────────────────────────────────────────────────────────
+
   - path: docs/ARCHITECTURE.md
-    title: "CruxControl — Architecture"
+    title: CruxControl — Architecture
     type: planning
     kind: planning
-    updated: 2026-06-14
-    nav_priority: high
-    consumer_hint: "CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks"
+    updated: 2026-08-02
+    consumer_hint: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
+
+  - path: docs/DEPLOY.md
+    title: Deploy
+    type: planning
+    kind: planning
+    updated: 2026-08-02
+    consumer_hint: Read when configuring or troubleshooting CruxControl's Cloudflare deployment
+
+  - path: docs/PRINCIPLES.md
+    title: CruxControl — Principles
+    type: planning
+    kind: planning
+    updated: 2026-08-02
+    consumer_hint: Product and engineering principles governing CruxControl decisions
+
   - path: docs/SPEC.md
-    title: "CruxControl — Specification"
+    title: CruxControl — Specification
     type: planning
     kind: planning
-    updated: 2026-06-14
-    nav_priority: high
-    consumer_hint: "CruxControl capabilities, domain model, constraints, and non-functional requirements"
+    updated: 2026-08-02
+    consumer_hint: CruxControl capabilities, domain model, constraints, and non-functional requirements
+
   - path: docs/VISION.md
-    title: "CruxControl — Vision"
+    title: CruxControl — Vision
     type: planning
     kind: planning
-    updated: 2026-06-13
-    nav_priority: high
-    consumer_hint: "CruxControl vision, problem, audience, principles, and non-goals"
+    updated: 2026-08-02
+    consumer_hint: CruxControl vision, problem, audience, principles, and non-goals
+
+  # ── research ──────────────────────────────────────────────────────────────
+
   - path: .research/briefs/cloudflare-deploy/parent.md
     title: "Research: Cloudflare Deploy Path for CruxControl"
     type: brief
@@ -39,24 +58,26 @@ documents:
     status: draft
     research_method: /research
     blocks_phase: epic-foundation-ci-deploy
-    nav_priority: high
-    consumer_hint: "Read before designing epic-foundation-ci-deploy — which Cloudflare target (Workers vs Pages) and deploy mechanism (GitHub Actions vs native Git) for a distributable static React+Vite PWA"
+    consumer_hint: Read before designing epic-foundation-ci-deploy — which Cloudflare target (Workers vs Pages) and deploy mechanism (GitHub Actions vs native Git) for a distributable static React+Vite PWA
+
   - path: .research/briefs/kilter-grade-prediction/classical-models.md
-    title: "Classical models on engineered features for Kilter grade prediction"
+    title: Classical models on engineered features for Kilter grade prediction
     type: brief
     kind: research
     updated: 2026-06-13
     status: draft
     research_method: /deep-research
-    consumer_hint: "Classical / gradient-boosted-tree models for predicting Kilter Board climb difficulty from engineered tabular features, including regression-vs-ordinal framing, expected accuracy, overfitting controls, and interpretability for sandbag detection."
+    consumer_hint: Classical / gradient-boosted-tree models for predicting Kilter Board climb difficulty from engineered tabular features, including regression-vs-ordinal framing, expected accuracy, overfitting controls, and interpretability for sandbag detection.
+
   - path: .research/briefs/kilter-grade-prediction/deep-representation-models.md
-    title: "Deep representation-learning models for Kilter grade prediction"
+    title: Deep representation-learning models for Kilter grade prediction
     type: brief
     kind: research
     updated: 2026-06-13
     status: draft
     research_method: /deep-research
-    consumer_hint: "Deep representation-learning models (CNN, GNN, sequence/Transformer) for predicting Kilter Board climb difficulty from hold placements, roles, and board angle — when each family fits, their inductive biases, data requirements, and in-browser export implications."
+    consumer_hint: Deep representation-learning models (CNN, GNN, sequence/Transformer) for predicting Kilter Board climb difficulty from hold placements, roles, and board angle — when each family fits, their inductive biases, data requirements, and in-browser export implications.
+
   - path: .research/briefs/kilter-grade-prediction/evaluation-methodology.md
     title: "Evaluation & Validation Methodology: Kilter Board Grade Prediction"
     type: brief
@@ -64,33 +85,36 @@ documents:
     updated: 2026-06-13
     status: draft
     research_method: /deep-research
-    consumer_hint: "Evaluation and validation methodology for ML models predicting Kilter Board climb difficulty from hold placements, roles, and angle, targeting per-angle community-consensus grade."
+    consumer_hint: Evaluation and validation methodology for ML models predicting Kilter Board climb difficulty from hold placements, roles, and angle, targeting per-angle community-consensus grade.
+
   - path: .research/briefs/kilter-grade-prediction/feature-engineering.md
-    title: "Feature Engineering for Kilter Grade Prediction"
+    title: Feature Engineering for Kilter Grade Prediction
     type: brief
     kind: research
     updated: 2026-06-14
     status: draft
     research_method: /deep-research
-    consumer_hint: "Feature engineering for predicting Kilter Board climb difficulty from frames, hold (x,y) coordinates, hold roles, and board angle — the frames→geometry decoding pipeline and the geometric/graph features prior MoonBoard/Kilter grade-prediction work found predictive."
+    consumer_hint: Feature engineering for predicting Kilter Board climb difficulty from frames, hold (x,y) coordinates, hold roles, and board angle — the frames→geometry decoding pipeline and the geometric/graph features prior MoonBoard/Kilter grade-prediction work found predictive.
+
   - path: .research/briefs/kilter-grade-prediction/in-browser-inference.md
-    title: "In-Browser Inference and Deployment"
+    title: In-Browser Inference and Deployment
     type: brief
     kind: research
     updated: 2026-06-14
     status: draft
     research_method: /deep-research
-    consumer_hint: "In-browser inference and deployment paths for a Kilter Board grade-prediction model trained offline in Python and served client-only in a PWA — ONNX Runtime Web vs TensorFlow.js, tree-to-ONNX conversion, WASM/SIMD backends, model size/latency, and feature-extraction parity to avoid train/serve skew."
+    consumer_hint: In-browser inference and deployment paths for a Kilter Board grade-prediction model trained offline in Python and served client-only in a PWA — ONNX Runtime Web vs TensorFlow.js, tree-to-ONNX conversion, WASM/SIMD backends, model size/latency, and feature-extraction parity to avoid train/serve skew.
+
   - path: .research/briefs/kilter-grade-prediction/parent.md
-    title: "Kilter Grade Prediction — Campaign Synthesis"
+    title: Kilter Grade Prediction — Campaign Synthesis
     type: brief
     kind: research
     updated: 2026-06-13
     status: draft
     research_method: /deep-research
     blocks_phase: epic-grade-prediction
-    nav_priority: high
-    consumer_hint: "The synthesis of the Kilter grade-prediction research campaign — the recommended ML approach for predicting per-angle community-consensus difficulty from hold placements/roles/angle, training offline in Python and running inference in-browser. Read before designing the epic-grade-prediction work."
+    consumer_hint: The synthesis of the Kilter grade-prediction research campaign — the recommended ML approach for predicting per-angle community-consensus difficulty from hold placements/roles/angle, training offline in Python and running inference in-browser. Read before designing the epic-grade-prediction work.
+
   - path: .research/briefs/kilter-grade-prediction/prior-work-datasets.md
     title: "Prior Work & Datasets: Kilter Board Grade Prediction"
     type: brief
@@ -98,7 +122,8 @@ documents:
     updated: 2026-06-13
     status: draft
     research_method: /deep-research
-    consumer_hint: "Survey of existing grade-prediction work and reusable datasets for Kilter Board and MoonBoard — what's been built, what accuracy was reached, and the reusable datasets/lessons that ground a Kilter difficulty-prediction effort."
+    consumer_hint: Survey of existing grade-prediction work and reusable datasets for Kilter Board and MoonBoard — what's been built, what accuracy was reached, and the reusable datasets/lessons that ground a Kilter difficulty-prediction effort.
+
   - path: docs/briefs/board-control-web-bluetooth.md
     title: "Brief: Board Control over Web Bluetooth (Integration Layer)"
     type: brief
@@ -107,8 +132,8 @@ documents:
     status: draft
     research_method: /brief
     blocks_phase: epic-board-control
-    nav_priority: high
-    consumer_hint: "Read before designing epic-board-control — Web Bluetooth connection lifecycle, GATT, and reliability patterns for driving the Kilter board"
+    consumer_hint: Read before designing epic-board-control — Web Bluetooth connection lifecycle, GATT, and reliability patterns for driving the Kilter board
+
   - path: docs/briefs/board-rendering-and-filtering.md
     title: "Brief: Board Rendering & Catalog Filtering (Climb Browser)"
     type: brief
@@ -117,8 +142,8 @@ documents:
     status: draft
     research_method: /brief
     blocks_phase: epic-climb-browser
-    nav_priority: high
-    consumer_hint: "Read before designing epic-climb-browser — how to render the 2D board and filter the catalog, grounded in Climbdex prior art"
+    consumer_hint: Read before designing epic-climb-browser — how to render the 2D board and filter the catalog, grounded in Climbdex prior art
+
   - path: docs/briefs/catalog-sync-api.md
     title: "Brief: Catalog Sync & the Kilter API (Sync Engine)"
     type: brief
@@ -127,15 +152,15 @@ documents:
     status: draft
     research_method: /brief
     blocks_phase: epic-catalog-sync
-    nav_priority: high
-    consumer_hint: "Read before designing epic-catalog-sync — the Kilter sync protocol, what BoardLib does, and the auth boundary for user/publish data"
+    consumer_hint: Read before designing epic-catalog-sync — the Kilter sync protocol, what BoardLib does, and the auth boundary for user/publish data
+
   - path: docs/briefs/data-model.md
     title: "Kilter Board Data Model: A Technical Primer"
     type: brief
     kind: research
     updated: 2026-06-13
-    nav_priority: high
-    consumer_hint: "Kilter Board SQLite schema, frames encoding, hold roles, grading system, and the sync/web API"
+    consumer_hint: Kilter Board SQLite schema, frames encoding, hold roles, grading system, and the sync/web API
+
   - path: docs/briefs/foundation-pwa-sqlite.md
     title: "Brief: Distributable Offline-First PWA + In-Browser SQLite (Foundation)"
     type: brief
@@ -144,15 +169,15 @@ documents:
     status: draft
     research_method: /brief
     blocks_phase: epic-foundation
-    nav_priority: high
-    consumer_hint: "Read before designing epic-foundation — which framework, in-browser SQLite approach, and PWA/hosting strategy for a distributable CruxControl"
+    consumer_hint: Read before designing epic-foundation — which framework, in-browser SQLite approach, and PWA/hosting strategy for a distributable CruxControl
+
   - path: docs/briefs/hardware-and-protocol.md
-    title: "Kilter Board Fullride 7x10 -- Technical Primer"
+    title: Kilter Board Fullride 7x10 -- Technical Primer
     type: brief
     kind: research
     updated: 2026-06-13
-    nav_priority: high
-    consumer_hint: "Kilter Board Fullride 7x10 hardware, BLE/Nordic UART packet protocol, LED system, and angle adjustment"
+    consumer_hint: Kilter Board Fullride 7x10 hardware, BLE/Nordic UART packet protocol, LED system, and angle adjustment
+
   - path: docs/briefs/recommendations-and-training.md
     title: "Brief: Recommendations & Training Methodology"
     type: brief
@@ -161,8 +186,8 @@ documents:
     status: draft
     research_method: /brief
     blocks_phase: epic-recommendations
-    nav_priority: high
-    consumer_hint: "Read before designing epic-recommendations — content-based recsys for a single user + climbing-training methodology for circuits, weakness, and progression"
+    consumer_hint: Read before designing epic-recommendations — content-based recsys for a single user + climbing-training methodology for circuits, weakness, and progression
+
   - path: .research/briefs/kilter-grade-prediction/campaign.md
     title: "Campaign Report: Kilter Grade Prediction"
     type: program-report
@@ -170,12 +195,22 @@ documents:
     updated: 2026-06-13
     status: draft
     research_method: /deep-research
-    consumer_hint: "Quality report + metadata for the Kilter grade-prediction deep-research campaign"
+    consumer_hint: Quality report + metadata for the Kilter grade-prediction deep-research campaign
+
+  - path: .research/analysis/landscapes/climbing-board-ecosystem.md
+    title: Climbing-board ecosystem landscape
+    type: research-analysis
+    kind: research
+    updated: 2026-08-02
+    consumer_hint: Current prior-art landscape for universal climbing-board control, catalogs, and user-data portability
+
+  # ── historical ──────────────────────────────────────────────────────────────
+
   - path: docs/architecture/history/north-star.md
-    title: "CruxControl -- North Star Document"
+    title: CruxControl -- North Star Document
     type: historical
     kind: historical
     updated: 2026-06-13
     status: superseded
     superseded_by: docs/ARCHITECTURE.md
-    consumer_hint: "Original combined ideation doc for CruxControl — superseded by VISION/SPEC/ARCHITECTURE"
+    consumer_hint: Original combined ideation doc for CruxControl — superseded by VISION/SPEC/ARCHITECTURE

@@ -3,6 +3,9 @@
 ## Release mapping
 tag-based
 
+## Review weight
+review_weight: standard
+
 ## Tag taxonomy
 - ble          board communication: Web Bluetooth, Nordic UART packet protocol, LED commands
 - data         catalog + sync pipeline: SQLite, frames encoding, kilterboardapp.com/sync

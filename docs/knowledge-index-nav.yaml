@@ -3,55 +3,56 @@
 # Provides corpus situational awareness only. Read knowledge-index.yaml for full index.
 
 schema_version: 3
-generated_at: 2026-06-15T01:47:56Z
+generated_at: 2026-08-02T15:36:17Z
 generated_from: frontmatter
-total_docs: 20
+total_docs: 23
 
 by_kind:
-  planning: 3
-  research: 16
+  planning: 5
+  research: 17
   historical: 1
 
+# Substrate items (.work/) by tier. Query via .work/bin/work-view.
 substrate_summary:
   active:
-    epic: 9
+    epic: 8
     feature: 6
     story: 0
     release: 0
-  backlog: 0
+  backlog: 5
+  releases: {}
   archive: 0
 
+# Top 15 most-recently-updated docs (planning + research only).
 recent:
-  - path: .research/briefs/cloudflare-deploy/parent.md
-    title: "Research: Cloudflare Deploy Path for CruxControl"
-    kind: research
-    updated: 2026-06-14
   - path: docs/ARCHITECTURE.md
     title: "CruxControl — Architecture"
     kind: planning
-    updated: 2026-06-14
+    updated: 2026-08-02
+  - path: docs/DEPLOY.md
+    title: "Deploy"
+    kind: planning
+    updated: 2026-08-02
+  - path: docs/PRINCIPLES.md
+    title: "CruxControl — Principles"
+    kind: planning
+    updated: 2026-08-02
   - path: docs/SPEC.md
     title: "CruxControl — Specification"
     kind: planning
-    updated: 2026-06-14
-  - path: .research/briefs/kilter-grade-prediction/parent.md
-    title: "Kilter Grade Prediction — Campaign Synthesis"
-    kind: research
-    updated: 2026-06-13
+    updated: 2026-08-02
   - path: docs/VISION.md
     title: "CruxControl — Vision"
     kind: planning
-    updated: 2026-06-13
+    updated: 2026-08-02
 
+# Docs flagged with nav_priority: high in frontmatter — read at session start.
 load_bearing:
-  - path: .research/briefs/cloudflare-deploy/parent.md
-    title: "Research: Cloudflare Deploy Path for CruxControl"
-    kind: research
-  - path: .research/briefs/kilter-grade-prediction/parent.md
-    title: "Kilter Grade Prediction — Campaign Synthesis"
-    kind: research
   - path: docs/ARCHITECTURE.md
     title: "CruxControl — Architecture"
+    kind: planning
+  - path: docs/PRINCIPLES.md
+    title: "CruxControl — Principles"
     kind: planning
   - path: docs/SPEC.md
     title: "CruxControl — Specification"
@@ -59,6 +60,12 @@ load_bearing:
   - path: docs/VISION.md
     title: "CruxControl — Vision"
     kind: planning
+  - path: .research/briefs/cloudflare-deploy/parent.md
+    title: "Research: Cloudflare Deploy Path for CruxControl"
+    kind: research
+  - path: .research/briefs/kilter-grade-prediction/parent.md
+    title: "Kilter Grade Prediction — Campaign Synthesis"
+    kind: research
   - path: docs/briefs/board-control-web-bluetooth.md
     title: "Brief: Board Control over Web Bluetooth (Integration Layer)"
     kind: research
@@ -81,5 +88,6 @@ load_bearing:
     title: "Brief: Recommendations & Training Methodology"
     kind: research
 
+# On-demand layers (Read tool):
 full_index_path: docs/knowledge-index.yaml
 detail_index_path: docs/knowledge-index-detail.yaml
