@@ -21,6 +21,7 @@ decisions:
   - "A native iOS shell, if prioritized, exposes a narrow CoreBluetooth transport bridge to the shared application core."
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority."
   - "Unrestricted locally authored climbs use a dedicated versioned IndexedDB repository with Draft/Finished and recoverable-Trash lifecycle, separate from provider catalogs."
+  - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
 ---
 
 # CruxControl — Architecture
@@ -77,8 +78,13 @@ feature item bodies in `.work/`, not here. Capabilities are in
    manually ordered local/provider climb references. Runtime resolution preserves
    unavailable Trash, missing, or incompatible-board entries without cross-database
    writes. Play-through keeps position ephemeral and delegates preview, connection,
-   and explicit serialized lighting to the existing climb-detail/controller boundary;
-   shareable-URL routing builds on the local aggregate later. A CruxControl-local
+   and explicit serialized lighting to the existing climb-detail/controller boundary.
+   Portable export snapshots resolvable local climb content without sender-local IDs
+   and preserves namespaced provider references in a strict independently versioned
+   envelope. Fragment URLs are used only below the bounded URL limit; lossless JSON
+   files remain available for every valid export. Import performs a write-free
+   compatibility preview, then creates fresh climbs in order and the fresh playlist
+   last, with reverse-order compensation for partial failure. A CruxControl-local
    construct (no Kilter counterpart).
 10. **ML Pipeline** — offline (Python): feature extraction from the catalog →
     training dataset → grade-prediction model. Exports a model for in-browser
@@ -107,7 +113,10 @@ Editor ──▶ Local climb repository ──▶ native IndexedDB
 
 Lists ──▶ Local playlist repository ──▶ separate native IndexedDB
   └──▶ read-time climb resolver ──▶ available / Trash / missing entry view
-                                   └──▶ ephemeral play-through ──▶ Renderer / controller
+  │                                └──▶ ephemeral play-through ──▶ Renderer / controller
+  ├──▶ portable snapshot envelope ──▶ fragment URL / JSON file
+  └──◀ preview + compatibility gate ── imported envelope
+                 └──▶ fresh climb copies, then fresh playlist (compensated on failure)
 ```
 
 Local climb reads and writes are fully offline. Installed catalog reads are likewise

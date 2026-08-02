@@ -218,3 +218,88 @@ test('persists multi-list membership, manual order, and Trash-safe resolution', 
   await expect(page.getByText('1 of 2')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Moon Arete' })).toBeVisible();
 });
+
+test('exports and imports a two-climb list as fresh persistent local copies', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await createFinishedClimb(page, 'Tidal Wave', 1);
+  await createFinishedClimb(page, 'Moon Arete', 2);
+
+  await page.getByRole('button', { name: /Lists.*0 lists/ }).click();
+  await page.getByLabel('New list').fill('Portable projects');
+  await page.getByRole('button', { name: 'Create list' }).click();
+
+  await page.getByRole('button', { name: /My Climbs.*2 climbs/ }).click();
+  await page.getByRole('button', { name: /Tidal Wave/ }).click();
+  await page.getByRole('button', { name: 'Add to lists' }).click();
+  await page.getByRole('checkbox', { name: 'Portable projects' }).check();
+  await expect(page.getByRole('checkbox', { name: 'Portable projects' })).toBeChecked();
+  await page.getByRole('button', { name: 'Close lists' }).click();
+
+  await page.getByRole('button', { name: /Moon Arete/ }).click();
+  await page.getByRole('button', { name: 'Add to lists' }).click();
+  await page.getByRole('checkbox', { name: 'Portable projects' }).check();
+  await expect(page.getByRole('checkbox', { name: 'Portable projects' })).toBeChecked();
+  await page.getByRole('button', { name: 'Close lists' }).click();
+
+  await page.getByRole('button', { name: /Lists.*1 list/ }).click();
+  await page.getByRole('button', { name: /Portable projects.*2 climbs/ }).click();
+  const climbsBefore = await readStoredClimbs(page);
+  const [sourcePlaylist] = (await readStoredPlaylists(page)).filter(
+    ({ name }) => name === 'Portable projects',
+  );
+  expect(sourcePlaylist).toBeDefined();
+
+  await page.getByRole('button', { name: 'Share list' }).click();
+  await expect(page.getByRole('heading', { name: 'Share list' })).toBeVisible();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download file' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('Portable projects.cruxplaylist.json');
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  await page.getByRole('button', { name: 'Close sharing' }).click();
+
+  await page.getByRole('button', { name: 'Import list' }).click();
+  await page.getByLabel('Playlist file').setInputFiles(downloadPath!);
+  await expect(page.getByRole('heading', { name: 'Portable projects' })).toBeVisible();
+  await expect(page.getByText('New local climb copies').locator('..')).toContainText('2');
+  expect(await readStoredClimbs(page)).toHaveLength(2);
+  expect(await readStoredPlaylists(page)).toHaveLength(1);
+  await page.getByRole('button', { name: 'Import as new list' }).click();
+  await expect(page.getByRole('button', { name: /Portable projects.*2 climbs/ })).toHaveCount(2);
+
+  const climbsAfter = await readStoredClimbs(page);
+  const playlistsAfter = (await readStoredPlaylists(page)).filter(
+    ({ name }) => name === 'Portable projects',
+  );
+  expect(climbsAfter).toHaveLength(4);
+  expect(playlistsAfter).toHaveLength(2);
+  const importedPlaylist = playlistsAfter.find(({ id }) => id !== sourcePlaylist!.id)!;
+  const originalIds = (sourcePlaylist!.entries as { kind: string; id: string }[]).map(
+    ({ id }) => id,
+  );
+  const importedIds = (importedPlaylist.entries as { kind: string; id: string }[]).map(
+    ({ id }) => id,
+  );
+  expect(importedIds).toHaveLength(2);
+  expect(importedIds.every((id) => !originalIds.includes(id))).toBe(true);
+  const climbsById = new Map(climbsAfter.map((climb) => [climb.id, climb]));
+  const originalById = new Map(climbsBefore.map((climb) => [climb.id, climb]));
+  expect(importedIds.map((id) => climbsById.get(id)?.name)).toEqual(
+    originalIds.map((id) => originalById.get(id)?.name),
+  );
+  expect(importedIds.map((id) => climbsById.get(id)?.status)).toEqual(
+    originalIds.map((id) => originalById.get(id)?.status),
+  );
+  expect(importedIds.map((id) => climbsById.get(id)?.assignments)).toEqual(
+    originalIds.map((id) => originalById.get(id)?.assignments),
+  );
+
+  await page.reload();
+  await page.getByRole('button', { name: /Lists.*2 lists/ }).click();
+  await expect(page.getByRole('button', { name: /Portable projects.*2 climbs/ })).toHaveCount(2);
+  expect(
+    (await readStoredPlaylists(page)).filter(({ name }) => name === 'Portable projects'),
+  ).toHaveLength(2);
+});

@@ -127,7 +127,14 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Draft and Finished climbs may belong to multiple lists. Trash, catalog absence,
   or permanent climb deletion leaves an explicit unavailable reference in place
   until the user removes it; restoring a local climb resolves the same membership.
-- Shareable URL per playlist (like shareable climb URLs).
+- Export a playlist through a bounded shareable URL fragment when it fits and through
+  a complete JSON file for every valid list. Resolvable browser-local memberships are
+  immutable climb snapshots without local IDs, revisions, installation identity, or
+  Trash state; provider memberships remain namespaced references.
+- Import URL and file payloads through the same strict compatibility preview with no
+  writes before confirmation. Confirmation creates a fresh list and fresh local climb
+  copies in exact order, never overwrites existing records, and retains unresolved
+  provider references with an explicit warning.
 - **Play-through on the board:** when connected, step through the playlist
   climb-by-climb, lighting each in turn. Without a board connection the playlist
   is still fully usable for browsing/sharing.
@@ -181,6 +188,10 @@ The model mirrors the official Kilter SQLite schema (see
   resolve Trash or missing climbs without rewriting membership rows. Exact-order
   play-through keeps navigation position ephemeral, remains browsable while
   disconnected, and lights only through the existing explicit controller action.
+  Portable sharing uses a versioned local-snapshot/provider-reference envelope with
+  bounded fragment links and lossless files. Import previews compatibility before any
+  write, creates fresh identities, and compensates created climb copies if list
+  creation fails.
 - The editor is responsive at Android-phone and desktop Chromium widths, retains
   persistent save/light actions, and exposes named keyboard-operable controls and
   non-color-only role markers.
@@ -189,6 +200,7 @@ The model mirrors the official Kilter SQLite schema (see
   API-level-3 bytes, Bluetooth lifecycle, lighting/preview, and the integrated
   create-save-light seams. Playwright Chromium covers autosave/reload/reopen,
   multi-list membership/order, Trash/restore resolution, ephemeral play-through, and
+  portable list export/import with fresh identities and preserved content/order, plus
   compact/wide interaction.
 - Physical behavior on a powered Fullride 7x10 through Android Chrome remains a
   pending manual acceptance checkpoint; automated approval does not claim it passed.

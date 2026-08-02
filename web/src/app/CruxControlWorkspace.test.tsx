@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { draftRevision, localDraftId } from '../drafts/codec';
 import { DraftConflictError } from '../drafts/errors';
 import type { LocalDraftRepository } from '../drafts/repository';
@@ -7,6 +7,8 @@ import { draftContent } from '../drafts/test-fixtures';
 import type { DraftContent, LocalClimbDraft } from '../drafts/types';
 import { layoutRevisionId } from '../domain/boards/identity';
 import { playlistId, playlistRevision } from '../playlists/codec';
+import { encodePlaylistFragment } from '../playlists/portable-codec';
+import type { PortablePlaylistV1 } from '../playlists/portable-types';
 import type { LocalPlaylistRepository } from '../playlists/repository';
 import type { LocalPlaylist } from '../playlists/types';
 import type { CruxControlRuntime } from './create-runtime';
@@ -22,6 +24,10 @@ const original: LocalClimbDraft = {
   updatedAt: '2026-08-02T00:00:00.000Z',
   metadata: {},
 };
+
+afterEach(() => {
+  window.history.replaceState(null, '', '/');
+});
 
 function persisted(
   id: LocalClimbDraft['id'],
@@ -90,6 +96,35 @@ function playlist(name: string, entries: LocalPlaylist['entries'] = []): LocalPl
 }
 
 describe('CruxControlWorkspace', () => {
+  it('routes a startup share hash straight to a write-free import preview and clears it on cancel', async () => {
+    const portable: PortablePlaylistV1 = {
+      format: 'cruxcontrol-playlist',
+      schemaVersion: 1,
+      exportedAt: '2026-08-02T00:00:00.000Z',
+      playlist: {
+        name: 'Shared from URL',
+        notes: 'Review before importing.',
+        entries: [],
+      },
+    };
+    const fragment = encodePlaylistFragment(portable);
+    window.history.replaceState(null, '', fragment);
+    const runtime = runtimeWith();
+
+    render(<CruxControlWorkspace runtime={runtime} />);
+
+    expect(await screen.findByRole('heading', { name: 'Shared from URL' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Lists.*0 lists/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(runtime.drafts.create).not.toHaveBeenCalled();
+    expect(runtime.playlists.create).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(window.location.hash).toBe('');
+  });
+
   it('partitions finished climbs, Drafts, and Trash with visible counts', async () => {
     const finished = persisted(
       localDraftId('22222222-2222-4222-8222-222222222222'),

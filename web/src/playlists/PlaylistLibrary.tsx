@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BoardLightController } from '../board-control/light-controller.ts';
+import type { LocalDraftRepository } from '../drafts/repository.ts';
 import type { LocalClimbDraft, LocalDraftId } from '../drafts/types.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
+import type { ConfiguredBoardInstallation } from '../installations/contracts.ts';
 import { playlistReferenceKey } from './codec.ts';
+import { PlaylistImportDialog } from './PlaylistImportDialog.tsx';
 import { PlaylistPlayThrough } from './PlaylistPlayThrough.tsx';
+import { PlaylistShareDialog } from './PlaylistShareDialog.tsx';
+import type { PlaylistHistoryAdapter } from './portable-history.ts';
+import type { PlaylistTransportAdapters } from './portable-transports.ts';
 import type { LocalPlaylistRepository } from './repository.ts';
 import { resolvePlaylistEntries, type ResolvedPlaylistEntry } from './resolve.ts';
 import type { LocalPlaylist, PlaylistId } from './types.ts';
@@ -19,12 +25,18 @@ export interface PlaylistLibraryProps {
   readonly playlists: readonly LocalPlaylist[];
   readonly localClimbs: readonly LocalClimbDraft[];
   readonly repository: LocalPlaylistRepository;
+  readonly draftRepository: LocalDraftRepository;
+  readonly installation: ConfiguredBoardInstallation;
   readonly definition: BoardDefinition;
   readonly controller?: BoardLightController | null;
   readonly compatibilityIssue: (draft: LocalClimbDraft) => string | null;
   readonly onChanged: (playlist: LocalPlaylist | null) => void;
   readonly onRefresh: () => Promise<void>;
   readonly onOpenLocalClimb: (id: LocalDraftId) => void;
+  readonly initialImportFragment?: string | null;
+  readonly history?: PlaylistHistoryAdapter;
+  readonly transports?: PlaylistTransportAdapters;
+  readonly shareBaseUrl?: URL;
 }
 
 function entryLabel(entry: ResolvedPlaylistEntry): string {
@@ -38,12 +50,18 @@ export function PlaylistLibrary({
   playlists,
   localClimbs,
   repository,
+  draftRepository,
+  installation,
   definition,
   controller,
   compatibilityIssue,
   onChanged,
   onRefresh,
   onOpenLocalClimb,
+  initialImportFragment = null,
+  history,
+  transports,
+  shareBaseUrl,
 }: PlaylistLibraryProps) {
   const playlistsRef = useRef(playlists);
   const [selectedId, setSelectedId] = useState<PlaylistId | null>(playlists[0]?.id ?? null);
@@ -51,8 +69,12 @@ export function PlaylistLibrary({
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
   const [playingId, setPlayingId] = useState<PlaylistId | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [importing, setImporting] = useState(() => Boolean(initialImportFragment));
   const [status, setStatus] = useState('');
   const [error, setError] = useState<RetryState | null>(null);
+  const importButtonRef = useRef<HTMLButtonElement>(null);
+  const shareButtonRef = useRef<HTMLButtonElement>(null);
   playlistsRef.current = playlists;
 
   const selected = playlists.find(({ id }) => id === selectedId) ?? null;
@@ -191,6 +213,14 @@ export function PlaylistLibrary({
   };
   const playing = Boolean(selected && selected.id === playingId && resolved.length > 0);
 
+  function closePortableDialog(kind: 'share' | 'import') {
+    if (kind === 'share') setSharing(false);
+    else setImporting(false);
+    queueMicrotask(() => {
+      (kind === 'share' ? shareButtonRef : importButtonRef).current?.focus();
+    });
+  }
+
   return (
     <section
       className={`playlist-library${playing ? ' playlist-library--playing' : ''}`}
@@ -202,6 +232,14 @@ export function PlaylistLibrary({
             <p className="eyebrow">Fullride 7×10</p>
             <h1 id="playlist-library-heading">Lists</h1>
           </div>
+          <button
+            ref={importButtonRef}
+            className="button button--secondary"
+            type="button"
+            onClick={() => setImporting(true)}
+          >
+            Import list
+          </button>
         </header>
         <form
           className="playlist-create"
@@ -297,6 +335,14 @@ export function PlaylistLibrary({
                 </span>
                 <button className="button button--secondary" type="submit">
                   Save changes
+                </button>
+                <button
+                  ref={shareButtonRef}
+                  className="button button--secondary"
+                  type="button"
+                  onClick={() => setSharing(true)}
+                >
+                  Share list
                 </button>
                 <button
                   className="button button--primary"
@@ -401,6 +447,31 @@ export function PlaylistLibrary({
           </section>
         )}
       </div>
+      {selected && sharing && (
+        <PlaylistShareDialog
+          playlist={selected}
+          localClimbs={localClimbs}
+          baseUrl={shareBaseUrl}
+          transports={transports}
+          onClose={() => closePortableDialog('share')}
+        />
+      )}
+      {importing && (
+        <PlaylistImportDialog
+          installation={installation}
+          drafts={draftRepository}
+          playlists={repository}
+          initialFragment={initialImportFragment}
+          history={history}
+          onImported={async (result) => {
+            onChanged(result.playlist);
+            setSelectedId(result.playlist.id);
+            await onRefresh();
+          }}
+          onRefresh={onRefresh}
+          onClose={() => closePortableDialog('import')}
+        />
+      )}
     </section>
   );
 }

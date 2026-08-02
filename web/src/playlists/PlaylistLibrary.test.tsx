@@ -2,9 +2,11 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { draftRevision, localDraftId } from '../drafts/codec.ts';
+import type { LocalDraftRepository } from '../drafts/repository.ts';
 import { draftContent } from '../drafts/test-fixtures.ts';
 import type { LocalClimbDraft } from '../drafts/types.ts';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
+import { activeInstallationId, createAppInstallationRegistry } from '../app/installations.ts';
 import { playlistId, playlistRevision } from './codec.ts';
 import { PlaylistLibrary } from './PlaylistLibrary.tsx';
 import type { LocalPlaylistRepository } from './repository.ts';
@@ -13,6 +15,7 @@ import type { LocalPlaylist, PlaylistContent } from './types.ts';
 const ACTIVE_ID = localDraftId('00000000-0000-4000-8000-000000000051');
 const TRASHED_ID = localDraftId('00000000-0000-4000-8000-000000000052');
 const MISSING_ID = localDraftId('00000000-0000-4000-8000-000000000053');
+const installation = createAppInstallationRegistry().require(activeInstallationId);
 
 function climb(id: typeof ACTIVE_ID, name: string, trashed = false): LocalClimbDraft {
   return {
@@ -66,6 +69,16 @@ function renderLibrary(initial: readonly LocalPlaylist[], localClimbs: readonly 
       stored = stored.filter((playlist) => playlist.id !== id);
     }),
   };
+  const draftRepository: LocalDraftRepository = {
+    create: vi.fn(),
+    get: vi.fn(),
+    list: vi.fn(),
+    update: vi.fn(),
+    trash: vi.fn(),
+    restore: vi.fn(),
+    deletePermanently: vi.fn(),
+    purgeExpiredTrash: vi.fn(),
+  };
 
   function Harness() {
     const [playlists, setPlaylists] = useState(initial);
@@ -75,6 +88,8 @@ function renderLibrary(initial: readonly LocalPlaylist[], localClimbs: readonly 
         playlists={playlists}
         localClimbs={localClimbs}
         repository={repository}
+        draftRepository={draftRepository}
+        installation={installation}
         definition={definition}
         compatibilityIssue={() => null}
         onChanged={(playlist) => {
@@ -216,5 +231,27 @@ describe('PlaylistLibrary', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Exit play-through' }));
     expect(screen.getByLabelText('List name')).toHaveValue('Mixed list');
     expect(screen.getByLabelText('Notes')).toHaveValue('Keep the order.');
+  });
+
+  it('opens portable dialogs and restores focus to their triggers when they close', async () => {
+    const active = climb(ACTIVE_ID, 'Active climb');
+    const playlist = storedPlaylist({
+      name: 'Portable list',
+      notes: '',
+      entries: [{ kind: 'local', id: ACTIVE_ID }],
+    });
+    renderLibrary([playlist], [active]);
+
+    const share = await screen.findByRole('button', { name: 'Share list' });
+    fireEvent.click(share);
+    expect(screen.getByRole('heading', { name: 'Share list' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Close sharing' }));
+    await waitFor(() => expect(share).toHaveFocus());
+
+    const importList = screen.getByRole('button', { name: 'Import list' });
+    fireEvent.click(importList);
+    expect(screen.getByRole('heading', { name: 'Import list' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Close import' }));
+    await waitFor(() => expect(importList).toHaveFocus());
   });
 });

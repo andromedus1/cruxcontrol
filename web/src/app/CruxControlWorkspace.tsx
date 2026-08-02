@@ -84,7 +84,9 @@ interface RetryAction {
 export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxControlRuntime }) {
   const [drafts, setDrafts] = useState<readonly LocalClimbDraft[]>([]);
   const [playlists, setPlaylists] = useState<readonly LocalPlaylist[]>([]);
-  const [collection, setCollection] = useState<WorkspaceDestination>('finished');
+  const [collection, setCollection] = useState<WorkspaceDestination>(() =>
+    globalThis.location?.hash.startsWith('#playlist=') ? 'lists' : 'finished',
+  );
   const [editing, setEditing] = useState<LocalDraftId | null>(null);
   const [selectedKey, setSelectedKey] = useState<ClimbViewKey | null>(null);
   const [membershipDraft, setMembershipDraft] = useState<LocalClimbDraft | null>(null);
@@ -367,6 +369,8 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
           playlists={playlists}
           localClimbs={drafts}
           repository={runtime.playlists}
+          draftRepository={runtime.drafts}
+          installation={runtime.installation}
           definition={runtime.installation.definition}
           controller={runtime.controller}
           compatibilityIssue={(draft) => draftCompatibilityIssue(draft, runtime)}
@@ -374,13 +378,16 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
             if (playlist) replacePlaylist(playlist);
             else void refreshPlaylists();
           }}
-          onRefresh={refreshPlaylists}
+          onRefresh={refresh}
           onOpenLocalClimb={(id) => {
             const draft = drafts.find((candidate) => candidate.id === id);
             if (!draft || draft.trashedAt !== undefined) return;
             setCollection(draft.status === 'draft' ? 'drafts' : 'finished');
             setSelectedKey(toClimbViewRecord(draft).key);
           }}
+          initialImportFragment={
+            globalThis.location?.hash.startsWith('#playlist=') ? globalThis.location.hash : null
+          }
         />
       ) : (
         <LocalClimbViewer
