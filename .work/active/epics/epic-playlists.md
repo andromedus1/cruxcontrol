@@ -4,7 +4,7 @@ kind: epic
 stage: drafting
 tags: [ui]
 parent: null
-depends_on: [epic-climb-browser]
+depends_on: [epic-climb-browser, epic-route-creation-climb-lifecycle]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
@@ -23,6 +23,9 @@ updated: 2026-08-02
   IDs and share through portable links/files.
 - **Board use**: a connected client can step through and light playlist climbs; all
   browsing, ordering, and sharing remains usable without a board connection.
+- **Flexible membership**: one climb can belong to multiple lists, and lists may
+  contain both finished climbs and drafts for uses such as favorites, current
+  projects, and training exercises.
 
 ## Brief
 
