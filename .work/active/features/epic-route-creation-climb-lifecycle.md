@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-climb-lifecycle
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, data]
 parent: epic-route-creation
 depends_on: [epic-route-creation-local-draft-library, epic-route-creation-animated-light-designs]
@@ -202,3 +202,24 @@ reports failures without hiding existing data.
 - **Future playlists**: playlist design must reference stable namespaced local IDs as
   well as provider IDs. This feature preserves the local identity needed for that work
   but does not invent playlist storage prematurely.
+
+## Implementation notes
+
+- Execution capability: GPT-5.6 Sol at xhigh reasoning, selected by the autopilot caller because this feature combines a persisted schema migration, optimistic lifecycle commands, and cross-cutting workspace/editor behavior.
+- Review weight: standard (caller override); implementation stops at `stage: review` for the independent feature review lane.
+- Stories completed: `epic-route-creation-climb-lifecycle-persistence` (`7713660`) and `epic-route-creation-climb-lifecycle-workspace` (`dae679d`) advanced directly to `done` after their scoped verification.
+- Delivered: schema-v3 Draft/Finished and repository-owned Trash metadata; pure v1/v2 migration; active/Drafts/Finished/Trash filters; revision-checked trash, restore, and permanent deletion; inclusive 30-day cleanup; My Climbs/Drafts/Trash counts and contextual actions; incompatible-record recovery; autosaved editor status; and production Chromium lifecycle persistence through reload.
+- Files changed: lifecycle aggregate/repository/codec and tests under `web/src/drafts/`; workspace, viewer, editor/autosave, CSS, component tests, and `web/e2e/local-route-editor.spec.ts`; current-state lifecycle assertions in `docs/SPEC.md` and `docs/ARCHITECTURE.md`.
+- Tests added/removed: added stable-interface and regression coverage for migration, filtering, revision conflicts, retention boundaries, lifecycle UI/actions/errors, incompatible rows, autosave safety, and the full browser flow. Stale assertions/fixtures were updated without deleting, skipping, or weakening behavioral coverage.
+- Simplification: retained one authoritative IndexedDB aggregate/repository and one derived workspace collection rather than adding parallel stores, indexes, or editor persistence paths; atomic mutation and physical deletion primitives are shared.
+- Discrepancies from design: none.
+- Adjacent issues parked: none.
+
+## Integrated verification
+
+- `npm test` — 41 Vitest files, 273 tests passed.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm run build` — production TypeScript/Vite/PWA build passed.
+- `npm run test:e2e -- e2e/local-route-editor.spec.ts` — 2 Chromium tests passed, covering Draft → Finished → Trash → restore → reload and compact-phone editor controls.
+- Test integrity inspection: lifecycle tests exercise production repository/component seams with no skips, tautological assertions, weakened expectations, or mocked-away acceptance behavior; the Playwright flow checks the persisted schema-v3 ID, status, content, and restored Trash metadata directly in IndexedDB.
