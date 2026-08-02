@@ -63,6 +63,17 @@ export interface ConfirmedScreenshotCandidate {
   readonly warningsOverridden: boolean;
 }
 
+export interface ScreenshotImportFailure {
+  readonly sourceName: string;
+  readonly message: string;
+}
+
+export interface ScreenshotImportResult {
+  readonly created: readonly import('../drafts/types').LocalClimbDraft[];
+  readonly skipped: readonly string[];
+  readonly failures: readonly ScreenshotImportFailure[];
+}
+
 export interface SuppliedRingFact {
   readonly column: number;
   readonly row: number;

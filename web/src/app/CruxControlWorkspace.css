@@ -60,6 +60,16 @@
   background: var(--color-bg-secondary);
 }
 
+.workspace-import-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.workspace-import-actions .button {
+  min-height: 44px;
+}
+
 .workspace-error p,
 .incompatible-climbs p {
   margin-top: 0;
@@ -112,5 +122,13 @@
 
   .incompatible-climbs li {
     display: block;
+  }
+
+  .workspace-import-actions {
+    padding-inline: var(--space-2);
+  }
+
+  .workspace-import-actions .button {
+    width: 100%;
   }
 }

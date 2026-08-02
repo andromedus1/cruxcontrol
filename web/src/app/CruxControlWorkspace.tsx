@@ -7,6 +7,7 @@ import { PlaylistLibrary } from '../playlists/PlaylistLibrary';
 import { PlaylistMembershipDialog } from '../playlists/PlaylistMembershipDialog';
 import type { LocalPlaylist } from '../playlists/types';
 import { RouteEditorWorkspace } from '../route-editor/RouteEditorWorkspace';
+import { KilterScreenshotImportDialog } from '../screenshot-import/KilterScreenshotImportDialog';
 import type { CruxControlRuntime } from './create-runtime';
 import './CruxControlWorkspace.css';
 
@@ -90,6 +91,7 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
   const [editing, setEditing] = useState<LocalDraftId | null>(null);
   const [selectedKey, setSelectedKey] = useState<ClimbViewKey | null>(null);
   const [membershipDraft, setMembershipDraft] = useState<LocalClimbDraft | null>(null);
+  const [importingScreenshots, setImportingScreenshots] = useState(false);
   const [error, setError] = useState('');
   const [retryAction, setRetryAction] = useState<RetryAction | null>(null);
 
@@ -364,6 +366,17 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
           </ul>
         </section>
       )}
+      {collection !== 'lists' && collection !== 'trash' && (
+        <div className="workspace-import-actions">
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => setImportingScreenshots(true)}
+          >
+            Import Kilter screenshots
+          </button>
+        </div>
+      )}
       {collection === 'lists' ? (
         <PlaylistLibrary
           playlists={playlists}
@@ -453,6 +466,17 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
           onChanged={replacePlaylist}
           onRefresh={refreshPlaylists}
           onClose={() => setMembershipDraft(null)}
+        />
+      )}
+      {importingScreenshots && (
+        <KilterScreenshotImportDialog
+          installation={runtime.installation}
+          repository={runtime.drafts}
+          onImported={async () => {
+            await refresh();
+            setCollection('drafts');
+          }}
+          onClose={() => setImportingScreenshots(false)}
         />
       )}
     </main>

@@ -19,7 +19,7 @@ describe('supplied Fullride screenshot facts', () => {
       ['Zaddy pinch 6?', 10],
       ['Loop lord 0', 10],
       ['Idk ok', 7],
-      ['“do a kick flip” 4+', 7],
+      ['"do a kick flip" 4+', 7],
       ['Bird claw 6', 9],
       ['Robusto 6', 9],
       ['Sewer type flow 6?', 10],

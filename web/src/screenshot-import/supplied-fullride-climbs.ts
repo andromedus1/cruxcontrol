@@ -108,7 +108,7 @@ const entries: readonly SuppliedFullrideClimb[] = [
   {
     sha256: 'e23025168d368c1b14d71876f7444dd256be3c6ac2c8723190d235f7b8d063aa',
     sourceName: 'Screenshot_20260802-141819.png',
-    name: '“do a kick flip” 4+',
+    name: '"do a kick flip" 4+',
     rings: [
       ...r('finish', [8, 0]),
       ...r('middle', [13, 3], [12, 8], [19, 9]),

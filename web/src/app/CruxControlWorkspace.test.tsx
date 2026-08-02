@@ -96,6 +96,14 @@ function playlist(name: string, entries: LocalPlaylist['entries'] = []): LocalPl
 }
 
 describe('CruxControlWorkspace', () => {
+  it('opens a write-free Kilter screenshot chooser from the climb workspace', async () => {
+    const runtime = runtimeWith();
+    render(<CruxControlWorkspace runtime={runtime} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Import Kilter screenshots' }));
+    expect(screen.getByRole('heading', { name: 'Import Kilter screenshots' })).toBeInTheDocument();
+    expect(runtime.drafts.create).not.toHaveBeenCalled();
+  });
+
   it('routes a startup share hash straight to a write-free import preview and clears it on cancel', async () => {
     const portable: PortablePlaylistV1 = {
       format: 'cruxcontrol-playlist',
