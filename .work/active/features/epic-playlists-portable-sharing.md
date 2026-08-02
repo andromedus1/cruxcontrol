@@ -1,7 +1,7 @@
 ---
 id: epic-playlists-portable-sharing
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, data]
 parent: epic-playlists
 depends_on: [epic-playlists-local-library]
@@ -270,3 +270,57 @@ offer retry without duplicating a successful prior attempt.
 - **Imported effects or placements unsupported locally**: validation uses the active
   definition/layout before writes. The escape hatch is a blocked preview, never a
   degraded or partially stripped climb.
+
+## Implementation notes
+
+- Execution capability: GPT-5.6 Sol at xhigh reasoning. The feature owns an
+  independently versioned untrusted-input boundary, browser capability adapters,
+  multi-repository compensation, and responsive interaction, so the parent retained
+  one feature-owning worker across both child units.
+- Review weight: standard (caller and project convention). Implementation stops at
+  `stage: review` for the autopilot orchestrator's independent review pass.
+- Implementation commits: `c4ec44d` (`epic-playlists-portable-sharing-codec`) and
+  `3be978c` (`epic-playlists-portable-sharing-import`). Both child stories are `done`.
+- Files changed: strict portable types/codec/export/transport/history/import modules;
+  Share and Import dialogs; Lists/workspace/CSS integration; focused codec, domain,
+  component, workspace, and Playwright coverage; and current-state architecture and
+  specification updates.
+- Delivered contract: Unicode-safe exact-order envelope round trips, forbidden local
+  authority stripping, path-specific fail-closed validation, bounded fragment/file
+  inputs, lossless file fallback, complete namespaced provider references, preview
+  before writes, fresh local/list identities, list-last execution, reverse compensation
+  with truthful root/cleanup evidence, startup-hash routing and matching-hash clearing,
+  injected browser adapters, truthful async status, success deduplication, focus return,
+  and compact/wide controls without horizontal overflow.
+- Tests added: Unit 1 contributed 26 codec/export/transport tests. Unit 2 contributed 19
+  planner/executor/dialog/integration tests plus a production-build Chromium round trip
+  that exports and imports a two-climb file, proves fresh IDs and preserved content/order,
+  and reloads both persistent lists.
+- Simplification: storage rows are never used as wire records; URL and file imports
+  converge on one pure decoder/planner; execution is isolated from browser effects; and
+  existing playlist, repository, renderer/controller, dialog, button, and status
+  boundaries are reused without another persistence or routing system.
+- Discrepancies from design: `PlaylistImportPlan` includes the active
+  `installationId`, which the designed executor signature otherwise cannot supply to
+  `LocalDraftRepository.create`. No provider catalog resolver exists in the current
+  installation/runtime contract, so provider entries remain in exact order and are
+  truthfully counted unresolved rather than having availability fabricated. Both are
+  routine contract reconciliations and require no stored or portable schema migration.
+- Documentation: `docs/ARCHITECTURE.md` now describes the portable envelope, adapters,
+  preview/compatibility gate, fresh-record execution, and compensation data flow;
+  `docs/SPEC.md` records the shipped URL/file, copy/reference, preview, and fresh-ID
+  behavior plus browser coverage.
+- Adjacent issues parked: none.
+
+## Implementation verification
+
+- Focused Unit 1 verification — 3 files, 26 tests passed.
+- Focused Unit 2 verification — 5 files, 32 tests passed (including existing Lists and
+  workspace integration coverage).
+- Post-child integrated `npm test` — 58 files, 362 tests passed.
+- Post-child `npm run typecheck` — passed.
+- Post-child `npm run lint` — passed.
+- Post-child `npm run build` — TypeScript and Vite production/PWA build passed.
+- Post-child `npm -w web run test:e2e` — all 4 Chromium scenarios passed, including
+  lifecycle, compact Android-sized interaction, list/play-through persistence, and the
+  portable two-climb export/import/reload round trip.
