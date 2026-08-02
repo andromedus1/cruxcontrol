@@ -4,7 +4,10 @@ kind: feature
 stage: implementing
 tags: [ble, ui]
 parent: epic-board-control
-depends_on: [epic-board-control-protocol-codec, epic-board-control-bluetooth-session]
+depends_on:
+  - epic-universal-board-platform-domain-definition
+  - epic-board-control-protocol-codec
+  - epic-board-control-bluetooth-session
 release_binding: null
 gate_origin: null
 created: 2026-08-02
