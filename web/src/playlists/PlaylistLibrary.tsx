@@ -71,6 +71,7 @@ export function PlaylistLibrary({
   const [playingId, setPlayingId] = useState<PlaylistId | null>(null);
   const [sharing, setSharing] = useState(false);
   const [importing, setImporting] = useState(() => Boolean(initialImportFragment));
+  const [pendingImportFragment, setPendingImportFragment] = useState(initialImportFragment);
   const [status, setStatus] = useState('');
   const [error, setError] = useState<RetryState | null>(null);
   const importButtonRef = useRef<HTMLButtonElement>(null);
@@ -215,7 +216,10 @@ export function PlaylistLibrary({
 
   function closePortableDialog(kind: 'share' | 'import') {
     if (kind === 'share') setSharing(false);
-    else setImporting(false);
+    else {
+      setPendingImportFragment(null);
+      setImporting(false);
+    }
     queueMicrotask(() => {
       (kind === 'share' ? shareButtonRef : importButtonRef).current?.focus();
     });
@@ -461,7 +465,7 @@ export function PlaylistLibrary({
           installation={installation}
           drafts={draftRepository}
           playlists={repository}
-          initialFragment={initialImportFragment}
+          initialFragment={pendingImportFragment}
           history={history}
           onImported={async (result) => {
             onChanged(result.playlist);

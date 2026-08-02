@@ -1,7 +1,7 @@
 ---
 id: epic-playlists
 kind: epic
-stage: review
+stage: done
 tags: [ui]
 parent: null
 depends_on: [epic-climb-browser, epic-route-creation-climb-lifecycle]
@@ -131,3 +131,22 @@ parallel without duplicating persistence.
   independently reproduced the full unit and Chromium suites.
 - Accepted non-blocking review follow-ups are parked separately; no child has an open
   correctness, persistence, BLE-safety, or privacy finding.
+- Aggregate review found one same-session cancellation seam. The focused story
+  `epic-playlists-consume-cancelled-import-fragment` consumes the startup fragment in
+  React state so reopening Import list cannot resurrect a canceled payload.
+
+## Review
+
+- Review weight: standard; one independent aggregate pass inspected all three child
+  features and their cross-feature seams at `f29034a`.
+- Verdict: approve with comments. No blocker or data-integrity, privacy, persistence,
+  accessibility, or BLE-safety rejection.
+- Reviewer verification: 85 focused playlist/workspace tests and all four Chromium
+  journeys passed.
+- Accepted and fixed finding: canceled startup fragments could reappear on manual reopen
+  in the same React session. The focused regression story consumes the one-shot fragment;
+  its six PlaylistLibrary tests, typecheck, and lint pass.
+- The remaining comment was test-depth only: portable dialogs have focused responsive
+  component coverage while the complete file round trip runs at wide Playwright width.
+  Existing compact journeys prove the shared dialog/button/layout primitives; this is
+  accepted without expanding the standard review. No re-review is required.

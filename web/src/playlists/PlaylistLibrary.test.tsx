@@ -9,6 +9,7 @@ import { kilterFullride7x10Definition as definition } from '../domain/boards/def
 import { activeInstallationId, createAppInstallationRegistry } from '../app/installations.ts';
 import { playlistId, playlistRevision } from './codec.ts';
 import { PlaylistLibrary } from './PlaylistLibrary.tsx';
+import type { PlaylistHistoryAdapter } from './portable-history.ts';
 import type { LocalPlaylistRepository } from './repository.ts';
 import type { LocalPlaylist, PlaylistContent } from './types.ts';
 
@@ -45,7 +46,14 @@ function storedPlaylist(
   };
 }
 
-function renderLibrary(initial: readonly LocalPlaylist[], localClimbs: readonly LocalClimbDraft[]) {
+function renderLibrary(
+  initial: readonly LocalPlaylist[],
+  localClimbs: readonly LocalClimbDraft[],
+  options: {
+    readonly initialImportFragment?: string;
+    readonly history?: PlaylistHistoryAdapter;
+  } = {},
+) {
   let stored = [...initial];
   let nextId = 70;
   const repository: LocalPlaylistRepository = {
@@ -101,6 +109,8 @@ function renderLibrary(initial: readonly LocalPlaylist[], localClimbs: readonly 
         }}
         onRefresh={refresh}
         onOpenLocalClimb={vi.fn()}
+        initialImportFragment={options.initialImportFragment}
+        history={options.history}
       />
     );
   }
@@ -253,5 +263,22 @@ describe('PlaylistLibrary', () => {
     expect(screen.getByRole('heading', { name: 'Import list' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Close import' }));
     await waitFor(() => expect(importList).toHaveFocus());
+  });
+
+  it('consumes a canceled startup fragment before Import list is reopened', async () => {
+    const replaceWithoutHash = vi.fn();
+    renderLibrary([], [], {
+      initialImportFragment: '#playlist=not-canonical-base64url!',
+      history: { currentHash: () => '#playlist=not-canonical-base64url!', replaceWithoutHash },
+    });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/shared playlist|portable playlist/i);
+    fireEvent.click(screen.getByRole('button', { name: 'Close import' }));
+    await waitFor(() => expect(replaceWithoutHash).toHaveBeenCalledOnce());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Import list' }));
+    expect(screen.getByRole('heading', { name: 'Import list' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Playlist file')).toBeInTheDocument();
   });
 });
