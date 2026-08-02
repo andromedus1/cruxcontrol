@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-local-draft-library
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, data]
 parent: epic-route-creation
 depends_on:
@@ -217,13 +217,13 @@ export function decodeStoredDraft(value: unknown): LocalClimbDraft;
 
 **Acceptance Criteria**:
 
-- [ ] Empty and unconventional drafts round-trip without semantic changes.
-- [ ] All four roles and every packed color `0..255` round-trip exactly and remain
+- [x] Empty and unconventional drafts round-trip without semantic changes.
+- [x] All four roles and every packed color `0..255` round-trip exactly and remain
   distinguishable.
-- [ ] Malformed brands, duplicate placements, invalid timestamps/revisions/colors,
+- [x] Malformed brands, duplicate placements, invalid timestamps/revisions/colors,
   and unknown schema versions fail with a typed path-bearing error rather than being
   dropped or normalized.
-- [ ] Encoding the same draft twice produces deeply equal wire records.
+- [x] Encoding the same draft twice produces deeply equal wire records.
 
 ### Unit 2: Repository contract and errors
 
@@ -305,10 +305,10 @@ export class DraftCorruptRecordError extends DraftRepositoryError {
 
 **Acceptance Criteria**:
 
-- [ ] Create/update/delete behavior is deterministic under injected IDs and clocks.
-- [ ] Stale updates and deletes cannot overwrite or remove newer revisions.
-- [ ] Missing records and persistence failures are distinguishable by stable codes.
-- [ ] List ordering is stable when multiple records share a timestamp.
+- [x] Create/update/delete behavior is deterministic under injected IDs and clocks.
+- [x] Stale updates and deletes cannot overwrite or remove newer revisions.
+- [x] Missing records and persistence failures are distinguishable by stable codes.
+- [x] List ordering is stable when multiple records share a timestamp.
 
 ### Unit 3: Native IndexedDB adapter
 
@@ -361,11 +361,11 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
 
 **Acceptance Criteria**:
 
-- [ ] Data survives repository close/reopen and works with no network or catalog DB.
-- [ ] Concurrent repositories cannot both update or delete from the same expected
+- [x] Data survives repository close/reopen and works with no network or catalog DB.
+- [x] Concurrent repositories cannot both update or delete from the same expected
   revision successfully.
-- [ ] Create never overwrites an existing record; every mutation commits all-or-none.
-- [ ] Upgrade blocking, quota, transaction abort, corrupt row, and unavailable-IDB
+- [x] Create never overwrites an existing record; every mutation commits all-or-none.
+- [x] Upgrade blocking, quota, transaction abort, corrupt row, and unavailable-IDB
   paths produce stable repository errors and preserve existing records.
 
 ### Unit 4: Viewer projection and public module
@@ -394,11 +394,11 @@ export function toClimbViewRecord(draft: LocalClimbDraft): ClimbViewRecord;
 
 **Acceptance Criteria**:
 
-- [ ] A draft's viewer key is stable across updates/reloads and cannot collide with a
+- [x] A draft's viewer key is stable across updates/reloads and cannot collide with a
   provider key namespace.
-- [ ] Viewer projection preserves assignment identity and exact packed colors and
+- [x] Viewer projection preserves assignment identity and exact packed colors and
   exposes only fields in the existing viewer contract.
-- [ ] Importing the module causes no storage access or side effect.
+- [x] Importing the module causes no storage access or side effect.
 
 ## Implementation Order
 
@@ -469,3 +469,30 @@ Kilter frames, or hardware.
   be unavailable or cleared by the user/browser. **Fallback**: truthful unavailable/
   quota errors now and the already-planned explicit export capability later; do not
   claim sync-grade durability.
+
+## Implementation notes
+
+- Execution capability: xhigh — persistence schema, corruption recovery, and atomic
+  optimistic concurrency are high-integrity user-data boundaries.
+- Review weight: standard (caller and project convention); implementation was left at
+  `stage: review` for the orchestrator-owned independent pass.
+- Files changed: `web/src/drafts/{types,codec,errors,repository,open-draft-database,indexeddb-repository,to-climb-view-record,index}.ts`, focused tests and fixtures in the same module, `web/package.json`, and `package-lock.json`.
+- Tests added/removed: codec round trips and malformed-path coverage; reusable
+  repository contract; IndexedDB durability, ordering, filtering, collision,
+  concurrency, atomic-abort, and corruption-retention cases; storage error mapping;
+  viewer projection. No tests removed.
+- Simplification: one structured-clone wire codec is shared by validation, mutation,
+  reads, and projection inputs; no catalog/OPFS coupling or parallel in-memory
+  persistence implementation was introduced.
+- Discrepancies from design: `fake-indexeddb` was selected from the design's permitted
+  strategies because it exercises native request/transaction/index behavior more
+  faithfully than a bespoke clone. Browser-only blocked/version-change callbacks are
+  implemented directly; unavailable factory and error translation use narrow tests.
+- Adjacent issues parked: none.
+
+## Verification evidence
+
+- `npm test` — 32 files, 191 tests passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm run build` — passed, including generated PWA service worker.
