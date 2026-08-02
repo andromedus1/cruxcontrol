@@ -1,7 +1,7 @@
 ---
 id: epic-universal-board-platform-domain-definition
 kind: feature
-stage: implementing
+stage: drafting
 tags: [data]
 parent: epic-universal-board-platform
 depends_on: []
@@ -430,3 +430,39 @@ from its recorded catalog source to prove a clean deterministic diff.
   screw-ons, and 450 LED positions, but the exact scoped placement count must be
   observed. A count mismatch is an evidence discrepancy, not permission to weaken the
   test silently.
+
+## Implementation discovery
+
+Implementation stopped at the required generator spike because the checked-in,
+schema-faithful snapshot contradicts the proposed physical-hold and LED model. The
+snapshot at `web/public/catalog/kilter-7x10.v1.db.gz` was decompressed to a temporary
+directory and queried read-only on 2026-08-02 with the designed product/layout/size/set
+scope (`7` / `8` / `17` / `{26,27}`). It reports:
+
+- 472 scoped placements: 234 Mainline and 238 Auxiliary.
+- 305 unique LEDs for product size 17, with exactly 305 scoped placements joining to
+  an LED and 167 scoped placements having no LED join.
+- 345 scoped placements whose hole coordinates fall inside the product-size bounds;
+  this still does not match the documented 365 total holds.
+- Joined LED counts of 165 Mainline and 140 Auxiliary, which exactly match the
+  documented 305 bolt-on split and strongly suggest that the snapshot's 305 LED rows
+  represent the bolt-on physical map only.
+- Source placement-role IDs `42`, `43`, `44`, and `45`, not the designed
+  `12`, `13`, `14`, and `15`; their source colors are green, cyan, magenta, and orange.
+- Explicit angles `0,5,10,...,70` and size bounds `left=-44`, `right=44`,
+  `bottom=24`, `top=144`.
+
+The central contract currently requires every emitted physical hold to join to exactly
+one LED while also requiring a 365-hold fixture. Those requirements cannot both be
+derived from this snapshot. No fixture, IDs, coordinates, tests, or weakened validator
+were fabricated. Before implementation resumes, design must determine whether the
+first definition should model only the 305 verified LED-addressable bolt-on placements,
+obtain a catalog/fixture that identifies the documented 60 screw-on footholds and their
+LED mapping, or represent non-addressable placements explicitly. The source-role IDs
+must also be corrected to the verified 42–45 values (or derived by semantic source
+fields rather than hard-coded IDs).
+
+Verification evidence: the decompressed SQLite SHA-256 was
+`32b2663c7e699708dc3983d6acf8eff5dd8d458530c680c50ce7f6719c61235f`;
+the committed gzip SHA-256 was
+`68d6d86aad984aca5cf9967d24c818d5bdf2984631b1fe9b9fa1fd30c0edbbbf`.
