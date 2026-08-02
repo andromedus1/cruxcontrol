@@ -8,10 +8,38 @@ depends_on: [epic-climb-browser, epic-catalog-sync]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-08-02
 ---
 
 # Route Creation: Visual Editor + Publish
+
+## Mockups
+
+- Inherits locked design system: `.mockups/design-system/`
+
+## Design decisions
+
+- **First-milestone persistence**: local drafts are authoritative and support export
+  and explicit sharing.
+- **Provider publication**: publishing into Kilter's community is deferred until the
+  current Kilter authentication and API are freshly researched.
+- **Draft validity**: a local draft can be saved in any state, including empty,
+  incomplete, or unconventional role combinations. Kilter/community publication
+  validation is a separate future concern and must never block local saving.
+- **Draft lighting**: any draft state can be sent to the configured board on demand;
+  the editor does not require a conventional number of starts, finishes, middle, or
+  foot-only holds before enabling lighting.
+- **Initial metadata**: name, angle, and selected holds/roles form the primary editing
+  surface; grade, description, and setter notes are optional.
+- **Role interaction**: tapping may cycle a hold through unused, start, middle, finish,
+  foot-only, and unused, with an explicit role toolbar available for direct assignment.
+- **Full-color control**: ship an Advanced Light mode in the first milestone with
+  access to the controller's full quantized color range. Ordinary climb authoring
+  continues to use semantic Kilter roles so climb meaning remains distinct from a
+  freeform light scene.
+- **Connected editing**: retain a persistent “Light draft” action and offer a Live
+  Preview toggle that updates the board while editing. Live Preview defaults off to
+  avoid surprise lighting and unnecessary Bluetooth traffic.
 
 ## Brief
 

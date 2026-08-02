@@ -4,27 +4,46 @@ kind: epic
 stage: drafting
 tags: [ble]
 parent: null
-depends_on: [epic-foundation]
+depends_on: [epic-universal-board-platform]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-08-02
+research_refs:
+  - docs/briefs/hardware-and-protocol.md
+  - docs/briefs/board-control-web-bluetooth.md
+  - .research/analysis/landscapes/climbing-board-ecosystem.md
 ---
 
 # Board Control: BLE Connect + Light Up Climbs
 
+## Design decisions
+
+- **Connection initiation**: an explicit Connect action owns device selection and
+  permission. Remember browser-granted devices where supported; reconnect only through
+  a user gesture when the platform requires it.
+- **Controller cardinality**: one active board controller per client device in the
+  first milestone.
+- **Platform**: Android and desktop Chromium are the first-milestone control clients;
+  iOS work is deferred to backlog.
+- **Lighting contract**: the controller accepts arbitrary light scenes independent of
+  climb validity. The four Kilter role colors are first-class presets, while the
+  protocol boundary represents the API-level-3 per-LED color byte directly so future
+  custom-color tools can use all 256 quantized RGB values without changing transport.
+
 ## Brief
 
-The defining hardware capability: connect to the physical Kilter Board over Web
+The first hardware capability: connect to the physical Kilter Board over Web
 Bluetooth and illuminate the holds for a selected climb in their role colors. This
-epic owns the BLE adapter — scan/connect, GATT lifecycle, and encoding LED commands
+epic owns the Kilter/Aurora controller profile and Web Bluetooth transport —
+scan/connect, GATT lifecycle, and encoding LED commands
 per the documented API-level-3 packet protocol (framing, checksums, multi-packet
 splitting).
 
 When done, the user can connect to their board and light up any climb (selected via
 the browser) in Start/Middle/Finish/Foot-only colors. It is the ONLY module that
-talks to the board. It does NOT own the catalog or selection UI (those come from
-foundation + climb-browser).
+talks to the board. It implements the contracts from `epic-universal-board-platform`
+and does NOT own the catalog or selection UI.
 
 ## Research briefs
 
