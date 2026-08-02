@@ -4,7 +4,7 @@ kind: feature
 stage: drafting
 tags: [ui, ble]
 parent: epic-route-creation
-depends_on: [epic-route-creation-animated-light-designs]
+depends_on: [epic-route-creation-animated-light-designs, epic-route-creation-kilter-screenshot-import]
 release_binding: null
 gate_origin: null
 created: 2026-08-02

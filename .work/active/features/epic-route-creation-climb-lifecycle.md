@@ -4,7 +4,7 @@ kind: feature
 stage: drafting
 tags: [ui, data]
 parent: epic-route-creation
-depends_on: [epic-route-creation-local-draft-library]
+depends_on: [epic-route-creation-local-draft-library, epic-route-creation-animated-light-designs]
 release_binding: null
 gate_origin: null
 created: 2026-08-02

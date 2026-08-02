@@ -4,7 +4,7 @@ kind: feature
 stage: drafting
 tags: [ui]
 parent: epic-climb-browser
-depends_on: [epic-climb-browser-fullride-renderer]
+depends_on: [epic-climb-browser-fullride-renderer, epic-playlists]
 release_binding: null
 gate_origin: null
 created: 2026-08-02
