@@ -1,7 +1,7 @@
 ---
 id: epic-universal-board-platform-domain-definition
 kind: feature
-stage: implementing
+stage: review
 tags: [data]
 parent: epic-universal-board-platform
 depends_on: []
@@ -520,3 +520,26 @@ This is the smallest evidence-backed boundary that delivers local create, render
 light. It also corrects role handling: generated product role names establish semantic
 roles, while native IDs 42–45 are retained as output evidence rather than treated as
 portable constants. The prior requirement for a fabricated 365-hold map is superseded.
+
+## Implementation notes
+
+- Execution capability: highest/xhigh, selected by the autopilot caller for the
+  foundational generated-contract and physical-mapping risk.
+- Review weight: standard, from project convention.
+- Files changed: `web/src/domain/boards/{types,identity,colors,definition,validate-definition,registry,index}.ts`,
+  `web/src/domain/boards/definitions/kilter-fullride-7x10{.generated,}.ts`,
+  `web/scripts/export-fullride-definition.py`, their focused TypeScript tests, and
+  `web/scripts/test_export_fullride_definition.py`.
+- Tests added: exhaustive packed-color round trips and protocol vectors; branded
+  identity/key collision contracts; definition validation issue coverage; exact
+  Fullride projection/provenance/immutability contracts; stable registry behavior;
+  and generator projection, semantic-role, ambiguity, and determinism tests.
+- Simplification: runtime consumers receive one frozen definition and registry barrel;
+  raw generated arrays stay behind the Kilter wrapper, with no runtime SQLite or plugin
+  abstraction.
+- Discrepancies from design: none after the verified 305-placement design resolution.
+- Adjacent issues parked: none.
+- Verification: `python3 -m unittest web/scripts/test_export_fullride_definition.py`
+  passed 5 tests; `npm test` passed 117 tests; `npm run typecheck`, `npm run lint`, and
+  `npm run build` passed. Two consecutive exports from the committed decompressed
+  catalog were byte-identical.
