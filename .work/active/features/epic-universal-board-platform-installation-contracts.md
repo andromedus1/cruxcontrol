@@ -1,7 +1,7 @@
 ---
 id: epic-universal-board-platform-installation-contracts
 kind: feature
-stage: review
+stage: done
 tags: [data]
 parent: epic-universal-board-platform
 depends_on: [epic-universal-board-platform-domain-definition]
@@ -426,3 +426,26 @@ side effects.
 - Adjacent issues parked: none.
 - Verification: `npm test` (24 files, 158 tests), `npm run typecheck`, `npm run lint`,
   and `npm run build` all pass.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve
+
+**Blockers**: none
+**Important**: none
+**Nits**: none
+**Rejected**: none
+
+**Notes**: Substrate feature review at effective weight `standard`, completed in exactly
+one same-harness fresh-context pass over design, implementation commit `b7724d2`, actual
+board-definition and controller/transport contracts, and focused tests. The pass covered
+correctness, test integrity, design/foundation alignment, public contracts, lifecycle and
+failure behavior, side effects, and breaking-change risk; security, persistence/migration,
+and user-facing UX lenses were inapplicable because the change adds in-process typed
+composition only. Adjudication confirmed immutable copied registry boundaries, fail-fast
+reference and compatibility validation, configured capability semantics distinct from live
+transport state, lazy one-shot controller construction with a memoized explicit failure,
+and no speculative provider operations, plugin framework, global service locator, or eager
+browser/device work. No fixes or follow-up items were required. Verification passed:
+focused Vitest (2 files, 11 tests), full `npm test` (27 files, 168 tests), `npm run
+typecheck`, `npm run lint`, and `npm run build`.
