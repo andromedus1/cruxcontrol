@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-climb-lifecycle
 kind: feature
-stage: review
+stage: done
 tags: [ui, data]
 parent: epic-route-creation
 depends_on: [epic-route-creation-local-draft-library, epic-route-creation-animated-light-designs]
@@ -223,3 +223,25 @@ reports failures without hiding existing data.
 - `npm run build` — production TypeScript/Vite/PWA build passed.
 - `npm run test:e2e -- e2e/local-route-editor.spec.ts` — 2 Chromium tests passed, covering Draft → Finished → Trash → restore → reload and compact-phone editor controls.
 - Test integrity inspection: lifecycle tests exercise production repository/component seams with no skips, tautological assertions, weakened expectations, or mocked-away acceptance behavior; the Playwright flow checks the persisted schema-v3 ID, status, content, and restored Trash metadata directly in IndexedDB.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve with comments
+
+**Blockers**: none
+**Important**: `idea-corrupt-climb-list-recovery` parked for the pre-existing case
+where one undecodable row rejects the whole list; automatic Trash purge already skips
+and preserves such rows safely.
+**Nits**: singular collection-count wording and persistent recovery-region semantics
+fixed in `a062004`. Optional future consolidation could deduplicate lifecycle
+partition/content projection helpers.
+**Rejected**: autosave resurrection, cutoff inclusivity, eager migration, revision
+gaps, unstable identity, missing incompatibility actions, and foundation drift were
+all checked and disproven by code and tests.
+
+**Notes**: Standard review weight; exactly one cross-model Claude Opus fresh-context
+pass over `7713660`, `dae679d`, and `f21f998`, followed by host adjudication and fix
+verification without re-review. Reviewer ran 63 lifecycle-focused tests and typecheck;
+implementation evidence additionally records 273 full tests, lint, build, and two
+Chromium Playwright journeys. Host reran the corrected workspace tests, lint, and
+typecheck after review fixes.
