@@ -34,6 +34,7 @@ it('replaces schematic bodies with one calibrated image only after it loads', ()
   const { container } = render(<BoardRenderer definition={fullride} assignments={assignments} />);
   const image = container.querySelector('[data-board-raster-artwork]');
   expect(image).toBeInTheDocument();
+  expect(image).toHaveClass('board-renderer__raster-artwork--dark-background');
   expect(container.querySelectorAll('[data-board-raster-artwork]')).toHaveLength(1);
   expect(container.querySelectorAll('.board-hold__body')).toHaveLength(305);
   expect(container.querySelectorAll('[data-placement-id]')).toHaveLength(305);

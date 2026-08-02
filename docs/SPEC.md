@@ -179,7 +179,8 @@ The model mirrors the official Kilter SQLite schema (see
 
 - The application composes one configured Fullride 7x10 installation with the
   generated 305-placement definition, one calibrated private reference-image artwork
-  layer with definition-driven schematic fallback, My Climbs/Drafts/Trash/Lists
+  layer with a dark high-contrast LED backdrop and definition-driven schematic fallback,
+  My Climbs/Drafts/Trash/Lists
   workspace, route editor, and Web Bluetooth controller. The private artwork does not
   imply redistribution permission: public distribution requires Kilter's permission
   or replacement with redistributable imagery.

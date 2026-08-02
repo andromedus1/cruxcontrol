@@ -243,7 +243,7 @@ export function BoardRenderer({
           />
           {rasterArtwork && (
             <image
-              className="board-renderer__raster-artwork"
+              className="board-renderer__raster-artwork board-renderer__raster-artwork--dark-background"
               data-board-raster-artwork
               href={rasterArtwork.href}
               x={rasterArtwork.imageBox.x}

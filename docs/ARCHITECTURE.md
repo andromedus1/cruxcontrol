@@ -62,7 +62,9 @@ feature item bodies in `.work/`, not here. Capabilities are in
 5. **Board Renderer** — definition-driven geometry, role colors, and selection.
    For the exact Fullride ID and revision, the private/local prototype resolves one
    immutable, affinely calibrated reference-image underlay beneath 305 semantic
-   placement groups. The shared independently authored schematic SVG artwork remains
+   placement groups. A renderer-only dark-background color treatment keeps bright LED
+   rings legible without changing the immutable source or calibration. The shared
+   independently authored schematic SVG artwork remains
    mounted until the raster loads and is the complete error, other-definition, and
    distributable fallback. Coordinates, hit testing, focus, overlays, and LED mapping
    always come from the generated definition; pixels never become domain geometry.

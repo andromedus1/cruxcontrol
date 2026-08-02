@@ -27,6 +27,9 @@
 .board-renderer__raster-artwork {
   pointer-events: none;
 }
+.board-renderer__raster-artwork--dark-background {
+  filter: invert(0.92) hue-rotate(180deg) brightness(0.78) contrast(1.12) saturate(0.72);
+}
 .board-hold {
   outline: none;
 }
