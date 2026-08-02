@@ -213,7 +213,7 @@ describe('CruxControlWorkspace', () => {
 
     render(<CruxControlWorkspace runtime={runtime} />);
     fireEvent.click(await screen.findByRole('button', { name: /Drafts.*1 climb/ }));
-    const recovery = screen.getByRole('alert', { name: 'Climb recovery needed' });
+    const recovery = screen.getByRole('region', { name: 'Recovery needed' });
     expect(recovery).toHaveTextContent('Original');
     expect(recovery).toHaveTextContent('uses a different layout revision');
     expect(screen.getByRole('button', { name: 'Move Original to Trash' })).toBeInTheDocument();

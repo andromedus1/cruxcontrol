@@ -267,7 +267,10 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
             }}
           >
             <span>{collectionCopy[value].label}</span>
-            <span className="collection-switch__count" aria-label={`${counts[value]} climbs`}>
+            <span
+              className="collection-switch__count"
+              aria-label={`${counts[value]} ${counts[value] === 1 ? 'climb' : 'climbs'}`}
+            >
               {counts[value]}
             </span>
           </button>
@@ -287,8 +290,12 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
         </div>
       )}
       {incompatibleDrafts.length > 0 && (
-        <section className="incompatible-climbs" role="alert" aria-label="Climb recovery needed">
-          <h2>Recovery needed</h2>
+        <section
+          className="incompatible-climbs"
+          role="region"
+          aria-labelledby="climb-recovery-heading"
+        >
+          <h2 id="climb-recovery-heading">Recovery needed</h2>
           <p>These local climbs cannot open on this board. Their stored content is unchanged.</p>
           <ul>
             {incompatibleDrafts.map(({ draft, issue }) => (
