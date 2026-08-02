@@ -5,6 +5,7 @@ import type { BoardDefinition, ClimbRole } from '../domain/boards/definition';
 import type { BoardPlacementId } from '../domain/boards/types';
 import type { LightScene } from '../domain/boards/light-scene';
 import { createBoardTransform, nearestPlacement, placementInDirection } from './geometry';
+import { resolveBoardRasterArtwork } from './fullride-private-artwork';
 import { chooseHoldArtwork, HoldArtwork } from './hold-artwork';
 import { createAssignmentIndex } from './scene';
 import type { BoardDirection, BoardHoldAppearance, BoardHoldAssignment } from './types';
@@ -63,6 +64,14 @@ export function BoardRenderer({
     throw new RangeError('Board renderer scale must be a finite number from 1 to 3');
   }
   const transform = useMemo(() => createBoardTransform(definition), [definition]);
+  const rasterArtwork = useMemo(() => resolveBoardRasterArtwork(definition), [definition]);
+  const [rasterLoad, setRasterLoad] = useState<{
+    readonly href: string | null;
+    readonly status: 'pending' | 'ready' | 'failed';
+  }>({ href: null, status: 'pending' });
+  const rasterStatus =
+    rasterArtwork && rasterLoad.href === rasterArtwork.href ? rasterLoad.status : 'pending';
+  const rasterReady = rasterStatus === 'ready';
   const assignmentIndex = useMemo(
     () => createAssignmentIndex(definition, assignments),
     [definition, assignments],
@@ -232,6 +241,21 @@ export function BoardRenderer({
             height={transform.viewBox.height - 1.2}
             rx="1.4"
           />
+          {rasterArtwork && (
+            <image
+              className="board-renderer__raster-artwork"
+              data-board-raster-artwork
+              href={rasterArtwork.href}
+              x={rasterArtwork.imageBox.x}
+              y={rasterArtwork.imageBox.y}
+              width={rasterArtwork.imageBox.width}
+              height={rasterArtwork.imageBox.height}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              onLoad={() => setRasterLoad({ href: rasterArtwork.href, status: 'ready' })}
+              onError={() => setRasterLoad({ href: rasterArtwork.href, status: 'failed' })}
+            />
+          )}
           {definition.placements.map((placement, index) => {
             const center = transform.toSvg(placement.position);
             const appearance = assignmentIndex.get(placement.id);
@@ -245,6 +269,7 @@ export function BoardRenderer({
                     : apiLevel3ColorHex(appearance.color)
                   : undefined;
             const interactive = interactionMode === 'select';
+            const illuminated = Boolean(appearance) || animatedColor !== undefined;
             return (
               <g
                 key={placement.id}
@@ -271,11 +296,16 @@ export function BoardRenderer({
                       interactive ? (event) => onHoldKeyDown(event, placement.id) : undefined
                     }
                   >
-                    {appearance && <circle className="board-hold__selection-ring" r="2.55" />}
-                    <HoldArtwork
-                      choice={chooseHoldArtwork(placement)}
-                      selected={Boolean(appearance)}
-                    />
+                    <circle className="board-hold__hit-target" r="2.35" />
+                    {illuminated && <circle className="board-hold__selection-halo" r="2.15" />}
+                    {illuminated && <circle className="board-hold__selection-ring" r="2.55" />}
+                    <circle className="board-hold__focus-ring" r="2.7" />
+                    {!rasterReady && (
+                      <HoldArtwork
+                        choice={chooseHoldArtwork(placement)}
+                        selected={Boolean(appearance)}
+                      />
+                    )}
                     {appearance && <AssignmentMarker appearance={appearance} />}
                   </g>
                 </g>

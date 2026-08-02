@@ -20,6 +20,7 @@ decisions:
   - "Catalogs are installed per provider/layout; a universal bundled database is rejected."
   - "A native iOS shell, if prioritized, exposes a narrow CoreBluetooth transport bridge to the shared application core."
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority."
+  - "Private Fullride builds may resolve one calibrated immutable raster artwork layer by exact definition ID and revision; schematics remain the distributable fallback."
   - "Unrestricted locally authored climbs use a dedicated versioned IndexedDB repository with Draft/Finished and recoverable-Trash lifecycle, separate from provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
 ---
@@ -59,10 +60,12 @@ feature item bodies in `.work/`, not here. Capabilities are in
    infer hardware limits from encoder speed. A future iOS shell may supply CoreBluetooth
    behind the same port.
 5. **Board Renderer** — definition-driven geometry, role colors, and selection.
-   The shared, independently authored schematic SVG renderer draws recognizable hold
-   artwork, semantic shapes, exact custom colors, and one accessible
-   pointer/roving-keyboard surface from the generated Fullride definition rather than
-   renderer constants or vendor artwork.
+   For the exact Fullride ID and revision, the private/local prototype resolves one
+   immutable, affinely calibrated reference-image underlay beneath 305 semantic
+   placement groups. The shared independently authored schematic SVG artwork remains
+   mounted until the raster loads and is the complete error, other-definition, and
+   distributable fallback. Coordinates, hit testing, focus, overlays, and LED mapping
+   always come from the generated definition; pixels never become domain geometry.
 6. **Climb Browser** — the implemented source-neutral My Climbs/Drafts/Trash
    list/detail surface drives the renderer and controller for browser-local climbs.
    Fast community-catalog filtering and shareable provider URLs remain downstream of
@@ -192,7 +195,10 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
   revisioned definition and compatibility declaration.
 - **Provider access and rights.** APIs and exports are unstable, and technical access
   does not establish redistribution permission. Every provider needs explicit policy,
-  provenance, refresh, and deletion handling.
+  provenance, refresh, and deletion handling. The private Fullride renderer currently
+  bundles a supplied Kilter reference image for local use only; public distribution is
+  gated on permission or replacement. Removing its exact-ID/revision resolver restores
+  the self-contained schematic path without a data migration.
 - **False universality.** Aurora-family controllers share machinery, but layouts,
   firmware generations, and MoonBoard protocols differ. Compatibility is declared
   and tested per controller profile.

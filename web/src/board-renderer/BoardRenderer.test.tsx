@@ -55,6 +55,23 @@ describe('BoardRenderer', () => {
     );
     expect(screen.getByRole('button', { name: /^Hold 1, Start/ })).toBeInTheDocument();
     expect(container.querySelector('[data-placement-id]')).toHaveStyle({ color: '#0000ff' });
+    expect(container.querySelectorAll('.board-hold__selection-halo')).toHaveLength(1);
+    expect(container.querySelectorAll('.board-hold__selection-ring')).toHaveLength(1);
+  });
+
+  it('shows animated-only holds with a color halo without changing their base label', () => {
+    const placement = fullride.placements[0]!;
+    const { container } = render(
+      <BoardRenderer
+        definition={fullride}
+        interactionMode="select"
+        lightScene={[{ placementId: placement.id, color: apiLevel3Color(0b111_000_00) }]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /^Hold 1, Unselected/ })).toBeInTheDocument();
+    expect(container.querySelector('[data-placement-id]')).toHaveStyle({ color: '#ff0000' });
+    expect(container.querySelectorAll('.board-hold__selection-halo')).toHaveLength(1);
+    expect(container.querySelectorAll('.board-hold__marker')).toHaveLength(0);
   });
 
   it('uses one roving focus and activates through keyboard navigation', () => {

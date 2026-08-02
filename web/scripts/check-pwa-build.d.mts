@@ -6,4 +6,5 @@
 export function checkPwaBuild(distDir?: string): {
   iconCount: number;
   precacheReferencesDb: boolean;
+  precacheReferencesPrivateArtwork: boolean;
 };

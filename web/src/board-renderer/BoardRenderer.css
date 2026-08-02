@@ -24,8 +24,15 @@
   stroke: var(--board-frame, #302b2a);
   stroke-width: 1.2;
 }
+.board-renderer__raster-artwork {
+  pointer-events: none;
+}
 .board-hold {
   outline: none;
+}
+.board-hold__hit-target {
+  fill: transparent;
+  pointer-events: none;
 }
 .board-hold__shadow {
   fill: rgba(33, 29, 28, 0.35);
@@ -56,6 +63,17 @@
   stroke: currentColor;
   stroke-width: 0.42;
 }
+.board-hold__selection-halo {
+  fill: currentColor;
+  fill-opacity: 0.22;
+  pointer-events: none;
+}
+.board-hold__focus-ring {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 0.62;
+  pointer-events: none;
+}
 .board-hold__marker {
   fill: #fff;
   stroke: #171718;
@@ -66,10 +84,8 @@
   stroke: #fff;
   stroke-width: 0.2;
 }
-.board-hold:focus-visible .board-hold__selection-ring,
-.board-hold:focus-visible .board-hold__body {
+.board-hold:focus-visible .board-hold__focus-ring {
   stroke: var(--board-focus, #111);
-  stroke-width: 0.65;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -84,14 +100,14 @@
   .board-hold__bolt {
     fill: #dcd7ba;
   }
-  .board-hold:focus-visible .board-hold__selection-ring,
-  .board-hold:focus-visible .board-hold__body {
+  .board-hold:focus-visible .board-hold__focus-ring {
     stroke: var(--board-focus, #fff);
   }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .board-hold__body,
+  .board-hold__selection-halo,
   .board-hold__selection-ring {
     transition:
       fill 120ms ease-out,

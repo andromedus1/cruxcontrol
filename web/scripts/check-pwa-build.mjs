@@ -8,6 +8,7 @@
 //   3. A generated service worker (dist/sw.js) exists.
 //   4. The SW precache manifest EXCLUDES the catalog DB (*.db / *.db.gz) — the
 //      multi-MB DB lives in OPFS, never in the SW cache.
+//   5. The private Fullride artwork IS present in the SW precache.
 //
 // Run after `vite build`:  node scripts/check-pwa-build.mjs
 // (The companion vitest at src/pwa/check-pwa-build.test.ts runs this same
@@ -79,10 +80,17 @@ export function checkPwaBuild(distDir = DEFAULT_DIST) {
       `PWA build check: service worker precache references a catalog DB (${dbMatch[0]}); it must never be precached.`,
     );
   }
+  const privateArtworkMatch = sw.match(/["'][^"']*kilter_fullride_7x10-[^"']+\.png["']/);
+  if (!privateArtworkMatch) {
+    throw new Error(
+      'PWA build check: service worker does not precache the private Fullride artwork.',
+    );
+  }
 
   return {
     iconCount: manifest.icons.length,
     precacheReferencesDb: false,
+    precacheReferencesPrivateArtwork: true,
   };
 }
 

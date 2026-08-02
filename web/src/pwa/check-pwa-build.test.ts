@@ -30,6 +30,7 @@ describe('PWA build artifacts', () => {
   it('emits manifest + icons + sw.js and never precaches a catalog .db', () => {
     const result = checkPwaBuild(DIST);
     expect(result.precacheReferencesDb).toBe(false);
+    expect(result.precacheReferencesPrivateArtwork).toBe(true);
     expect(result.iconCount).toBeGreaterThanOrEqual(3);
   });
 });

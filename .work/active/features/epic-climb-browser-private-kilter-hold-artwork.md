@@ -1,7 +1,7 @@
 ---
 id: epic-climb-browser-private-kilter-hold-artwork
 kind: feature
-stage: implementing
+stage: review
 tags: [ui]
 parent: epic-climb-browser
 depends_on: [epic-climb-browser-fullride-renderer, epic-playlists]
@@ -221,3 +221,40 @@ implementation rather than advance independently.
 - **Color overlay obscures shape**: an opaque fill would recreate the recognition problem.
   **Fallback**: use a restrained translucent halo plus outline/marker and verify all four
   roles and arbitrary custom colors at phone scale.
+
+## Implementation notes
+
+- Execution capability: GPT-5.6 Codex xhigh; cohesive renderer, calibration, PWA, and
+  documentation surface with exact geometry and offline-asset invariants.
+- Review weight: standard (project `.work/CONVENTIONS.md`); stop at the independent
+  feature-review boundary requested by the implementation orchestrator.
+- Files changed: `web/src/board-renderer/fullride-private-artwork.ts` and focused test;
+  `BoardRenderer.tsx`, renderer CSS/tests/index; PWA configuration/build verifier;
+  `docs/SPEC.md`; `docs/ARCHITECTURE.md`; this feature record.
+- Tests added/removed: exhaustive 305-cell lattice/identity/calibration resolver tests;
+  pending/load/error/non-matching renderer composition tests; animated-only halo
+  coverage; production-PWA assertion that the one hashed artwork asset is precached.
+  No tests removed.
+- Simplification: one Vite-bundled image replaces 305 schematic bodies only after load,
+  while the existing definition-positioned groups, fallback component, transparent hit
+  targets, focus rings, semantic markers, and public renderer props remain shared.
+- Discrepancies from design: Workbox's 2 MiB default rejected the immutable 2.53 MB
+  source, so the existing explicit precache ceiling is narrowly raised to 3 MiB and the
+  build verifier locks inclusion. No geometry or interaction discrepancy.
+- Adjacent issues parked: none; `idea-kilter-artwork-distribution-rights` remains open
+  and is still the public-release gate.
+
+## Verification evidence
+
+- Focused renderer/resolver/reference suite: 5 files, 23 tests passed before the final
+  non-matching-definition case; that case also passes in the final full suite.
+- Integrated: `npm test` (59 files, 376 tests), `npm run typecheck`, `npm run lint`,
+  `npm run build`, `node web/scripts/check-pwa-build.mjs`, and `git diff --check` pass.
+- Production build emits exactly one hashed 2.53 MB Fullride PNG and precaches it; no
+  catalog database enters the service worker cache.
+- Local headless Chromium at 390×844 loaded the production build, opened a fresh editor,
+  rendered one raster plus 305 semantic placement groups and zero schematic bodies,
+  and selected a center hold through the real pointer surface with one color halo. A
+  full-page visual capture confirmed corner/center alignment and no blank board.
+- Physical Android pinch/pan remains an operator smoke during normal dogfooding; the
+  automated scale, pointer, roving-keyboard, and phone-structure contracts are green.

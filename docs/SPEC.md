@@ -61,9 +61,11 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Filtering: grade range, angle, quality, ascent count, setter, hold count,
   grade-consensus accuracy.
 - Shareable URLs for individual climbs (a major gap in the official app).
-- Visual 2D board renderer showing independently authored schematic SVG hold artwork,
-  positions, semantic role shapes, and custom colors with pointer and roving-keyboard
-  interaction.
+- Visual 2D board renderer showing recognizable hold artwork, positions, semantic role
+  shapes, and custom colors with pointer and roving-keyboard interaction. The private
+  Fullride prototype uses one immutable calibrated Kilter reference-image underlay;
+  independently authored schematic SVG holds remain the complete loading/error,
+  non-matching-definition, and distributable fallback.
 - The generated immutable Fullride 7x10 definition contains 305 controllable Mainline
   and Auxiliary placements. Renderers consume its geometry and identities rather than
   hard-coded vendor coordinates.
@@ -176,9 +178,11 @@ The model mirrors the official Kilter SQLite schema (see
 ## Current Fullride Local Milestone
 
 - The application composes one configured Fullride 7x10 installation with the
-  generated 305-placement definition, the independently authored schematic SVG
-  renderer, My Climbs/Drafts/Trash/Lists workspace, route editor, and Web Bluetooth
-  controller.
+  generated 305-placement definition, one calibrated private reference-image artwork
+  layer with definition-driven schematic fallback, My Climbs/Drafts/Trash/Lists
+  workspace, route editor, and Web Bluetooth controller. The private artwork does not
+  imply redistribution permission: public distribution requires Kilter's permission
+  or replacement with redistributable imagery.
 - Locally authored climbs are authoritative in a dedicated native IndexedDB database,
   survive reload/reopen, move between Draft and Finished without content validation,
   and remain recoverable from Trash for 30 days. Definition/layout/angle/placement

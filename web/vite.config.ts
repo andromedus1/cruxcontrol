@@ -49,6 +49,9 @@ export default defineConfig({
         // the SW precache. There is no .db in the build yet, but this guard is
         // in place for when catalog-bootstrap adds it.
         globIgnores: ['**/*.db', '**/*.db.gz'],
+        // The private/local Fullride reference is 2.53 MB and must work on the
+        // first offline launch. Keep this narrowly above that immutable asset.
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
       },
