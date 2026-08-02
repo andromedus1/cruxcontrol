@@ -12,11 +12,12 @@ export interface ClimbDetailProps {
   readonly climb: ClimbViewRecord;
   readonly controller?: BoardLightController | null;
   readonly headingLevel?: 1 | 2;
+  readonly onEdit?: () => void;
 }
 
 const roles: readonly ClimbRole[] = ['start', 'middle', 'finish', 'foot-only'];
 
-export function ClimbDetail({ definition, climb, controller, headingLevel = 2 }: ClimbDetailProps) {
+export function ClimbDetail({ definition, climb, controller, headingLevel = 2, onEdit }: ClimbDetailProps) {
   const state = useBoardLightState(controller);
   const [localError, setLocalError] = useState('');
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
@@ -74,6 +75,7 @@ export function ClimbDetail({ definition, climb, controller, headingLevel = 2 }:
       </ul>
       <div className="climb-detail__actions">
         <p className="action-status" aria-live="polite">{localError || state.error?.message || operationStatus || (!connected ? 'Connect a board to light this scene.' : '')}</p>
+        {onEdit && <button className="button button--secondary" type="button" onClick={onEdit}>Edit climb</button>}
         <button className="button button--primary" type="button" disabled={!ready} onClick={light}>{actionLabel}</button>
       </div>
     </article>

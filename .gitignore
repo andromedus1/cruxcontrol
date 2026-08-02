@@ -13,6 +13,8 @@ web/dist/
 
 # Test / coverage
 coverage/
+web/test-results/
+web/playwright-report/
 
 # OS / editor
 .DS_Store

@@ -12,6 +12,7 @@ export interface LocalClimbViewerProps {
   readonly onSelectedKeyChange: (key: ClimbViewKey | null) => void;
   readonly controller?: BoardLightController | null;
   readonly onCreateClimb?: () => void;
+  readonly onEditClimb?: (key: ClimbViewKey) => void;
 }
 
 function validateRecords(definition: BoardDefinition, climbs: readonly ClimbViewRecord[]) {
@@ -32,6 +33,7 @@ export function LocalClimbViewer({
   onSelectedKeyChange,
   controller,
   onCreateClimb,
+  onEditClimb,
 }: LocalClimbViewerProps) {
   validateRecords(definition, climbs);
   const selected = useMemo(
@@ -129,7 +131,7 @@ export function LocalClimbViewer({
           {selected && (
             <>
               <button className="climb-sheet__close" type="button" aria-label="Close climb details" onClick={dismiss}>×</button>
-              <ClimbDetail definition={definition} climb={selected} controller={controller} />
+              <ClimbDetail definition={definition} climb={selected} controller={controller} onEdit={onEditClimb ? () => onEditClimb(selected.key) : undefined} />
             </>
           )}
         </dialog>

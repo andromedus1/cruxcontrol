@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-editor-workspace
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: epic-route-creation
 depends_on:
@@ -198,9 +198,9 @@ export function applyEditorTool(assignments: readonly BoardHoldAssignment[], pla
 
 **Acceptance Criteria**:
 
-- [ ] Semantic/custom cycles, overwrite, erase, and empty states are immutable and deterministic.
-- [ ] Existing `DraftContent` remains the sole persistence model; all unrestricted states work.
-- [ ] No-op edits do not dirty or trigger persistence.
+- [x] Semantic/custom cycles, overwrite, erase, and empty states are immutable and deterministic.
+- [x] Existing `DraftContent` remains the sole persistence model; all unrestricted states work.
+- [x] No-op edits do not dirty or trigger persistence.
 
 ### Unit 2: Coalescing autosave and conflict recovery
 
@@ -232,9 +232,9 @@ export function useDraftAutosave(options: {
 
 **Acceptance Criteria**:
 
-- [ ] Burst edits save latest once; edits during save create at most one revision-safe follow-up.
-- [ ] Explicit flush, retry, reload, and save-copy preserve content correctly.
-- [ ] Unmount prevents timer completion from updating state; unload warning is truthful.
+- [x] Burst edits save latest once; edits during save create at most one revision-safe follow-up.
+- [x] Explicit flush, retry, reload, and save-copy preserve content correctly.
+- [x] Unmount prevents timer completion from updating state; unload warning is truthful.
 
 ### Unit 3: Connected-lighting hook
 
@@ -266,9 +266,9 @@ export function useEditorLighting(options: {
 
 **Acceptance Criteria**:
 
-- [ ] Disconnected light connects then sends once; connected sends once; busy cannot duplicate.
-- [ ] Preview starts off, sends immediately on opt-in, then only latest debounced assignments.
-- [ ] Unsupported/errors are truthful; disabling preview never clears the board.
+- [x] Disconnected light connects then sends once; connected sends once; busy cannot duplicate.
+- [x] Preview starts off, sends immediately on opt-in, then only latest debounced assignments.
+- [x] Unsupported/errors are truthful; disabling preview never clears the board.
 
 ### Unit 4: Responsive editor and exact color control
 
@@ -303,9 +303,9 @@ export function ApiLevel3ColorControl(props: { readonly value: ApiLevel3Color; r
 
 **Acceptance Criteria**:
 
-- [ ] Pointer and keyboard users can cycle/direct/erase and select all 256 colors.
-- [ ] Mobile/desktop retain full recognizable board, locked tokens, and persistent actions.
-- [ ] Statuses and recovery are accessible and never rely on color alone or 305 tab stops.
+- [x] Pointer and keyboard users can cycle/direct/erase and select all 256 colors.
+- [x] Mobile/desktop retain full recognizable board, locked tokens, and persistent actions.
+- [x] Statuses and recovery are accessible and never rely on color alone or 305 tab stops.
 
 ### Unit 5: Application composition and local-list integration
 
@@ -334,9 +334,9 @@ export function App(props: { readonly createRuntime?: () => Promise<CruxControlR
 
 **Acceptance Criteria**:
 
-- [ ] First launch lists drafts; Create persists/opens empty; reload/reopen restores exact state.
-- [ ] Saved drafts appear once with stable identity/Edit; init failure is honest/retryable.
-- [ ] Existing injected viewer/controller consumers remain compatible.
+- [x] First launch lists drafts; Create persists/opens empty; reload/reopen restores exact state.
+- [x] Saved drafts appear once with stable identity/Edit; init failure is honest/retryable.
+- [x] Existing injected viewer/controller consumers remain compatible.
 
 ### Unit 6: Integration and real-browser smoke
 
@@ -354,9 +354,9 @@ export function App(props: { readonly createRuntime?: () => Promise<CruxControlR
 
 **Acceptance Criteria**:
 
-- [ ] Vitest covers create-save-light, empty/unconventional scenes, failures/conflicts, preview races.
-- [ ] Chromium proves real IndexedDB persistence/reload and accessible editor interaction.
-- [ ] test, typecheck, lint, build, and e2e pass without claiming automated BLE proof.
+- [x] Vitest covers create-save-light, empty/unconventional scenes, failures/conflicts, preview races.
+- [x] Chromium proves real IndexedDB persistence/reload and accessible editor interaction.
+- [x] test, typecheck, lint, build, and e2e pass without claiming automated BLE proof.
 
 ## Implementation Order
 
@@ -399,3 +399,30 @@ No child stories. The units share one reducer and integration surface; splitting
 autosave, lighting, and composition across owners would create unstable intermediate
 contracts and duplicate integration work. One implementation owner should take the
 feature through standard review.
+
+## Implementation notes
+
+- Execution capability: xhigh; this feature coordinates optimistic persistence,
+  responsive UI state, and asynchronous BLE operations across several completed ports.
+- Review weight: standard (caller and project convention).
+- Files changed: `web/src/route-editor/`, `web/src/app/CruxControlWorkspace.tsx`,
+  `web/src/app/create-runtime.ts`, application/browser composition, Playwright setup,
+  package metadata, and test-artifact ignores.
+- Tests added: pure editor role/custom assignment coverage, responsive workspace and
+  exact channel controls, controller-backed empty lighting and immediate preview, plus
+  a real-Chromium IndexedDB create/color/save/reload/reopen smoke.
+- Simplification: reused `DraftContent`, `BoardRenderer`, `lightSceneFromAssignments`,
+  `BoardLightController`, and the local viewer; no parallel editor persistence,
+  rendering, protocol, or transport model was introduced.
+- Discrepancies from design: the smoke test uses a production preview server rather
+  than adding application test flags; physical BLE remains the parent epic's manual
+  Android/Fullride checkpoint.
+- Adjacent issues parked: none.
+
+## Verification evidence
+
+- `npm test` — 202 tests passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm run build` — production PWA build passed.
+- `npm -w web run test:e2e` — Chromium create/color/save/reload/reopen passed.
