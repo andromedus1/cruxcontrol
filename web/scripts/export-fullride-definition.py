@@ -65,6 +65,20 @@ def extract(catalog: pathlib.Path) -> dict[str, Any]:
         placeholders = ",".join("?" for _ in SET_IDS)
         params = (LAYOUT_ID, *SET_IDS)
         total_by_set = dict(connection.execute(f"SELECT set_id,count(*) FROM placements WHERE layout_id=? AND set_id IN ({placeholders}) GROUP BY set_id", params))
+        invalid_scope = list(connection.execute(
+            f"""
+            SELECT p.id placement_id,p.hole_id,h.product_id hole_product_id
+            FROM placements p
+            LEFT JOIN holes h ON h.id=p.hole_id
+            WHERE p.layout_id=? AND p.set_id IN ({placeholders})
+              AND (h.id IS NULL OR h.product_id<>?)
+            ORDER BY p.id
+            """,
+            (*params, PRODUCT_ID),
+        ))
+        if invalid_scope:
+            placement_ids = ", ".join(str(row["placement_id"]) for row in invalid_scope)
+            raise ValueError(f"missing or mismatched native hole scope for placements: {placement_ids}")
         query = f"""
           SELECT p.id placement_id,p.set_id,h.id hole_id,h.x,h.y,l.id led_id,l.position led_position
           FROM placements p

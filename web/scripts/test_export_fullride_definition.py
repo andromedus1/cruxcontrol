@@ -89,6 +89,16 @@ class GeneratorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "ambiguous or duplicate"):
                 generator.extract(path)
 
+    def test_rejects_placements_outside_the_native_product_scope(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self.database(tmp)
+            connection = sqlite3.connect(path)
+            connection.execute("UPDATE holes SET product_id=99 WHERE id=11")
+            connection.commit()
+            connection.close()
+            with self.assertRaisesRegex(ValueError, "native hole scope"):
+                generator.extract(path)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,7 @@
 ---
 id: epic-universal-board-platform-domain-definition
 kind: feature
-stage: review
+stage: done
 tags: [data]
 parent: epic-universal-board-platform
 depends_on: []
@@ -543,3 +543,31 @@ portable constants. The prior requirement for a fabricated 365-hold map is super
   passed 5 tests; `npm test` passed 117 tests; `npm run typecheck`, `npm run lint`, and
   `npm run build` passed. Two consecutive exports from the committed decompressed
   catalog were byte-identical.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve
+
+**Blockers**: none unresolved. Fixed inline: scoped placements with a missing hole or
+a hole owned by another product were previously folded into the excluded/no-LED
+provenance count; generation now rejects that native-scope corruption, with a focused
+regression test.
+**Important**: none
+**Nits**: none
+**Rejected**: none
+
+**Notes**: Substrate feature review at effective weight `standard`; exactly one
+balanced, same-harness fresh-context pass ran. Closure followed receiver verification
+of the named blocker fix without a second review pass. Direct queries against the
+schema-faithful source database (SHA-256
+`32b2663c7e699708dc3983d6acf8eff5dd8d458530c680c50ce7f6719c61235f`) verified 472
+scoped placements, 305 controllable placements, 167 excluded placements, emitted set
+counts 165/140, excluded set counts 69/98, 305 unique placement/hole/LED-row/LED-position
+identities, zero out-of-bounds emitted coordinates, source role IDs 42/43/44/45, and
+angles `0,5,...,70`. Two post-fix regenerations were byte-identical to each other and
+the checked-in artifact (SHA-256
+`2de883837c343a63c56d4147dd6ff24434ad182712828a9069394515f045e499`). Verification
+passed: 6 Python generator tests, 146 web tests, typecheck, lint, and production build.
+Foundation assertions were inspected and remain aligned. Auth/security, network,
+concurrency, persistence migration, and UI/UX lenses were not applicable to this pure
+offline domain/generator boundary.
