@@ -3,6 +3,7 @@ import type { DraftContent, DraftRevision, LocalClimbDraft, LocalDraftId } from 
 
 export interface DraftListOptions {
   readonly installationId?: BoardInstallationId;
+  readonly collection?: 'active' | 'drafts' | 'finished' | 'trash';
 }
 
 export interface LocalDraftRepository {
@@ -14,7 +15,10 @@ export interface LocalDraftRepository {
     expectedRevision: DraftRevision,
     content: DraftContent,
   ): Promise<LocalClimbDraft>;
-  delete(id: LocalDraftId, expectedRevision: DraftRevision): Promise<void>;
+  trash(id: LocalDraftId, expectedRevision: DraftRevision): Promise<LocalClimbDraft>;
+  restore(id: LocalDraftId, expectedRevision: DraftRevision): Promise<LocalClimbDraft>;
+  deletePermanently(id: LocalDraftId, expectedRevision: DraftRevision): Promise<void>;
+  purgeExpiredTrash(): Promise<number>;
 }
 
 export interface DraftRepositoryOptions {

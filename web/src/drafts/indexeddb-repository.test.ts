@@ -18,6 +18,26 @@ async function repository(options: { now?: () => Date; createId?: () => string }
   return { factory, repository: new IndexedDbLocalDraftRepository(database, options) };
 }
 
+function requestValue(request: IDBRequest<unknown>): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function putRaw(database: IDBDatabase, value: unknown): Promise<void> {
+  const transaction = database.transaction(DRAFT_STORE_NAME, 'readwrite');
+  transaction.objectStore(DRAFT_STORE_NAME).put(value);
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+function readRaw(database: IDBDatabase, id: string): Promise<unknown> {
+  return requestValue(database.transaction(DRAFT_STORE_NAME).objectStore(DRAFT_STORE_NAME).get(id));
+}
+
 describe('IndexedDbLocalDraftRepository', () => {
   it('supports unrestricted CRUD, exact revisions, and immutable snapshots', async () => {
     const times = ['2026-08-02T12:00:00.000Z', '2026-08-02T13:00:00.000Z'];
@@ -41,11 +61,154 @@ describe('IndexedDbLocalDraftRepository', () => {
       updatedAt: '2026-08-02T13:00:00.000Z',
     });
     expect(Object.isFrozen(updated.assignments)).toBe(true);
-    await context.repository.delete(updated.id, updated.revision);
+    await context.repository.deletePermanently(updated.id, updated.revision);
     expect(await context.repository.get(updated.id)).toBeNull();
   });
 
-  it('prevents stale updates and deletes and distinguishes missing records', async () => {
+  it('opens v1 and v2 rows as active Drafts without eagerly rewriting storage', async () => {
+    const ids = [FIRST_DRAFT_ID, SECOND_DRAFT_ID];
+    const context = await repository({
+      createId: () => ids.shift()!,
+      now: () => new Date('2026-08-02T12:00:00.000Z'),
+    });
+    const first = await context.repository.create(draftContent({ name: 'v1' }));
+    const second = await context.repository.create(draftContent({ name: 'v2' }));
+    const database = await openDraftDatabase(context.factory);
+    const firstRaw = structuredClone(await readRaw(database, first.id)) as Record<string, unknown>;
+    firstRaw.schemaVersion = 1;
+    delete firstRaw.status;
+    delete firstRaw.trashedAt;
+    delete firstRaw.effectGroups;
+    const secondRaw = structuredClone(await readRaw(database, second.id)) as Record<
+      string,
+      unknown
+    >;
+    secondRaw.schemaVersion = 2;
+    delete secondRaw.status;
+    delete secondRaw.trashedAt;
+    await putRaw(database, firstRaw);
+    await putRaw(database, secondRaw);
+
+    expect(await context.repository.get(first.id)).toMatchObject({
+      schemaVersion: 3,
+      status: 'draft',
+    });
+    expect(await context.repository.get(second.id)).toMatchObject({
+      schemaVersion: 3,
+      status: 'draft',
+    });
+    expect(await readRaw(database, first.id)).toMatchObject({ schemaVersion: 1 });
+    expect(await readRaw(database, second.id)).toMatchObject({ schemaVersion: 2 });
+    database.close();
+  });
+
+  it('partitions Drafts, Finished climbs, and Trash while retaining identity and status', async () => {
+    const ids = [FIRST_DRAFT_ID, SECOND_DRAFT_ID];
+    const times = [
+      '2026-08-02T12:00:00.000Z',
+      '2026-08-02T12:00:01.000Z',
+      '2026-08-02T12:00:02.000Z',
+      '2026-08-02T12:00:03.000Z',
+      '2026-08-02T12:00:04.000Z',
+    ];
+    const context = await repository({
+      createId: () => ids.shift()!,
+      now: () => new Date(times.shift()!),
+    });
+    const draft = await context.repository.create(draftContent({ name: 'Draft' }));
+    const createdFinished = await context.repository.create(
+      draftContent({ name: 'Finished', status: 'finished' }),
+    );
+
+    expect(await context.repository.list()).toEqual([createdFinished, draft]);
+    expect(await context.repository.list({ collection: 'drafts' })).toEqual([draft]);
+    expect(await context.repository.list({ collection: 'finished' })).toEqual([createdFinished]);
+    expect(await context.repository.list({ collection: 'trash' })).toEqual([]);
+
+    const trashed = await context.repository.trash(createdFinished.id, createdFinished.revision);
+    expect(trashed).toMatchObject({
+      id: createdFinished.id,
+      status: 'finished',
+      revision: 2,
+      trashedAt: '2026-08-02T12:00:02.000Z',
+    });
+    expect(await context.repository.list()).toEqual([draft]);
+    expect(await context.repository.list({ collection: 'finished' })).toEqual([]);
+    expect(await context.repository.list({ collection: 'trash' })).toEqual([trashed]);
+
+    const restored = await context.repository.restore(trashed.id, trashed.revision);
+    expect(restored).toMatchObject({
+      id: createdFinished.id,
+      status: 'finished',
+      revision: 3,
+    });
+    expect(restored).not.toHaveProperty('trashedAt');
+    expect(await context.repository.list({ collection: 'finished' })).toEqual([restored]);
+  });
+
+  it('revision-checks every lifecycle command and rejects content saves to Trash', async () => {
+    const context = await repository({ createId: () => FIRST_DRAFT_ID });
+    const created = await context.repository.create(draftContent());
+    const finished = await context.repository.update(
+      created.id,
+      created.revision,
+      draftContent({ status: 'finished' }),
+    );
+    await expect(context.repository.trash(finished.id, created.revision)).rejects.toBeInstanceOf(
+      DraftConflictError,
+    );
+    const trashed = await context.repository.trash(finished.id, finished.revision);
+    await expect(
+      context.repository.update(trashed.id, trashed.revision, draftContent()),
+    ).rejects.toMatchObject({ code: 'conflict', message: expect.stringContaining('Trash') });
+    await expect(context.repository.restore(trashed.id, finished.revision)).rejects.toBeInstanceOf(
+      DraftConflictError,
+    );
+    await expect(
+      context.repository.deletePermanently(trashed.id, finished.revision),
+    ).rejects.toBeInstanceOf(DraftConflictError);
+    expect(await context.repository.get(trashed.id)).toEqual(trashed);
+  });
+
+  it('purges Trash at the inclusive 30-day boundary and preserves every other row', async () => {
+    const ids = [
+      FIRST_DRAFT_ID,
+      SECOND_DRAFT_ID,
+      '33333333-3333-4333-8333-333333333333',
+      '44444444-4444-4444-8444-444444444444',
+      '55555555-5555-4555-8555-555555555555',
+    ];
+    let now = '2026-08-02T12:00:00.000Z';
+    const context = await repository({
+      createId: () => ids.shift()!,
+      now: () => new Date(now),
+    });
+    const expired = await context.repository.create(draftContent({ name: 'Expired' }));
+    const expiredTrash = await context.repository.trash(expired.id, expired.revision);
+    now = '2026-08-02T12:00:00.001Z';
+    const newer = await context.repository.create(draftContent({ name: 'Newer' }));
+    const newerTrash = await context.repository.trash(newer.id, newer.revision);
+    const active = await context.repository.create(draftContent({ name: 'Active' }));
+    const corrupt = await context.repository.create(draftContent({ name: 'Corrupt' }));
+    const unknown = await context.repository.create(draftContent({ name: 'Unknown' }));
+    const database = await openDraftDatabase(context.factory);
+    await putRaw(database, { ...((await readRaw(database, corrupt.id)) as object), angle: 'bad' });
+    await putRaw(database, {
+      ...((await readRaw(database, unknown.id)) as object),
+      schemaVersion: 4,
+    });
+
+    now = '2026-09-01T12:00:00.000Z';
+    await expect(context.repository.purgeExpiredTrash()).resolves.toBe(1);
+    expect(await context.repository.get(expiredTrash.id)).toBeNull();
+    expect(await context.repository.get(newerTrash.id)).toEqual(newerTrash);
+    expect(await context.repository.get(active.id)).toEqual(active);
+    expect(await readRaw(database, corrupt.id)).toMatchObject({ angle: 'bad' });
+    expect(await readRaw(database, unknown.id)).toMatchObject({ schemaVersion: 4 });
+    database.close();
+  });
+
+  it('prevents stale updates and permanent deletes and distinguishes missing records', async () => {
     const context = await repository({ createId: () => FIRST_DRAFT_ID });
     const first = await context.repository.create(draftContent());
     const second = await context.repository.update(
@@ -56,17 +219,17 @@ describe('IndexedDbLocalDraftRepository', () => {
     await expect(
       context.repository.update(first.id, first.revision, draftContent()),
     ).rejects.toBeInstanceOf(DraftConflictError);
-    await expect(context.repository.delete(first.id, first.revision)).rejects.toBeInstanceOf(
-      DraftConflictError,
-    );
+    await expect(
+      context.repository.deletePermanently(first.id, first.revision),
+    ).rejects.toBeInstanceOf(DraftConflictError);
     expect(await context.repository.get(first.id)).toEqual(second);
     const missing = localDraftId(SECOND_DRAFT_ID);
     await expect(
       context.repository.update(missing, first.revision, draftContent()),
     ).rejects.toBeInstanceOf(DraftNotFoundError);
-    await expect(context.repository.delete(missing, first.revision)).rejects.toBeInstanceOf(
-      DraftNotFoundError,
-    );
+    await expect(
+      context.repository.deletePermanently(missing, first.revision),
+    ).rejects.toBeInstanceOf(DraftNotFoundError);
   });
 
   it('aborts invalid replacements atomically and preserves the prior aggregate', async () => {
@@ -143,7 +306,7 @@ describe('IndexedDbLocalDraftRepository', () => {
     const deleteRepository = new IndexedDbLocalDraftRepository(await openDraftDatabase(factory));
     const results = await Promise.allSettled([
       updateRepository.update(created.id, created.revision, draftContent({ name: 'updated' })),
-      deleteRepository.delete(created.id, created.revision),
+      deleteRepository.deletePermanently(created.id, created.revision),
     ]);
 
     expect(results.filter(({ status }) => status === 'fulfilled')).toHaveLength(1);
@@ -203,7 +366,12 @@ describe('IndexedDbLocalDraftRepository', () => {
     await expect(closed.update(id, revision, draftContent())).rejects.toMatchObject({
       code: 'unavailable',
     });
-    await expect(closed.delete(id, revision)).rejects.toMatchObject({ code: 'unavailable' });
+    await expect(closed.trash(id, revision)).rejects.toMatchObject({ code: 'unavailable' });
+    await expect(closed.restore(id, revision)).rejects.toMatchObject({ code: 'unavailable' });
+    await expect(closed.deletePermanently(id, revision)).rejects.toMatchObject({
+      code: 'unavailable',
+    });
+    await expect(closed.purgeExpiredTrash()).rejects.toMatchObject({ code: 'unavailable' });
   });
 
   it('waits for transaction abort before classifying quota failures', async () => {

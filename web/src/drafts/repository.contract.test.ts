@@ -17,23 +17,48 @@ export function runLocalDraftRepositoryContract(
   create: (ids: readonly string[]) => Promise<DraftRepositoryContractContext>,
 ): void {
   describe(`${name} local draft repository contract`, () => {
-    it('creates, lists, updates, and deletes unrestricted drafts', async () => {
+    it('creates, lists, updates, trashes, restores, and permanently deletes unrestricted climbs', async () => {
       const context = await create([FIRST_DRAFT_ID]);
       const created = await context.repository.create(draftContent());
-      expect(created).toMatchObject({ id: FIRST_DRAFT_ID, revision: 1, name: '', assignments: [] });
+      expect(created).toMatchObject({
+        id: FIRST_DRAFT_ID,
+        revision: 1,
+        status: 'draft',
+        name: '',
+        assignments: [],
+      });
       expect(await context.repository.list()).toEqual([created]);
       const updated = await context.repository.update(
         created.id,
         created.revision,
-        draftContent({ name: 'unconventional', metadata: { setterNotes: '' } }),
+        draftContent({
+          status: 'finished',
+          name: 'unconventional',
+          metadata: { setterNotes: '' },
+        }),
       );
       expect(updated).toMatchObject({
         revision: 2,
         createdAt: created.createdAt,
+        status: 'finished',
         name: 'unconventional',
       });
-      await context.repository.delete(updated.id, updated.revision);
-      expect(await context.repository.get(updated.id)).toBeNull();
+      expect(await context.repository.list({ collection: 'drafts' })).toEqual([]);
+      expect(await context.repository.list({ collection: 'finished' })).toEqual([updated]);
+
+      const trashed = await context.repository.trash(updated.id, updated.revision);
+      expect(trashed).toMatchObject({ id: created.id, revision: 3, status: 'finished' });
+      expect(trashed.trashedAt).toBeDefined();
+      expect(await context.repository.list()).toEqual([]);
+      expect(await context.repository.list({ collection: 'trash' })).toEqual([trashed]);
+
+      const restored = await context.repository.restore(trashed.id, trashed.revision);
+      expect(restored).toMatchObject({ id: created.id, revision: 4, status: 'finished' });
+      expect(restored).not.toHaveProperty('trashedAt');
+      expect(await context.repository.list({ collection: 'finished' })).toEqual([restored]);
+
+      await context.repository.deletePermanently(restored.id, restored.revision);
+      expect(await context.repository.get(restored.id)).toBeNull();
       context.close();
     });
 
@@ -49,18 +74,22 @@ export function runLocalDraftRepositoryContract(
       const context = await create([FIRST_DRAFT_ID]);
       const placementId = kilterFullride7x10Definition.placements[0]!.id;
       const content = draftContent({
-        assignments: [{
-          placementId,
-          appearance: { kind: 'custom', color: apiLevel3Color(42) },
-          effectGroupId: lightEffectGroupId('pulse-a'),
-        }],
-        effectGroups: [{
-          id: lightEffectGroupId('pulse-a'),
-          kind: 'pulse',
-          palette: [apiLevel3Color(42)],
-          periodMs: 1000,
-          intensity: 0.5,
-        }],
+        assignments: [
+          {
+            placementId,
+            appearance: { kind: 'custom', color: apiLevel3Color(42) },
+            effectGroupId: lightEffectGroupId('pulse-a'),
+          },
+        ],
+        effectGroups: [
+          {
+            id: lightEffectGroupId('pulse-a'),
+            kind: 'pulse',
+            palette: [apiLevel3Color(42)],
+            periodMs: 1000,
+            intensity: 0.5,
+          },
+        ],
       });
       const created = await context.repository.create(content);
       expect(created.effectGroups).toEqual(content.effectGroups);

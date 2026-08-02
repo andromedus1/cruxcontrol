@@ -19,12 +19,14 @@ import {
   type DraftMetadata,
   type DraftRevision,
   type LocalClimbDraft,
+  type LocalClimbStatus,
   type LocalDraftId,
-  type StoredDraftV2,
+  type StoredDraftV3,
 } from './types.ts';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const ROLES = new Set(['start', 'middle', 'finish', 'foot-only']);
+const CLIMB_STATUSES = new Set<LocalClimbStatus>(['draft', 'finished']);
 const EFFECT_KINDS = new Set<LightEffectKind>([
   'pulse',
   'color-cycle',
@@ -203,11 +205,13 @@ function decodeEffectGroups(value: unknown, source: unknown): readonly LightEffe
   );
 }
 
-export function encodeStoredDraft(draft: LocalClimbDraft): StoredDraftV2 {
+export function encodeStoredDraft(draft: LocalClimbDraft): StoredDraftV3 {
   return {
-    schemaVersion: 2,
+    schemaVersion: LOCAL_DRAFT_SCHEMA_VERSION,
     id: draft.id,
     revision: draft.revision,
+    status: draft.status,
+    ...(draft.trashedAt === undefined ? {} : { trashedAt: draft.trashedAt }),
     installationId: draft.installationId,
     definitionId: draft.definitionId,
     layoutRevision: draft.layoutRevision,
@@ -237,7 +241,7 @@ export function encodeStoredDraft(draft: LocalClimbDraft): StoredDraftV2 {
 
 export function decodeStoredDraft(value: unknown): LocalClimbDraft {
   const raw = record(value, '$', value);
-  if (raw.schemaVersion !== 1 && raw.schemaVersion !== LOCAL_DRAFT_SCHEMA_VERSION) {
+  if (raw.schemaVersion !== 1 && raw.schemaVersion !== 2 && raw.schemaVersion !== 3) {
     throw new DraftSchemaError(raw.schemaVersion, typeof raw.id === 'string' ? raw.id : undefined);
   }
   let id: LocalDraftId;
@@ -266,12 +270,27 @@ export function decodeStoredDraft(value: unknown): LocalClimbDraft {
   ) {
     throw corrupt('updatedOrder', 'must equal [updatedAt, id]', value);
   }
-  const effectGroups = raw.schemaVersion === 1 ? Object.freeze([]) : decodeEffectGroups(raw.effectGroups, value);
+  const effectGroups =
+    raw.schemaVersion === 1 ? Object.freeze([]) : decodeEffectGroups(raw.effectGroups, value);
   const effectGroupIds = new Set(effectGroups.map(({ id }) => id));
+  let status: LocalClimbStatus = 'draft';
+  let trashedAt: string | undefined;
+  if (raw.schemaVersion === 3) {
+    const decodedStatus = string(raw.status, 'status', value) as LocalClimbStatus;
+    if (!CLIMB_STATUSES.has(decodedStatus)) {
+      throw corrupt('status', 'expected draft or finished', value);
+    }
+    status = decodedStatus;
+    if (raw.trashedAt !== undefined) {
+      trashedAt = timestamp(raw.trashedAt, 'trashedAt', value);
+    }
+  }
   return Object.freeze({
     schemaVersion: LOCAL_DRAFT_SCHEMA_VERSION,
     id,
     revision,
+    status,
+    ...(trashedAt === undefined ? {} : { trashedAt }),
     installationId: branded(boardInstallationId, raw.installationId, 'installationId', value),
     definitionId: branded(boardDefinitionId, raw.definitionId, 'definitionId', value),
     layoutRevision: branded(layoutRevisionId, raw.layoutRevision, 'layoutRevision', value),

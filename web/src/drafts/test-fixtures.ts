@@ -8,6 +8,7 @@ export const TEST_INSTALLATION_ID = boardInstallationId('test-fullride');
 
 export function draftContent(overrides: Partial<DraftContent> = {}): DraftContent {
   return {
+    status: 'draft',
     installationId: TEST_INSTALLATION_ID,
     definitionId: kilterFullride7x10Definition.id,
     layoutRevision: kilterFullride7x10Definition.layoutRevision,

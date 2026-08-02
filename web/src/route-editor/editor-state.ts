@@ -5,6 +5,7 @@ import { apiLevel3Color } from '../domain/boards/colors';
 
 function contentOf(draft: LocalClimbDraft): DraftContent {
   return Object.freeze({
+    status: draft.status,
     installationId: draft.installationId,
     definitionId: draft.definitionId,
     layoutRevision: draft.layoutRevision,

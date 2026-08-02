@@ -10,7 +10,7 @@ import { RouteEditorWorkspace } from './RouteEditorWorkspace';
 
 const draft: LocalClimbDraft = {
   ...draftContent(),
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: localDraftId('11111111-1111-4111-8111-111111111111'),
   revision: draftRevision(1),
   createdAt: '2026-08-02T00:00:00.000Z',
@@ -22,7 +22,10 @@ const repository: LocalDraftRepository = {
   get: vi.fn(),
   list: vi.fn(),
   update: vi.fn(),
-  delete: vi.fn(),
+  trash: vi.fn(),
+  restore: vi.fn(),
+  deletePermanently: vi.fn(),
+  purgeExpiredTrash: vi.fn(),
 };
 
 describe('RouteEditorWorkspace', () => {

@@ -19,6 +19,8 @@ import {
   type LocalDraftId,
 } from './types.ts';
 
+const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
+
 function transactionError(transaction: IDBTransaction, message: string): DraftRepositoryError {
   return translateDraftStorageError(transaction.error, message);
 }
@@ -32,12 +34,20 @@ function requestResult<T>(request: IDBRequest<T>, message: string): Promise<T> {
 
 function freezeContent(
   content: DraftContent,
-  identity: { id: LocalDraftId; revision: DraftRevision; createdAt: string; updatedAt: string },
+  identity: {
+    id: LocalDraftId;
+    revision: DraftRevision;
+    createdAt: string;
+    updatedAt: string;
+    trashedAt?: string;
+  },
 ): LocalClimbDraft {
   return decodeStoredDraft({
     schemaVersion: LOCAL_DRAFT_SCHEMA_VERSION,
     id: identity.id,
     revision: identity.revision,
+    status: content.status,
+    ...(identity.trashedAt === undefined ? {} : { trashedAt: identity.trashedAt }),
     installationId: content.installationId,
     definitionId: content.definitionId,
     layoutRevision: content.layoutRevision,
@@ -50,6 +60,35 @@ function freezeContent(
     updatedAt: identity.updatedAt,
     updatedOrder: [identity.updatedAt, identity.id],
   });
+}
+
+function contentOf(draft: LocalClimbDraft): DraftContent {
+  return {
+    status: draft.status,
+    installationId: draft.installationId,
+    definitionId: draft.definitionId,
+    layoutRevision: draft.layoutRevision,
+    name: draft.name,
+    angle: draft.angle,
+    assignments: draft.assignments,
+    effectGroups: draft.effectGroups,
+    metadata: draft.metadata,
+  };
+}
+
+function isInCollection(
+  draft: LocalClimbDraft,
+  collection: NonNullable<DraftListOptions['collection']>,
+): boolean {
+  if (collection === 'trash') return draft.trashedAt !== undefined;
+  if (draft.trashedAt !== undefined) return false;
+  if (collection === 'drafts') return draft.status === 'draft';
+  if (collection === 'finished') return draft.status === 'finished';
+  return true;
+}
+
+function deleteStoredDraft(store: IDBObjectStore, id: LocalDraftId): IDBRequest<undefined> {
+  return store.delete(id);
 }
 
 export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
@@ -150,8 +189,9 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
         try {
           const draft = decodeStoredDraft(cursor.value);
           if (
-            options.installationId === undefined ||
-            draft.installationId === options.installationId
+            (options.installationId === undefined ||
+              draft.installationId === options.installationId) &&
+            isInCollection(draft, options.collection ?? 'active')
           )
             drafts.push(draft);
           cursor.continue();
@@ -167,6 +207,58 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
     expectedRevision: DraftRevision,
     content: DraftContent,
   ): Promise<LocalClimbDraft> {
+    return this.#mutate(id, expectedRevision, 'update local climb', (current, updatedAt) => {
+      if (current.trashedAt !== undefined) {
+        throw new DraftRepositoryError(
+          'conflict',
+          `Local climb ${id} is in Trash and cannot be updated`,
+        );
+      }
+      return freezeContent(content, {
+        id,
+        revision: draftRevision(current.revision + 1),
+        createdAt: current.createdAt,
+        updatedAt,
+        trashedAt: current.trashedAt,
+      });
+    });
+  }
+
+  trash(id: LocalDraftId, expectedRevision: DraftRevision): Promise<LocalClimbDraft> {
+    return this.#mutate(id, expectedRevision, 'move local climb to Trash', (current, updatedAt) => {
+      if (current.trashedAt !== undefined) {
+        throw new DraftRepositoryError('conflict', `Local climb ${id} is already in Trash`);
+      }
+      return freezeContent(contentOf(current), {
+        id,
+        revision: draftRevision(current.revision + 1),
+        createdAt: current.createdAt,
+        updatedAt,
+        trashedAt: updatedAt,
+      });
+    });
+  }
+
+  restore(id: LocalDraftId, expectedRevision: DraftRevision): Promise<LocalClimbDraft> {
+    return this.#mutate(id, expectedRevision, 'restore local climb', (current, updatedAt) => {
+      if (current.trashedAt === undefined) {
+        throw new DraftRepositoryError('conflict', `Local climb ${id} is not in Trash`);
+      }
+      return freezeContent(contentOf(current), {
+        id,
+        revision: draftRevision(current.revision + 1),
+        createdAt: current.createdAt,
+        updatedAt,
+      });
+    });
+  }
+
+  #mutate(
+    id: LocalDraftId,
+    expectedRevision: DraftRevision,
+    operation: string,
+    change: (current: LocalClimbDraft, updatedAt: string) => LocalClimbDraft,
+  ): Promise<LocalClimbDraft> {
     const updatedAt = this.#now().toISOString();
     let transaction: IDBTransaction;
     let store: IDBObjectStore;
@@ -176,7 +268,7 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
       store = transaction.objectStore(DRAFT_STORE_NAME);
       getRequest = store.get(id);
     } catch (cause) {
-      return Promise.reject(translateDraftStorageError(cause, 'Could not update local draft'));
+      return Promise.reject(translateDraftStorageError(cause, `Could not ${operation}`));
     }
     let result: LocalClimbDraft | undefined;
     let semanticError: unknown;
@@ -187,12 +279,7 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
         if (current.revision !== expectedRevision) {
           throw new DraftConflictError(id, expectedRevision, current.revision);
         }
-        result = freezeContent(content, {
-          id,
-          revision: draftRevision(current.revision + 1),
-          createdAt: current.createdAt,
-          updatedAt,
-        });
+        result = change(current, updatedAt);
         store.put(encodeStoredDraft(result));
       } catch (error) {
         semanticError = error;
@@ -207,11 +294,11 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
               new DraftRepositoryError('unavailable', 'Draft update completed without a result'),
             );
       transaction.onabort = () =>
-        reject(semanticError ?? transactionError(transaction, 'Could not update local draft'));
+        reject(semanticError ?? transactionError(transaction, `Could not ${operation}`));
     });
   }
 
-  delete(id: LocalDraftId, expectedRevision: DraftRevision): Promise<void> {
+  deletePermanently(id: LocalDraftId, expectedRevision: DraftRevision): Promise<void> {
     let transaction: IDBTransaction;
     let store: IDBObjectStore;
     let getRequest: IDBRequest<unknown>;
@@ -220,7 +307,9 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
       store = transaction.objectStore(DRAFT_STORE_NAME);
       getRequest = store.get(id);
     } catch (cause) {
-      return Promise.reject(translateDraftStorageError(cause, 'Could not delete local draft'));
+      return Promise.reject(
+        translateDraftStorageError(cause, 'Could not permanently delete local climb'),
+      );
     }
     let semanticError: unknown;
     getRequest.onsuccess = () => {
@@ -230,7 +319,7 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
         if (current.revision !== expectedRevision) {
           throw new DraftConflictError(id, expectedRevision, current.revision);
         }
-        store.delete(id);
+        deleteStoredDraft(store, id);
       } catch (error) {
         semanticError = error;
         transaction.abort();
@@ -239,7 +328,51 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
     return new Promise((resolve, reject) => {
       transaction.oncomplete = () => resolve();
       transaction.onabort = () =>
-        reject(semanticError ?? transactionError(transaction, 'Could not delete local draft'));
+        reject(
+          semanticError ??
+            transactionError(transaction, 'Could not permanently delete local climb'),
+        );
+    });
+  }
+
+  purgeExpiredTrash(): Promise<number> {
+    const expiresAtOrBefore = this.#now().valueOf() - TRASH_RETENTION_MS;
+    let transaction: IDBTransaction;
+    let store: IDBObjectStore;
+    let request: IDBRequest<IDBCursorWithValue | null>;
+    try {
+      transaction = this.#database.transaction(DRAFT_STORE_NAME, 'readwrite');
+      store = transaction.objectStore(DRAFT_STORE_NAME);
+      request = store.openCursor();
+    } catch (cause) {
+      return Promise.reject(
+        translateDraftStorageError(cause, 'Could not remove expired Trash climbs'),
+      );
+    }
+    let deleted = 0;
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) return;
+      try {
+        const draft = decodeStoredDraft(cursor.value);
+        if (
+          draft.trashedAt !== undefined &&
+          new Date(draft.trashedAt).valueOf() <= expiresAtOrBefore
+        ) {
+          deleteStoredDraft(store, draft.id);
+          deleted += 1;
+        }
+      } catch (error) {
+        if (!(error instanceof DraftRepositoryError)) throw error;
+      }
+      cursor.continue();
+    };
+    return new Promise((resolve, reject) => {
+      request.onerror = () =>
+        reject(translateDraftStorageError(request.error, 'Could not remove expired Trash climbs'));
+      transaction.oncomplete = () => resolve(deleted);
+      transaction.onabort = () =>
+        reject(transactionError(transaction, 'Could not remove expired Trash climbs'));
     });
   }
 

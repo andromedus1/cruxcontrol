@@ -11,7 +11,7 @@ import { lightEffectGroupId } from '../board-renderer/types';
 const placementId = kilterFullride7x10Definition.placements[0]!.id;
 const draft: LocalClimbDraft = {
   ...draftContent(),
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: localDraftId('11111111-1111-4111-8111-111111111111'),
   revision: draftRevision(1),
   createdAt: '2026-08-02T00:00:00.000Z',

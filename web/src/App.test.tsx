@@ -8,7 +8,16 @@ describe('App', () => {
   it('renders the honest local workspace without fabricated climbs', async () => {
     const runtime: CruxControlRuntime = {
       installation: createAppInstallationRegistry().require(activeInstallationId),
-      drafts: { create: vi.fn(), get: vi.fn(), list: vi.fn().mockResolvedValue([]), update: vi.fn(), delete: vi.fn() },
+      drafts: {
+        create: vi.fn(),
+        get: vi.fn(),
+        list: vi.fn().mockResolvedValue([]),
+        update: vi.fn(),
+        trash: vi.fn(),
+        restore: vi.fn(),
+        deletePermanently: vi.fn(),
+        purgeExpiredTrash: vi.fn(),
+      },
       controller: null,
       close: vi.fn(),
     };

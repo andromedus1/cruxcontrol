@@ -11,7 +11,7 @@ import { CruxControlWorkspace } from './CruxControlWorkspace';
 
 const original: LocalClimbDraft = {
   ...draftContent({ name: 'Original' }),
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: localDraftId('11111111-1111-4111-8111-111111111111'),
   revision: draftRevision(1),
   createdAt: '2026-08-02T00:00:00.000Z',
@@ -26,7 +26,7 @@ function persisted(
 ): LocalClimbDraft {
   return {
     ...content,
-    schemaVersion: 2,
+    schemaVersion: 3,
     id,
     revision: draftRevision(revision),
     createdAt: original.createdAt,
@@ -53,7 +53,10 @@ describe('CruxControlWorkspace', () => {
         get: vi.fn(),
         list: vi.fn().mockResolvedValue([original]),
         update,
-        delete: vi.fn(),
+        trash: vi.fn(),
+        restore: vi.fn(),
+        deletePermanently: vi.fn(),
+        purgeExpiredTrash: vi.fn(),
       },
       controller: null,
       close: vi.fn(),
@@ -84,7 +87,10 @@ describe('CruxControlWorkspace', () => {
         get: vi.fn(),
         list: vi.fn().mockResolvedValue([incompatible]),
         update: vi.fn(),
-        delete: vi.fn(),
+        trash: vi.fn(),
+        restore: vi.fn(),
+        deletePermanently: vi.fn(),
+        purgeExpiredTrash: vi.fn(),
       },
       controller: null,
       close: vi.fn(),
@@ -108,7 +114,16 @@ describe('CruxControlWorkspace', () => {
       .mockResolvedValueOnce([original]);
     const runtime: CruxControlRuntime = {
       installation: createAppInstallationRegistry().require(activeInstallationId),
-      drafts: { create: vi.fn(), get: vi.fn(), list, update: vi.fn(), delete: vi.fn() },
+      drafts: {
+        create: vi.fn(),
+        get: vi.fn(),
+        list,
+        update: vi.fn(),
+        trash: vi.fn(),
+        restore: vi.fn(),
+        deletePermanently: vi.fn(),
+        purgeExpiredTrash: vi.fn(),
+      },
       controller: null,
       close: vi.fn(),
     };

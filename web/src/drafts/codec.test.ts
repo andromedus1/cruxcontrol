@@ -9,7 +9,7 @@ import type { LocalClimbDraft } from './types.ts';
 function draft(overrides: Partial<LocalClimbDraft> = {}): LocalClimbDraft {
   const content = draftContent();
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: localDraftId(FIRST_DRAFT_ID),
     revision: draftRevision(1),
     ...content,
@@ -22,7 +22,7 @@ function draft(overrides: Partial<LocalClimbDraft> = {}): LocalClimbDraft {
 }
 
 describe('local draft codec', () => {
-  it('migrates valid v1 records to v2 without changing their climb content', () => {
+  it('migrates valid v1 records to active v3 drafts without changing their climb content', () => {
     const current = draft({
       name: 'Old wave',
       assignments: [
@@ -37,13 +37,16 @@ describe('local draft codec', () => {
       schemaVersion: 1,
     };
     delete (v1 as { effectGroups?: unknown }).effectGroups;
+    delete (v1 as { status?: unknown }).status;
+    delete (v1 as { trashedAt?: unknown }).trashedAt;
     for (const assignment of v1.assignments as unknown as { effectGroupId?: unknown }[]) {
       delete assignment.effectGroupId;
     }
 
     expect(decodeStoredDraft(v1)).toEqual({
       ...current,
-      schemaVersion: 2,
+      schemaVersion: 3,
+      status: 'draft',
       effectGroups: [],
       assignments: current.assignments.map(({ placementId, appearance }) => ({
         placementId,
@@ -52,9 +55,20 @@ describe('local draft codec', () => {
     });
   });
 
-  it('round-trips v2 effect groups and assignment membership exactly', () => {
+  it('migrates valid v2 records to active Drafts without eager lifecycle metadata', () => {
+    const source = draft({ status: 'finished' });
+    const v2 = { ...encodeStoredDraft(source), schemaVersion: 2 };
+    delete (v2 as { status?: unknown }).status;
+    delete (v2 as { trashedAt?: unknown }).trashedAt;
+
+    expect(decodeStoredDraft(v2)).toEqual({ ...source, status: 'draft' });
+  });
+
+  it('round-trips v3 lifecycle, effect groups, and assignment membership exactly', () => {
     const placementId = kilterFullride7x10Definition.placements[0]!.id;
     const source = draft({
+      status: 'finished',
+      trashedAt: '2026-08-03T12:00:00.000Z',
       assignments: [
         {
           placementId,
@@ -77,26 +91,74 @@ describe('local draft codec', () => {
   });
 
   it.each([
-    ['effectGroups[0].id', { effectGroups: [{ id: '', kind: 'pulse', palette: [1], periodMs: 1000, intensity: 1 }] }],
-    ['effectGroups[1].id', { effectGroups: [
-      { id: 'same', kind: 'pulse', palette: [1], periodMs: 1000, intensity: 1 },
-      { id: 'same', kind: 'wave', palette: [2], periodMs: 1000, intensity: 1 },
-    ] }],
-    ['effectGroups[0].palette', { effectGroups: [{ id: 'bad', kind: 'pulse', palette: [], periodMs: 1000, intensity: 1 }] }],
-    ['effectGroups[0].palette[0]', { effectGroups: [{ id: 'bad', kind: 'pulse', palette: [256], periodMs: 1000, intensity: 1 }] }],
-    ['effectGroups[0].periodMs', { effectGroups: [{ id: 'bad', kind: 'pulse', palette: [1], periodMs: 249, intensity: 1 }] }],
-    ['effectGroups[0].intensity', { effectGroups: [{ id: 'bad', kind: 'pulse', palette: [1], periodMs: 1000, intensity: 1.01 }] }],
-    ['assignments[0].effectGroupId', {
-      assignments: [{
-        placementId: kilterFullride7x10Definition.placements[0]!.id,
-        appearance: { kind: 'custom', color: 1 },
-        effectGroupId: 'missing',
-      }],
-    }],
-  ])('rejects corrupt v2 effect data at %s', (path, change) => {
+    [
+      'effectGroups[0].id',
+      { effectGroups: [{ id: '', kind: 'pulse', palette: [1], periodMs: 1000, intensity: 1 }] },
+    ],
+    [
+      'effectGroups[1].id',
+      {
+        effectGroups: [
+          { id: 'same', kind: 'pulse', palette: [1], periodMs: 1000, intensity: 1 },
+          { id: 'same', kind: 'wave', palette: [2], periodMs: 1000, intensity: 1 },
+        ],
+      },
+    ],
+    [
+      'effectGroups[0].palette',
+      { effectGroups: [{ id: 'bad', kind: 'pulse', palette: [], periodMs: 1000, intensity: 1 }] },
+    ],
+    [
+      'effectGroups[0].palette[0]',
+      {
+        effectGroups: [{ id: 'bad', kind: 'pulse', palette: [256], periodMs: 1000, intensity: 1 }],
+      },
+    ],
+    [
+      'effectGroups[0].periodMs',
+      { effectGroups: [{ id: 'bad', kind: 'pulse', palette: [1], periodMs: 249, intensity: 1 }] },
+    ],
+    [
+      'effectGroups[0].intensity',
+      {
+        effectGroups: [{ id: 'bad', kind: 'pulse', palette: [1], periodMs: 1000, intensity: 1.01 }],
+      },
+    ],
+    [
+      'assignments[0].effectGroupId',
+      {
+        assignments: [
+          {
+            placementId: kilterFullride7x10Definition.placements[0]!.id,
+            appearance: { kind: 'custom', color: 1 },
+            effectGroupId: 'missing',
+          },
+        ],
+      },
+    ],
+  ])('rejects corrupt v3 effect data at %s', (path, change) => {
     const wire = { ...encodeStoredDraft(draft()), ...change };
     expect(() => decodeStoredDraft(wire)).toThrowError(
-      expect.objectContaining({ code: 'corrupt-record', path, record: wire }) as DraftCorruptRecordError,
+      expect.objectContaining({
+        code: 'corrupt-record',
+        path,
+        record: wire,
+      }) as DraftCorruptRecordError,
+    );
+  });
+
+  it.each([
+    ['status', { status: 'published' }],
+    ['trashedAt', { trashedAt: 'next month' }],
+    ['trashedAt', { trashedAt: '2026-08-03T12:00:00Z' }],
+  ])('rejects corrupt lifecycle data at %s', (path, change) => {
+    const wire = { ...encodeStoredDraft(draft()), ...change };
+    expect(() => decodeStoredDraft(wire)).toThrowError(
+      expect.objectContaining({
+        code: 'corrupt-record',
+        path,
+        record: wire,
+      }) as DraftCorruptRecordError,
     );
   });
 
@@ -173,11 +235,11 @@ describe('local draft codec', () => {
     );
     expect(duplicate).toEqual(snapshot);
 
-    const future = { ...encodeStoredDraft(draft()), schemaVersion: 3 };
+    const future = { ...encodeStoredDraft(draft()), schemaVersion: 4 };
     expect(() => decodeStoredDraft(future)).toThrowError(
       expect.objectContaining({
         code: 'schema-unsupported',
-        schemaVersion: 3,
+        schemaVersion: 4,
         id: FIRST_DRAFT_ID,
       }) as DraftSchemaError,
     );
