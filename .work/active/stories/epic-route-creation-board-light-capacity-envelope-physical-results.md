@@ -49,4 +49,14 @@ and post-campaign one-light/clear recovery evidence are durably recorded.
   longest of those batches.
 - A 20-light, 2 FPS animation at 20 ms inter-chunk pacing completed with the expected
   visible behavior and clean clear. Exact trace-derived effective FPS and latency remain
-  pending local trace retrieval before this point is classified against pass criteria.
+  pending because that case was not separately exported.
+- Retrieved local trace `cruxcontrol-capacity-20-10fps.json` from the connected Android
+  device without retaining it in the repository. It records API 2, 20 lights, one packet,
+  46 framed bytes, three writes, requested 10 FPS, 20 ms pacing, and operator observation
+  `correct`. The manually stopped 4.18-second run delivered 9 complete frames at 2.0266
+  effective FPS with 24 missed due frames, p50 424.3 ms, p95/max 448.4 ms. Cancellation
+  occurred during the next frame and recovery force-disconnected after one clear event;
+  this is useful throughput evidence but not a full-duration animation pass.
+- Together, the clean visible 2 FPS case and 10-FPS trace show that the present 20-light
+  path is transport-limited to roughly 2 FPS at 20 ms pacing. Product policy must not
+  present requested 10 FPS as delivered motion.
