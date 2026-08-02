@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-08-02T15:36:17Z'
+generated_at: '2026-08-02T18:42:20Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -11,8 +11,8 @@ documents:
 
       '
     decisions:
-    - Offline-first React + Vite SPA (TypeScript) with local SQLite (wa-sqlite AccessHandlePoolVFS in
-      a Web Worker, IndexedDB fallback) as the read path.
+    - Offline-first React + Vite SPA (TypeScript) with local SQLite through wa-sqlite AccessHandlePoolVFS
+      in a Web Worker as the catalog read path.
     - BLE isolated behind a Web Bluetooth adapter implementing the API-level-3 packet protocol.
     - Sync engine is a separate module wrapping POST /sync with incremental shared_syncs cursors.
     - ML training is offline (Python); inference runs in-browser via ONNX Runtime Web (WASM).
@@ -25,6 +25,10 @@ documents:
     - Catalogs are installed per provider/layout; a universal bundled database is rejected.
     - A native iOS shell, if prioritized, exposes a narrow CoreBluetooth transport bridge to the shared
       application core.
+    - The generated immutable Fullride definition is the shared geometry, placement identity, role, and
+      LED-mapping authority.
+    - Unrestricted local drafts use a dedicated versioned IndexedDB repository, separate from provider
+      catalogs.
   docs/DEPLOY.md:
     summary: 'Operator runbook for the CI-gated Cloudflare Workers Static Assets deployment, including
       secrets, opt-in enablement, branch protection, and verification.
@@ -65,6 +69,8 @@ documents:
       on demand.
     - Android/desktop Chromium provide Web Bluetooth control; iOS direct control is a later native-bridge
       capability.
+    - Local drafts are unrestricted, browser-authoritative aggregates; provider publication validation
+      is a separate future boundary.
   docs/VISION.md:
     summary: 'CruxControl is a Kilter-first, eventually universal climbing-board app. Its first complete
       vertical slice controls a home Fullride 7x10, while its domain, catalog, and controller boundaries
