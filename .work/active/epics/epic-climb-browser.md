@@ -1,7 +1,7 @@
 ---
 id: epic-climb-browser
 kind: epic
-stage: implementing
+stage: review
 tags: [ui]
 parent: null
 depends_on: [epic-universal-board-platform]
@@ -110,3 +110,15 @@ and light a local climb and would pull catalog bootstrap into the critical path.
 - **Deferred catalog scope could leak into the local viewer.** The viewer must consume
   normalized records through a narrow source boundary rather than query provider SQL,
   preserving a clean later path to filtering and shareable provider-climb URLs.
+
+## Child features reviewed and complete
+
+- `epic-climb-browser-fullride-renderer` — definition-driven 305-hold Fullride
+  rendering, role/custom overlays, view/select accessibility, and responsive geometry
+  approved.
+- `epic-climb-browser-local-climb-viewer` — source-neutral controlled list/detail,
+  responsive split/modal lifecycle, explicit board-control status/actions, and honest
+  local empty state approved.
+
+Both direct child features are done, so this epic is ready for its separate aggregate
+review.
