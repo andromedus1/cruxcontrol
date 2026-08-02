@@ -1,7 +1,7 @@
 ---
 id: epic-board-control-protocol-codec
 kind: feature
-stage: implementing
+stage: review
 tags: [ble]
 parent: epic-board-control
 depends_on: []
@@ -256,3 +256,24 @@ this feature's CI boundary is exact byte output.
   codec intentionally preserves all input rather than imposing a climb hold limit.
   **Fallback**: animation frame-diffing and rate limiting belong in future lighting
   orchestration, not protocol encoding.
+
+## Implementation notes
+
+- Execution capability: highest-capability/xhigh; byte-level hardware protocol
+  correctness and reverse-engineered packet boundaries warranted the strongest
+  implementation posture.
+- Review weight: standard (caller/project convention); stop at feature review for the
+  orchestrator-owned independent pass.
+- Files changed: `web/src/board-control/api-level-3-codec.ts`,
+  `web/src/board-control/api-level-3-codec.test.ts`.
+- Tests added/removed: added 43 pure Vitest cases covering exact clear and green-light
+  fixtures, exhaustive reachability of all 256 protocol colors, malformed numeric
+  inputs, duplicate LED rejection, 84/85/168/169-light packet boundaries, framing,
+  checksums, and continuous 20-byte write reconstruction; removed none.
+- Simplification: kept validation, framing, and chunking in one dependency-free module;
+  no registry, Bluetooth abstraction, decoder, or API-level compatibility layer was
+  introduced.
+- Discrepancies from design: none.
+- Adjacent issues parked: none.
+- Verification: `npm test` (67 tests), `npm run typecheck`, `npm run lint`, and
+  `npm run build` all pass on 2026-08-02.
