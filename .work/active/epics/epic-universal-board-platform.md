@@ -1,7 +1,7 @@
 ---
 id: epic-universal-board-platform
 kind: epic
-stage: drafting
+stage: implementing
 tags: [data]
 parent: null
 depends_on: [epic-foundation-sqlite-readpath, epic-foundation-pwa-shell]
@@ -58,10 +58,41 @@ board vendors or user-facing browsing/control.
 - `docs/SPEC.md` — Board Inventory & Setup and namespaced domain identities.
 - `docs/PRINCIPLES.md` — Separate the three changing axes; preserve before normalizing.
 
-## Anticipated child features
+## UI alignment
 
-Provisional:
-- Namespaced domain identities + immutable board/layout definitions
-- Board installation registry + capability negotiation
-- Domain catalog query port + Kilter projection over the raw SQLite foundation
-- Catalog provider and controller profile/transport contracts
+This epic establishes domain and adapter contracts without adding a user-facing
+surface. Its consumers inherit the locked design system and their own approved screen
+or flow mockups; no mockup is required for this decomposition.
+
+## Decomposition
+
+Split by durable capability rather than technical layer. The domain-definition feature
+owns the shared identity and geometry vocabulary. Installation contracts compose that
+definition with provider/controller capabilities, while the catalog-domain feature
+independently projects raw SQLite rows into the same vocabulary. This keeps board
+control and catalog consumers from sharing Kilter-specific infrastructure while
+allowing the two downstream seams to develop in parallel after the definition lands.
+
+### Child features
+
+- `epic-universal-board-platform-domain-definition` — namespaced identities and the
+  immutable Fullride 7x10 definition — depends on: `[]`
+- `epic-universal-board-platform-installation-contracts` — installation registry,
+  capabilities, and provider/controller ports — depends on:
+  `[epic-universal-board-platform-domain-definition]`
+- `epic-universal-board-platform-catalog-domain` — typed domain catalog queries and
+  Kilter SQLite projection — depends on:
+  `[epic-universal-board-platform-domain-definition]`
+
+### Decomposition risks
+
+- **Definition accuracy is load-bearing.** Incorrect placement, coordinate, or LED
+  identity would contaminate rendering and physical control. The concrete Fullride
+  definition must be verified against the schema-faithful catalog data, with the
+  screenshot used only as a visual cross-check.
+- **Contract overreach could create a speculative plugin system.** The feature briefs
+  constrain this milestone to explicit TypeScript ports and one Kilter composition;
+  abstractions not exercised by the first consumers are deferred.
+- **Raw-SQL leakage would defeat the boundary.** The existing `CatalogPort` is
+  intentionally low-level; its Kilter projection must become the sole query path for
+  product modules rather than a parallel convenience wrapper.
