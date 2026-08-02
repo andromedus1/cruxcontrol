@@ -8,16 +8,19 @@ using only those holds. Normally you drive the board with Kilter's official phon
 
 That app is slow, hard to get your data out of, and not very smart. **CruxControl is a
 replacement for it** — a web app (it runs in your browser, nothing to install from an
-app store) that talks to a home Kilter Board over Bluetooth and does the same job, but
-faster and with extra features the official app doesn't have:
+app store) that talks to a home Kilter Board over Bluetooth.
 
-- **Browse and filter climbs instantly**, even offline.
-- **Light up a climb on the wall** straight from the browser.
-- **Predict the difficulty (grade)** of a climb using machine learning — including
-  climbs nobody has rated yet, and spotting "sandbags" (climbs harder than their label).
-- **Keep your own logbook** of what you've climbed, stored on *your* device — not locked
-  inside someone else's app.
-- **Share a climb with a friend** by sending them a link.
+The completed first local milestone can:
+
+- **Create and edit climbs in any state**, including empty or unconventional routes,
+  and autosave them in this browser.
+- **Show all 305 controllable Fullride holds** in an accessible, responsive board
+  diagram with the four normal climb roles or any of the board's 256 light colors.
+- **Light or clear the wall from Android or desktop Chromium** through the browser's
+  Web Bluetooth support, with an optional live preview while setting.
+
+Community-catalog browsing and sharing, a local logbook, ML grade prediction, and
+personalized training remain later milestones.
 
 It's built for one specific board — a home **Kilter Board Fullride 7x10** — and shared
 with a small circle of friends. Each person runs their own copy against their own board,
@@ -52,10 +55,11 @@ no backend, no accounts; each user runs their own client with local data.
 npm install          # installs the web workspace
 npm run dev          # vite dev server
 npm run build        # static production build → web/dist
-npm test             # vitest (24 tests)
+npm test             # vitest contract and integration suite
 npm run typecheck    # tsc --noEmit (strict)
 npm run lint         # eslint
 npm run format       # prettier --write
+npm -w web run test:e2e  # Playwright Chromium smoke tests (build first)
 ```
 
 Requires Node ≥ 20 (see `.nvmrc`). Run scripts from the repo root with
@@ -63,6 +67,19 @@ Requires Node ≥ 20 (see `.nvmrc`). Run scripts from the repo root with
 
 ### Architecture highlights (foundation)
 
+- **Immutable Fullride board domain** — a reproducible catalog projection generates
+  the validated Fullride 7x10 definition: 305 controllable placements, geometry,
+  source identities, LED positions, supported angles, and semantic role presets.
+- **Original SVG renderer** — definition-driven hold artwork, role shapes, custom
+  colors, pan/scale behavior, and roving keyboard interaction are shared by the climb
+  viewer and route editor.
+- **Local drafts and editor** — unrestricted, schema-versioned drafts live in a
+  dedicated native IndexedDB store with optimistic revisions. The responsive editor
+  supports semantic roles, all 256 packed 3/3/2-bit colors, coalesced autosave,
+  reload/retry/save-copy recovery, explicit lighting, and opt-in live preview.
+- **Board control** — the API-level-3 codec, Web Bluetooth session, and light-scene
+  controller are isolated behind typed ports and covered with deterministic transport
+  fakes. A powered-board Android Chrome verification is still required.
 - **Local catalog read path** — the Kilter catalog is an in-browser SQLite database
   (`wa-sqlite`, `AccessHandlePoolVFS`) running in a Web Worker, behind the `CatalogPort`
   interface ([web/src/data/](web/src/data/)). All climb/hold/stats queries go through it.
@@ -82,13 +99,19 @@ Workers-over-Pages is in [.research/briefs/cloudflare-deploy/parent.md](.researc
 
 ### Status
 
-The **foundation epic is nearly complete**. Done: monorepo scaffold, the in-browser
-SQLite read path, the offline PWA shell, and CI + the gated Workers deploy. In progress:
-**catalog bootstrap** — snapshot generation is proven (the script + manifest are in), but
-the client-side first-run install is blocked on a VFS-import decision (see the
-`epic-foundation-catalog-bootstrap` item).
+The **Fullride local create-save-light milestone is implemented**. The application now
+composes the generated 305-placement board definition, original SVG renderer, local
+climb viewer, unrestricted IndexedDB draft library, responsive route editor, and
+API-level-3 Web Bluetooth controller. The automated snapshot is green across 218
+Vitest tests, strict typecheck, lint, production build, and two Chromium end-to-end
+smokes covering autosave/reload/reopen and phone/desktop interaction.
 
-Everything past the foundation — board control over Bluetooth, the climb browser, ML
-grade prediction, logbook, playlists, recommendations, route creation — is planned and
-blocked on it. Work is tracked in `.work/`; query with `.work/bin/work-view --ready`
-(or `--parent epic-foundation` for the foundation's status).
+Automated tests validate protocol bytes and the controller lifecycle through fakes;
+they do **not** prove behavior on a powered board. Fullride 7x10 + Android Chrome
+physical verification remains an explicit pending checkpoint.
+
+Community-catalog first-run installation is still blocked on the VFS-import decision
+in `epic-foundation-catalog-bootstrap`. Catalog browsing/filtering and provider
+publication, iOS direct control, other boards, ML grade prediction, logbook,
+playlists, sharing, and recommendations remain future work. Query current work with
+`.work/bin/work-view --ready`.

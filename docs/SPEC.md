@@ -18,17 +18,19 @@ decisions:
   - "Every climb and layout identity is namespaced by provider and immutable board/layout revision; bare vendor IDs never cross domain boundaries."
   - "The Fullride 7x10 is the acceptance board for the first milestone; additional providers are installed on demand."
   - "Android/desktop Chromium provide Web Bluetooth control; iOS direct control is a later native-bridge capability."
+  - "Local drafts are unrestricted, browser-authoritative aggregates; provider publication validation is a separate future boundary."
 ---
 
 # CruxControl — Specification
 
 This document owns the capability contract: what the system does, the domain it
-operates over, and the constraints it must satisfy. The *why* lives in
-[VISION.md](VISION.md); the *how* lives in [ARCHITECTURE.md](ARCHITECTURE.md).
+operates over, and the constraints it must satisfy. The _why_ lives in
+[VISION.md](VISION.md); the _how_ lives in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Capabilities
 
 ### 0. Board Inventory & Setup
+
 - Browse the board models and layout revisions supported by installed providers.
 - Configure one or more local board installations: board/layout, supported angle,
   installed hold sets, catalog source, and compatible controller profile.
@@ -38,34 +40,52 @@ operates over, and the constraints it must satisfy. The *why* lives in
   availability: browse, control, create, publish, import, and sync.
 
 ### 1. Board Control (BLE)
+
 - Connect to the active board through a capability-selected controller adapter.
 - The first adapter controls the Kilter Fullride 7x10 via Web Bluetooth.
 - Light up holds for any selected climb using the Nordic UART protocol (API level 3).
 - Support the full color role system: Start (green), Middle (cyan), Finish
-  (magenta), Foot-only (orange).
-- Handle multi-packet messages for climbs with many holds.
+  (magenta), Foot-only (orange), plus all 256 packed 3/3/2-bit hardware colors.
+- Handle framing, checksums, 16-bit LED positions, multi-packet scenes, and bounded
+  20-byte writes for climbs with many holds.
+- Keep connection, reconnect, disconnect, light, clear, and latest-frame-wins preview
+  behavior behind a typed controller/transport boundary.
 
 ### 2. Climb Browser
+
 - Fast, responsive browsing of the active board's installed community catalog.
 - Filtering: grade range, angle, quality, ascent count, setter, hold count,
   grade-consensus accuracy.
 - Shareable URLs for individual climbs (a major gap in the official app).
-- Visual 2D board renderer showing hold positions and roles.
-- Fullride 7x10 layout first (Mainline + Auxiliary sets); renderers consume board
-  definitions rather than hard-coded vendor coordinates.
+- Visual 2D board renderer showing original SVG hold artwork, positions, semantic role
+  shapes, and custom colors with pointer and roving-keyboard interaction.
+- The generated immutable Fullride 7x10 definition contains 305 controllable Mainline
+  and Auxiliary placements. Renderers consume its geometry and identities rather than
+  hard-coded vendor coordinates.
 
 ### 3. Route Creation & Editing
+
 - Visual editor: create climbs by tapping holds on the board diagram.
-- Assign roles (start / middle / finish / foot-only) per hold.
-- Publish climbs to the Kilter Board API; save drafts locally.
+- Assign roles (start / middle / finish / foot-only), erase holds, or select any exact
+  packed hardware color per hold.
+- Save empty, incomplete, unconventional, semantic, or custom-color drafts locally;
+  no provider role-count or metadata validity rule gates local saving or lighting.
+- Autosave coalesces edits behind optimistic revisions. Storage failures remain dirty
+  and retryable; conflicts offer reload-stored or save-a-copy recovery without silent
+  overwrites.
+- Explicit Light Draft and opt-in, default-off Live Preview reuse the board controller.
+- Publishing to the Kilter community is deferred until its current authentication and
+  API contract are freshly researched; it is not part of local draft validity.
 
 ### 4. Logbook & Session Tracking
+
 - Log ascents and attempts with grade votes and quality ratings.
 - Session mode: track attempts across a session with real-time stats.
 - Full logbook history with search and analytics.
 - Logbook stored locally; optional sync to the Kilter API.
 
 ### 5. Grade Prediction (ML)
+
 - Predict climb difficulty from hold placements, roles, and board angle.
 - Features: hold positions (x, y), roles, hold count, wall angle, spacing/distances.
 - Target: community consensus grade (`difficulty_average` from `climb_stats`).
@@ -73,6 +93,7 @@ operates over, and the constraints it must satisfy. The *why* lives in
   actual divergence), recommend routes at a target difficulty.
 
 ### 6. Data Acquisition & Training Pipeline
+
 - Sync the Kilter catalog via the documented sync API (`POST /sync`),
   bootstrapped with BoardLib (`boardlib database kilter kilter.db`).
 - Collect climbs + frames, `climb_stats` per angle, hold coordinates
@@ -86,12 +107,14 @@ operates over, and the constraints it must satisfy. The *why* lives in
 - Install catalogs per provider/layout on demand rather than bundling a universal DB.
 
 ### 7. Personalized Training & Recommendations
+
 - Recommend climbs by grade range, preferred style, and progression.
 - Circuit generation: auto-build a session of N climbs at target grades.
 - Weakness detection: which hold types/positions the user struggles with.
 - Progressive overload: suggest slightly harder versions of sent climbs.
 
 ### 8. Playlists (Curated Climb Lists)
+
 - Create named, hand-picked, **manually reorderable** lists of climbs.
 - A playlist is a CruxControl-local construct (Kilter has no playlist concept);
   it references climbs by stable Kilter climb ID so a shared playlist resolves
@@ -130,18 +153,40 @@ The model mirrors the official Kilter SQLite schema (see
   stable cross-module identity for climbs, links, logbook entries, and playlists.
 - **CatalogProvenance** — source, retrieval time, native payload/version, and usage
   constraints retained with imported data.
+- **LocalClimbDraft** — a schema-versioned, installation- and layout-revision-bound
+  browser aggregate with stable local identity, optimistic revision, unrestricted
+  metadata and hold assignments, and an exact semantic/custom appearance distinction.
+
+## Current Fullride Local Milestone
+
+- The application composes one configured Fullride 7x10 installation with the
+  generated 305-placement definition, the original SVG renderer, local draft list and
+  detail surfaces, route editor, and Web Bluetooth controller.
+- Drafts are authoritative in a dedicated native IndexedDB database and survive
+  reload/reopen. Definition/layout/angle/placement incompatibility is surfaced while
+  retaining the stored record unchanged.
+- The editor is responsive at Android-phone and desktop Chromium widths, retains
+  persistent save/light actions, and exposes named keyboard-operable controls and
+  non-color-only role markers.
+- Deterministic tests cover definition/renderer, persistence/concurrency/recovery,
+  API-level-3 bytes, Bluetooth lifecycle, lighting/preview, and the integrated
+  create-save-light seams. Playwright Chromium covers autosave/reload/reopen and
+  compact/wide interaction.
+- Physical behavior on a powered Fullride 7x10 through Android Chrome remains a
+  pending manual acceptance checkpoint; automated approval does not claim it passed.
 
 ## Constraints & Non-Functional Requirements
 
 - **Browser support.** Web Bluetooth limits the client to Chromium browsers
   (Chrome/Edge); other browsers can browse but not drive the board.
-- **Offline-first.** The catalog and logbook must be usable without network;
-  load must be instant from local storage.
+- **Offline-first.** Local drafts already create, edit, and reopen without network.
+  The catalog and logbook must likewise be usable from local storage when their
+  milestones ship.
 - **Kilter-first acceptance scope.** The Fullride 7x10 is the first end-to-end
   acceptance board. Core identities and ports support multiple boards, but other
   providers do not block that milestone.
-- **Data ownership.** The logbook is the source of truth locally; Kilter sync is
-  optional and reversible.
+- **Data ownership.** Local drafts are browser-authoritative today. The logbook will
+  likewise be locally authoritative; Kilter sync remains optional and reversible.
 - **Protocol fidelity.** BLE packets must implement framing, checksums, and
   multi-packet splitting exactly per API level 3 (see
   [briefs/hardware-and-protocol.md](briefs/hardware-and-protocol.md)).
