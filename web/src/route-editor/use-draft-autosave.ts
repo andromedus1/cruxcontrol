@@ -15,10 +15,14 @@ export interface DraftAutosaveControls {
 export function useDraftAutosave({ repository, state, dispatch, delayMs = 800 }: { readonly repository: LocalDraftRepository; readonly state: RouteEditorState; readonly dispatch: Dispatch<RouteEditorAction>; readonly delayMs?: number }): DraftAutosaveControls {
   const latest = useRef(state);
   const active = useRef<Promise<void> | null>(null);
+  const recovering = useRef(false);
   const mounted = useRef(true);
   latest.current = state;
 
-  useEffect(() => () => { mounted.current = false; }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   const saveNow = useCallback(async () => {
     if (active.current) return active.current;
@@ -59,14 +63,34 @@ export function useDraftAutosave({ repository, state, dispatch, delayMs = 800 }:
     saveNow,
     retry: saveNow,
     async reloadStored() {
-      const stored = await repository.get(latest.current.draft.id);
-      if (!stored) throw new Error('The stored draft no longer exists.');
-      dispatch({ type: 'reload', draft: stored });
+      if (recovering.current) throw new Error('Draft recovery is already in progress.');
+      recovering.current = true;
+      dispatch({ type: 'save-started', generation: latest.current.generation });
+      try {
+        const stored = await repository.get(latest.current.draft.id);
+        if (!stored) throw new Error('The stored draft no longer exists. Save a copy to preserve your changes.');
+        if (mounted.current) dispatch({ type: 'reload', draft: stored });
+      } catch (error) {
+        if (mounted.current) dispatch({ type: 'save-failed', error: error instanceof Error ? error : new Error('Could not reload the stored draft.'), conflict: true });
+        throw error;
+      } finally {
+        recovering.current = false;
+      }
     },
     async saveCopy() {
-      const copy = await repository.create(latest.current.content);
-      dispatch({ type: 'reload', draft: copy });
-      return copy;
+      if (recovering.current) throw new Error('Draft recovery is already in progress.');
+      recovering.current = true;
+      dispatch({ type: 'save-started', generation: latest.current.generation });
+      try {
+        const copy = await repository.create(latest.current.content);
+        if (mounted.current) dispatch({ type: 'reload', draft: copy });
+        return copy;
+      } catch (error) {
+        if (mounted.current) dispatch({ type: 'save-failed', error: error instanceof Error ? error : new Error('Could not save a copy.'), conflict: true });
+        throw error;
+      } finally {
+        recovering.current = false;
+      }
     },
   };
 }

@@ -26,9 +26,39 @@ describe('route editor model', () => {
     expect(applyEditorTool(custom, placementId, { kind: 'erase' })).toEqual([]);
   });
 
+  it('keeps exact no-op assignments clean and accepts every packed color', () => {
+    const empty: readonly never[] = [];
+    expect(applyEditorTool(empty, placementId, { kind: 'erase' })).toBe(empty);
+
+    const start = applyEditorTool([], placementId, { kind: 'role', role: 'start' });
+    expect(applyEditorTool(start, placementId, { kind: 'role', role: 'start' })).toBe(start);
+
+    for (let packed = 0; packed <= 255; packed += 1) {
+      const custom = applyEditorTool([], placementId, { kind: 'custom', color: apiLevel3Color(packed) });
+      expect(custom[0]?.appearance).toEqual({ kind: 'custom', color: packed });
+    }
+
+    const state = createRouteEditorState(draft);
+    const eraseState = routeEditorReducer(
+      routeEditorReducer(state, { type: 'set-tool', tool: { kind: 'erase' } }),
+      { type: 'activate-placement', placementId },
+    );
+    expect(eraseState.generation).toBe(0);
+    expect(eraseState.saveStatus).toBe('saved');
+  });
+
   it('does not dirty on identical metadata', () => {
     const state = createRouteEditorState(draft);
     expect(routeEditorReducer(state, { type: 'set-name', value: '' })).toBe(state);
     expect(routeEditorReducer(state, { type: 'set-name', value: 'Wave' }).saveStatus).toBe('dirty');
+  });
+
+  it('preserves ordinary metadata spaces while omitting blank-only values', () => {
+    const state = createRouteEditorState(draft);
+    const withSpace = routeEditorReducer(state, { type: 'set-metadata', field: 'description', value: 'Move left ' });
+    expect(withSpace.content.metadata?.description).toBe('Move left ');
+    const withSentence = routeEditorReducer(withSpace, { type: 'set-metadata', field: 'description', value: 'Move left now' });
+    expect(withSentence.content.metadata?.description).toBe('Move left now');
+    expect(routeEditorReducer(withSentence, { type: 'set-metadata', field: 'description', value: '   ' }).content.metadata?.description).toBeUndefined();
   });
 });

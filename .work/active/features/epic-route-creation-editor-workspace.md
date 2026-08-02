@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-editor-workspace
 kind: feature
-stage: review
+stage: done
 tags: [ui, ble]
 parent: epic-route-creation
 depends_on:
@@ -426,3 +426,34 @@ feature through standard review.
 - `npm run lint` — passed.
 - `npm run build` — production PWA build passed.
 - `npm -w web run test:e2e` — Chromium create/color/save/reload/reopen passed.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve
+
+**Blockers**: none unresolved. Fixed inline: exact no-op hold assignments no longer
+dirty a draft; optional metadata preserves ordinary spaces; autosave remains mounted
+under React StrictMode and serializes revision-safe follow-ups; conflict reload/copy
+failures remain recoverable and Save-a-copy adopts the new identity; Live Preview
+recovers truthfully from failure/disconnect without stale status races; duplicate busy
+lighting gestures remain bounded; and compact viewports now use the required 2.5×
+board scale.
+**Important**: none
+**Nits**: none
+**Rejected**: none
+
+**Notes**: Substrate feature review at effective weight `standard`; exactly one
+independent fresh-context same-harness pass over implementation commit `fecc838`, the
+feature/epic decisions, locked Sumi & Plywood / Wave Console design system and browser
+composition, dependency contracts, production reducer/autosave/renderer/controller/
+viewer/runtime code, and unit/browser evidence. Pass count: 1; no second independent
+pass ran after fixes. The corrected snapshot covers unrestricted empty and
+unconventional drafts, cycle/direct/erase semantics, all 256 exact API-level-3 colors,
+persistent Light Draft with direct-gesture connect timing, Live Preview default-off and
+180 ms latest-state behavior, autosave races/conflicts/copy/reload persistence,
+responsive roving-keyboard interaction, and wide/mobile Chromium smoke. Full
+verification passed `npm test` (38 files, 215 tests), `npm run typecheck`, `npm run
+lint`, `npm run build`, and `npm -w web run test:e2e` (1440×900 persistence/reload plus
+390×844 compact/sticky-action smoke). Publication, catalog, authentication, and iOS
+bridge work remained out of scope. Physical BLE evidence remains the explicitly manual
+powered-Fullride/Android-Chrome checkpoint and is not claimed by this approval.
