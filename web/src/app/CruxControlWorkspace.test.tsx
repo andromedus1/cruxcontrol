@@ -11,7 +11,7 @@ import { CruxControlWorkspace } from './CruxControlWorkspace';
 
 const original: LocalClimbDraft = {
   ...draftContent({ name: 'Original' }),
-  schemaVersion: 1,
+  schemaVersion: 2,
   id: localDraftId('11111111-1111-4111-8111-111111111111'),
   revision: draftRevision(1),
   createdAt: '2026-08-02T00:00:00.000Z',
@@ -22,7 +22,7 @@ const original: LocalClimbDraft = {
 function persisted(id: LocalClimbDraft['id'], revision: number, content: DraftContent): LocalClimbDraft {
   return {
     ...content,
-    schemaVersion: 1,
+    schemaVersion: 2,
     id,
     revision: draftRevision(revision),
     createdAt: original.createdAt,

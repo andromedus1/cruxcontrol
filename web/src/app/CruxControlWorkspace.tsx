@@ -50,7 +50,7 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
   }, [editing]);
   const create = async () => {
     try {
-      const draft = await runtime.drafts.create({ installationId: runtime.installation.config.id, definitionId: runtime.installation.definition.id, layoutRevision: runtime.installation.definition.layoutRevision, name: '', angle: runtime.installation.config.angle, assignments: Object.freeze([]), metadata: Object.freeze({}) });
+      const draft = await runtime.drafts.create({ installationId: runtime.installation.config.id, definitionId: runtime.installation.definition.id, layoutRevision: runtime.installation.definition.layoutRevision, name: '', angle: runtime.installation.config.angle, assignments: Object.freeze([]), effectGroups: Object.freeze([]), metadata: Object.freeze({}) });
       setError('');
       setDrafts((values) => Object.freeze([draft, ...values])); setEditing(draft.id);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not create a draft.'); }

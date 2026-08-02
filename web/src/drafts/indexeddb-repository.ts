@@ -44,6 +44,7 @@ function freezeContent(
     name: content.name,
     angle: content.angle,
     assignments: content.assignments,
+    effectGroups: content.effectGroups,
     metadata: content.metadata ?? {},
     createdAt: identity.createdAt,
     updatedAt: identity.updatedAt,

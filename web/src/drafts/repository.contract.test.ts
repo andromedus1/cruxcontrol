@@ -3,6 +3,9 @@ import { draftContent, FIRST_DRAFT_ID, SECOND_DRAFT_ID } from './test-fixtures.t
 import { IDBFactory } from 'fake-indexeddb';
 import { IndexedDbLocalDraftRepository } from './indexeddb-repository.ts';
 import { openDraftDatabase } from './open-draft-database.ts';
+import { apiLevel3Color } from '../domain/boards/colors.ts';
+import { kilterFullride7x10Definition } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
+import { lightEffectGroupId } from '../board-renderer/types.ts';
 
 export interface DraftRepositoryContractContext {
   readonly repository: LocalDraftRepository;
@@ -39,6 +42,39 @@ export function runLocalDraftRepositoryContract(
       const first = await context.repository.create(draftContent({ name: 'first' }));
       const second = await context.repository.create(draftContent({ name: 'second' }));
       expect((await context.repository.list()).map(({ id }) => id)).toEqual([second.id, first.id]);
+      context.close();
+    });
+
+    it('persists normalized effect groups and membership through create and update', async () => {
+      const context = await create([FIRST_DRAFT_ID]);
+      const placementId = kilterFullride7x10Definition.placements[0]!.id;
+      const content = draftContent({
+        assignments: [{
+          placementId,
+          appearance: { kind: 'custom', color: apiLevel3Color(42) },
+          effectGroupId: lightEffectGroupId('pulse-a'),
+        }],
+        effectGroups: [{
+          id: lightEffectGroupId('pulse-a'),
+          kind: 'pulse',
+          palette: [apiLevel3Color(42)],
+          periodMs: 1000,
+          intensity: 0.5,
+        }],
+      });
+      const created = await context.repository.create(content);
+      expect(created.effectGroups).toEqual(content.effectGroups);
+      expect(created.assignments).toEqual(content.assignments);
+      const updated = await context.repository.update(created.id, created.revision, {
+        ...content,
+        effectGroups: [],
+        assignments: content.assignments.map(({ placementId, appearance }) => ({
+          placementId,
+          appearance,
+        })),
+      });
+      expect(updated.effectGroups).toEqual([]);
+      expect(updated.assignments[0]).not.toHaveProperty('effectGroupId');
       context.close();
     });
   });

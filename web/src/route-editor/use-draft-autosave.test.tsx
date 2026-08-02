@@ -12,7 +12,7 @@ import { useDraftAutosave } from './use-draft-autosave';
 
 const initial: LocalClimbDraft = {
   ...draftContent(),
-  schemaVersion: 1,
+  schemaVersion: 2,
   id: localDraftId('11111111-1111-4111-8111-111111111111'),
   revision: draftRevision(1),
   createdAt: '2026-08-02T00:00:00.000Z',
@@ -23,7 +23,7 @@ const initial: LocalClimbDraft = {
 function saved(content: DraftContent, revision: number, id = initial.id): LocalClimbDraft {
   return {
     ...content,
-    schemaVersion: 1,
+    schemaVersion: 2,
     id,
     revision: draftRevision(revision),
     createdAt: initial.createdAt,

@@ -10,6 +10,7 @@ function contentOf(draft: LocalClimbDraft): DraftContent {
     name: draft.name,
     angle: draft.angle,
     assignments: draft.assignments,
+    effectGroups: draft.effectGroups,
     metadata: draft.metadata,
   });
 }

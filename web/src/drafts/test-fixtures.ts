@@ -14,6 +14,7 @@ export function draftContent(overrides: Partial<DraftContent> = {}): DraftConten
     name: '',
     angle: 40,
     assignments: [],
+    effectGroups: [],
     metadata: {},
     ...overrides,
   };
