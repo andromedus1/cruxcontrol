@@ -1,7 +1,7 @@
 ---
 id: epic-playlists-local-library
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, data]
 parent: epic-playlists
 depends_on: [epic-route-creation-climb-lifecycle]
@@ -221,3 +221,46 @@ from repository truth.
   unresolved placeholders until the matching catalog is installed.
 - **UI density**: keep list CRUD and membership selection in focused surfaces; do not
   overload the hold editor or board canvas.
+
+## Implementation notes
+
+- Execution capability: GPT-5.6 Sol at xhigh reasoning, selected by the caller because
+  the feature spans durable storage, partial runtime startup/cleanup, reference
+  resolution, and a dense responsive UI. One implementer owned both sequential story
+  checkpoints to preserve cross-boundary context.
+- Review weight: standard (caller and project convention); implementation stops at
+  feature `stage: review` as requested.
+- Story commits: `8ee85b5` (`epic-playlists-local-library-persistence`) and `3d88e83`
+  (`epic-playlists-local-library-management`).
+- Files changed: new `web/src/playlists/` contracts, codec, repository, resolver,
+  management UI/CSS/tests; runtime/workspace/climb-detail integration; production
+  Chromium journey; current-state `SPEC` and `ARCHITECTURE` assertions.
+- Tests added/removed: added 31 focused playlist/runtime/component tests within the
+  now-green 304-test Vitest suite plus one end-to-end Chromium journey; updated three
+  existing runtime fixtures for the required playlist port; removed none.
+- Test integrity inspection: tests exercise repository and component interfaces with
+  observable state and stored records, retain exact identity/order assertions, and use
+  no skipped, tautological, or implementation-disabled paths. The one Playwright
+  timing repair waits for the observable restore count before reload rather than
+  weakening the persistence assertion.
+- Simplification: membership remains references-only in one playlist aggregate;
+  Trash/restore performs no playlist write; resolution is a read-time join; no
+  cross-database transaction, drag framework, catalog dependency, or duplicated app
+  shell was introduced.
+- Discrepancies from design: none. The explicitly deferred parent-tier mockup remains
+  deferred; the UI reuses the locked token system and existing responsive workspace,
+  dialog, action, and error patterns.
+- Adjacent issues parked: none.
+
+## Integrated verification
+
+- `npm test` — 48 files and 304 tests passed.
+- `npm run lint` — passed.
+- `npm run build` — TypeScript and Vite production/PWA build passed.
+- `npx playwright test` — all 3 Chromium journeys passed, including compact editor
+  behavior and playlist membership/order/Trash/restore persistence across reload.
+- Acceptance walk-through: list CRUD/notes/confirmation, Draft and Finished
+  multi-membership, duplicate prevention, accessible boundary-aware reordering,
+  repository-truth retries, inline creation, Trash-safe restoration, unresolved
+  references, mobile/wide controls, and existing edit/light flows are covered and
+  green.
