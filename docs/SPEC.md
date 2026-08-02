@@ -119,8 +119,11 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 
 - Create named, hand-picked, **manually reorderable** lists of climbs.
 - A playlist is a CruxControl-local construct (Kilter has no playlist concept);
-  it references climbs by stable Kilter climb ID so a shared playlist resolves
-  against any local catalog.
+  it stores ordered, unique references to either stable browser-local climb IDs or
+  namespaced provider + layout revision + source climb IDs.
+- Draft and Finished climbs may belong to multiple lists. Trash, catalog absence,
+  or permanent climb deletion leaves an explicit unavailable reference in place
+  until the user removes it; restoring a local climb resolves the same membership.
 - Shareable URL per playlist (like shareable climb URLs).
 - **Play-through on the board:** when connected, step through the playlist
   climb-by-climb, lighting each in turn. Without a board connection the playlist
@@ -143,9 +146,9 @@ The model mirrors the official Kilter SQLite schema (see
 - **Ascent / Bid** — logged sends and attempts (auth-gated for personal data).
 - **Session** — a grouping of attempts/ascents over a single board session.
 - **Playlist** — a CruxControl-local, user-named, ordered list of climb
-  references (by namespaced provider + layout revision + source climb ID);
-  shareable and board-playable. Not a
-  Kilter schema entity.
+  references (by stable browser-local ID or namespaced provider + layout revision +
+  source climb ID), with notes and optimistic revision identity; shareable and
+  board-playable. Not a Kilter schema entity.
 
 - **BoardDefinition** — vendor/model/layout revision, geometry, placements, roles,
   angle rules, grade systems, and controller-compatible LED mapping.
@@ -164,19 +167,23 @@ The model mirrors the official Kilter SQLite schema (see
 
 - The application composes one configured Fullride 7x10 installation with the
   generated 305-placement definition, the independently authored schematic SVG
-  renderer, My Climbs/Drafts/Trash list and detail surfaces, route editor, and Web
-  Bluetooth controller.
+  renderer, My Climbs/Drafts/Trash/Lists workspace, route editor, and Web Bluetooth
+  controller.
 - Locally authored climbs are authoritative in a dedicated native IndexedDB database,
   survive reload/reopen, move between Draft and Finished without content validation,
   and remain recoverable from Trash for 30 days. Definition/layout/angle/placement
   incompatibility is surfaced while retaining the stored record unchanged.
+- Flexible lists are authoritative in a separate versioned native IndexedDB database.
+  Their ordered references survive reload, allow one climb in multiple lists, and
+  resolve Trash or missing climbs without rewriting membership rows.
 - The editor is responsive at Android-phone and desktop Chromium widths, retains
   persistent save/light actions, and exposes named keyboard-operable controls and
   non-color-only role markers.
-- Deterministic tests cover definition/renderer, persistence/concurrency/recovery,
+- Deterministic tests cover definition/renderer, climb and playlist
+  persistence/concurrency/recovery,
   API-level-3 bytes, Bluetooth lifecycle, lighting/preview, and the integrated
-  create-save-light seams. Playwright Chromium covers autosave/reload/reopen and
-  compact/wide interaction.
+  create-save-light seams. Playwright Chromium covers autosave/reload/reopen,
+  multi-list membership/order, Trash/restore resolution, and compact/wide interaction.
 - Physical behavior on a powered Fullride 7x10 through Android Chrome remains a
   pending manual acceptance checkpoint; automated approval does not claim it passed.
 

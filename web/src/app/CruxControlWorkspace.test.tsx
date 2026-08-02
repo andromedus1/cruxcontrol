@@ -6,12 +6,15 @@ import type { LocalDraftRepository } from '../drafts/repository';
 import { draftContent } from '../drafts/test-fixtures';
 import type { DraftContent, LocalClimbDraft } from '../drafts/types';
 import { layoutRevisionId } from '../domain/boards/identity';
+import { playlistId, playlistRevision } from '../playlists/codec';
+import type { LocalPlaylistRepository } from '../playlists/repository';
+import type { LocalPlaylist } from '../playlists/types';
 import type { CruxControlRuntime } from './create-runtime';
 import { CruxControlWorkspace } from './CruxControlWorkspace';
 import { activeInstallationId, createAppInstallationRegistry } from './installations';
 
 const original: LocalClimbDraft = {
-  ...draftContent({ name: 'Original' }),
+  ...draftContent({ name: 'Original', installationId: activeInstallationId }),
   schemaVersion: 3,
   id: localDraftId('11111111-1111-4111-8111-111111111111'),
   revision: draftRevision(1),
@@ -27,6 +30,7 @@ function persisted(
 ): LocalClimbDraft {
   return {
     ...content,
+    installationId: activeInstallationId,
     schemaVersion: 3,
     id,
     revision: draftRevision(revision),
@@ -42,7 +46,10 @@ function listCollections(active: readonly LocalClimbDraft[], trash: readonly Loc
   );
 }
 
-function runtimeWith(overrides: Partial<LocalDraftRepository> = {}): CruxControlRuntime {
+function runtimeWith(
+  overrides: Partial<LocalDraftRepository> = {},
+  playlistOverrides: Partial<LocalPlaylistRepository> = {},
+): CruxControlRuntime {
   return {
     installation: createAppInstallationRegistry().require(activeInstallationId),
     drafts: {
@@ -56,8 +63,29 @@ function runtimeWith(overrides: Partial<LocalDraftRepository> = {}): CruxControl
       purgeExpiredTrash: vi.fn().mockResolvedValue(0),
       ...overrides,
     },
+    playlists: {
+      create: vi.fn(),
+      get: vi.fn(),
+      list: vi.fn().mockResolvedValue([]),
+      update: vi.fn(),
+      delete: vi.fn(),
+      ...playlistOverrides,
+    },
     controller: null,
     close: vi.fn(),
+  };
+}
+
+function playlist(name: string, entries: LocalPlaylist['entries'] = []): LocalPlaylist {
+  return {
+    schemaVersion: 1,
+    id: playlistId('44444444-4444-4444-8444-444444444444'),
+    revision: playlistRevision(1),
+    name,
+    notes: '',
+    entries,
+    createdAt: '2026-08-02T00:00:00.000Z',
+    updatedAt: '2026-08-02T00:00:00.000Z',
   };
 }
 
@@ -162,6 +190,86 @@ describe('CruxControlWorkspace', () => {
     await waitFor(() => expect(restore).toHaveBeenCalledWith(original.id, draftRevision(3)));
     expect(current).toMatchObject({ id: original.id, status: 'finished', revision: 4 });
     expect(current).not.toHaveProperty('trashedAt');
+  });
+
+  it('adds one climb to multiple lists through independent detail checkboxes', async () => {
+    const first = playlist('Projects');
+    const second: LocalPlaylist = {
+      ...playlist('Warmups'),
+      id: playlistId('55555555-5555-4555-8555-555555555555'),
+    };
+    let stored = [first, second];
+    const list = vi.fn<LocalPlaylistRepository['list']>(async () => stored);
+    const update = vi.fn<LocalPlaylistRepository['update']>(async (id, revision, content) => {
+      const current = stored.find((candidate) => candidate.id === id)!;
+      const changed = { ...current, ...content, revision: playlistRevision(Number(revision) + 1) };
+      stored = stored.map((candidate) => (candidate.id === id ? changed : candidate));
+      return changed;
+    });
+    const runtime = runtimeWith({ list: listCollections([original], []) }, { list, update });
+
+    render(<CruxControlWorkspace runtime={runtime} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Drafts.*1 climb/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Original/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add to lists' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Projects' }));
+    await waitFor(() => expect(update).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Warmups' }));
+    await waitFor(() => expect(update).toHaveBeenCalledTimes(2));
+
+    expect(stored.map(({ entries }) => entries)).toEqual([
+      [{ kind: 'local', id: original.id }],
+      [{ kind: 'local', id: original.id }],
+    ]);
+  });
+
+  it('leaves playlist rows untouched while Trash and restore change runtime availability', async () => {
+    let current = original;
+    const listDrafts = vi.fn<LocalDraftRepository['list']>(async (options) => {
+      if (options?.collection === 'trash') return current.trashedAt ? [current] : [];
+      return current.trashedAt ? [] : [current];
+    });
+    const trash = vi.fn<LocalDraftRepository['trash']>(async (_id, revision) => {
+      current = {
+        ...current,
+        revision: draftRevision(Number(revision) + 1),
+        trashedAt: '2026-08-02T00:00:03.000Z',
+      };
+      return current;
+    });
+    const restore = vi.fn<LocalDraftRepository['restore']>(async (_id, revision) => {
+      const { trashedAt: _trashedAt, ...active } = current;
+      current = { ...active, revision: draftRevision(Number(revision) + 1) };
+      return current;
+    });
+    const stored = playlist('Projects', [{ kind: 'local', id: original.id }]);
+    const playlistUpdate = vi.fn<LocalPlaylistRepository['update']>();
+    const playlistDelete = vi.fn<LocalPlaylistRepository['delete']>();
+    const runtime = runtimeWith(
+      { list: listDrafts, trash, restore },
+      { list: vi.fn().mockResolvedValue([stored]), update: playlistUpdate, delete: playlistDelete },
+    );
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<CruxControlWorkspace runtime={runtime} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Drafts.*1 climb/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Original/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Move to trash' }));
+    await waitFor(() => expect(trash).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: /Lists.*1 list/ }));
+    expect(await screen.findByText('In Trash')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View Original' })).toBeDisabled();
+    expect(playlistUpdate).not.toHaveBeenCalled();
+    expect(playlistDelete).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /Trash.*1 climb/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Original/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+    await waitFor(() => expect(restore).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: /Lists.*1 list/ }));
+    expect(await screen.findByText('Available')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View Original' })).toBeEnabled();
+    expect(stored.entries).toEqual([{ kind: 'local', id: original.id }]);
   });
 
   it('confirms Delete forever and makes destructive failures retryable', async () => {

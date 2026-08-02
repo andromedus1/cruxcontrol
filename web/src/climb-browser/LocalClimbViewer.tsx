@@ -16,6 +16,7 @@ export interface LocalClimbViewerProps {
   readonly emptyDescription: string;
   readonly onCreateClimb?: () => void;
   readonly onEditClimb?: (key: ClimbViewKey) => void;
+  readonly onManageLists?: (key: ClimbViewKey) => void;
   readonly primaryAction?: Readonly<{
     label: string;
     onActivate: (key: ClimbViewKey) => void;
@@ -48,6 +49,7 @@ export function LocalClimbViewer({
   emptyDescription,
   onCreateClimb,
   onEditClimb,
+  onManageLists,
   primaryAction,
   destructiveAction,
 }: LocalClimbViewerProps) {
@@ -181,6 +183,7 @@ export function LocalClimbViewer({
                 climb={selected}
                 controller={controller}
                 onEdit={onEditClimb ? () => onEditClimb(selected.key) : undefined}
+                onManageLists={onManageLists ? () => onManageLists(selected.key) : undefined}
                 primaryAction={
                   primaryAction
                     ? {

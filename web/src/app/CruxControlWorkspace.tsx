@@ -3,11 +3,15 @@ import { LocalClimbViewer } from '../climb-browser/LocalClimbViewer';
 import type { ClimbViewKey } from '../climb-browser/types';
 import { toClimbViewRecord } from '../drafts/to-climb-view-record';
 import type { DraftContent, LocalClimbDraft, LocalDraftId } from '../drafts/types';
+import { PlaylistLibrary } from '../playlists/PlaylistLibrary';
+import { PlaylistMembershipDialog } from '../playlists/PlaylistMembershipDialog';
+import type { LocalPlaylist } from '../playlists/types';
 import { RouteEditorWorkspace } from '../route-editor/RouteEditorWorkspace';
 import type { CruxControlRuntime } from './create-runtime';
 import './CruxControlWorkspace.css';
 
 export type LocalClimbCollection = 'finished' | 'drafts' | 'trash';
+export type WorkspaceDestination = LocalClimbCollection | 'lists';
 
 const collectionCopy: Record<
   LocalClimbCollection,
@@ -29,6 +33,8 @@ const collectionCopy: Record<
     emptyDescription: 'Deleted climbs stay recoverable here for 30 days.',
   },
 };
+
+const destinations: readonly WorkspaceDestination[] = ['finished', 'drafts', 'trash', 'lists'];
 
 function draftCompatibilityIssue(
   draft: LocalClimbDraft,
@@ -77,9 +83,11 @@ interface RetryAction {
 
 export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxControlRuntime }) {
   const [drafts, setDrafts] = useState<readonly LocalClimbDraft[]>([]);
-  const [collection, setCollection] = useState<LocalClimbCollection>('finished');
+  const [playlists, setPlaylists] = useState<readonly LocalPlaylist[]>([]);
+  const [collection, setCollection] = useState<WorkspaceDestination>('finished');
   const [editing, setEditing] = useState<LocalDraftId | null>(null);
   const [selectedKey, setSelectedKey] = useState<ClimbViewKey | null>(null);
+  const [membershipDraft, setMembershipDraft] = useState<LocalClimbDraft | null>(null);
   const [error, setError] = useState('');
   const [retryAction, setRetryAction] = useState<RetryAction | null>(null);
 
@@ -92,25 +100,25 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
         cause instanceof Error ? cause.message : 'Could not remove expired Trash climbs.';
     }
     try {
-      const [active, trash] = await Promise.all([
-        runtime.drafts.list({
-          installationId: runtime.installation.config.id,
-          collection: 'active',
-        }),
-        runtime.drafts.list({
-          installationId: runtime.installation.config.id,
-          collection: 'trash',
-        }),
+      const [active, trash, storedPlaylists] = await Promise.all([
+        runtime.drafts.list({ collection: 'active' }),
+        runtime.drafts.list({ collection: 'trash' }),
+        runtime.playlists.list(),
       ]);
       setDrafts(Object.freeze([...active, ...trash]));
+      setPlaylists(storedPlaylists);
       setError(cleanupError);
       setRetryAction(
         cleanupError ? { label: 'Retry refreshing climbs', run: () => void refresh() } : null,
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not load local climbs.');
+      setError(cause instanceof Error ? cause.message : 'Could not load the local workspace.');
       setRetryAction({ label: 'Retry refreshing climbs', run: () => void refresh() });
     }
+  }, [runtime]);
+
+  const refreshPlaylists = useCallback(async () => {
+    setPlaylists(await runtime.playlists.list());
   }, [runtime]);
 
   useEffect(() => {
@@ -125,6 +133,12 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
 
   const removeDraft = useCallback((id: LocalDraftId) => {
     setDrafts((values) => Object.freeze(values.filter((candidate) => candidate.id !== id)));
+  }, []);
+
+  const replacePlaylist = useCallback((playlist: LocalPlaylist) => {
+    setPlaylists((values) =>
+      Object.freeze([playlist, ...values.filter((candidate) => candidate.id !== playlist.id)]),
+    );
   }, []);
 
   async function retryable(label: string, action: () => Promise<void>) {
@@ -201,9 +215,16 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
     });
   }
 
+  const currentInstallationId = runtime.installation.config.id;
   const visibleDrafts = useMemo(
-    () => drafts.filter((draft) => belongsTo(draft, collection)),
-    [collection, drafts],
+    () =>
+      collection === 'lists'
+        ? []
+        : drafts.filter(
+            (draft) =>
+              draft.installationId === currentInstallationId && belongsTo(draft, collection),
+          ),
+    [collection, currentInstallationId, drafts],
   );
   const compatibility = visibleDrafts.map((draft) => ({
     draft,
@@ -219,14 +240,21 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
     ? drafts.find(({ id, trashedAt }) => id === editing && trashedAt === undefined)
     : undefined;
   const counts = {
-    finished: drafts.filter((draft) => belongsTo(draft, 'finished')).length,
-    drafts: drafts.filter((draft) => belongsTo(draft, 'drafts')).length,
-    trash: drafts.filter((draft) => belongsTo(draft, 'trash')).length,
+    finished: drafts.filter(
+      (draft) => draft.installationId === currentInstallationId && belongsTo(draft, 'finished'),
+    ).length,
+    drafts: drafts.filter(
+      (draft) => draft.installationId === currentInstallationId && belongsTo(draft, 'drafts'),
+    ).length,
+    trash: drafts.filter(
+      (draft) => draft.installationId === currentInstallationId && belongsTo(draft, 'trash'),
+    ).length,
+    lists: playlists.length,
   };
   const selectedDraft = compatibleDrafts.find(
     (draft) => toClimbViewRecord(draft).key === selectedKey,
   );
-  const copy = collectionCopy[collection];
+  const copy = collection === 'lists' ? null : collectionCopy[collection];
 
   const adoptDraftIdentity = useCallback(
     (draft: LocalClimbDraft) => {
@@ -255,8 +283,8 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
 
   return (
     <main className="climb-workspace">
-      <nav className="collection-switch" aria-label="Local climb collections">
-        {(Object.keys(collectionCopy) as LocalClimbCollection[]).map((value) => (
+      <nav className="collection-switch" aria-label="Workspace destinations">
+        {destinations.map((value) => (
           <button
             key={value}
             type="button"
@@ -264,12 +292,21 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
             onClick={() => {
               setCollection(value);
               setSelectedKey(null);
+              setMembershipDraft(null);
             }}
           >
-            <span>{collectionCopy[value].label}</span>
+            <span>{value === 'lists' ? 'Lists' : collectionCopy[value].label}</span>
             <span
               className="collection-switch__count"
-              aria-label={`${counts[value]} ${counts[value] === 1 ? 'climb' : 'climbs'}`}
+              aria-label={`${counts[value]} ${
+                value === 'lists'
+                  ? counts[value] === 1
+                    ? 'list'
+                    : 'lists'
+                  : counts[value] === 1
+                    ? 'climb'
+                    : 'climbs'
+              }`}
             >
               {counts[value]}
             </span>
@@ -285,11 +322,11 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
             </button>
           )}
           <button type="button" onClick={() => void refresh()}>
-            Refresh climbs
+            Refresh workspace
           </button>
         </div>
       )}
-      {incompatibleDrafts.length > 0 && (
+      {collection !== 'lists' && incompatibleDrafts.length > 0 && (
         <section
           className="incompatible-climbs"
           role="region"
@@ -325,49 +362,90 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
           </ul>
         </section>
       )}
-      <LocalClimbViewer
-        definition={runtime.installation.definition}
-        climbs={compatibleDrafts.map(toClimbViewRecord)}
-        selectedKey={selectedKey}
-        onSelectedKeyChange={setSelectedKey}
-        controller={runtime.controller}
-        heading={copy.label}
-        emptyTitle={copy.emptyTitle}
-        emptyDescription={copy.emptyDescription}
-        onCreateClimb={collection === 'trash' ? undefined : () => void create()}
-        onEditClimb={
-          collection === 'trash'
-            ? undefined
-            : (key) => {
-                const draft = compatibleDrafts.find(
-                  (value) => toClimbViewRecord(value).key === key,
-                );
-                if (draft) setEditing(draft.id);
-              }
-        }
-        primaryAction={
-          selectedDraft
-            ? collection === 'drafts'
-              ? {
-                  label: 'Mark finished',
-                  onActivate: () => void changeStatus(selectedDraft, 'finished'),
+      {collection === 'lists' ? (
+        <PlaylistLibrary
+          playlists={playlists}
+          localClimbs={drafts}
+          repository={runtime.playlists}
+          compatibilityIssue={(draft) => draftCompatibilityIssue(draft, runtime)}
+          onChanged={(playlist) => {
+            if (playlist) replacePlaylist(playlist);
+            else void refreshPlaylists();
+          }}
+          onRefresh={refreshPlaylists}
+          onOpenLocalClimb={(id) => {
+            const draft = drafts.find((candidate) => candidate.id === id);
+            if (!draft || draft.trashedAt !== undefined) return;
+            setCollection(draft.status === 'draft' ? 'drafts' : 'finished');
+            setSelectedKey(toClimbViewRecord(draft).key);
+          }}
+        />
+      ) : (
+        <LocalClimbViewer
+          definition={runtime.installation.definition}
+          climbs={compatibleDrafts.map(toClimbViewRecord)}
+          selectedKey={selectedKey}
+          onSelectedKeyChange={setSelectedKey}
+          controller={runtime.controller}
+          heading={copy!.label}
+          emptyTitle={copy!.emptyTitle}
+          emptyDescription={copy!.emptyDescription}
+          onCreateClimb={collection === 'trash' ? undefined : () => void create()}
+          onEditClimb={
+            collection === 'trash'
+              ? undefined
+              : (key) => {
+                  const draft = compatibleDrafts.find(
+                    (value) => toClimbViewRecord(value).key === key,
+                  );
+                  if (draft) setEditing(draft.id);
                 }
-              : collection === 'finished'
+          }
+          onManageLists={
+            collection === 'trash'
+              ? undefined
+              : (key) => {
+                  const draft = compatibleDrafts.find(
+                    (value) => toClimbViewRecord(value).key === key,
+                  );
+                  if (draft) setMembershipDraft(draft);
+                }
+          }
+          primaryAction={
+            selectedDraft
+              ? collection === 'drafts'
                 ? {
-                    label: 'Move to drafts',
-                    onActivate: () => void changeStatus(selectedDraft, 'draft'),
+                    label: 'Mark finished',
+                    onActivate: () => void changeStatus(selectedDraft, 'finished'),
                   }
-                : { label: 'Restore', onActivate: () => void restore(selectedDraft) }
-            : undefined
-        }
-        destructiveAction={
-          selectedDraft
-            ? collection === 'trash'
-              ? { label: 'Delete forever', onActivate: () => void deleteForever(selectedDraft) }
-              : { label: 'Move to trash', onActivate: () => void moveToTrash(selectedDraft) }
-            : undefined
-        }
-      />
+                : collection === 'finished'
+                  ? {
+                      label: 'Move to drafts',
+                      onActivate: () => void changeStatus(selectedDraft, 'draft'),
+                    }
+                  : { label: 'Restore', onActivate: () => void restore(selectedDraft) }
+              : undefined
+          }
+          destructiveAction={
+            selectedDraft
+              ? collection === 'trash'
+                ? { label: 'Delete forever', onActivate: () => void deleteForever(selectedDraft) }
+                : { label: 'Move to trash', onActivate: () => void moveToTrash(selectedDraft) }
+              : undefined
+          }
+        />
+      )}
+      {membershipDraft && (
+        <PlaylistMembershipDialog
+          climbName={climbName(membershipDraft)}
+          reference={{ kind: 'local', id: membershipDraft.id }}
+          playlists={playlists}
+          repository={runtime.playlists}
+          onChanged={replacePlaylist}
+          onRefresh={refreshPlaylists}
+          onClose={() => setMembershipDraft(null)}
+        />
+      )}
     </main>
   );
 }

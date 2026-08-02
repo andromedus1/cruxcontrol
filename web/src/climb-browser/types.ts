@@ -1,11 +1,16 @@
 import type { BoardHoldAssignment } from '../board-renderer/types';
-import type { Brand } from '../domain/boards/types';
+import { providerClimbKey } from '../domain/boards/identity';
+import type { Brand, ProviderClimbId } from '../domain/boards/types';
 
 export type ClimbViewKey = Brand<string, 'ClimbViewKey'>;
 
 export function climbViewKey(value: string): ClimbViewKey {
   if (value.trim().length === 0) throw new TypeError('Climb view key must not be empty');
   return value as ClimbViewKey;
+}
+
+export function providerClimbViewKey(id: ProviderClimbId): ClimbViewKey {
+  return climbViewKey(`provider:${providerClimbKey(id)}`);
 }
 
 export interface ClimbViewRecord {

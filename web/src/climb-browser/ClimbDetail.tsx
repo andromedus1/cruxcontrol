@@ -13,6 +13,7 @@ export interface ClimbDetailProps {
   readonly controller?: BoardLightController | null;
   readonly headingLevel?: 1 | 2;
   readonly onEdit?: () => void;
+  readonly onManageLists?: () => void;
   readonly primaryAction?: Readonly<{ label: string; onActivate: () => void }>;
   readonly destructiveAction?: Readonly<{ label: string; onActivate: () => void }>;
 }
@@ -25,6 +26,7 @@ export function ClimbDetail({
   controller,
   headingLevel = 2,
   onEdit,
+  onManageLists,
   primaryAction,
   destructiveAction,
 }: ClimbDetailProps) {
@@ -118,6 +120,11 @@ export function ClimbDetail({
         {onEdit && (
           <button className="button button--secondary" type="button" onClick={onEdit}>
             Edit climb
+          </button>
+        )}
+        {onManageLists && (
+          <button className="button button--secondary" type="button" onClick={onManageLists}>
+            Add to lists
           </button>
         )}
         {primaryAction && (

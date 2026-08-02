@@ -41,9 +41,9 @@ feature item bodies in `.work/`, not here. Capabilities are in
 2. **Data Layer** — on-demand local SQLite catalogs via `wa-sqlite`
    (`AccessHandlePoolVFS`) in a Web Worker, behind domain query ports. Native records
    and provenance sit beside a normalized read model. A catalog-storage IndexedDB
-   fallback is deferred. Small locally authored climb aggregates deliberately use a
-   separate native IndexedDB repository with versioned codecs, atomic optimistic
-   updates, and explicit lifecycle commands;
+   fallback is deferred. Small locally authored climb and playlist aggregates use
+   independent native IndexedDB repositories with versioned codecs and atomic
+   optimistic updates; climb storage additionally owns explicit lifecycle commands.
    catalog bootstrap remains a separate incomplete boundary.
 3. **Catalog Providers** — source-specific import/sync adapters. Kilter is first;
    later Aurora-family and MoonBoard providers are separately researched. Network,
@@ -69,9 +69,12 @@ feature item bodies in `.work/`, not here. Capabilities are in
    adapters own future source-native encoding and optional publication.
 8. **Logbook & Sessions** — local store of ascents/attempts/sessions with
    analytics; optional push to the Kilter API via the Sync Engine.
-9. **Playlists** — local store of user-curated, ordered namespaced climb references;
-   reuses the renderer + shareable-URL routing, and drives the BLE Adapter for
-   board play-through. A CruxControl-local construct (no Kilter counterpart).
+9. **Playlists** — an implemented separate native IndexedDB repository and responsive
+   management surface for named, annotated, manually ordered local/provider climb
+   references. Runtime resolution preserves unavailable Trash, missing, or
+   incompatible-board entries without cross-database writes. Shareable-URL routing
+   and board play-through build on this local aggregate later. A CruxControl-local
+   construct (no Kilter counterpart).
 10. **ML Pipeline** — offline (Python): feature extraction from the catalog →
     training dataset → grade-prediction model. Exports a model for in-browser
     inference (ONNX Runtime Web / WASM); feeds prediction + recommendation features back
@@ -96,6 +99,9 @@ Editor ──▶ Local climb repository ──▶ native IndexedDB
   │               (versioned + optimistic)       (browser-local authority)
   ├──▶ Renderer ──▶ SVG board surface
   └──▶ Light controller ──▶ controller profile / transport
+
+Lists ──▶ Local playlist repository ──▶ separate native IndexedDB
+  └──▶ read-time climb resolver ──▶ available / Trash / missing entry view
 ```
 
 Local climb reads and writes are fully offline. Installed catalog reads are likewise
@@ -115,8 +121,9 @@ browsing, editing, and logging remain testable without hardware or network.
 - **Preserve source truth.** Normalized tables are query projections. Native payloads,
   grades, versions, attribution, and provenance remain available for reconciliation.
 - **Single source of truth.** The local SQLite catalog is the community read model;
-  the native IndexedDB climb store is authoritative for locally authored climbs. The
-  future logbook store owns personal activity.
+  the native IndexedDB climb store is authoritative for locally authored climbs; the
+  independent native IndexedDB playlist store is authoritative for list metadata and
+  ordered references. The future logbook store owns personal activity.
 - **Generated over hand-written.** Catalog data, feature tables, and the model
   come from pipelines, not manual curation.
 - **Offline-first.** Every read works without network; sync is a background
@@ -139,7 +146,7 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | React 19 + Vite 6 (TypeScript)              | Client-only SPA framework + build tooling                                                                                                                                                                      |
 | `wa-sqlite` (`AccessHandlePoolVFS`)         | In-browser SQLite catalog read path in a Web Worker; catalog IndexedDB fallback is deferred                                                                                                                    |
-| Native IndexedDB                            | Versioned, atomic, browser-local climb authority with explicit Draft/Finished/Trash lifecycle                                                                                                                  |
+| Native IndexedDB                            | Independent versioned, atomic, browser-local authorities for climbs (Draft/Finished/Trash lifecycle) and playlist aggregates                                                                                   |
 | `vite-plugin-pwa` (Workbox)                 | Service worker + manifest — offline shell, installability                                                                                                                                                      |
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |

@@ -18,6 +18,13 @@ describe('App', () => {
         deletePermanently: vi.fn(),
         purgeExpiredTrash: vi.fn(),
       },
+      playlists: {
+        create: vi.fn(),
+        get: vi.fn(),
+        list: vi.fn().mockResolvedValue([]),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
       controller: null,
       close: vi.fn(),
     };

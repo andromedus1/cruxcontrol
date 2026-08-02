@@ -24,6 +24,13 @@ describe('create-save-light integration', () => {
     const runtime: CruxControlRuntime = {
       installation,
       drafts,
+      playlists: {
+        create: vi.fn(),
+        get: vi.fn(),
+        list: vi.fn().mockResolvedValue([]),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
       controller: installation.createController(),
       close: vi.fn(),
     };
