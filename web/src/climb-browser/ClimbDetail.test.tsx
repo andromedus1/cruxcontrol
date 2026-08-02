@@ -58,4 +58,31 @@ describe('ClimbDetail', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear board' }));
     expect(connected.clear).toHaveBeenCalledOnce();
   });
+
+  it('shows reconnect and preview operations explicitly', () => {
+    const recoverableError = controllerWith({
+      transport: {
+        status: 'error',
+        device: { id: 'board', name: 'Homewall' },
+        error: Object.assign(new Error('Connection lost'), { recoverable: true }),
+      } as BoardLightState['transport'],
+      operation: 'idle',
+      lastAppliedScene: null,
+      error: null,
+    });
+    const firstRender = render(<ClimbDetail definition={definition} climb={climb} controller={recoverableError} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect' }));
+    expect(recoverableError.reconnect).toHaveBeenCalledWith('board');
+    firstRender.unmount();
+
+    const previewing = controllerWith({
+      transport: { status: 'connected', device: { id: 'board', name: 'Homewall' } },
+      operation: 'previewing',
+      lastAppliedScene: null,
+      error: null,
+    });
+    render(<ClimbDetail definition={definition} climb={climb} controller={previewing} />);
+    expect(screen.getByRole('button', { name: 'Previewing…' })).toBeDisabled();
+    expect(screen.getByText('Previewing board changes…')).toBeInTheDocument();
+  });
 });

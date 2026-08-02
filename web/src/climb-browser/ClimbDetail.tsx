@@ -24,9 +24,18 @@ export function ClimbDetail({ definition, climb, controller, headingLevel = 2 }:
   const ready = connected && state.operation === 'idle';
   const empty = climb.assignments.length === 0;
   const hasCustom = climb.assignments.some(({ appearance }) => appearance.kind === 'custom');
-  const actionLabel = state.operation === 'lighting' || state.operation === 'clearing'
-    ? empty ? 'Clearing…' : 'Lighting…'
-    : empty ? 'Clear board' : 'Light this climb';
+  let actionLabel = empty ? 'Clear board' : 'Light this climb';
+  let operationStatus = '';
+  if (state.operation === 'lighting') {
+    actionLabel = 'Lighting…';
+    operationStatus = 'Lighting this climb…';
+  } else if (state.operation === 'clearing') {
+    actionLabel = 'Clearing…';
+    operationStatus = 'Clearing the board…';
+  } else if (state.operation === 'previewing') {
+    actionLabel = 'Previewing…';
+    operationStatus = 'Previewing board changes…';
+  }
   const boardHeadingId = `board-${String(climb.key).replace(/[^a-z0-9_-]/gi, '-')}`;
 
   const light = () => {
@@ -64,7 +73,7 @@ export function ClimbDetail({ definition, climb, controller, headingLevel = 2 }:
         {hasCustom && <li><span className="role-legend__custom" />Custom colors</li>}
       </ul>
       <div className="climb-detail__actions">
-        <p className="action-status" aria-live="polite">{localError || state.error?.message || (!connected ? 'Connect a board to light this scene.' : '')}</p>
+        <p className="action-status" aria-live="polite">{localError || state.error?.message || operationStatus || (!connected ? 'Connect a board to light this scene.' : '')}</p>
         <button className="button button--primary" type="button" disabled={!ready} onClick={light}>{actionLabel}</button>
       </div>
     </article>

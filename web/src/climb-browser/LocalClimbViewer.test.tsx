@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10';
@@ -44,5 +44,47 @@ describe('LocalClimbViewer', () => {
   it('rejects duplicate keys and unsupported angles', () => {
     expect(() => render(<LocalClimbViewer definition={definition} climbs={[first, first]} selectedKey={null} onSelectedKeyChange={() => undefined} />)).toThrow('Duplicate');
     expect(() => render(<LocalClimbViewer definition={definition} climbs={[{ ...first, key: climbViewKey('bad'), angle: 37 }]} selectedKey={null} onSelectedKeyChange={() => undefined} />)).toThrow('unsupported angle');
+  });
+
+  it('preserves modal semantics across phone and desktop transitions and returns focus', async () => {
+    let desktop = false;
+    const listeners = new Set<EventListener>();
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      get matches() { return query.includes('min-width') ? desktop : !desktop; },
+      media: query,
+      onchange: null,
+      addEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => {
+        if (typeof listener === 'function') listeners.add(listener);
+      },
+      removeEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => {
+        if (typeof listener === 'function') listeners.delete(listener);
+      },
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => true,
+    }));
+    const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal');
+    render(<Controlled />);
+
+    const row = screen.getByRole('button', { name: /Garage Circuit/ });
+    row.focus();
+    fireEvent.click(row);
+    const dialog = screen.getByRole('dialog');
+    expect(showModal).toHaveBeenCalledOnce();
+
+    const setDesktop = (value: boolean) => {
+      desktop = value;
+      act(() => {
+        for (const listener of listeners) listener(new Event('change'));
+      });
+    };
+    setDesktop(true);
+    expect(dialog).toHaveAttribute('open');
+    setDesktop(false);
+    expect(showModal).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close climb details' }));
+    await waitFor(() => expect(row).toHaveFocus());
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

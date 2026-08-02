@@ -29,11 +29,13 @@ export function BoardControlBar({ controller }: BoardControlBarProps) {
     void action.catch(() => undefined);
   };
 
+  const connectLabel = transport.status === 'error' && transport.device ? 'Reconnect' : 'Connect';
+
   return (
     <div className="board-control-bar">
       <span className={`connection-dot connection-dot--${transport.status}`} aria-hidden="true" />
       <span className="board-control-bar__status" role="status">{label}</span>
-      {canConnect && <button className="button button--secondary" type="button" onClick={connect}>Connect</button>}
+      {canConnect && <button className="button button--secondary" type="button" onClick={connect}>{connectLabel}</button>}
       {busy && <span className="board-control-bar__busy" aria-hidden="true">•••</span>}
     </div>
   );

@@ -1,7 +1,7 @@
 ---
 id: epic-climb-browser-local-climb-viewer
 kind: feature
-stage: review
+stage: done
 tags: [ui]
 parent: epic-climb-browser
 depends_on: [epic-climb-browser-fullride-renderer]
@@ -440,3 +440,39 @@ no new persistence, protocol, or external-system boundary.
 - Adjacent issues parked: none.
 - Verification: `npm test` (27 files, 168 tests), `npm run typecheck`, `npm run lint`,
   and `npm run build` all pass in `web/`.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve
+
+**Blockers**: none unresolved. Fixed inline: the responsive detail could remain a
+modeless open dialog when returning from the desktop split to phone width, losing
+modal backdrop, background inertness, and correct Escape behavior; the controller
+surface did not distinguish recoverable reconnect or preview-in-progress states; and
+the compact sheet top bar did not reserve space for its 44px close control. The review
+now tracks modal versus modeless dialog mode explicitly, restores `showModal()` on
+the desktop-to-phone transition, announces every light/clear/preview operation,
+labels recoverable device restoration as Reconnect, and keeps close/connect controls
+visibly separated.
+
+**Important**: none
+
+**Nits**: none
+
+**Rejected**: none
+
+**Notes**: Substrate feature review at effective weight `standard`; exactly one
+balanced same-harness fresh-context pass inspected implementation commit `ad22c63`,
+the feature and parent contracts, locked hybrid/detail mockups, foundation assertions,
+and the domain, renderer, controller, UI, and test boundaries. The source-neutral
+projection remains immutable and storage/catalog-independent; all role/custom scenes
+flow unchanged through the shared renderer and light-scene projection; the board and
+sticky action remain present for empty and populated scenes; controlled selection,
+focus return, explicit connection, honest empty state, and absence of catalog/editor
+ownership were verified. A local headless-Chrome smoke covered the phone sheet and
+wide split with a five-assignment Fullride fixture; the temporary preview harness was
+removed before commit. Security, persistence/migration, and breaking-contract lenses
+were not applicable because the change adds no auth, storage, external request, or
+public schema boundary. Final verification passed 27 test files / 170 tests,
+typecheck, lint, production build, and `git diff --check`. Standard-weight closure
+followed receiver verification of the named fixes without a second independent pass.

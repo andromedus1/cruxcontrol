@@ -39,6 +39,7 @@ export function LocalClimbViewer({
     [climbs, selectedKey],
   );
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialogMode = useRef<'closed' | 'modeless' | 'modal'>('closed');
   const rowRefs = useRef(new Map<ClimbViewKey, HTMLButtonElement>());
   const returnFocusKey = useRef<ClimbViewKey | null>(null);
 
@@ -49,13 +50,17 @@ export function LocalClimbViewer({
     const sync = () => {
       if (!selected) {
         if (dialog.open) dialog.close();
+        dialogMode.current = 'closed';
         return;
       }
       if (media.matches) {
-        if (dialog.open) dialog.close();
-        dialog.setAttribute('open', '');
-      } else if (!dialog.open) {
-        dialog.showModal();
+        if (dialogMode.current === 'modal' && dialog.open) dialog.close();
+        if (!dialog.open) dialog.setAttribute('open', '');
+        dialogMode.current = 'modeless';
+      } else {
+        if (dialogMode.current === 'modeless' && dialog.open) dialog.removeAttribute('open');
+        if (!dialog.open) dialog.showModal();
+        dialogMode.current = 'modal';
       }
     };
     sync();
