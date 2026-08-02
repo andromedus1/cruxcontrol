@@ -1,7 +1,7 @@
 ---
 id: epic-board-control-protocol-codec
 kind: feature
-stage: review
+stage: done
 tags: [ble]
 parent: epic-board-control
 depends_on: []
@@ -277,3 +277,23 @@ this feature's CI boundary is exact byte output.
 - Adjacent issues parked: none.
 - Verification: `npm test` (67 tests), `npm run typecheck`, `npm run lint`, and
   `npm run build` all pass on 2026-08-02.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve
+
+**Blockers**: none
+**Important**: none
+**Nits**: none
+**Rejected**: none
+
+**Notes**: Substrate feature review with effective weight `standard`: exactly one
+balanced fresh-context pass over implementation commit `cdbef87`, surrounding codec
+and test code, the parent epic, project rules, foundation assertions, and the cited
+protocol research. Protocol markers, 84-record packet partitioning, payload length,
+payload-only checksum, little-endian position encoding, 3/3/2-bit color quantization,
+continuous 20-byte FIFO write splitting, numeric validation, duplicate rejection, and
+test independence all match the accepted contract. Security, persistence/migration,
+concurrency/lifecycle, and UI lenses were not applicable to this dependency-free pure
+codec. Verification on the tracked `cdbef87` snapshot passed 67 tests, typecheck, lint,
+and production build. No second independent pass ran, as required for standard weight.
