@@ -3,7 +3,9 @@ import { apiLevelForAuroraDeviceName, type AuroraApiLevel } from './api-level-2-
 import { encodedSceneCost } from './capacity-model';
 import type { BoardLightController, CapacityCase, CapacityCaseResult } from './light-controller';
 
-const LIGHT_COUNTS = [1, 20, 84, 85, 168, 252, 305] as const;
+// Include both Aurora packet boundaries and nearby search points so physical testing can
+// distinguish controller message assembly from an aggregate LED/load ceiling.
+const LIGHT_COUNTS = [1, 20, 84, 85, 100, 120, 126, 127, 128, 140, 150, 160, 168, 252, 305] as const;
 const FPS = [0, 1, 2, 4, 6, 8, 10] as const;
 const PACING = [20, 10, 5, 0] as const;
 
