@@ -36,6 +36,11 @@ speed.
 
 ## Evidence so far
 
+- The triggering design was not a stale effect marker: because the current model can
+  attach an effect only to an assigned/lit hold, Andrew assigned nearly every hold to
+  build a background. That turned one decorative effect into a near-full-board scene
+  and exposed the transport limit. Future background layers must target unused LEDs
+  independently from the four protected climb-role assignments.
 - API level 3 encodes about 84 holds per Aurora packet, but the transport splits the
   framed message into 20-byte BLE writes.
 - A 365-hold Fullride frame is roughly 56 characteristic writes; the current animation
