@@ -1,7 +1,7 @@
 ---
 id: epic-board-control
 kind: epic
-stage: implementing
+stage: review
 tags: [ble]
 parent: null
 depends_on: [epic-universal-board-platform]
@@ -105,3 +105,15 @@ prevents Web Bluetooth lifecycle details from leaking into route creation.
   through the mock reduces—not eliminates—this risk.
 - Fullride placement-to-LED mapping is owned by the board definition upstream; this
   epic accepts LED-addressed scenes and must not duplicate geometry or catalog logic.
+
+## Child features reviewed and complete
+
+- `epic-board-control-protocol-codec` — API-level-3 color, framing, checksum,
+  splitting, and write-chunk contracts approved.
+- `epic-board-control-bluetooth-session` — explicit connection lifecycle, serialized
+  writes, reconnection, typed failures, and deterministic mock approved.
+- `epic-board-control-light-scenes` — unrestricted scenes, four semantic presets,
+  all 256 encoded colors, clear/light, and latest-frame-wins preview approved.
+
+Automated verification is green. The aggregate epic review must keep the documented
+physical Fullride/Android Chrome smoke test pending until Andrew performs it.
