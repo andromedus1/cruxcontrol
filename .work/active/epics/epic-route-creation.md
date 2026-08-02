@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation
 kind: epic
-stage: implementing
+stage: review
 tags: [ui]
 parent: null
 depends_on: [epic-climb-browser, epic-board-control]
@@ -115,3 +115,11 @@ coordination overhead without an independently useful capability.
 - **Autopilot lacks a dedicated route-editor mock selection.** Implementation is
   constrained to the locked design system and accepted browser patterns; any novel
   layout direction is deferred rather than improvised.
+
+## Child features reviewed and complete (2026-08-02)
+
+- `epic-route-creation-local-draft-library` — done after standard feature review.
+- `epic-route-creation-editor-workspace` — done after standard feature review.
+- The epic is ready for its separate aggregate review. Physical Fullride/Android
+  Chrome BLE evidence remains an explicit manual checkpoint and is not claimed by
+  either child review.
