@@ -1,7 +1,7 @@
 ---
 id: epic-board-control-bluetooth-session
 kind: feature
-stage: implementing
+stage: review
 tags: [ble]
 parent: epic-board-control
 depends_on: []
@@ -477,3 +477,50 @@ must compare characteristic object identity. It also fails product-wise if choos
 cancellation looks like a broken board; cancellation remains recoverable and leaves a
 clean disconnected state. No automatic reconnection, retry policy, pacing delay, or
 transport-level animation scheduler is added without physical evidence.
+
+## Manual smoke checklist
+
+Run this only from `https://` or the Vite localhost development origin and only after
+the downstream protocol/scene feature supplies a known-safe encoded command:
+
+1. Power on the Fullride controller and invoke Connect from a direct click/tap.
+2. Confirm the chooser is filtered to the Aurora advertisement service and record the
+   controller name shown by Chromium (including its advertised API level, if present).
+3. Select the controller and confirm the session reaches `connected` after resolving
+   the Nordic UART service and RX characteristic.
+4. Power the controller off and confirm the session immediately reports
+   `disconnected`; no stale write is accepted.
+5. Power it on and use explicit reconnect (without reopening the chooser where
+   Chromium remembers the grant); confirm fresh service/characteristic resolution.
+6. With a known-safe command from the light-scenes feature, send representative
+   multi-chunk data and confirm writes remain ordered. Do not send arbitrary dummy
+   bytes to hardware.
+7. Use intentional Disconnect and confirm repeated Disconnect actions are harmless.
+
+## Implementation notes
+
+- Execution capability: highest/xhigh, selected by the caller because user-activation,
+  disconnect races, and serialized BLE state carry hardware reliability risk.
+- Review weight: standard (caller/project convention); left at `stage: review` for one
+  independent feature-level pass.
+- Files changed: `web/src/board-control/transport.ts`,
+  `web/src/board-control/web-bluetooth-platform.ts`,
+  `web/src/board-control/web-bluetooth-transport.ts`,
+  `web/src/board-control/aurora-web-bluetooth.ts`,
+  `web/src/board-control/mock-byte-transport.ts`, and their two test modules.
+- Tests added: reusable mock transport lifecycle/write contract; deterministic browser
+  fake coverage for capability states, synchronous chooser capture/cancellation,
+  chooser concurrency and synchronous failure recovery, stage-specific error mapping,
+  write-mode selection, batch FIFO ordering, byte-copy evidence, disconnect
+  invalidation, fresh reconnect discovery, optional remembered devices, and queue
+  recovery.
+- Simplification: browser Bluetooth is represented by the exact structural members
+  consumed by the adapter; UUID configuration is data; no ambient typings, packet
+  knowledge, retries, background reconnect, or timing simulator were added.
+- Discrepancies from design: the manual checklist refuses arbitrary dummy writes and
+  defers every physical write to the downstream known-safe codec/scene checkpoint;
+  this is safer than the brief's conditional dummy-write wording. No contract or
+  behavioral discrepancy.
+- Adjacent issues parked: none.
+- Verification: `npm test` (88 tests), `npm run typecheck`, `npm run lint`, and
+  `npm run build` all pass.
