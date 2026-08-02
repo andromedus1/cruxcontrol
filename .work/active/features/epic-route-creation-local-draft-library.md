@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-local-draft-library
 kind: feature
-stage: review
+stage: done
 tags: [ui, data]
 parent: epic-route-creation
 depends_on:
@@ -496,3 +496,26 @@ Kilter frames, or hardware.
 - `npm run typecheck` — passed.
 - `npm run lint` — passed.
 - `npm run build` — passed, including generated PWA service worker.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve
+
+**Blockers**: none unresolved. Fixed inline: unavailable IndexedDB and closed-database
+transaction setup now reject with stable repository errors; write failures wait for
+transaction abort before classifying quota errors, when the browser has populated the
+transaction cause.
+**Important**: none
+**Nits**: none
+**Rejected**: none
+
+**Notes**: Substrate feature review at effective weight `standard`; exactly one
+independent fresh-context pass. The pass covered v1 codec round trips and corruption,
+semantic/custom packed-color fidelity, immutable snapshots, IndexedDB transaction
+lifetime and atomic optimistic concurrency, ordering/filtering, blocked upgrades and
+version changes, quota/unavailable normalization, viewer projection, the locked
+`fake-indexeddb@6.2.5` dependency, and test integrity. Added regression coverage for
+missing IndexedDB, blocked upgrades, version-change closure, closed repositories,
+quota abort timing, and concurrent update/delete serialization. Full verification:
+`npm test` (32 files, 196 tests), `npm run typecheck`, `npm run lint`, and
+`npm run build` all passed. No second review pass ran under the standard closure policy.

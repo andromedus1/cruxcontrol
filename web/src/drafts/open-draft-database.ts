@@ -10,12 +10,14 @@ export interface DraftDatabaseFactory {
   open(name: string, version?: number): IDBOpenDBRequest;
 }
 
-export function openDraftDatabase(factory: DraftDatabaseFactory = indexedDB): Promise<IDBDatabase> {
+export function openDraftDatabase(factory?: DraftDatabaseFactory): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     let settled = false;
     let request: IDBOpenDBRequest;
     try {
-      request = factory.open(DRAFT_DATABASE_NAME, DRAFT_DATABASE_VERSION);
+      const databaseFactory = factory ?? globalThis.indexedDB;
+      if (!databaseFactory) throw new DOMException('IndexedDB is unavailable', 'NotSupportedError');
+      request = databaseFactory.open(DRAFT_DATABASE_NAME, DRAFT_DATABASE_VERSION);
     } catch (cause) {
       reject(translateDraftStorageError(cause, 'Local draft storage is unavailable'));
       return;

@@ -86,8 +86,14 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
   }
 
   async #add(draft: LocalClimbDraft): Promise<void> {
-    const transaction = this.#database.transaction(DRAFT_STORE_NAME, 'readwrite');
-    const request = transaction.objectStore(DRAFT_STORE_NAME).add(encodeStoredDraft(draft));
+    let transaction: IDBTransaction;
+    let request: IDBRequest<IDBValidKey>;
+    try {
+      transaction = this.#database.transaction(DRAFT_STORE_NAME, 'readwrite');
+      request = transaction.objectStore(DRAFT_STORE_NAME).add(encodeStoredDraft(draft));
+    } catch (cause) {
+      throw translateDraftStorageError(cause, 'Could not create local draft');
+    }
     return new Promise((resolve, reject) => {
       let collision = false;
       request.onerror = (event) => {
@@ -100,7 +106,7 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
         collision
           ? reject(new DraftConflictError(draft.id, draft.revision, draft.revision))
           : resolve();
-      transaction.onabort = transaction.onerror = () => {
+      transaction.onabort = () => {
         if (collision) reject(new DraftConflictError(draft.id, draft.revision, draft.revision));
         else reject(transactionError(transaction, 'Could not create local draft'));
       };
@@ -161,9 +167,16 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
     content: DraftContent,
   ): Promise<LocalClimbDraft> {
     const updatedAt = this.#now().toISOString();
-    const transaction = this.#database.transaction(DRAFT_STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(DRAFT_STORE_NAME);
-    const getRequest = store.get(id);
+    let transaction: IDBTransaction;
+    let store: IDBObjectStore;
+    let getRequest: IDBRequest<unknown>;
+    try {
+      transaction = this.#database.transaction(DRAFT_STORE_NAME, 'readwrite');
+      store = transaction.objectStore(DRAFT_STORE_NAME);
+      getRequest = store.get(id);
+    } catch (cause) {
+      return Promise.reject(translateDraftStorageError(cause, 'Could not update local draft'));
+    }
     let result: LocalClimbDraft | undefined;
     let semanticError: unknown;
     getRequest.onsuccess = () => {
@@ -192,15 +205,22 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
           : reject(
               new DraftRepositoryError('unavailable', 'Draft update completed without a result'),
             );
-      transaction.onabort = transaction.onerror = () =>
+      transaction.onabort = () =>
         reject(semanticError ?? transactionError(transaction, 'Could not update local draft'));
     });
   }
 
   delete(id: LocalDraftId, expectedRevision: DraftRevision): Promise<void> {
-    const transaction = this.#database.transaction(DRAFT_STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(DRAFT_STORE_NAME);
-    const getRequest = store.get(id);
+    let transaction: IDBTransaction;
+    let store: IDBObjectStore;
+    let getRequest: IDBRequest<unknown>;
+    try {
+      transaction = this.#database.transaction(DRAFT_STORE_NAME, 'readwrite');
+      store = transaction.objectStore(DRAFT_STORE_NAME);
+      getRequest = store.get(id);
+    } catch (cause) {
+      return Promise.reject(translateDraftStorageError(cause, 'Could not delete local draft'));
+    }
     let semanticError: unknown;
     getRequest.onsuccess = () => {
       try {
@@ -217,7 +237,7 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
     };
     return new Promise((resolve, reject) => {
       transaction.oncomplete = () => resolve();
-      transaction.onabort = transaction.onerror = () =>
+      transaction.onabort = () =>
         reject(semanticError ?? transactionError(transaction, 'Could not delete local draft'));
     });
   }

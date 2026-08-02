@@ -1,7 +1,7 @@
 import { IDBFactory } from 'fake-indexeddb';
 import { apiLevel3Color } from '../domain/boards/colors.ts';
 import { boardInstallationId } from '../installations/contracts.ts';
-import { localDraftId } from './codec.ts';
+import { draftRevision, localDraftId } from './codec.ts';
 import { DraftConflictError, DraftNotFoundError } from './errors.ts';
 import { IndexedDbLocalDraftRepository } from './indexeddb-repository.ts';
 import { DRAFT_STORE_NAME, openDraftDatabase } from './open-draft-database.ts';
@@ -131,6 +131,33 @@ describe('IndexedDbLocalDraftRepository', () => {
     expect(failure).toMatchObject({ status: 'rejected', reason: expect.any(DraftConflictError) });
   });
 
+  it('serializes a concurrent update and delete from the same revision', async () => {
+    const factory = new IDBFactory();
+    const createDatabase = await openDraftDatabase(factory);
+    const creator = new IndexedDbLocalDraftRepository(createDatabase, {
+      createId: () => FIRST_DRAFT_ID,
+    });
+    const created = await creator.create(draftContent());
+
+    const updateRepository = new IndexedDbLocalDraftRepository(await openDraftDatabase(factory));
+    const deleteRepository = new IndexedDbLocalDraftRepository(await openDraftDatabase(factory));
+    const results = await Promise.allSettled([
+      updateRepository.update(created.id, created.revision, draftContent({ name: 'updated' })),
+      deleteRepository.delete(created.id, created.revision),
+    ]);
+
+    expect(results.filter(({ status }) => status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter(({ status }) => status === 'rejected')).toHaveLength(1);
+    if (results[0].status === 'fulfilled') {
+      expect(await creator.get(created.id)).toEqual(results[0].value);
+    } else {
+      expect(await creator.get(created.id)).toBeNull();
+    }
+    creator.close();
+    updateRepository.close();
+    deleteRepository.close();
+  });
+
   it('surfaces corrupt rows without deleting them', async () => {
     const context = await repository({ createId: () => FIRST_DRAFT_ID });
     const created = await context.repository.create(draftContent());
@@ -158,5 +185,58 @@ describe('IndexedDbLocalDraftRepository', () => {
         request.onerror = () => reject(request.error);
       }),
     ).toMatchObject({ angle: 'bad' });
+  });
+
+  it('normalizes closed-database failures for every repository operation', async () => {
+    const context = await repository({ createId: () => FIRST_DRAFT_ID });
+    const database = await openDraftDatabase(context.factory);
+    const closed = new IndexedDbLocalDraftRepository(database, {
+      createId: () => SECOND_DRAFT_ID,
+    });
+    database.close();
+    const id = localDraftId(FIRST_DRAFT_ID);
+    const revision = draftRevision(1);
+
+    await expect(closed.create(draftContent())).rejects.toMatchObject({ code: 'unavailable' });
+    await expect(closed.get(id)).rejects.toMatchObject({ code: 'unavailable' });
+    await expect(closed.list()).rejects.toMatchObject({ code: 'unavailable' });
+    await expect(closed.update(id, revision, draftContent())).rejects.toMatchObject({
+      code: 'unavailable',
+    });
+    await expect(closed.delete(id, revision)).rejects.toMatchObject({ code: 'unavailable' });
+  });
+
+  it('waits for transaction abort before classifying quota failures', async () => {
+    let requestError: DOMException | null = null;
+    let transactionErrorValue: DOMException | null = null;
+    const request = {
+      get error() {
+        return requestError;
+      },
+      onerror: null,
+    } as unknown as IDBRequest<IDBValidKey>;
+    const transaction = {
+      get error() {
+        return transactionErrorValue;
+      },
+      objectStore: () => ({ add: () => request }),
+      oncomplete: null,
+      onabort: null,
+      onerror: null,
+    } as unknown as IDBTransaction;
+    const database = { transaction: () => transaction } as unknown as IDBDatabase;
+    const quota = new DOMException('full', 'QuotaExceededError');
+    const draftRepository = new IndexedDbLocalDraftRepository(database, {
+      createId: () => FIRST_DRAFT_ID,
+    });
+
+    const create = draftRepository.create(draftContent());
+    requestError = quota;
+    request.onerror?.call(request, new Event('error', { cancelable: true }));
+    transaction.onerror?.call(transaction, new Event('error'));
+    transactionErrorValue = quota;
+    transaction.onabort?.call(transaction, new Event('abort'));
+
+    await expect(create).rejects.toMatchObject({ code: 'quota-exceeded', cause: quota });
   });
 });
