@@ -31,7 +31,11 @@ export class MockBoardByteTransport implements BoardByteTransport {
   private state: BoardTransportState;
 
   constructor(options?: MockByteTransportOptions) {
-    this.capability = options?.capability ?? Object.freeze({ supported: true });
+    this.capability = Object.freeze(
+      options?.capability?.supported === false
+        ? { supported: false, reason: options.capability.reason }
+        : { supported: true },
+    );
     this.devices = Object.freeze(
       (options?.devices ?? [{ id: 'mock-board', name: 'Mock Kilter Board' }]).map(freezeDevice),
     );
@@ -59,10 +63,14 @@ export class MockBoardByteTransport implements BoardByteTransport {
   }
 
   getRememberedDevices(): Promise<readonly BoardDeviceRef[]> {
+    if (!this.capability.supported) return Promise.resolve(Object.freeze([]));
     return Promise.resolve(Object.freeze(this.devices.map(freezeDevice)));
   }
 
   async requestAndConnect(): Promise<BoardDeviceRef> {
+    if (this.capability.supported) {
+      this.publish(Object.freeze({ status: 'selecting', device: null }));
+    }
     return this.connect(this.devices[0]);
   }
 
@@ -115,7 +123,11 @@ export class MockBoardByteTransport implements BoardByteTransport {
         recoverable: false,
       });
     }
-    if (!device) throw new BoardTransportError('device-unavailable', 'The selected board is not available.');
+    if (!device) {
+      const error = new BoardTransportError('device-unavailable', 'The selected board is not available.');
+      this.publish(Object.freeze({ status: 'error', device: null, error }));
+      throw error;
+    }
     const ref = freezeDevice(device);
     this.publish(Object.freeze({ status: 'connecting', device: ref }));
     const failure = this.failures.connect.shift();

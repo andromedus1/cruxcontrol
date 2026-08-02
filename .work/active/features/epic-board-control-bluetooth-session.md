@@ -1,7 +1,7 @@
 ---
 id: epic-board-control-bluetooth-session
 kind: feature
-stage: review
+stage: done
 tags: [ble]
 parent: epic-board-control
 depends_on: []
@@ -524,3 +524,25 @@ the downstream protocol/scene feature supplies a known-safe encoded command:
 - Adjacent issues parked: none.
 - Verification: `npm test` (88 tests), `npm run typecheck`, `npm run lint`, and
   `npm run build` all pass.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve
+
+**Blockers**: resolved inline — chooser rejections are now observed synchronously
+before the FIFO continuation, preventing a delayed queue from producing a global
+unhandled rejection; GATT setup failures now publish one terminal error transition
+rather than two.
+**Important**: none
+**Nits**: none
+**Rejected**: none
+
+**Notes**: Substrate feature review with effective weight `standard`; exactly one
+balanced independent fresh-context pass (same OpenAI/Codex model class). The pass
+covered synchronous chooser activation, typed capability/state/error behavior,
+whole-batch FIFO serialization, disconnect generation invalidation and fresh GATT
+resolution, remembered-device reuse, browser/mock transition fidelity, foundation
+alignment, and test integrity. The resolved blocker also aligned unsupported
+remembered-device results and chooser transitions in the deterministic mock. Final
+verification on the corrected snapshot: `npm test` (119 tests), `npm run build`
+(including strict TypeScript), and `npm run lint` all pass. No second review pass ran.

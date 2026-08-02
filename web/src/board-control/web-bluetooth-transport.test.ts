@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AURORA_WEB_BLUETOOTH_CONFIG } from './aurora-web-bluetooth.ts';
 import type {
   BluetoothDeviceLike,
@@ -124,6 +124,23 @@ describe('WebBluetoothByteTransport', () => {
     await expect(transport.requestAndConnect()).resolves.toMatchObject({ id: 'board-1' });
   });
 
+  it('attaches a chooser rejection handler before returning to the caller', async () => {
+    const chooser = deferred<BluetoothDeviceLike>();
+    const then = vi.spyOn(chooser.promise, 'then');
+    const transport = new WebBluetoothByteTransport(
+      {
+        isSecureContext: true,
+        bluetooth: { requestDevice: () => chooser.promise },
+      },
+      AURORA_WEB_BLUETOOTH_CONFIG,
+    );
+
+    const connecting = transport.requestAndConnect();
+    expect(then).toHaveBeenCalledTimes(1);
+    chooser.reject(new DOMException('cancelled', 'NotFoundError'));
+    await expect(connecting).rejects.toMatchObject({ code: 'chooser-cancelled' });
+  });
+
   it('normalizes synchronous chooser errors and releases the chooser guard', async () => {
     const transport = new WebBluetoothByteTransport(
       {
@@ -173,7 +190,10 @@ describe('WebBluetoothByteTransport', () => {
       },
       AURORA_WEB_BLUETOOTH_CONFIG,
     );
+    const statuses: string[] = [];
+    transport.subscribe((state) => statuses.push(state.status));
     await expect(transport.requestAndConnect()).rejects.toMatchObject({ code });
+    expect(statuses).toEqual(['disconnected', 'selecting', 'connecting', 'error']);
   });
 
   it('rejects a characteristic with neither modern write method', async () => {

@@ -102,9 +102,18 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
       this.publishError(error, null);
       return Promise.reject(error);
     }
+    // Observe chooser rejection immediately even when an older GATT operation is
+    // holding the FIFO queue. Deferring the first rejection handler until the
+    // queued continuation runs can surface a browser-level unhandled rejection.
+    const chooserResult = chooser.then(
+      (device) => ({ ok: true as const, device }),
+      (cause: unknown) => ({ ok: false as const, cause }),
+    );
     return this.enqueue(async () => {
       try {
-        const device = await chooser;
+        const result = await chooserResult;
+        if (!result.ok) throw result.cause;
+        const { device } = result;
         this.device = device;
         this.installDisconnectListener(device);
         return await this.connectDevice(device);
@@ -121,7 +130,7 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
               device: this.device ? this.deviceRef(this.device) : null,
             }),
           );
-        } else {
+        } else if (this.state.status !== 'error' || this.state.error !== error) {
           this.publishError(error, this.device);
         }
         throw error;

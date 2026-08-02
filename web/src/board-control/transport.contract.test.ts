@@ -65,12 +65,20 @@ describe('MockBoardByteTransport evidence and failures', () => {
     expect(transport.getState().status).toBe('disconnected');
   });
 
+  it('mirrors the real chooser and connection state sequence', async () => {
+    const transport = new MockBoardByteTransport();
+    const statuses: string[] = [];
+    transport.subscribe((state) => statuses.push(state.status));
+    await transport.requestAndConnect();
+    expect(statuses).toEqual(['disconnected', 'selecting', 'connecting', 'connected']);
+  });
+
   it('represents unsupported capability deterministically', async () => {
     const transport = new MockBoardByteTransport({
       capability: { supported: false, reason: 'api-unavailable' },
     });
     expect(transport.getState().status).toBe('unsupported');
+    await expect(transport.getRememberedDevices()).resolves.toEqual([]);
     await expect(transport.requestAndConnect()).rejects.toMatchObject({ code: 'unsupported' });
   });
 });
-
