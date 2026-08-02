@@ -1,7 +1,7 @@
 ---
 id: epic-board-control-light-scenes
 kind: feature
-stage: implementing
+stage: review
 tags: [ble, ui]
 parent: epic-board-control
 depends_on:
@@ -377,3 +377,41 @@ draft store share placement IDs but do not import codec or transport modules.
 - Advisory review: skipped; the user supplied detailed prior `--only-questions`
   decisions and the remaining choices are reversible internal composition details.
 - Child stories: none — one tightly coupled state machine and test seam.
+
+## Implementation notes
+
+- Execution capability: highest-capability/xhigh, inherited from the autopilot caller;
+  placement-to-hardware composition and preview concurrency warranted the strongest
+  implementation pass.
+- Review weight: standard, from the caller and project convention.
+- Files changed: `web/src/domain/boards/light-scene.ts`,
+  `web/src/domain/boards/index.ts`, `web/src/board-control/light-controller.ts`, and
+  `web/src/board-control/light-controller.test.ts`.
+- Tests added/removed: added 13 unit/integration tests covering exact four-role bytes,
+  arbitrary 256-color scenes, empty/clear commands, immutable state, validation before
+  writes, a 305-placement multi-packet scene, transport errors and reconnection, and
+  deterministic latest-frame-wins/explicit-priority arbitration; removed none.
+- Simplification: kept preview scheduling to one active operation, one pending preview,
+  and a FIFO explicit-operation queue; reused the existing definition validator, codec,
+  transport error vocabulary, and mock transport rather than adding profiles, timers,
+  or a second color model.
+- Discrepancies from design: the generated definition export is named
+  `kilterFullride7x10Definition` rather than the illustrative uppercase name; a failed
+  mock write moves the transport to its honest error state, so a retained preview is
+  safely rejected as disconnected until explicit reconnect rather than being silently
+  applied.
+- Adjacent issues parked: none.
+
+## Physical verification
+
+- Status: **pending — requires Andrew with the powered Fullride 7x10 and Android
+  Chrome**.
+- Browser/device: pending.
+- Advertised controller name and observed `@APILevel`: pending.
+- Test scene: pending; must include all four role presets plus at least four custom
+  API-level-3 color bytes and enough placements to span multiple BLE writes.
+- Clear, remote disconnect, explicit reconnect, and relight: pending.
+- Observed mapping/protocol discrepancies: pending.
+- Automated substitute evidence: 13 controller tests compose the generated 305-hold
+  definition, real API-level-3 codec, and mock byte transport; this does not claim
+  physical hardware behavior.
