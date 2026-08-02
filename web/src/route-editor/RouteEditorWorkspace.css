@@ -135,6 +135,11 @@
 .tool-shape--custom {
   background: conic-gradient(#98bb6c, #7e9cd8, #d27e99, #e6c384, #98bb6c);
 }
+.tool-shape--eyedropper {
+  border: 2px solid currentColor;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+}
 .color-control {
   margin: 0;
   padding: var(--space-3);

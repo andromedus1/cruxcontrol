@@ -7,6 +7,7 @@ export type EditorTool =
   | { readonly kind: 'cycle' }
   | { readonly kind: 'role'; readonly role: ClimbRole }
   | { readonly kind: 'erase' }
+  | { readonly kind: 'eyedropper' }
   | { readonly kind: 'custom'; readonly color: ApiLevel3Color };
 
 export type EditorSaveStatus = 'saved' | 'dirty' | 'saving' | 'error' | 'conflict';
@@ -24,11 +25,22 @@ export interface RouteEditorState {
 export type RouteEditorAction =
   | { readonly type: 'set-name'; readonly value: string }
   | { readonly type: 'set-angle'; readonly value: number }
-  | { readonly type: 'set-metadata'; readonly field: 'grade' | 'description' | 'setterNotes'; readonly value: string }
+  | {
+      readonly type: 'set-metadata';
+      readonly field: 'grade' | 'description' | 'setterNotes';
+      readonly value: string;
+    }
   | { readonly type: 'set-tool'; readonly tool: EditorTool }
-  | { readonly type: 'activate-placement'; readonly placementId: import('../domain/boards/types').BoardPlacementId }
+  | {
+      readonly type: 'activate-placement';
+      readonly placementId: import('../domain/boards/types').BoardPlacementId;
+    }
   | { readonly type: 'save-started'; readonly generation: number }
-  | { readonly type: 'save-succeeded'; readonly draft: LocalClimbDraft; readonly generation: number }
+  | {
+      readonly type: 'save-succeeded';
+      readonly draft: LocalClimbDraft;
+      readonly generation: number;
+    }
   | { readonly type: 'save-failed'; readonly error: Error; readonly conflict: boolean }
   | { readonly type: 'reload'; readonly draft: LocalClimbDraft };
 

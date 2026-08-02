@@ -2,6 +2,7 @@ import { useEffect, useId, useReducer, useState } from 'react';
 import type { BoardLightController } from '../board-control/light-controller';
 import { BoardRenderer } from '../board-renderer/BoardRenderer';
 import type { BoardDefinition } from '../domain/boards/definition';
+import type { BoardPlacementId } from '../domain/boards/types';
 import type { LocalDraftRepository } from '../drafts/repository';
 import type { LocalClimbDraft } from '../drafts/types';
 import { createRouteEditorState, routeEditorReducer } from './editor-state';
@@ -49,6 +50,26 @@ export function RouteEditorWorkspace({
         : lighting.controllerState.transport.status === 'connected'
           ? 'Light draft'
           : 'Connect & light';
+  const activatePlacement = (placementId: BoardPlacementId) => {
+    if (state.tool.kind !== 'eyedropper') {
+      dispatch({ type: 'activate-placement', placementId });
+      return;
+    }
+    const sampled = state.content.assignments.find(
+      (assignment) => assignment.placementId === placementId,
+    )?.appearance;
+    if (!sampled) return;
+    dispatch({
+      type: 'set-tool',
+      tool: {
+        kind: 'custom',
+        color:
+          sampled.kind === 'custom'
+            ? sampled.color
+            : definition.rolePresets[sampled.role].lightColor,
+      },
+    });
+  };
   return (
     <main className="route-editor">
       <header className="route-editor__header">
@@ -178,9 +199,7 @@ export function RouteEditorWorkspace({
             scale={boardScale}
             onScaleChange={setBoardScale}
             labelledBy={boardHeading}
-            onPlacementActivate={(placementId) =>
-              dispatch({ type: 'activate-placement', placementId })
-            }
+            onPlacementActivate={activatePlacement}
           />
         </section>
       </div>

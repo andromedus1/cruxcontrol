@@ -23,14 +23,16 @@ export function applyEditorTool(
   placementId: BoardPlacementId,
   tool: EditorTool,
 ): readonly BoardHoldAssignment[] {
+  if (tool.kind === 'eyedropper') return assignments;
   const current = assignments.find((value) => value.placementId === placementId)?.appearance;
-  const appearance = tool.kind === 'cycle'
-    ? cycleAppearance(current)
-    : tool.kind === 'erase'
-      ? null
-      : tool.kind === 'role'
-        ? { kind: 'role' as const, role: tool.role }
-        : { kind: 'custom' as const, color: tool.color };
+  const appearance =
+    tool.kind === 'cycle'
+      ? cycleAppearance(current)
+      : tool.kind === 'erase'
+        ? null
+        : tool.kind === 'role'
+          ? { kind: 'role' as const, role: tool.role }
+          : { kind: 'custom' as const, color: tool.color };
   if (!current && !appearance) return assignments;
   if (current && appearance && sameAppearance(current, appearance)) return assignments;
   const without = assignments.filter((value) => value.placementId !== placementId);

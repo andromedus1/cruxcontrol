@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-editor-eyedropper
 kind: story
-stage: implementing
+stage: done
 tags: [ui]
 parent: epic-route-creation-editor-workspace
 depends_on: []
@@ -32,3 +32,13 @@ and the board definition; do not duplicate role-color data in reducer state.
 - Sampling does not modify or dirty the draft.
 - The sampled Advanced Light value can be painted onto another hold.
 - Sampling an unassigned hold is a no-op.
+
+## Implementation evidence
+
+- Added a dedicated Eyedropper tool that samples semantic presets through the active
+  definition and retains exact custom API3 bytes.
+- Sampling changes only the active tool; it does not dirty the draft. The next hold
+  activation paints with Advanced Light.
+- Added semantic, custom, unassigned, and paint-after-sample coverage.
+- Full verification: 230 tests passing; lint, typecheck, and production build green.
+- User verified the interaction on the attached Pixel 8.
