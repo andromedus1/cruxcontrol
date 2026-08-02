@@ -1,7 +1,7 @@
 ---
 id: epic-playlists
 kind: epic
-stage: drafting
+stage: implementing
 tags: [ui]
 parent: null
 depends_on: [epic-climb-browser, epic-route-creation-climb-lifecycle]
@@ -53,6 +53,16 @@ the BLE adapter from epic-board-control for play-through.
 - **Climb references**: Playlists store stable Kilter climb IDs, not embedded climb
   data, so shared playlists resolve against any local catalog. — makes share URLs
   portable.
+- **Reference scope**: persisted playlist membership uses a namespaced union of local
+  climb IDs and provider climb IDs. Draft/Finished/Trash transitions never rewrite
+  membership; trashed entries remain visible but unavailable until restored.
+- **Multiple membership**: one climb may belong to any number of manually ordered
+  lists. Lists impose no semantics beyond a user-chosen name and optional notes, so
+  favorites, projects, and training exercises use the same model.
+- **Portable local climbs**: because a friend's browser cannot resolve another
+  browser's local UUID, shared payloads include immutable snapshots for local entries
+  while provider entries remain namespaced references. Import creates local copies and
+  never overwrites existing climbs or lists silently.
 
 ## Research briefs
 
@@ -66,10 +76,41 @@ No `[needs-brief]`.
 - `docs/ARCHITECTURE.md` — Module Map §8 (Playlists); reuse of §4 (Renderer),
   §5 (Climb Browser routing), §3 (BLE Adapter for play-through).
 
-## Anticipated child features
+## UI alignment deferred
 
-Provisional — `/epic-design` decides the real decomposition:
-- Playlist store (create/rename/delete; ordered climb-ID lists; local persistence)
-- Playlist editor UI (add from browser, drag-reorder, remove)
-- Shareable playlist URL (encode/resolve by climb ID)
-- Board play-through (step through, light each climb; needs epic-board-control)
+Autopilot cannot run the interactive mockup chooser. The child features should reuse
+the selected hybrid climb-browser workspace and locked Kanagawa/Field Console design
+system. Net-new surfaces are a Lists collection/library, list editor with reorder and
+membership actions, share/import dialog, and board play-through controls. A later
+`epic-design --only-questions epic-playlists` pass may add dedicated mocks, but the
+existing patterns and locked product decisions are sufficient to implement without
+blocking.
+
+## Decomposition
+
+Split by user capability rather than technical layer. The local library feature owns
+the versioned playlist aggregate, membership reference union, and complete management
+surface because those contracts must evolve together. Play-through and portable
+sharing are independent consumers once that library is verified and can proceed in
+parallel without duplicating persistence.
+
+### Child features
+
+- `epic-playlists-local-library` — create, rename, annotate, delete, add/remove, and
+  manually reorder local/provider climb memberships — depends on: `[]`
+- `epic-playlists-play-through` — step through a list and light each available climb
+  on the configured board — depends on: `[epic-playlists-local-library]`
+- `epic-playlists-portable-sharing` — versioned URL/file sharing and safe import,
+  embedding snapshots only for browser-local climbs — depends on:
+  `[epic-playlists-local-library]`
+
+### Decomposition risks
+
+- Local climb UUIDs are not portable; shared local snapshots must create copies rather
+  than pretending identities resolve across browsers.
+- Trash retains membership by stable ID, but play-through must skip unavailable
+  entries explicitly instead of mutating the list.
+- URL payload size is bounded by browsers and messaging clients. The sharing feature
+  must retain a downloadable/importable file fallback rather than silently truncating.
+- Provider-backed references remain a typed future branch until catalog installation
+  ships; local-list usefulness must not depend on that deferred work.
