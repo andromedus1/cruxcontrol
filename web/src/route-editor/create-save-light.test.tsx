@@ -18,7 +18,9 @@ describe('create-save-light integration', () => {
       now: () => new Date('2026-08-02T12:00:00.000Z'),
     });
     const transport = new MockBoardByteTransport();
-    const installation = createAppInstallationRegistry({ createTransport: () => transport }).require(activeInstallationId);
+    const installation = createAppInstallationRegistry({
+      createTransport: () => transport,
+    }).require(activeInstallationId);
     const runtime: CruxControlRuntime = {
       installation,
       drafts,
@@ -29,24 +31,31 @@ describe('create-save-light integration', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Create your first climb' }));
     await screen.findByRole('heading', { name: 'Untitled climb' });
 
-    const apply = (ordinal: number) => fireEvent.keyDown(
-      screen.getByRole('button', { name: new RegExp(`^Hold ${ordinal},`) }),
-      { key: 'Enter' },
-    );
+    const apply = (ordinal: number) =>
+      fireEvent.keyDown(screen.getByRole('button', { name: new RegExp(`^Hold ${ordinal},`) }), {
+        key: 'Enter',
+      });
     apply(1);
-    fireEvent.click(screen.getByRole('radio', { name: /Middle/ })); apply(2);
-    fireEvent.click(screen.getByRole('radio', { name: /Finish/ })); apply(3);
-    fireEvent.click(screen.getByRole('radio', { name: /Foot-only/ })); apply(4);
+    apply(2);
+    apply(2);
+    apply(3);
+    apply(3);
+    apply(3);
+    apply(4);
+    apply(4);
+    apply(4);
+    apply(4);
     fireEvent.click(screen.getByRole('radio', { name: /Advanced Light/ }));
     fireEvent.change(screen.getByLabelText('red channel'), { target: { value: '7' } });
     fireEvent.change(screen.getByLabelText('green channel'), { target: { value: '7' } });
     fireEvent.change(screen.getByLabelText('blue channel'), { target: { value: '3' } });
     apply(5);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save now' }));
     await waitFor(() => expect(document.querySelector('.save-chip')).toHaveTextContent('saved'));
     fireEvent.click(screen.getByRole('button', { name: 'Connect & light' }));
-    await waitFor(() => expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(1));
+    await waitFor(() =>
+      expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(1),
+    );
 
     const stored = await drafts.list({ installationId: installation.config.id });
     expect(stored).toHaveLength(1);

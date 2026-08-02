@@ -26,7 +26,7 @@ const repository: LocalDraftRepository = {
 };
 
 describe('RouteEditorWorkspace', () => {
-  it('supports all semantic tools, exact custom channels, and unrestricted lighting copy', () => {
+  it('shows the simplified autosaving hold tools and exact custom channels', () => {
     render(
       <RouteEditorWorkspace
         definition={kilterFullride7x10Definition}
@@ -36,15 +36,22 @@ describe('RouteEditorWorkspace', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Untitled climb' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Foot-only/ })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /^Start$/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /^Middle$/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /^Finish$/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /^Foot-only$/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Cycle' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Erase' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Eyedropper/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('radio', { name: /Advanced Light/ }));
     expect(screen.getByLabelText('red channel')).toHaveAttribute('max', '7');
     expect(screen.getByLabelText('blue channel')).toHaveAttribute('max', '3');
     expect(screen.getByRole('button', { name: 'Connect & light' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Save now' })).not.toBeInTheDocument();
     expect(document.querySelector('.board-renderer__viewport')).toHaveAttribute('data-scale', '1');
   });
 
-  it('cycles, directly assigns, and erases through the roving keyboard surface', () => {
+  it('cycles and erases through the roving keyboard surface', () => {
     render(
       <RouteEditorWorkspace
         definition={kilterFullride7x10Definition}
@@ -56,12 +63,38 @@ describe('RouteEditorWorkspace', () => {
     const hold = screen.getByRole('button', { name: /^Hold 1, Unselected/ });
     fireEvent.keyDown(hold, { key: 'Enter' });
     expect(screen.getByRole('button', { name: /^Hold 1, Start/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('radio', { name: /Finish/ }));
     fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 1, Start/ }), { key: ' ' });
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 1, Middle/ }), { key: ' ' });
     expect(screen.getByRole('button', { name: /^Hold 1, Finish/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('radio', { name: 'Erase' }));
     fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 1, Finish/ }), { key: 'Enter' });
     expect(screen.getByRole('button', { name: /^Hold 1, Unselected/ })).toBeInTheDocument();
+  });
+
+  it('creates and edits a saved effect group, then paints membership on an existing hold', () => {
+    render(
+      <RouteEditorWorkspace
+        definition={kilterFullride7x10Definition}
+        draft={draft}
+        repository={repository}
+        onBack={vi.fn()}
+      />,
+    );
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 1, Unselected/ }), {
+      key: 'Enter',
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add effect' }));
+    expect(screen.getByLabelText('Effect kind')).toHaveValue('pulse');
+    fireEvent.change(screen.getByLabelText('Effect kind'), { target: { value: 'wave' } });
+    fireEvent.change(screen.getByLabelText('Effect speed'), { target: { value: '2400' } });
+    fireEvent.change(screen.getByLabelText('Effect intensity'), { target: { value: '60' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Apply selected effect' }));
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 1, Start/ }), { key: 'Enter' });
+    expect(screen.getByText('1 hold in this effect')).toBeInTheDocument();
+    expect(document.querySelector('.save-chip')).toHaveTextContent('dirty');
+    fireEvent.click(screen.getByRole('radio', { name: 'Remove effect' }));
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 1, Start/ }), { key: 'Enter' });
+    expect(screen.getByText('0 holds in this effect')).toBeInTheDocument();
   });
 
   it('starts fitted and supports controls and pinch zoom in the editor', () => {
@@ -117,7 +150,9 @@ describe('RouteEditorWorkspace', () => {
     );
 
     fireEvent.click(screen.getByRole('radio', { name: /Eyedropper/ }));
-    fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 3, Unselected/ }), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 3, Unselected/ }), {
+      key: 'Enter',
+    });
     expect(screen.getByRole('radio', { name: /Eyedropper/ })).toHaveAttribute(
       'aria-checked',
       'true',
@@ -137,7 +172,9 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByLabelText('red channel')).toHaveValue('7');
     expect(screen.getByLabelText('green channel')).toHaveValue('7');
     expect(screen.getByLabelText('blue channel')).toHaveValue('3');
-    fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 3, Unselected/ }), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 3, Unselected/ }), {
+      key: 'Enter',
+    });
     expect(screen.getByRole('button', { name: /^Hold 3, Custom #FFFFFF/ })).toBeInTheDocument();
     expect(document.querySelector('.save-chip')).toHaveTextContent('dirty');
   });

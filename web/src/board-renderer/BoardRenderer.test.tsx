@@ -43,6 +43,20 @@ describe('BoardRenderer', () => {
     expect(screen.getByRole('button', { name: /Custom #FFFFFF/ })).toBeInTheDocument();
   });
 
+  it('uses a generated light scene as the visual color source without changing base labels', () => {
+    const placement = fullride.placements[0]!;
+    const { container } = render(
+      <BoardRenderer
+        definition={fullride}
+        interactionMode="select"
+        assignments={[{ placementId: placement.id, appearance: { kind: 'role', role: 'start' } }]}
+        lightScene={[{ placementId: placement.id, color: apiLevel3Color(0b000_000_11) }]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /^Hold 1, Start/ })).toBeInTheDocument();
+    expect(container.querySelector('[data-placement-id]')).toHaveStyle({ color: '#0000ff' });
+  });
+
   it('uses one roving focus and activates through keyboard navigation', () => {
     const activated = vi.fn();
     const { container } = render(

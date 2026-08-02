@@ -24,18 +24,47 @@ export function applyEditorTool(
   tool: EditorTool,
 ): readonly BoardHoldAssignment[] {
   if (tool.kind === 'eyedropper') return assignments;
-  const current = assignments.find((value) => value.placementId === placementId)?.appearance;
+  const currentAssignment = assignments.find((value) => value.placementId === placementId);
+  const current = currentAssignment?.appearance;
+  if (tool.kind === 'apply-effect') {
+    if (!currentAssignment || currentAssignment.effectGroupId === tool.effectGroupId)
+      return assignments;
+    return Object.freeze(
+      assignments.map((assignment) =>
+        assignment.placementId === placementId
+          ? Object.freeze({ ...assignment, effectGroupId: tool.effectGroupId })
+          : assignment,
+      ),
+    );
+  }
+  if (tool.kind === 'remove-effect') {
+    if (!currentAssignment?.effectGroupId) return assignments;
+    return Object.freeze(
+      assignments.map((assignment) => {
+        if (assignment.placementId !== placementId) return assignment;
+        const { effectGroupId: _removed, ...base } = assignment;
+        return Object.freeze(base);
+      }),
+    );
+  }
   const appearance =
     tool.kind === 'cycle'
       ? cycleAppearance(current)
       : tool.kind === 'erase'
         ? null
-        : tool.kind === 'role'
-          ? { kind: 'role' as const, role: tool.role }
-          : { kind: 'custom' as const, color: tool.color };
+        : { kind: 'custom' as const, color: tool.color };
   if (!current && !appearance) return assignments;
   if (current && appearance && sameAppearance(current, appearance)) return assignments;
   const without = assignments.filter((value) => value.placementId !== placementId);
   if (!appearance) return Object.freeze(without);
-  return Object.freeze([...without, Object.freeze({ placementId, appearance })]);
+  return Object.freeze([
+    ...without,
+    Object.freeze({
+      placementId,
+      appearance,
+      ...(currentAssignment?.effectGroupId === undefined
+        ? {}
+        : { effectGroupId: currentAssignment.effectGroupId }),
+    }),
+  ]);
 }

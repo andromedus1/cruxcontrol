@@ -3,6 +3,7 @@ import type { KeyboardEvent, MouseEvent, TouchEvent } from 'react';
 import { apiLevel3ColorHex } from '../domain/boards/colors';
 import type { BoardDefinition, ClimbRole } from '../domain/boards/definition';
 import type { BoardPlacementId } from '../domain/boards/types';
+import type { LightScene } from '../domain/boards/light-scene';
 import { createBoardTransform, nearestPlacement, placementInDirection } from './geometry';
 import { chooseHoldArtwork, HoldArtwork } from './hold-artwork';
 import { createAssignmentIndex } from './scene';
@@ -12,6 +13,7 @@ import './BoardRenderer.css';
 export interface BoardRendererProps {
   readonly definition: BoardDefinition;
   readonly assignments?: readonly BoardHoldAssignment[];
+  readonly lightScene?: LightScene;
   readonly interactionMode?: 'view' | 'select';
   readonly scale?: number;
   readonly onScaleChange?: (scale: number) => void;
@@ -50,6 +52,7 @@ function AssignmentMarker({ appearance }: { readonly appearance: BoardHoldAppear
 export function BoardRenderer({
   definition,
   assignments = [],
+  lightScene,
   interactionMode = 'view',
   scale = 1,
   onScaleChange,
@@ -63,6 +66,10 @@ export function BoardRenderer({
   const assignmentIndex = useMemo(
     () => createAssignmentIndex(definition, assignments),
     [definition, assignments],
+  );
+  const lightIndex = useMemo(
+    () => new Map(lightScene?.map(({ placementId, color }) => [placementId, color]) ?? []),
+    [lightScene],
   );
   const [focused, setFocused] = useState(definition.placements[0]?.id ?? null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -228,11 +235,15 @@ export function BoardRenderer({
           {definition.placements.map((placement, index) => {
             const center = transform.toSvg(placement.position);
             const appearance = assignmentIndex.get(placement.id);
-            const color = appearance
-              ? appearance.kind === 'role'
-                ? definition.rolePresets[appearance.role].screenColor
-                : apiLevel3ColorHex(appearance.color)
-              : undefined;
+            const animatedColor = lightIndex.get(placement.id);
+            const color =
+              animatedColor !== undefined
+                ? apiLevel3ColorHex(animatedColor)
+                : appearance
+                  ? appearance.kind === 'role'
+                    ? definition.rolePresets[appearance.role].screenColor
+                    : apiLevel3ColorHex(appearance.color)
+                  : undefined;
             const interactive = interactionMode === 'select';
             return (
               <g

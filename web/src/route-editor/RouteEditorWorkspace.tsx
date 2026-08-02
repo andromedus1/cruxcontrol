@@ -1,14 +1,18 @@
-import { useEffect, useId, useReducer, useState } from 'react';
+import { useEffect, useId, useMemo, useReducer, useState } from 'react';
 import type { BoardLightController } from '../board-control/light-controller';
 import { BoardRenderer } from '../board-renderer/BoardRenderer';
 import type { BoardDefinition } from '../domain/boards/definition';
 import type { BoardPlacementId } from '../domain/boards/types';
+import type { LightEffectGroupId } from '../board-renderer/types';
 import type { LocalDraftRepository } from '../drafts/repository';
 import type { LocalClimbDraft } from '../drafts/types';
 import { createRouteEditorState, routeEditorReducer } from './editor-state';
 import { RouteEditorToolbar } from './RouteEditorToolbar';
+import { LightEffectsPanel } from './LightEffectsPanel';
 import { useDraftAutosave } from './use-draft-autosave';
 import { useEditorLighting } from './use-editor-lighting';
+import { useAnimationClock } from '../light-effects/use-animation-clock';
+import { renderAnimationFrame } from '../light-effects/frame';
 import './RouteEditorWorkspace.css';
 
 export function RouteEditorWorkspace({
@@ -31,19 +35,49 @@ export function RouteEditorWorkspace({
   const lighting = useEditorLighting({
     definition,
     assignments: state.content.assignments,
+    effectGroups: state.content.effectGroups,
     controller,
   });
   const boardHeading = useId();
   const [boardScale, setBoardScale] = useState(1);
+  const [selectedEffectId, setSelectedEffectId] = useState<LightEffectGroupId | null>(
+    state.content.effectGroups[0]?.id ?? null,
+  );
+  const hasAnimatedAssignments = useMemo(() => {
+    const ids = new Set(state.content.effectGroups.map(({ id }) => id));
+    return state.content.assignments.some(
+      ({ effectGroupId }) => effectGroupId !== undefined && ids.has(effectGroupId),
+    );
+  }, [state.content.assignments, state.content.effectGroups]);
+  const previewElapsedMs = useAnimationClock({ active: hasAnimatedAssignments, fps: 10 });
+  const visualScene = useMemo(
+    () =>
+      renderAnimationFrame({
+        definition,
+        assignments: state.content.assignments,
+        effectGroups: state.content.effectGroups,
+        elapsedMs: previewElapsedMs,
+      }),
+    [definition, previewElapsedMs, state.content.assignments, state.content.effectGroups],
+  );
   useEffect(() => onDraftIdentityChange?.(state.draft), [onDraftIdentityChange, state.draft]);
+  useEffect(() => {
+    if (
+      selectedEffectId !== null &&
+      state.content.effectGroups.some(({ id }) => id === selectedEffectId)
+    )
+      return;
+    setSelectedEffectId(state.content.effectGroups[0]?.id ?? null);
+  }, [selectedEffectId, state.content.effectGroups]);
   const risky = state.saveStatus !== 'saved';
   const back = () => {
     if (!risky || window.confirm('Leave with changes that may not be saved?')) onBack();
   };
   const lightBusy = lighting.status === 'connecting' || lighting.status === 'lighting';
   const unsupported = !controller || lighting.controllerState.transport.status === 'unsupported';
-  const lightLabel =
-    lighting.status === 'connecting'
+  const lightLabel = lighting.animationRunning
+    ? 'Restart animation'
+    : lighting.status === 'connecting'
       ? 'Connecting…'
       : lighting.status === 'lighting'
         ? 'Lighting…'
@@ -155,8 +189,15 @@ export function RouteEditorWorkspace({
           </section>
           <RouteEditorToolbar
             tool={state.tool}
-            definition={definition}
+            advancedColor={state.advancedColor}
             onToolChange={(tool) => dispatch({ type: 'set-tool', tool })}
+          />
+          <LightEffectsPanel
+            state={state}
+            assignments={state.content.assignments}
+            selectedId={selectedEffectId}
+            onSelectedIdChange={setSelectedEffectId}
+            dispatch={dispatch}
           />
         </aside>
         <section className="route-editor__board" aria-labelledby={boardHeading}>
@@ -176,9 +217,9 @@ export function RouteEditorWorkspace({
             >
               −
             </button>
-          <span className="board-zoom__value" aria-label="Board zoom">
-            {Math.round(boardScale * 100)}%
-          </span>
+            <span className="board-zoom__value" aria-label="Board zoom">
+              {Math.round(boardScale * 100)}%
+            </span>
             <button
               type="button"
               aria-label="Zoom in"
@@ -195,6 +236,7 @@ export function RouteEditorWorkspace({
           <BoardRenderer
             definition={definition}
             assignments={state.content.assignments}
+            lightScene={visualScene}
             interactionMode="select"
             scale={boardScale}
             onScaleChange={setBoardScale}
@@ -238,19 +280,22 @@ export function RouteEditorWorkspace({
           <input
             type="checkbox"
             checked={lighting.livePreview}
-            disabled={lighting.controllerState.transport.status !== 'connected'}
+            disabled={
+              lighting.animationRunning || lighting.controllerState.transport.status !== 'connected'
+            }
             onChange={(event) => lighting.setLivePreview(event.target.checked)}
           />
           Live Preview
         </label>
-        <button
-          className="button button--secondary"
-          type="button"
-          disabled={state.saveStatus === 'saving'}
-          onClick={() => void autosave.saveNow()}
-        >
-          Save now
-        </button>
+        {lighting.animationRunning && (
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => void lighting.stopAnimation()}
+          >
+            Stop animation
+          </button>
+        )}
         <button
           className="button button--primary"
           type="button"

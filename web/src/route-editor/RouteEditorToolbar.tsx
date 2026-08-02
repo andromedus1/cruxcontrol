@@ -1,20 +1,17 @@
-import { apiLevel3Color } from '../domain/boards/colors';
-import type { BoardDefinition, ClimbRole } from '../domain/boards/definition';
+import type { ApiLevel3Color } from '../domain/boards/types';
 import { ApiLevel3ColorControl } from './ApiLevel3ColorControl';
 import type { EditorTool } from './types';
 
-const roles: readonly ClimbRole[] = ['start', 'middle', 'finish', 'foot-only'];
-
 export function RouteEditorToolbar({
   tool,
-  definition,
+  advancedColor,
   onToolChange,
 }: {
   readonly tool: EditorTool;
-  readonly definition: BoardDefinition;
+  readonly advancedColor: ApiLevel3Color;
   readonly onToolChange: (tool: EditorTool) => void;
 }) {
-  const custom = tool.kind === 'custom' ? tool.color : apiLevel3Color(0b001_100_10);
+  const custom = tool.kind === 'custom' ? tool.color : advancedColor;
   return (
     <section className="editor-tools" aria-labelledby="tools-heading">
       <h2 id="tools-heading">Hold tool</h2>
@@ -27,21 +24,6 @@ export function RouteEditorToolbar({
         >
           Cycle
         </button>
-        {roles.map((role) => (
-          <button
-            type="button"
-            role="radio"
-            aria-checked={tool.kind === 'role' && tool.role === role}
-            key={role}
-            onClick={() => onToolChange({ kind: 'role', role })}
-          >
-            <span
-              className={`tool-shape tool-shape--${role}`}
-              style={{ background: definition.rolePresets[role].screenColor }}
-            />
-            {definition.rolePresets[role].label}
-          </button>
-        ))}
         <button
           type="button"
           role="radio"
