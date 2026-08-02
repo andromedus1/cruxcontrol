@@ -1,7 +1,7 @@
 ---
 id: epic-playlists-local-library
 kind: feature
-stage: review
+stage: done
 tags: [ui, data]
 parent: epic-playlists
 depends_on: [epic-route-creation-climb-lifecycle]
@@ -264,3 +264,23 @@ from repository truth.
   repository-truth retries, inline creation, Trash-safe restoration, unresolved
   references, mobile/wide controls, and existing edit/light flows are covered and
   green.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve with comments
+
+**Blockers**: none
+**Important**: `idea-isolate-playlist-read-failures` parked unbound; playlist read
+corruption currently rejects the combined workspace refresh, but this lower-likelihood
+recoverable edge does not invalidate the feature's required storage/write isolation or
+acceptance behavior.
+**Nits**: Compact Lists behavior is covered by component assertions and responsive CSS,
+but the current compact Playwright journey exercises the editor rather than Lists.
+**Rejected**: none
+
+**Notes**: Substrate feature review at standard weight; exactly one balanced independent
+cross-model pass by Claude Opus xhigh, followed by receiver adjudication and no re-review.
+The reviewer independently reproduced 304/304 Vitest tests, lint, TypeScript, and the
+production PWA build, inspected the three feature commits, and found all persistence and
+management acceptance criteria met. Security had no meaningful new external surface;
+provider UI resolution remains an explicit deferred boundary.
