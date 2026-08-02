@@ -1,9 +1,9 @@
 ---
 id: story-ble-android-light-write
 kind: story
-stage: review
+stage: done
 tags: [ble]
-parent: epic-board-control
+parent: null
 depends_on: []
 release_binding: null
 gate_origin: null
@@ -60,3 +60,15 @@ Aurora UART characteristic and the selected holds light on the physical board.
   and expected API2 bytes.
 - `npm test`: 228 passing; `npm run lint`: passing; `npm run build`: passing.
 - Physical Pixel 8 + Kilter Fullride test: all selected positions and colors matched.
+
+## Review
+
+- **Mode**: bounded inline standalone-story review; no independent or cross-model
+  reviewer, per story policy.
+- **Weight**: standard (project convention), one pass.
+- **Verdict**: approved. Device-name selection, API2 record packing, color reduction,
+  framing, checksum, and transport chunking match the reproduced controller contract.
+- **Finding resolved**: added explicit coverage for a scene crossing the 127-light
+  API2 packet boundary.
+- **Closure**: automated verification is green and the physical board reproduced the
+  selected positions and colors.

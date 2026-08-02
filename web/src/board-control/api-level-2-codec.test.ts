@@ -37,4 +37,13 @@ describe('API-level-2 encoding', () => {
       color: 0xff,
     }))).map((chunk) => chunk.length)).toEqual([20, 6]);
   });
+
+  it('frames a scene above the single-packet limit with API2 first and last markers', () => {
+    const packets = encodeApiLevel2Packets(
+      Array.from({ length: 128 }, (_, ledPosition) => ({ ledPosition, color: 0xff })),
+    );
+    expect(packets).toHaveLength(2);
+    expect(packets.map((packet) => packet[4])).toEqual([0x4e, 0x4f]);
+    expect(packets.map((packet) => packet[1])).toEqual([0xff, 0x03]);
+  });
 });
