@@ -1,7 +1,7 @@
 ---
 id: epic-playlists-play-through
 kind: feature
-stage: review
+stage: done
 tags: [ui, ble]
 parent: epic-playlists
 depends_on: [epic-playlists-local-library, epic-board-control]
@@ -214,7 +214,8 @@ over stable repository and controller ports.
 - Discrepancies from design: none. The compact active mode hides the list selector to keep
   list identity, position, navigation, board status, and Light action in the phone viewport;
   Exit restores management, while the wide selector remains available and switching exits.
-- Adjacent issues parked: none.
+- Adjacent issues parked: `idea-playlist-play-through-boundary-focus` records the
+  non-blocking keyboard-focus polish identified by the independent review.
 
 ## Integrated verification
 
@@ -232,3 +233,14 @@ over stable repository and controller ports.
   disconnected browsing remains complete, and only explicit Connect/Light actions touch the
   controller. Empty lists cannot enter, exit/switch restores management, and no play-through
   action changes playlist or climb data.
+
+## Review
+
+- Review weight: standard; one independent Claude Opus pass reviewed commit `8ea6656`.
+- Verdict: ready. No correctness, BLE-safety, persistence, contract, or regression findings.
+- Verification reproduced by the reviewer: typecheck and focused lint passed; all focused
+  play-through/library tests passed. The full suite had one unrelated parallel-load timeout
+  that passed in isolation and touched no changed file.
+- Adjudication: accepted the lone low-severity keyboard-focus observation as a separate
+  backlog enhancement because it does not affect navigation correctness, lighting safety,
+  or current acceptance criteria. No re-review is required under standard weight.
