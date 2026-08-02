@@ -1,7 +1,7 @@
 ---
 id: epic-universal-board-platform-domain-definition
 kind: feature
-stage: drafting
+stage: implementing
 tags: [data]
 parent: epic-universal-board-platform
 depends_on: []
@@ -68,10 +68,11 @@ screen, or any non-Kilter definition.
 - **Identity shape**: cross-module identities are immutable value objects whose
   fields remain legible (`provider`, source ID, and layout revision). Stable key
   helpers own serialization; consumers must not concatenate or parse identity strings.
-- **Physical hold identity**: a definition-scoped hold ID is distinct from Kilter's
-  placement, hole, set, and LED IDs. Those native IDs remain on each concrete hold as
-  source metadata so catalog frames and controller commands can be projected without
-  making vendor IDs the domain identity.
+- **Controllable-placement identity**: the selectable/lightable surface is the
+  intersection of layout placements and the active product size's LED map. A
+  definition-scoped placement ID is distinct from Kilter's placement, hole, set, and
+  LED IDs; those native IDs remain as source metadata. Unjoined layout placements are
+  not controls on this 7x10 definition.
 - **Colors**: climb roles and light colors are independent. Four Kilter role presets
   (green start, blue middle, red/pink finish, gold/yellow foot-only) provide semantic
   defaults, while the domain color contract exposes every API-level-3 packed color
@@ -86,6 +87,13 @@ screen, or any non-Kilter definition.
 - **Fixture authority**: catalog coordinates and joins are authoritative. The supplied
   `docs/kilter_fullride_7x10.png` is a visual alignment reference and is never sampled
   to manufacture IDs or geometry.
+- **Verified Fullride subset**: the locally available schema-faithful snapshot proves
+  305 controllable placements for product size 17—165 Mainline and 140 Auxiliary—each
+  with one unique LED. The definition exports those 305 placements. It does not claim
+  or fabricate a separate 60-foothold map unsupported by the snapshot.
+- **Role discovery**: role semantics are derived from the generated product-specific
+  role records (`name`/`full_name`), not legacy numeric constants. The verified source
+  currently resolves start/middle/finish/foot-only to IDs 42/43/44/45.
 
 ## Architectural choice
 
@@ -106,9 +114,10 @@ evolve additively.
 
 The trickiest unit is the generated Fullride artifact and its validation. A placement
 that joins to the wrong hole or LED can render plausibly while lighting the wrong
-physical hold. Generation therefore joins placement → hole → LED under the exact
-product/layout/size/set scope, fails on missing or ambiguous mappings, orders rows
-deterministically, and emits source metadata alongside the definition-scoped identity.
+physical hold. Generation therefore treats placement → hole → product-size LED as an
+inner-joined controllable projection under the exact product/layout/size/set scope,
+fails on ambiguous mappings, reports excluded layout placements as provenance, orders
+rows deterministically, and emits source metadata beside the definition identity.
 
 ## Implementation Units
 
@@ -126,7 +135,7 @@ export type Brand<T, Name extends string> = T & { readonly [brand]: Name };
 
 export type BoardDefinitionId = Brand<string, 'BoardDefinitionId'>;
 export type LayoutRevisionId = Brand<string, 'LayoutRevisionId'>;
-export type HoldId = Brand<string, 'HoldId'>;
+export type BoardPlacementId = Brand<string, 'BoardPlacementId'>;
 export type ProviderId = Brand<string, 'ProviderId'>;
 export type ProviderSourceId = Brand<string, 'ProviderSourceId'>;
 export type ProviderClimbKey = Brand<string, 'ProviderClimbKey'>;
@@ -141,7 +150,7 @@ export interface ProviderClimbId {
 // identity.ts — constructors reject empty/whitespace values.
 export function boardDefinitionId(value: string): BoardDefinitionId;
 export function layoutRevisionId(value: string): LayoutRevisionId;
-export function holdId(value: string): HoldId;
+export function boardPlacementId(value: string): BoardPlacementId;
 export function providerId(value: string): ProviderId;
 export function providerSourceId(value: string): ProviderSourceId;
 export function providerClimbKey(id: ProviderClimbId): ProviderClimbKey;
@@ -197,7 +206,7 @@ export interface BoardBounds {
   readonly bottom: number;
   readonly top: number;
 }
-export interface NativeHoldIdentity {
+export interface NativePlacementIdentity {
   readonly provider: ProviderId;
   readonly productId: ProviderSourceId;
   readonly layoutId: ProviderSourceId;
@@ -207,10 +216,10 @@ export interface NativeHoldIdentity {
   readonly holeId: ProviderSourceId;
   readonly ledPosition: number;
 }
-export interface BoardHoldDefinition {
-  readonly id: HoldId;
+export interface BoardPlacementDefinition {
+  readonly id: BoardPlacementId;
   readonly position: BoardPoint;
-  readonly native: NativeHoldIdentity;
+  readonly native: NativePlacementIdentity;
 }
 export interface RolePreset {
   readonly role: ClimbRole;
@@ -228,14 +237,15 @@ export interface BoardDefinition {
   readonly size: string;
   readonly bounds: BoardBounds;
   readonly supportedAngles: readonly number[];
-  readonly holds: readonly BoardHoldDefinition[];
+  readonly placements: readonly BoardPlacementDefinition[];
   readonly rolePresets: Readonly<Record<ClimbRole, RolePreset>>;
 }
 export interface DefinitionValidationIssue {
   readonly path: string;
   readonly code: 'invalid-bounds' | 'invalid-coordinate' | 'invalid-angle' |
-    'duplicate-angle' | 'duplicate-hold-id' | 'duplicate-placement-id' |
-    'duplicate-led-position' | 'native-scope-mismatch' | 'missing-role' |
+    'duplicate-angle' | 'duplicate-domain-placement-id' |
+    'duplicate-placement-id' | 'duplicate-hole-id' | 'duplicate-led-position' |
+    'native-scope-mismatch' | 'missing-role' | 'unknown-source-role' |
     'duplicate-source-role';
   readonly message: string;
 }
@@ -252,9 +262,11 @@ export function assertBoardDefinition(
   and are frozen recursively once at module initialization so runtime mutation fails.
 - Coordinates remain in catalog space. Normalization/pixel transforms belong to the
   renderer; the domain only requires finite coordinates inside non-degenerate bounds.
-- LED positions are validated as unique non-negative integers within this concrete
-  definition. If a future verified board requires shared LEDs, that evidence should
-  add an explicit mapping model rather than silently weakening this invariant.
+- Every exported placement is controllable and therefore has one LED position. Domain
+  placement IDs, native placement IDs, native hole IDs, and LED positions are each
+  validated as unique non-negative identities within this definition. If a future
+  verified board requires one-to-many mapping, add that model explicitly rather than
+  weakening the Fullride invariant.
 - Role preset screen colors use the locked design tokens, while `lightColor` stores
   the exact 3/3/2 value sent to API-level-3 hardware. User-facing terminology is
   green, blue, red/pink, and gold/yellow even where native catalog labels say
@@ -262,8 +274,8 @@ export function assertBoardDefinition(
 
 **Acceptance Criteria**:
 - [ ] Validation rejects malformed bounds, non-finite/out-of-bounds coordinates,
-  invalid/duplicate angles, duplicate domain/native placement/LED identities, native
-  scope drift, and incomplete/ambiguous role presets.
+  invalid/duplicate angles, duplicate domain/native placement/hole/LED identities,
+  native scope drift, and incomplete/ambiguous role presets.
 - [ ] Validation does not enforce any climb composition or role-count rules.
 - [ ] A consumer can enumerate geometry, source placement/hole identity, LED position,
   supported angles, and all four role presets without importing Kilter infrastructure.
@@ -272,6 +284,7 @@ export function assertBoardDefinition(
 
 **Files**:
 - `web/scripts/export-fullride-definition.py`
+- `web/scripts/test_export_fullride_definition.py`
 - `web/src/domain/boards/definitions/kilter-fullride-7x10.generated.ts`
 - `web/src/domain/boards/definitions/kilter-fullride-7x10.ts`
 
@@ -290,30 +303,43 @@ python web/scripts/export-fullride-definition.py \
 
 **Implementation Notes**:
 - Scope constants reuse the catalog-bootstrap evidence: product `7`, layout `8`,
-  product size `17`, sets `26` and `27`. The generator queries `placements`, `holes`,
-  `leds`, `products_angles`, `placement_roles`, and size bounds in one read-only
-  transaction.
-- It fails if any scoped placement has zero or multiple hole/LED matches, any native
-  identity is duplicated, all four source roles are not present exactly once, or the
-  resulting `BoardDefinition` invariants would fail. It emits sorted placements,
-  angles, and role records so identical source data yields byte-identical output.
-- The generated header records source scope, UTC generation date, source DB SHA-256,
-  row counts, and the generator command. The immutable revision contains a short hash
-  of the definition-bearing rows, not the continually changing climb catalog version.
-- The wrapper maps source roles 12/13/14/15 to semantic roles and locked UI labels,
-  and packs their native LED colors into API-level-3 values. It exports no raw arrays.
-- Expected acceptance fixture: 7x10 Fullride Mainline + Auxiliary, documented 305
-  bolt-on holds plus 60 screw-on footholds, with every emitted placement joined to
-  exactly one physical LED. If live catalog evidence contradicts this documented
-  count, stop generation and record the discrepancy rather than adjusting the test.
+  product size `17`, sets `26` and `27`. In one read-only transaction, the generator
+  queries size bounds and angles; discovers the product's role records; and selects
+  controllable placements with an inner join from `placements` through `holes` to
+  `leds WHERE product_size_id = 17`.
+- Layout placements without a size-17 LED are counted by set in provenance and excluded
+  from the control/selection surface. They are not errors: the layout spans nested
+  product sizes. Duplicate join results, missing native scope, or an empty controllable
+  projection are errors.
+- Role semantics are normalized from source names after ASCII case/space/hyphen
+  normalization: `start`, `middle`, `finish`, and `foot`/`foot only`. The generator
+  requires exactly one record for each semantic role and rejects unknown/ambiguous
+  records. It emits the discovered native IDs and colors; no numeric role ID is coded
+  into the wrapper.
+- It emits sorted controllable placements, angles, and role records so identical source
+  data yields byte-identical output.
+- The generated header records source scope, source DB SHA-256, projection counts, and
+  the generator command without a volatile timestamp. The immutable revision contains
+  a short hash of the definition-bearing rows, not the continually changing climb
+  catalog version.
+- The wrapper applies locked user-facing labels/tokens and packs each generated native
+  LED color into an API-level-3 value. It exports no raw arrays.
+- Verified acceptance fixture: 305 controllable placements (165 set 26 Mainline, 140
+  set 27 Auxiliary), 305 unique holes, 305 unique LED positions, product bounds
+  `[-44,44] × [24,144]`, and angles `0,5,...,70`. Generated role IDs are 42–45 for the
+  current source, but tests prove the semantic mapping from generated records rather
+  than making those values input constants.
 
 **Acceptance Criteria**:
 - [ ] The checked-in artifact can construct the Fullride definition with no network,
   SQLite, or installed climb catalog at runtime.
 - [ ] Re-running against the same source database produces no diff except an unchanged
   provenance header; a changed physical map produces a new layout revision.
-- [ ] The fixture contains the complete scoped physical map, all supported angles,
-  all four semantic presets, and native placement/hole/set/LED identities.
+- [ ] The fixture contains the complete verified controllable map, all supported
+  angles, all four semantic presets, and native placement/hole/set/LED identities.
+- [ ] The generated provenance reports 472 total scoped layout placements, 305 emitted
+  controllable placements, and 167 excluded unjoined placements, making the projection
+  boundary auditable.
 - [ ] The screenshot is preserved unchanged and excluded from generation logic.
 
 ### Unit 4: Explicit definition registry
@@ -350,9 +376,8 @@ export const boardDefinitions: BoardDefinitionRegistry;
 
 ## Implementation Order
 
-1. **Fullride generator spike** — run the authoritative joins and confirm counts,
-   uniqueness, and source role/angle records first because a contradiction changes the
-   central physical model.
+1. **Fullride projection check** — encode the already-verified authoritative joins and
+   assert the 472/305/167 projection accounting before generating any artifact.
 2. **Identity and color contracts** — establish the types and exhaustive color math.
 3. **Definition contract and validation** — encode the verified invariants from the spike.
 4. **Generated fixture and wrapper** — emit, validate, and check in the concrete board.
@@ -389,12 +414,26 @@ increase merge and assumption risk.
 ### Fixture contract: `web/src/domain/boards/definitions/kilter-fullride-7x10.test.ts`
 
 - `assertBoardDefinition` passes; definition/revision/source constants match provenance.
-- Assert documented hold/set counts, unique placement/hole/LED mappings, finite bounds,
-  every hold within bounds, explicit sorted angles, and four exact role semantics.
+- Assert 305 controllable placements split 165/140 by set; unique domain placement,
+  native placement, hole, and LED identities; finite bounds; every placement within
+  bounds; explicit `0,5,...,70` angles; and four exact role semantics.
+- Assert provenance accounts for 472 scoped placements as 305 emitted + 167 excluded.
+- Assert generated source role records currently carry IDs 42/43/44/45 and exact native
+  colors, while a generator fixture with different IDs but the same semantic names
+  produces the same semantic-role keys.
 - Assert the generated source database hash and definition-row hash against committed
   provenance so accidental hand editing or regeneration from the wrong catalog fails.
 - Sample known bottom/middle/top placements from the generated artifact to catch axis or
   join reversal without snapshotting the entire array.
+
+### Generator contract: `web/scripts/test_export_fullride_definition.py`
+
+- Build a minimal temporary SQLite schema with nested-size unjoined placements and
+  assert only product-size LED joins are emitted, with total/emitted/excluded counts.
+- Replace native role IDs while retaining semantic names and prove generated semantic
+  keys remain stable; reject missing, duplicated, and unknown role semantics.
+- Reject ambiguous LED joins and prove row insertion order cannot change generated
+  artifact bytes.
 
 ### Registry contract: `web/src/domain/boards/registry.test.ts`
 
@@ -403,22 +442,23 @@ increase merge and assumption risk.
 
 ### Verification
 
-Run `npm test`, `npm run typecheck`, `npm run lint`, and regenerate the fixture once
-from its recorded catalog source to prove a clean deterministic diff.
+Run `python -m unittest web/scripts/test_export_fullride_definition.py`, `npm test`,
+`npm run typecheck`, `npm run lint`, and regenerate the fixture once from its recorded
+catalog source to prove a clean deterministic diff.
 
 ## Risks
 
-- **Riskiest assumption — one scoped placement maps to one LED.** The brief describes
-  that chain but the 450-LED kit and 365 documented holds make unused positions likely.
-  The generator spike validates the join rather than equating LED-kit count with hold
-  count. **Fallback:** model only joined placement LEDs; if one placement legitimately
-  has multiple LEDs, stop and revise `ledPosition` to an explicit non-empty list before
-  downstream contracts depend on it.
-- **Catalog availability during implementation.** The pruned binary is intentionally
-  uncommitted and community-catalog bootstrap is deferred. **Fallback:** use BoardLib or
-  a user-supplied full catalog only as generator input; runtime remains independent. If
-  no authoritative database is obtainable, land contracts/tests but do not fabricate
-  or mark the concrete fixture complete.
+- **Riskiest assumption — the LED join defines the selectable 7x10 surface.** The
+  verified snapshot supports it exactly: 305 unique joined placements split 165/140,
+  matching the documented Mainline/Auxiliary bolt-on counts, while unjoined placements
+  occupy the wider nested layout. **Fallback:** if hardware smoke testing finds a
+  controllable hold absent from this projection, preserve this revision and generate a
+  corrected revision from newer authoritative data; do not append guessed LEDs.
+- **Catalog reproducibility.** The locally available pruned snapshot is authoritative
+  generator input but binary catalog distribution remains a separate policy decision.
+  **Fallback:** retain the generated TypeScript artifact plus source/projection hashes;
+  regeneration may use BoardLib or a user-supplied source database, while runtime and
+  fixture tests remain independent of SQLite and network access.
 - **Coordinate transform uncertainty.** Catalog-space geometry is trustworthy while
   renderer pixel math still needs visual calibration. **Fallback:** preserve raw bounds
   and coordinates here; renderer owns an additive transform without changing identity.
@@ -426,10 +466,10 @@ from its recorded catalog source to prove a clean deterministic diff.
   and user-facing blue/red-pink/gold-yellow language can diverge. **Fallback:** retain
   both exact packed `lightColor` and independent screen token; never infer semantics
   from color.
-- **Least sure — documented hold counts.** The brief distinguishes 305 bolt-ons, 60
-  screw-ons, and 450 LED positions, but the exact scoped placement count must be
-  observed. A count mismatch is an evidence discrepancy, not permission to weaken the
-  test silently.
+- **Neutral hold artwork completeness.** The generated 305-placement overlay owns
+  interaction and control, not detailed silhouettes. **Fallback:** the renderer uses
+  the preserved full-board reference as its neutral visual layer and overlays all 305
+  selectable positions; visual artwork can improve additively without changing IDs.
 
 ## Implementation discovery
 
@@ -466,3 +506,17 @@ Verification evidence: the decompressed SQLite SHA-256 was
 `32b2663c7e699708dc3983d6acf8eff5dd8d458530c680c50ce7f6719c61235f`;
 the committed gzip SHA-256 was
 `68d6d86aad984aca5cf9967d24c818d5bdf2984631b1fe9b9fa1fd30c0edbbbf`.
+
+## Design resolution after implementation discovery
+
+The apparent contradiction came from treating every placement in a layout shared by
+nested product sizes as a hold on product size 17. The size-specific `leds` table is
+the authoritative membership relation for what this controller can address. An inner
+join yields exactly 305 unique placements/holes/LEDs, split 165 Mainline and 140
+Auxiliary, all within the size bounds. The remaining 167 layout placements have no
+size-17 LED and are excluded with provenance rather than modeled as disabled holds.
+
+This is the smallest evidence-backed boundary that delivers local create, render, and
+light. It also corrects role handling: generated product role names establish semantic
+roles, while native IDs 42–45 are retained as output evidence rather than treated as
+portable constants. The prior requirement for a fabricated 365-hold map is superseded.
