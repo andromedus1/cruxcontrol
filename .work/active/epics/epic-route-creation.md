@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation
 kind: epic
-stage: drafting
+stage: implementing
 tags: [ui]
 parent: null
 depends_on: [epic-climb-browser, epic-board-control]
@@ -11,7 +11,7 @@ created: 2026-06-13
 updated: 2026-08-02
 ---
 
-# Route Creation: Visual Editor + Publish
+# Route Creation: Local Draft Editor + Lighting
 
 ## Mockups
 
@@ -68,11 +68,50 @@ the ones the browser and board-control epics provide.
   §2 (Sync Engine) for publish.
 - `docs/SPEC.md` — Capability 3 (Route Creation & Editing).
 
-## Anticipated child features
+## UI alignment deferred
 
-Provisional:
-- Tap-to-place editor producing valid frames strings
-- Role assignment UI (start/middle/finish/foot-only)
-- Local draft persistence
-- Advanced full-color lighting and optional connected Live Preview
-- Kilter publish flow remains deferred
+This epic introduces a responsive route-setting workspace with metadata controls,
+role/color tools, save state, and connected light controls. Its product decisions and
+visual language are already locked, but dedicated route-editor screen selection cannot
+run inside autopilot. Both child features inherit `.mockups/design-system/` and the
+approved responsive browser composition at
+`.mockups/screens/epic-climb-browser/option-hybrid.html`; the editor should reuse its
+board prominence, compact touch-safe controls, phone-first composition, wide split
+console, and persistent primary action. A later interactive
+`epic-design --only-questions epic-route-creation` pass may add dedicated route mocks
+without blocking this create-save-light milestone.
+
+## Decomposition
+
+Split at the durable local-data boundary, then compose the completed renderer and
+controller into one user-visible editor. The draft library owns identity, browser
+persistence, and projection into “My climbs”; the editor workspace owns all setting
+interactions and connected lighting. A separate role-toolbar or lighting feature was
+rejected because both operate on the same in-progress assignment state and would create
+coordination overhead without an independently useful capability.
+
+### Child features
+
+- `epic-route-creation-local-draft-library` — unrestricted, durable Fullride drafts
+  and projection into the local climb viewer — depends on:
+  `[epic-universal-board-platform-domain-definition, epic-climb-browser-local-climb-viewer]`
+- `epic-route-creation-editor-workspace` — responsive semantic/custom-color authoring,
+  save/reopen, explicit Light Draft, and opt-in Live Preview — depends on:
+  `[epic-route-creation-local-draft-library, epic-climb-browser-fullride-renderer, epic-board-control-light-scenes]`
+
+### Decomposition risks
+
+- **Persisted schema drift is the trickiest data risk.** Draft records outlive a
+  deployment, so the library must version and validate stored data, retain the board
+  definition revision, and surface recovery rather than silently discarding or
+  coercing unknown placements/colors.
+- **Semantic and custom color state can blur.** The editor must preserve whether an
+  assignment is a climb role or an arbitrary light color; rendering, persistence, and
+  controller scenes must derive from that single assignment state without lossy
+  conversion.
+- **Rapid edits can outrun BLE.** Live Preview must use the controller's existing
+  bounded latest-frame-wins operation, remain off by default, and never bypass the
+  explicit Light Draft action or write directly to transport.
+- **Autopilot lacks a dedicated route-editor mock selection.** Implementation is
+  constrained to the locked design system and accepted browser patterns; any novel
+  layout direction is deferred rather than improvised.
