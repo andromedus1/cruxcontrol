@@ -24,6 +24,8 @@ through CruxControl's durable local climb repository.
 The first real input set is the 16 PNG screenshots in `docs/set_boulders/`. The work
 should produce a repeatable import path rather than a one-off manual transcription,
 while keeping all image processing and saved climb data local to the user's device.
+All 16 supplied climbs use the Fullride 7x10 at 40 degrees. The visible text written
+at the top of each screenshot is the authoritative climb name.
 
 ## Simplification opportunity
 
