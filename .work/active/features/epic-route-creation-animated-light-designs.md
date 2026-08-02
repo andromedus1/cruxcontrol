@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-animated-light-designs
 kind: feature
-stage: review
+stage: done
 tags: [ui, ble, data]
 parent: epic-route-creation
 depends_on:
@@ -195,3 +195,24 @@ design animates while semantic climb holds stay static.
 - Hold Tool now exposes Cycle, Erase, Eyedropper, and Advanced Light. Direct semantic role buttons and Save now were removed; coalesced autosave and recovery actions remain.
 - Integrated verification: 41 Vitest files / 256 tests pass, ESLint passes, and TypeScript plus the production Vite/PWA build pass.
 - Review boundary: implementation is ready for independent review. A Pixel 8 + physical Fullride animation smoke remains pending and should confirm visual cadence/stepping on the API2 controller before final acceptance.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve with comments
+
+**Blockers**: none
+**Important**: reduced-motion preview gap fixed in `907dfe1`; JavaScript-driven SVG
+animation now settles at its base frame when the system requests reduced motion.
+**Nits**: Alternating Pulse uses global placement parity, so a sparse selection may
+place two chosen holds in the same phase; one-color cycle/wave palettes intentionally
+render statically and could receive a future explanatory hint.
+**Rejected**: documentation silence is omission rather than assertion drift; the
+existing foundation claims remain true. Async cancellation, conservative post-write
+pacing, quantized fade stepping, and pure v1 migration were verified as intentional.
+
+**Notes**: Standard review weight; exactly one cross-model Claude Opus fresh-context
+pass over commits `e301da9`, `8298c93`, `e6bb5f9`, and `6ed37d8`, followed by host
+adjudication and fix verification without re-review. Full verification after the fix:
+41 Vitest files / 257 tests pass, ESLint passes, and TypeScript plus the Vite/PWA
+production build pass. Pixel 8 + physical Fullride animation cadence/color stepping
+remains a manual acceptance check and is not claimed by this software review.
