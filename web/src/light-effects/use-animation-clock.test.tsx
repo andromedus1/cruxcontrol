@@ -32,4 +32,25 @@ describe('useAnimationClock', () => {
     });
     expect(result.current).toBe(stopped);
   });
+
+  it('holds the visual preview at its base frame when reduced motion is requested', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+
+    const { result } = renderHook(() => useAnimationClock({ active: true, fps: 10 }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    expect(result.current).toBe(0);
+  });
 });
