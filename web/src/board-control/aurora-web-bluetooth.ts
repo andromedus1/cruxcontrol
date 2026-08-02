@@ -14,4 +14,3 @@ export const AURORA_WEB_BLUETOOTH_CONFIG: WebBluetoothTransportConfig = Object.f
   primaryServiceUuid: NORDIC_UART_SERVICE_UUID,
   writeCharacteristicUuid: NORDIC_UART_RX_CHARACTERISTIC_UUID,
 });
-

@@ -75,4 +75,3 @@ export interface BoardByteTransport {
 export function freezeDevice(device: BoardDeviceRef): BoardDeviceRef {
   return Object.freeze({ id: device.id, name: device.name });
 }
-

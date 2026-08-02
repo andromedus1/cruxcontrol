@@ -57,10 +57,14 @@ describe('MockBoardByteTransport evidence and failures', () => {
   it('scripts one-shot failures and remote disconnects', async () => {
     const transport = new MockBoardByteTransport();
     transport.failNext('connect', new BoardTransportError('gatt-connect-failed', 'No connection'));
-    await expect(transport.requestAndConnect()).rejects.toMatchObject({ code: 'gatt-connect-failed' });
+    await expect(transport.requestAndConnect()).rejects.toMatchObject({
+      code: 'gatt-connect-failed',
+    });
     await transport.reconnect();
     transport.failNext('write', new BoardTransportError('write-failed', 'No write'));
-    await expect(transport.writeBatch([new Uint8Array([1])])).rejects.toMatchObject({ code: 'write-failed' });
+    await expect(transport.writeBatch([new Uint8Array([1])])).rejects.toMatchObject({
+      code: 'write-failed',
+    });
     transport.simulateRemoteDisconnect();
     expect(transport.getState().status).toBe('disconnected');
   });

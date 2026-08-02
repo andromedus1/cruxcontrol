@@ -90,7 +90,8 @@ export class MockBoardByteTransport implements BoardByteTransport {
 
   async writeBatch(chunks: readonly Uint8Array[]): Promise<void> {
     const copies = chunks.map((chunk) => new Uint8Array(chunk));
-    if (copies.length === 0) throw new BoardTransportError('write-failed', 'No board data was provided.');
+    if (copies.length === 0)
+      throw new BoardTransportError('write-failed', 'No board data was provided.');
     if (this.state.status !== 'connected') {
       throw new BoardTransportError('disconnected', 'Connect to the board before sending lights.');
     }
@@ -100,7 +101,10 @@ export class MockBoardByteTransport implements BoardByteTransport {
       throw failure;
     }
     this.recorded.push(
-      Object.freeze({ type: 'write', chunks: Object.freeze(copies.map((chunk) => new Uint8Array(chunk))) }),
+      Object.freeze({
+        type: 'write',
+        chunks: Object.freeze(copies.map((chunk) => new Uint8Array(chunk))),
+      }),
     );
   }
 
@@ -124,7 +128,10 @@ export class MockBoardByteTransport implements BoardByteTransport {
       });
     }
     if (!device) {
-      const error = new BoardTransportError('device-unavailable', 'The selected board is not available.');
+      const error = new BoardTransportError(
+        'device-unavailable',
+        'The selected board is not available.',
+      );
       this.publish(Object.freeze({ status: 'error', device: null, error }));
       throw error;
     }

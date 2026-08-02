@@ -50,4 +50,3 @@ export function getBrowserBluetoothPlatform(): WebBluetoothPlatform {
     bluetooth: browser.navigator?.bluetooth,
   };
 }
-

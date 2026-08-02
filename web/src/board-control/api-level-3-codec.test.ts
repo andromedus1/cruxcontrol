@@ -31,9 +31,7 @@ describe('quantizeApiLevel3Color', () => {
     for (let red = 0; red < 8; red += 1) {
       for (let green = 0; green < 8; green += 1) {
         for (let blue = 0; blue < 4; blue += 1) {
-          colors.add(
-            quantizeApiLevel3Color({ red: red << 5, green: green << 5, blue: blue << 6 }),
-          );
+          colors.add(quantizeApiLevel3Color({ red: red << 5, green: green << 5, blue: blue << 6 }));
         }
       }
     }

@@ -69,14 +69,19 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
   }
 
   async getRememberedDevices(): Promise<readonly BoardDeviceRef[]> {
-    if (!this.capability.supported || !this.platform.bluetooth?.getDevices) return Object.freeze([]);
+    if (!this.capability.supported || !this.platform.bluetooth?.getDevices)
+      return Object.freeze([]);
     let devices: readonly BluetoothDeviceLike[];
     try {
       devices = await this.platform.bluetooth.getDevices();
     } catch (cause) {
-      throw new BoardTransportError('device-unavailable', 'Remembered boards could not be accessed.', {
-        cause,
-      });
+      throw new BoardTransportError(
+        'device-unavailable',
+        'Remembered boards could not be accessed.',
+        {
+          cause,
+        },
+      );
     }
     for (const device of devices) this.installDisconnectListener(device);
     return Object.freeze(devices.map((device) => this.deviceRef(device)));
@@ -153,10 +158,15 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
         } catch (cause) {
           throw this.fail('device-unavailable', 'Remembered boards could not be accessed.', cause);
         }
-        device = deviceId ? devices.find((candidate) => candidate.id === deviceId) ?? null : devices[0] ?? null;
+        device = deviceId
+          ? (devices.find((candidate) => candidate.id === deviceId) ?? null)
+          : (devices[0] ?? null);
       }
       if (!device) {
-        const error = new BoardTransportError('device-unavailable', 'The selected board is not available.');
+        const error = new BoardTransportError(
+          'device-unavailable',
+          'The selected board is not available.',
+        );
         this.publishError(error, null);
         throw error;
       }
@@ -188,14 +198,20 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
     }
     return this.enqueue(async () => {
       if (this.state.status !== 'connected' || !this.characteristic || !this.writeMethod) {
-        throw new BoardTransportError('disconnected', 'Connect to the board before sending lights.');
+        throw new BoardTransportError(
+          'disconnected',
+          'Connect to the board before sending lights.',
+        );
       }
       const generation = this.generation;
       const write = this.writeMethod;
       try {
         for (const chunk of copies) {
           if (generation !== this.generation || this.state.status !== 'connected') {
-            throw new BoardTransportError('disconnected', 'The board disconnected while sending lights.');
+            throw new BoardTransportError(
+              'disconnected',
+              'The board disconnected while sending lights.',
+            );
           }
           await write(chunk);
         }
@@ -211,7 +227,11 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
         const error =
           cause instanceof BoardTransportError
             ? cause
-            : new BoardTransportError('write-failed', 'The board could not receive the light data.', { cause });
+            : new BoardTransportError(
+                'write-failed',
+                'The board could not receive the light data.',
+                { cause },
+              );
         this.publishError(error, this.device);
         throw error;
       }
@@ -223,7 +243,8 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
     this.clearHandles();
     const connectionGeneration = this.generation;
     this.publish(Object.freeze({ status: 'connecting', device: ref }));
-    if (!device.gatt) throw this.fail('gatt-connect-failed', 'The board does not expose a Bluetooth connection.');
+    if (!device.gatt)
+      throw this.fail('gatt-connect-failed', 'The board does not expose a Bluetooth connection.');
     let server: BluetoothRemoteGattServerLike;
     try {
       server = await device.gatt.connect();
@@ -311,7 +332,11 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
     );
   }
 
-  private fail(code: BoardTransportErrorCode, message: string, cause?: unknown): BoardTransportError {
+  private fail(
+    code: BoardTransportErrorCode,
+    message: string,
+    cause?: unknown,
+  ): BoardTransportError {
     const error = new BoardTransportError(code, message, { cause });
     this.clearHandles();
     this.publishError(error, this.device);
@@ -320,14 +345,25 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
 
   private mapChooserError(cause: unknown): BoardTransportError {
     if (cause instanceof BoardTransportError) return cause;
-    if (typeof cause === 'object' && cause !== null && 'name' in cause && cause.name === 'NotFoundError') {
+    if (
+      typeof cause === 'object' &&
+      cause !== null &&
+      'name' in cause &&
+      cause.name === 'NotFoundError'
+    ) {
       return new BoardTransportError('chooser-cancelled', 'No board was selected.', { cause });
     }
-    return new BoardTransportError('device-unavailable', 'The board chooser could not select a device.', { cause });
+    return new BoardTransportError(
+      'device-unavailable',
+      'The board chooser could not select a device.',
+      { cause },
+    );
   }
 
   private publishError(error: BoardTransportError, device: BluetoothDeviceLike | null): void {
-    this.publish(Object.freeze({ status: 'error', device: device ? this.deviceRef(device) : null, error }));
+    this.publish(
+      Object.freeze({ status: 'error', device: device ? this.deviceRef(device) : null, error }),
+    );
   }
 
   private publish(state: BoardTransportState): void {

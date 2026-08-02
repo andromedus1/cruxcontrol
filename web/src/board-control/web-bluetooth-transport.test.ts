@@ -79,13 +79,20 @@ function browserFixture(characteristics: BluetoothRemoteGattCharacteristicLike[]
 
 describe('WebBluetoothByteTransport', () => {
   it.each([
-    [{ isSecureContext: false } satisfies WebBluetoothPlatform, 'insecure-context', 'insecure-context'],
+    [
+      { isSecureContext: false } satisfies WebBluetoothPlatform,
+      'insecure-context',
+      'insecure-context',
+    ],
     [{ isSecureContext: true } satisfies WebBluetoothPlatform, 'api-unavailable', 'unsupported'],
-  ] as const)('reports unsupported capability without a chooser', async (platform, reason, code) => {
-    const transport = new WebBluetoothByteTransport(platform, AURORA_WEB_BLUETOOTH_CONFIG);
-    expect(transport.getCapability()).toEqual({ supported: false, reason });
-    await expect(transport.requestAndConnect()).rejects.toMatchObject({ code });
-  });
+  ] as const)(
+    'reports unsupported capability without a chooser',
+    async (platform, reason, code) => {
+      const transport = new WebBluetoothByteTransport(platform, AURORA_WEB_BLUETOOTH_CONFIG);
+      expect(transport.getCapability()).toEqual({ supported: false, reason });
+      await expect(transport.requestAndConnect()).rejects.toMatchObject({ code });
+    },
+  );
 
   it('opens the chooser synchronously with exact Aurora options and rejects a second chooser', async () => {
     const characteristic = { writeValueWithoutResponse: () => Promise.resolve() };
@@ -94,7 +101,9 @@ describe('WebBluetoothByteTransport', () => {
     const connecting = transport.requestAndConnect();
     expect(fixture.chooserCalls()).toBe(1);
     expect(transport.getState().status).toBe('selecting');
-    await expect(transport.requestAndConnect()).rejects.toMatchObject({ code: 'chooser-in-progress' });
+    await expect(transport.requestAndConnect()).rejects.toMatchObject({
+      code: 'chooser-in-progress',
+    });
     await connecting;
     expect(fixture.log[0]).toContain('chooser:4488b571');
     expect(fixture.log.slice(1, 4)).toEqual([
@@ -119,7 +128,9 @@ describe('WebBluetoothByteTransport', () => {
       },
     };
     const transport = new WebBluetoothByteTransport(platform, AURORA_WEB_BLUETOOTH_CONFIG);
-    await expect(transport.requestAndConnect()).rejects.toMatchObject({ code: 'chooser-cancelled' });
+    await expect(transport.requestAndConnect()).rejects.toMatchObject({
+      code: 'chooser-cancelled',
+    });
     expect(transport.getState()).toEqual({ status: 'disconnected', device: null });
     await expect(transport.requestAndConnect()).resolves.toMatchObject({ id: 'board-1' });
   });
@@ -153,8 +164,12 @@ describe('WebBluetoothByteTransport', () => {
       },
       AURORA_WEB_BLUETOOTH_CONFIG,
     );
-    await expect(transport.requestAndConnect()).rejects.toMatchObject({ code: 'device-unavailable' });
-    await expect(transport.requestAndConnect()).rejects.toMatchObject({ code: 'device-unavailable' });
+    await expect(transport.requestAndConnect()).rejects.toMatchObject({
+      code: 'device-unavailable',
+    });
+    await expect(transport.requestAndConnect()).rejects.toMatchObject({
+      code: 'device-unavailable',
+    });
   });
 
   it.each([
@@ -173,7 +188,9 @@ describe('WebBluetoothByteTransport', () => {
     const server: BluetoothRemoteGattServerLike = {
       connected: false,
       connect() {
-        return failureStage === 'connect' ? Promise.reject(new Error('radio')) : Promise.resolve(server);
+        return failureStage === 'connect'
+          ? Promise.reject(new Error('radio'))
+          : Promise.resolve(server);
       },
       disconnect() {},
       getPrimaryService() {
@@ -199,7 +216,9 @@ describe('WebBluetoothByteTransport', () => {
   it('rejects a characteristic with neither modern write method', async () => {
     const fixture = browserFixture([{}]);
     const transport = new WebBluetoothByteTransport(fixture.platform, AURORA_WEB_BLUETOOTH_CONFIG);
-    await expect(transport.requestAndConnect()).rejects.toMatchObject({ code: 'write-not-supported' });
+    await expect(transport.requestAndConnect()).rejects.toMatchObject({
+      code: 'write-not-supported',
+    });
   });
 
   it('serializes complete concurrent batches without interleaving', async () => {
@@ -233,14 +252,25 @@ describe('WebBluetoothByteTransport', () => {
 
   it('falls back to writes with response and resolves fresh handles after reconnect', async () => {
     const writes: string[] = [];
-    const first = { properties: { writeWithoutResponse: false, write: true }, writeValueWithResponse: async () => { writes.push('first'); } };
-    const second = { writeValueWithoutResponse: async () => { writes.push('second'); } };
+    const first = {
+      properties: { writeWithoutResponse: false, write: true },
+      writeValueWithResponse: async () => {
+        writes.push('first');
+      },
+    };
+    const second = {
+      writeValueWithoutResponse: async () => {
+        writes.push('second');
+      },
+    };
     const fixture = browserFixture([first, second]);
     const transport = new WebBluetoothByteTransport(fixture.platform, AURORA_WEB_BLUETOOTH_CONFIG);
     await transport.requestAndConnect();
     await transport.writeBatch([new Uint8Array([1])]);
     fixture.device.remoteDisconnect();
-    await expect(transport.writeBatch([new Uint8Array([2])])).rejects.toMatchObject({ code: 'disconnected' });
+    await expect(transport.writeBatch([new Uint8Array([2])])).rejects.toMatchObject({
+      code: 'disconnected',
+    });
     await transport.reconnect('board-1');
     await transport.writeBatch([new Uint8Array([3])]);
     expect(writes).toEqual(['first', 'second']);
@@ -250,12 +280,14 @@ describe('WebBluetoothByteTransport', () => {
   it('invalidates a multi-chunk batch after remote disconnect', async () => {
     const gate = deferred<void>();
     const writes: number[] = [];
-    const fixture = browserFixture([{
-      writeValueWithoutResponse(value) {
-        writes.push(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)[0]!);
-        return gate.promise;
+    const fixture = browserFixture([
+      {
+        writeValueWithoutResponse(value) {
+          writes.push(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)[0]!);
+          return gate.promise;
+        },
       },
-    }]);
+    ]);
     const transport = new WebBluetoothByteTransport(fixture.platform, AURORA_WEB_BLUETOOTH_CONFIG);
     await transport.requestAndConnect();
     const batch = transport.writeBatch([new Uint8Array([1]), new Uint8Array([2])]);
@@ -277,8 +309,12 @@ describe('WebBluetoothByteTransport', () => {
     const fixture = browserFixture([characteristic, characteristic]);
     const transport = new WebBluetoothByteTransport(fixture.platform, AURORA_WEB_BLUETOOTH_CONFIG);
     await transport.requestAndConnect();
-    await expect(transport.writeBatch([new Uint8Array([1])])).rejects.toMatchObject({ code: 'write-failed' });
-    await expect(transport.writeBatch([new Uint8Array([2])])).rejects.toMatchObject({ code: 'disconnected' });
+    await expect(transport.writeBatch([new Uint8Array([1])])).rejects.toMatchObject({
+      code: 'write-failed',
+    });
+    await expect(transport.writeBatch([new Uint8Array([2])])).rejects.toMatchObject({
+      code: 'disconnected',
+    });
     await transport.reconnect();
     await expect(transport.writeBatch([new Uint8Array([3])])).resolves.toBeUndefined();
     await transport.disconnect();
@@ -289,7 +325,12 @@ describe('WebBluetoothByteTransport', () => {
   it('returns no remembered devices when the optional API is absent', async () => {
     const fixture = browserFixture([{ writeValueWithoutResponse: () => Promise.resolve() }]);
     const transport = new WebBluetoothByteTransport(
-      { isSecureContext: true, bluetooth: { requestDevice: fixture.platform.bluetooth!.requestDevice.bind(fixture.platform.bluetooth) } },
+      {
+        isSecureContext: true,
+        bluetooth: {
+          requestDevice: fixture.platform.bluetooth!.requestDevice.bind(fixture.platform.bluetooth),
+        },
+      },
       AURORA_WEB_BLUETOOTH_CONFIG,
     );
     await expect(transport.getRememberedDevices()).resolves.toEqual([]);
@@ -306,7 +347,9 @@ describe('WebBluetoothByteTransport', () => {
       },
       AURORA_WEB_BLUETOOTH_CONFIG,
     );
-    await expect(transport.getRememberedDevices()).rejects.toMatchObject({ code: 'device-unavailable' });
+    await expect(transport.getRememberedDevices()).rejects.toMatchObject({
+      code: 'device-unavailable',
+    });
     await expect(transport.reconnect()).rejects.toMatchObject({ code: 'device-unavailable' });
   });
 });

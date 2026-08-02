@@ -84,9 +84,7 @@ function framePayload(payload: Uint8Array): Uint8Array {
   return frame;
 }
 
-export function encodeApiLevel3Packets(
-  scene: readonly ApiLevel3Light[],
-): readonly Uint8Array[] {
+export function encodeApiLevel3Packets(scene: readonly ApiLevel3Light[]): readonly Uint8Array[] {
   validateScene(scene);
 
   const packetCount = Math.max(1, Math.ceil(scene.length / LIGHTS_PER_PACKET));
@@ -135,8 +133,6 @@ export function splitApiLevel3Writes(
   return writes;
 }
 
-export function encodeApiLevel3Scene(
-  scene: readonly ApiLevel3Light[],
-): readonly Uint8Array[] {
+export function encodeApiLevel3Scene(scene: readonly ApiLevel3Light[]): readonly Uint8Array[] {
   return splitApiLevel3Writes(encodeApiLevel3Packets(scene));
 }
