@@ -1,7 +1,7 @@
 ---
 id: epic-universal-board-platform-installation-contracts
 kind: feature
-stage: implementing
+stage: review
 tags: [data]
 parent: epic-universal-board-platform
 depends_on: [epic-universal-board-platform-domain-definition]
@@ -403,3 +403,26 @@ surface is bounded: the completed board-definition module and already-implemente
 transport/light controller expose the exact contracts this feature must compose. The
 feature remains a standard-weight, single-stride implementation with no UI or external
 side effects.
+
+## Implementation notes
+
+- Execution capability: high/xhigh; the scope was cohesive and bounded, while immutable
+  composition, fail-fast validation, and stateful controller lifetime warranted careful
+  contract work.
+- Review weight: standard, from `.work/CONVENTIONS.md` and the caller.
+- Files changed: `web/src/installations/contracts.ts`,
+  `web/src/installations/registry.ts`,
+  `web/src/installations/fullride-controller-profile.ts`,
+  `web/src/installations/index.ts`, `web/src/app/installations.ts`, and their focused
+  registry/composition tests.
+- Tests added/removed: added 11 tests covering identity validation, exact capability
+  derivation, invalid/duplicate/incompatible composition, deep immutable copies,
+  deterministic order, lazy one-shot controller construction, the shipped Fullride
+  composition, and its side-effect-free app setup; removed none.
+- Simplification: reused `BoardDefinitionRegistry`, `BoardLightController`, and the
+  existing Fullride controller factory directly; added no provider operations, plugin
+  framework, transport wrapper, persistence, or global service locator.
+- Discrepancies from design: none.
+- Adjacent issues parked: none.
+- Verification: `npm test` (24 files, 158 tests), `npm run typecheck`, `npm run lint`,
+  and `npm run build` all pass.
