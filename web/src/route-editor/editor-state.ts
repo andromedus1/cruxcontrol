@@ -45,6 +45,10 @@ export function routeEditorReducer(
   action: RouteEditorAction,
 ): RouteEditorState {
   switch (action.type) {
+    case 'set-status':
+      return action.value === state.content.status
+        ? state
+        : changed(state, { ...state.content, status: action.value });
     case 'set-name':
       return action.value === state.content.name
         ? state

@@ -18,7 +18,7 @@ decisions:
   - "Every climb and layout identity is namespaced by provider and immutable board/layout revision; bare vendor IDs never cross domain boundaries."
   - "The Fullride 7x10 is the acceptance board for the first milestone; additional providers are installed on demand."
   - "Android/desktop Chromium provide Web Bluetooth control; iOS direct control is a later native-bridge capability."
-  - "Local drafts are unrestricted, browser-authoritative aggregates; provider publication validation is a separate future boundary."
+  - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
 ---
 
 # CruxControl — Specification
@@ -157,17 +157,19 @@ The model mirrors the official Kilter SQLite schema (see
   constraints retained with imported data.
 - **LocalClimbDraft** — a schema-versioned, installation- and layout-revision-bound
   browser aggregate with stable local identity, optimistic revision, unrestricted
-  metadata and hold assignments, and an exact semantic/custom appearance distinction.
+  metadata and hold assignments, Draft/Finished status, recoverable deletion metadata,
+  and an exact semantic/custom appearance distinction.
 
 ## Current Fullride Local Milestone
 
 - The application composes one configured Fullride 7x10 installation with the
   generated 305-placement definition, the independently authored schematic SVG
-  renderer, local draft list and detail surfaces, route editor, and Web Bluetooth
-  controller.
-- Drafts are authoritative in a dedicated native IndexedDB database and survive
-  reload/reopen. Definition/layout/angle/placement incompatibility is surfaced while
-  retaining the stored record unchanged.
+  renderer, My Climbs/Drafts/Trash list and detail surfaces, route editor, and Web
+  Bluetooth controller.
+- Locally authored climbs are authoritative in a dedicated native IndexedDB database,
+  survive reload/reopen, move between Draft and Finished without content validation,
+  and remain recoverable from Trash for 30 days. Definition/layout/angle/placement
+  incompatibility is surfaced while retaining the stored record unchanged.
 - The editor is responsive at Android-phone and desktop Chromium widths, retains
   persistent save/light actions, and exposes named keyboard-operable controls and
   non-color-only role markers.
@@ -188,7 +190,7 @@ The model mirrors the official Kilter SQLite schema (see
 - **Kilter-first acceptance scope.** The Fullride 7x10 is the first end-to-end
   acceptance board. Core identities and ports support multiple boards, but other
   providers do not block that milestone.
-- **Data ownership.** Local drafts are browser-authoritative today. The logbook will
+- **Data ownership.** Locally authored climbs are browser-authoritative today. The logbook will
   likewise be locally authoritative; Kilter sync remains optional and reversible.
 - **Protocol fidelity.** BLE packets must implement framing, checksums, and
   multi-packet splitting exactly per API level 3 (see

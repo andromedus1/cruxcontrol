@@ -11,8 +11,19 @@ export interface LocalClimbViewerProps {
   readonly selectedKey: ClimbViewKey | null;
   readonly onSelectedKeyChange: (key: ClimbViewKey | null) => void;
   readonly controller?: BoardLightController | null;
+  readonly heading: string;
+  readonly emptyTitle: string;
+  readonly emptyDescription: string;
   readonly onCreateClimb?: () => void;
   readonly onEditClimb?: (key: ClimbViewKey) => void;
+  readonly primaryAction?: Readonly<{
+    label: string;
+    onActivate: (key: ClimbViewKey) => void;
+  }>;
+  readonly destructiveAction?: Readonly<{
+    label: string;
+    onActivate: (key: ClimbViewKey) => void;
+  }>;
 }
 
 function validateRecords(definition: BoardDefinition, climbs: readonly ClimbViewRecord[]) {
@@ -32,8 +43,13 @@ export function LocalClimbViewer({
   selectedKey,
   onSelectedKeyChange,
   controller,
+  heading,
+  emptyTitle,
+  emptyDescription,
   onCreateClimb,
   onEditClimb,
+  primaryAction,
+  destructiveAction,
 }: LocalClimbViewerProps) {
   validateRecords(definition, climbs);
   const selected = useMemo(
@@ -78,20 +94,30 @@ export function LocalClimbViewer({
 
   return (
     <div className="local-climb-viewer">
-      <aside className="climb-list-pane" aria-label="Saved climbs">
+      <aside className="climb-list-pane" aria-label={heading}>
         <header className="workspace-header">
           <div>
             <p className="eyebrow">Fullride 7×10</p>
-            <h1>My climbs</h1>
+            <h1>{heading}</h1>
           </div>
-          {onCreateClimb && <button className="button button--primary" type="button" onClick={onCreateClimb}>Create climb</button>}
+          {onCreateClimb && (
+            <button className="button button--primary" type="button" onClick={onCreateClimb}>
+              Create climb
+            </button>
+          )}
         </header>
         {climbs.length === 0 ? (
           <section className="climb-empty">
-            <p className="climb-empty__symbol" aria-hidden="true">◇</p>
-            <h2>No saved climbs yet</h2>
-            <p>Create a draft to choose holds, save it locally, and light it on your board.</p>
-            {onCreateClimb && <button className="button button--primary" type="button" onClick={onCreateClimb}>Create your first climb</button>}
+            <p className="climb-empty__symbol" aria-hidden="true">
+              ◇
+            </p>
+            <h2>{emptyTitle}</h2>
+            <p>{emptyDescription}</p>
+            {onCreateClimb && (
+              <button className="button button--primary" type="button" onClick={onCreateClimb}>
+                Create your first climb
+              </button>
+            )}
           </section>
         ) : (
           <ul className="climb-list">
@@ -111,7 +137,10 @@ export function LocalClimbViewer({
                   }}
                 >
                   <span className="climb-row__name">{climb.name}</span>
-                  <span className="climb-row__meta">{climb.angle}°{climb.grade ? ` · ${climb.grade}` : ''}{climb.setter ? ` · ${climb.setter}` : ''}</span>
+                  <span className="climb-row__meta">
+                    {climb.angle}°{climb.grade ? ` · ${climb.grade}` : ''}
+                    {climb.setter ? ` · ${climb.setter}` : ''}
+                  </span>
                   <span className="climb-row__holds">{climb.assignments.length} holds</span>
                 </button>
               </li>
@@ -120,18 +149,55 @@ export function LocalClimbViewer({
         )}
       </aside>
       <main className="climb-detail-pane">
-        {!selected && <section className="no-selection"><p>Select a saved climb to inspect its holds and light the board.</p></section>}
+        {!selected && (
+          <section className="no-selection">
+            <p>Select a saved climb to inspect its holds and light the board.</p>
+          </section>
+        )}
         <dialog
           ref={dialogRef}
           className="climb-sheet"
           aria-label={selected ? `${selected.name} details` : 'Climb details'}
-          onCancel={(event) => { event.preventDefault(); dismiss(); }}
-          onClose={() => { if (selected && window.matchMedia('(max-width: 899px)').matches) dismiss(); }}
+          onCancel={(event) => {
+            event.preventDefault();
+            dismiss();
+          }}
+          onClose={() => {
+            if (selected && window.matchMedia('(max-width: 899px)').matches) dismiss();
+          }}
         >
           {selected && (
             <>
-              <button className="climb-sheet__close" type="button" aria-label="Close climb details" onClick={dismiss}>×</button>
-              <ClimbDetail definition={definition} climb={selected} controller={controller} onEdit={onEditClimb ? () => onEditClimb(selected.key) : undefined} />
+              <button
+                className="climb-sheet__close"
+                type="button"
+                aria-label="Close climb details"
+                onClick={dismiss}
+              >
+                ×
+              </button>
+              <ClimbDetail
+                definition={definition}
+                climb={selected}
+                controller={controller}
+                onEdit={onEditClimb ? () => onEditClimb(selected.key) : undefined}
+                primaryAction={
+                  primaryAction
+                    ? {
+                        label: primaryAction.label,
+                        onActivate: () => primaryAction.onActivate(selected.key),
+                      }
+                    : undefined
+                }
+                destructiveAction={
+                  destructiveAction
+                    ? {
+                        label: destructiveAction.label,
+                        onActivate: () => destructiveAction.onActivate(selected.key),
+                      }
+                    : undefined
+                }
+              />
             </>
           )}
         </dialog>

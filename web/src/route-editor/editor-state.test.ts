@@ -122,6 +122,22 @@ describe('route editor model', () => {
     expect(routeEditorReducer(state, { type: 'set-name', value: 'Wave' }).saveStatus).toBe('dirty');
   });
 
+  it('moves between Draft and Finished without changing climb content', () => {
+    const state = createRouteEditorState(draft);
+    const finished = routeEditorReducer(state, { type: 'set-status', value: 'finished' });
+
+    expect(finished.content.status).toBe('finished');
+    expect(finished.content.assignments).toBe(state.content.assignments);
+    expect(finished.content.effectGroups).toBe(state.content.effectGroups);
+    expect(finished.content.metadata).toBe(state.content.metadata);
+    expect(finished.generation).toBe(1);
+    expect(finished.saveStatus).toBe('dirty');
+    expect(routeEditorReducer(finished, { type: 'set-status', value: 'finished' })).toBe(finished);
+    expect(
+      routeEditorReducer(finished, { type: 'set-status', value: 'draft' }).content.status,
+    ).toBe('draft');
+  });
+
   it('preserves ordinary metadata spaces while omitting blank-only values', () => {
     const state = createRouteEditorState(draft);
     const withSpace = routeEditorReducer(state, {

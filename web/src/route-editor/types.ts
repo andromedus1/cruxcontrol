@@ -28,6 +28,7 @@ export interface RouteEditorState {
 }
 
 export type RouteEditorAction =
+  | { readonly type: 'set-status'; readonly value: DraftContent['status'] }
   | { readonly type: 'set-name'; readonly value: string }
   | { readonly type: 'set-angle'; readonly value: number }
   | {

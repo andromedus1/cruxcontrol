@@ -111,7 +111,9 @@ export function RouteEditorWorkspace({
           Back
         </button>
         <div>
-          <p className="eyebrow">Local draft · Fullride 7×10</p>
+          <p className="eyebrow">
+            {state.content.status === 'draft' ? 'Draft' : 'Finished'} · Fullride 7×10
+          </p>
           <h1>{state.content.name.trim() || 'Untitled climb'}</h1>
         </div>
         <span
@@ -296,6 +298,18 @@ export function RouteEditorWorkspace({
             Stop animation
           </button>
         )}
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={() =>
+            dispatch({
+              type: 'set-status',
+              value: state.content.status === 'draft' ? 'finished' : 'draft',
+            })
+          }
+        >
+          {state.content.status === 'draft' ? 'Mark finished' : 'Move to drafts'}
+        </button>
         <button
           className="button button--primary"
           type="button"

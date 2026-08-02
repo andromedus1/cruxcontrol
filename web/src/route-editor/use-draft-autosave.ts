@@ -12,7 +12,17 @@ export interface DraftAutosaveControls {
   saveCopy(): Promise<LocalClimbDraft>;
 }
 
-export function useDraftAutosave({ repository, state, dispatch, delayMs = 800 }: { readonly repository: LocalDraftRepository; readonly state: RouteEditorState; readonly dispatch: Dispatch<RouteEditorAction>; readonly delayMs?: number }): DraftAutosaveControls {
+export function useDraftAutosave({
+  repository,
+  state,
+  dispatch,
+  delayMs = 800,
+}: {
+  readonly repository: LocalDraftRepository;
+  readonly state: RouteEditorState;
+  readonly dispatch: Dispatch<RouteEditorAction>;
+  readonly delayMs?: number;
+}): DraftAutosaveControls {
   const latest = useRef(state);
   const active = useRef<Promise<void> | null>(null);
   const recovering = useRef(false);
@@ -21,7 +31,9 @@ export function useDraftAutosave({ repository, state, dispatch, delayMs = 800 }:
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   const saveNow = useCallback(async () => {
@@ -29,20 +41,36 @@ export function useDraftAutosave({ repository, state, dispatch, delayMs = 800 }:
     const run = async () => {
       do {
         const snapshot = latest.current;
-        if (snapshot.generation === snapshot.persistedGeneration && snapshot.saveStatus !== 'error') return;
+        if (snapshot.generation === snapshot.persistedGeneration && snapshot.saveStatus !== 'error')
+          return;
         dispatch({ type: 'save-started', generation: snapshot.generation });
         try {
-          const saved = await repository.update(snapshot.draft.id, snapshot.draft.revision, snapshot.content);
+          const saved = await repository.update(
+            snapshot.draft.id,
+            snapshot.draft.revision,
+            snapshot.content,
+          );
           if (!mounted.current) return;
           dispatch({ type: 'save-succeeded', draft: saved, generation: snapshot.generation });
-          latest.current = { ...latest.current, draft: saved, persistedGeneration: snapshot.generation };
+          latest.current = {
+            ...latest.current,
+            draft: saved,
+            persistedGeneration: snapshot.generation,
+          };
         } catch (error) {
-          if (mounted.current) dispatch({ type: 'save-failed', error: error instanceof Error ? error : new Error('Could not save draft'), conflict: error instanceof DraftConflictError });
+          if (mounted.current)
+            dispatch({
+              type: 'save-failed',
+              error: error instanceof Error ? error : new Error('Could not save draft'),
+              conflict: error instanceof DraftConflictError,
+            });
           return;
         }
       } while (latest.current.generation !== latest.current.persistedGeneration);
     };
-    active.current = run().finally(() => { active.current = null; });
+    active.current = run().finally(() => {
+      active.current = null;
+    });
     return active.current;
   }, [dispatch, repository]);
 
@@ -68,10 +96,23 @@ export function useDraftAutosave({ repository, state, dispatch, delayMs = 800 }:
       dispatch({ type: 'save-started', generation: latest.current.generation });
       try {
         const stored = await repository.get(latest.current.draft.id);
-        if (!stored) throw new Error('The stored draft no longer exists. Save a copy to preserve your changes.');
+        if (!stored)
+          throw new Error(
+            'The stored draft no longer exists. Save a copy to preserve your changes.',
+          );
+        if (stored.trashedAt !== undefined) {
+          throw new Error(
+            'The stored climb is in Trash. Save a copy to preserve these editor changes.',
+          );
+        }
         if (mounted.current) dispatch({ type: 'reload', draft: stored });
       } catch (error) {
-        if (mounted.current) dispatch({ type: 'save-failed', error: error instanceof Error ? error : new Error('Could not reload the stored draft.'), conflict: true });
+        if (mounted.current)
+          dispatch({
+            type: 'save-failed',
+            error: error instanceof Error ? error : new Error('Could not reload the stored draft.'),
+            conflict: true,
+          });
         throw error;
       } finally {
         recovering.current = false;
@@ -86,7 +127,12 @@ export function useDraftAutosave({ repository, state, dispatch, delayMs = 800 }:
         if (mounted.current) dispatch({ type: 'reload', draft: copy });
         return copy;
       } catch (error) {
-        if (mounted.current) dispatch({ type: 'save-failed', error: error instanceof Error ? error : new Error('Could not save a copy.'), conflict: true });
+        if (mounted.current)
+          dispatch({
+            type: 'save-failed',
+            error: error instanceof Error ? error : new Error('Could not save a copy.'),
+            conflict: true,
+          });
         throw error;
       } finally {
         recovering.current = false;

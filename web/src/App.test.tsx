@@ -22,7 +22,7 @@ describe('App', () => {
       close: vi.fn(),
     };
     render(<App createRuntime={() => Promise.resolve(runtime)} />);
-    expect(await screen.findByRole('heading', { name: 'My climbs' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'No saved climbs yet' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'My Climbs' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'No finished climbs yet' })).toBeInTheDocument();
   });
 });

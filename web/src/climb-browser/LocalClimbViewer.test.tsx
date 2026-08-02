@@ -6,23 +6,74 @@ import { LocalClimbViewer } from './LocalClimbViewer';
 import { climbViewKey, type ClimbViewKey, type ClimbViewRecord } from './types';
 
 const first: ClimbViewRecord = {
-  key: climbViewKey('local:first'), name: 'Garage Circuit', angle: 40,
-  assignments: [{ placementId: definition.placements[0].id, appearance: { kind: 'role', role: 'start' } }],
-  origin: 'local-draft', grade: 'V4', setter: 'Andrew',
+  key: climbViewKey('local:first'),
+  name: 'Garage Circuit',
+  angle: 40,
+  assignments: [
+    { placementId: definition.placements[0].id, appearance: { kind: 'role', role: 'start' } },
+  ],
+  origin: 'local-draft',
+  grade: 'V4',
+  setter: 'Andrew',
+};
+
+const copy = {
+  heading: 'Drafts',
+  emptyTitle: 'No drafts yet',
+  emptyDescription: 'Create a climb to get started.',
 };
 
 function Controlled({ climbs = [first] }: { climbs?: readonly ClimbViewRecord[] }) {
   const [selected, setSelected] = useState<ClimbViewKey | null>(null);
-  return <LocalClimbViewer definition={definition} climbs={climbs} selectedKey={selected} onSelectedKeyChange={setSelected} />;
+  return (
+    <LocalClimbViewer
+      {...copy}
+      definition={definition}
+      climbs={climbs}
+      selectedKey={selected}
+      onSelectedKeyChange={setSelected}
+    />
+  );
 }
 
 describe('LocalClimbViewer', () => {
   it('shows an honest empty state and injected create action', () => {
     const create = vi.fn();
-    render(<LocalClimbViewer definition={definition} climbs={[]} selectedKey={null} onSelectedKeyChange={() => undefined} onCreateClimb={create} />);
-    expect(screen.getByRole('heading', { name: 'No saved climbs yet' })).toBeInTheDocument();
+    render(
+      <LocalClimbViewer
+        {...copy}
+        definition={definition}
+        climbs={[]}
+        selectedKey={null}
+        onSelectedKeyChange={() => undefined}
+        onCreateClimb={create}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Drafts' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'No drafts yet' })).toBeInTheDocument();
+    expect(screen.getByText('Create a climb to get started.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Create your first climb' }));
     expect(create).toHaveBeenCalledOnce();
+  });
+
+  it('binds contextual primary and destructive actions to the selected climb', () => {
+    const primary = vi.fn();
+    const destructive = vi.fn();
+    render(
+      <LocalClimbViewer
+        {...copy}
+        definition={definition}
+        climbs={[first]}
+        selectedKey={first.key}
+        onSelectedKeyChange={() => undefined}
+        primaryAction={{ label: 'Mark finished', onActivate: primary }}
+        destructiveAction={{ label: 'Move to trash', onActivate: destructive }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Mark finished' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Move to trash' }));
+    expect(primary).toHaveBeenCalledWith(first.key);
+    expect(destructive).toHaveBeenCalledWith(first.key);
   });
 
   it('uses controlled selection and renders truthful climb detail', () => {
@@ -36,21 +87,51 @@ describe('LocalClimbViewer', () => {
   });
 
   it('does not silently replace a stale selection', () => {
-    render(<LocalClimbViewer definition={definition} climbs={[first]} selectedKey={climbViewKey('missing')} onSelectedKeyChange={() => undefined} />);
+    render(
+      <LocalClimbViewer
+        {...copy}
+        definition={definition}
+        climbs={[first]}
+        selectedKey={climbViewKey('missing')}
+        onSelectedKeyChange={() => undefined}
+      />,
+    );
     expect(screen.getByText(/Select a saved climb/)).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Garage Circuit' })).not.toBeInTheDocument();
   });
 
   it('rejects duplicate keys and unsupported angles', () => {
-    expect(() => render(<LocalClimbViewer definition={definition} climbs={[first, first]} selectedKey={null} onSelectedKeyChange={() => undefined} />)).toThrow('Duplicate');
-    expect(() => render(<LocalClimbViewer definition={definition} climbs={[{ ...first, key: climbViewKey('bad'), angle: 37 }]} selectedKey={null} onSelectedKeyChange={() => undefined} />)).toThrow('unsupported angle');
+    expect(() =>
+      render(
+        <LocalClimbViewer
+          {...copy}
+          definition={definition}
+          climbs={[first, first]}
+          selectedKey={null}
+          onSelectedKeyChange={() => undefined}
+        />,
+      ),
+    ).toThrow('Duplicate');
+    expect(() =>
+      render(
+        <LocalClimbViewer
+          {...copy}
+          definition={definition}
+          climbs={[{ ...first, key: climbViewKey('bad'), angle: 37 }]}
+          selectedKey={null}
+          onSelectedKeyChange={() => undefined}
+        />,
+      ),
+    ).toThrow('unsupported angle');
   });
 
   it('preserves modal semantics across phone and desktop transitions and returns focus', async () => {
     let desktop = false;
     const listeners = new Set<EventListener>();
     vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
-      get matches() { return query.includes('min-width') ? desktop : !desktop; },
+      get matches() {
+        return query.includes('min-width') ? desktop : !desktop;
+      },
       media: query,
       onchange: null,
       addEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => {

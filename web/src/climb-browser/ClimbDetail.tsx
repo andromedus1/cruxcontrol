@@ -13,11 +13,21 @@ export interface ClimbDetailProps {
   readonly controller?: BoardLightController | null;
   readonly headingLevel?: 1 | 2;
   readonly onEdit?: () => void;
+  readonly primaryAction?: Readonly<{ label: string; onActivate: () => void }>;
+  readonly destructiveAction?: Readonly<{ label: string; onActivate: () => void }>;
 }
 
 const roles: readonly ClimbRole[] = ['start', 'middle', 'finish', 'foot-only'];
 
-export function ClimbDetail({ definition, climb, controller, headingLevel = 2, onEdit }: ClimbDetailProps) {
+export function ClimbDetail({
+  definition,
+  climb,
+  controller,
+  headingLevel = 2,
+  onEdit,
+  primaryAction,
+  destructiveAction,
+}: ClimbDetailProps) {
   const state = useBoardLightState(controller);
   const [localError, setLocalError] = useState('');
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
@@ -55,28 +65,82 @@ export function ClimbDetail({ definition, climb, controller, headingLevel = 2, o
       <BoardControlBar controller={controller} />
       <header className="climb-detail__header">
         <div>
-          <p className="eyebrow">{climb.origin === 'local-draft' ? 'Local draft' : 'Climb'}</p>
+          <p className="eyebrow">{climb.origin === 'local-draft' ? 'Local climb' : 'Climb'}</p>
           <Heading id={boardHeadingId}>{climb.name}</Heading>
         </div>
         <span className="angle-badge">{climb.angle}°</span>
       </header>
       <dl className="climb-meta">
-        {climb.grade && <><dt>Grade</dt><dd>{climb.grade}</dd></>}
-        {climb.setter && <><dt>Setter</dt><dd>{climb.setter}</dd></>}
-        <dt>Holds</dt><dd>{climb.assignments.length}</dd>
+        {climb.grade && (
+          <>
+            <dt>Grade</dt>
+            <dd>{climb.grade}</dd>
+          </>
+        )}
+        {climb.setter && (
+          <>
+            <dt>Setter</dt>
+            <dd>{climb.setter}</dd>
+          </>
+        )}
+        <dt>Holds</dt>
+        <dd>{climb.assignments.length}</dd>
       </dl>
       {climb.description && <p className="climb-detail__description">{climb.description}</p>}
       <section className="climb-detail__board" aria-label="Board preview">
-        <BoardRenderer definition={definition} assignments={climb.assignments} labelledBy={boardHeadingId} />
+        <BoardRenderer
+          definition={definition}
+          assignments={climb.assignments}
+          labelledBy={boardHeadingId}
+        />
       </section>
       <ul className="role-legend" aria-label="Hold colors">
-        {roles.map((role) => <li key={role}><span style={{ background: definition.rolePresets[role].screenColor }} />{definition.rolePresets[role].label}</li>)}
-        {hasCustom && <li><span className="role-legend__custom" />Custom colors</li>}
+        {roles.map((role) => (
+          <li key={role}>
+            <span style={{ background: definition.rolePresets[role].screenColor }} />
+            {definition.rolePresets[role].label}
+          </li>
+        ))}
+        {hasCustom && (
+          <li>
+            <span className="role-legend__custom" />
+            Custom colors
+          </li>
+        )}
       </ul>
       <div className="climb-detail__actions">
-        <p className="action-status" aria-live="polite">{localError || state.error?.message || operationStatus || (!connected ? 'Connect a board to light this scene.' : '')}</p>
-        {onEdit && <button className="button button--secondary" type="button" onClick={onEdit}>Edit climb</button>}
-        <button className="button button--primary" type="button" disabled={!ready} onClick={light}>{actionLabel}</button>
+        <p className="action-status" aria-live="polite">
+          {localError ||
+            state.error?.message ||
+            operationStatus ||
+            (!connected ? 'Connect a board to light this scene.' : '')}
+        </p>
+        {onEdit && (
+          <button className="button button--secondary" type="button" onClick={onEdit}>
+            Edit climb
+          </button>
+        )}
+        {primaryAction && (
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={primaryAction.onActivate}
+          >
+            {primaryAction.label}
+          </button>
+        )}
+        {destructiveAction && (
+          <button
+            className="button button--destructive"
+            type="button"
+            onClick={destructiveAction.onActivate}
+          >
+            {destructiveAction.label}
+          </button>
+        )}
+        <button className="button button--primary" type="button" disabled={!ready} onClick={light}>
+          {actionLabel}
+        </button>
       </div>
     </article>
   );

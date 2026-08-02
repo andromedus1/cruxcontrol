@@ -51,7 +51,26 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByLabelText('blue channel')).toHaveAttribute('max', '3');
     expect(screen.getByRole('button', { name: 'Connect & light' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Save now' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mark finished' })).toBeInTheDocument();
     expect(document.querySelector('.board-renderer__viewport')).toHaveAttribute('data-scale', '1');
+  });
+
+  it('changes lifecycle status without imposing climb validity rules', () => {
+    render(
+      <RouteEditorWorkspace
+        definition={kilterFullride7x10Definition}
+        draft={draft}
+        repository={repository}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark finished' }));
+    expect(screen.getByText('Finished · Fullride 7×10')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Move to drafts' })).toBeInTheDocument();
+    expect(document.querySelector('.save-chip')).toHaveTextContent('dirty');
+    fireEvent.click(screen.getByRole('button', { name: 'Move to drafts' }));
+    expect(screen.getByText('Draft · Fullride 7×10')).toBeInTheDocument();
   });
 
   it('cycles and erases through the roving keyboard surface', () => {

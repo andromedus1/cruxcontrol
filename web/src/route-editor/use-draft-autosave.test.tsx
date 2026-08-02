@@ -68,6 +68,7 @@ describe('useDraftAutosave', () => {
     act(() => {
       result.current.dispatch({ type: 'set-name', value: 'Tidal' });
       result.current.dispatch({ type: 'set-name', value: 'Tidal Wave' });
+      result.current.dispatch({ type: 'set-status', value: 'finished' });
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(800);
@@ -75,6 +76,7 @@ describe('useDraftAutosave', () => {
 
     expect(update).toHaveBeenCalledOnce();
     expect(update.mock.calls[0]?.[2].name).toBe('Tidal Wave');
+    expect(update.mock.calls[0]?.[2].status).toBe('finished');
     expect(result.current.state.saveStatus).toBe('saved');
   });
 
@@ -179,6 +181,28 @@ describe('useDraftAutosave', () => {
     });
     expect(result.current.state.content.name).toBe('Retry me');
     expect(result.current.state.saveStatus).toBe('saved');
+  });
+
+  it('does not reload a climb that another context moved to Trash', async () => {
+    const conflict = new DraftConflictError(initial.id, draftRevision(1), draftRevision(2));
+    const drafts = repository(vi.fn().mockRejectedValue(conflict));
+    vi.mocked(drafts.get).mockResolvedValue({
+      ...saved(draftContent({ name: 'Trashed elsewhere' }), 2),
+      trashedAt: '2026-08-02T00:00:02.000Z',
+    });
+    const { result } = renderHook(() => useHarness(drafts));
+
+    act(() => result.current.dispatch({ type: 'set-name', value: 'Keep my changes' }));
+    await act(async () => {
+      await result.current.controls.saveNow();
+    });
+    await act(async () => {
+      await expect(result.current.controls.reloadStored()).rejects.toThrow('in Trash');
+    });
+
+    expect(result.current.state.content.name).toBe('Keep my changes');
+    expect(result.current.state.saveStatus).toBe('conflict');
+    expect(result.current.state.persistenceError?.message).toContain('Save a copy');
   });
 
   it('cancels pending autosave on unmount and remains live under StrictMode effect replay', async () => {
