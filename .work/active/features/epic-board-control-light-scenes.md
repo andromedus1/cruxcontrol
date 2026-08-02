@@ -1,7 +1,7 @@
 ---
 id: epic-board-control-light-scenes
 kind: feature
-stage: review
+stage: done
 tags: [ble, ui]
 parent: epic-board-control
 depends_on:
@@ -415,3 +415,30 @@ draft store share placement IDs but do not import codec or transport modules.
 - Automated substitute evidence: 13 controller tests compose the generated 305-hold
   definition, real API-level-3 codec, and mock byte transport; this does not claim
   physical hardware behavior.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve
+
+**Blockers**: none
+**Important**: none
+**Nits**: none
+**Rejected**: none
+
+**Notes**: Substrate feature review with effective weight `standard`: exactly one
+balanced fresh-context pass over implementation commit `6f7836e`, the feature design,
+dependency contracts, surrounding production code, tests, project rules, and relevant
+foundation/research assertions. Placement IDs resolve to the generated Fullride LED
+positions; all 256 API-level-3 colors and the four role presets remain unrestricted;
+empty light and clear commands use the codec clear batch; explicit operations serialize
+ahead of retained preview work; and latest-frame-wins preview settlement, failure
+recovery, and last-successful-scene semantics match the accepted contract. One material
+public-state leak was fixed inline: transport error snapshots now replace diagnostic
+`cause` values with frozen stable errors at both the top-level and nested transport
+surfaces, with regression coverage. Full verification passed 146 tests, typecheck,
+lint, and production build. Persistence/migration and broad security lenses were not
+applicable; the focused security check covered diagnostic/browser-object exposure.
+Physical verification remains honestly pending for Andrew on the powered Fullride 7x10,
+so this feature is code-reviewed but the parent epic must not claim hardware
+verification until that checkpoint passes. No second independent pass ran, as required
+for standard weight.

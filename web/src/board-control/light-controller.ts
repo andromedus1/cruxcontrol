@@ -13,9 +13,7 @@ import { assertBoardDefinition } from '../domain/boards/validate-definition.ts';
 
 export type LightOperation = 'idle' | 'lighting' | 'clearing' | 'previewing';
 
-export type PreviewResult =
-  | { readonly status: 'applied' }
-  | { readonly status: 'superseded' };
+export type PreviewResult = { readonly status: 'applied' } | { readonly status: 'superseded' };
 
 export interface BoardLightState {
   readonly transport: BoardTransportState;
@@ -81,7 +79,7 @@ export function createFullrideLightController(
   const explicitTasks: ExplicitTask[] = [];
   let pendingPreview: PreviewTask | null = null;
   let processing = false;
-  let state = freezeState(options.transport.getState(), 'idle', null, null);
+  let state = freezeState(publicTransportState(options.transport.getState()), 'idle', null, null);
 
   const publish = (
     transport = state.transport,
@@ -94,12 +92,14 @@ export function createFullrideLightController(
   };
 
   options.transport.subscribe((transport) => {
+    const publicTransport = publicTransportState(transport);
     const operation =
-      transport.status === 'disconnected' || transport.status === 'unsupported'
+      publicTransport.status === 'disconnected' || publicTransport.status === 'unsupported'
         ? 'idle'
         : state.operation;
-    const error = transport.status === 'error' ? publicTransportError(transport.error) : state.error;
-    publish(transport, operation, state.lastAppliedScene, error);
+    const error =
+      publicTransport.status === 'error' ? publicTransport.error : state.error;
+    publish(publicTransport, operation, state.lastAppliedScene, error);
   });
 
   const resolveScene = (scene: LightScene): ResolvedScene => {
@@ -185,11 +185,21 @@ export function createFullrideLightController(
   const connect = async (operation: () => Promise<BoardDeviceRef>) => {
     try {
       const device = await operation();
-      publish(options.transport.getState(), state.operation, state.lastAppliedScene, null);
+      publish(
+        publicTransportState(options.transport.getState()),
+        state.operation,
+        state.lastAppliedScene,
+        null,
+      );
       return device;
     } catch (error) {
       if (error instanceof BoardTransportError) {
-        publish(options.transport.getState(), 'idle', state.lastAppliedScene, publicTransportError(error));
+        publish(
+          publicTransportState(options.transport.getState()),
+          'idle',
+          state.lastAppliedScene,
+          publicTransportError(error),
+        );
       }
       throw error;
     }
@@ -238,6 +248,17 @@ function freezeState(
 }
 
 function publicTransportError(error: BoardTransportError): BoardTransportError {
-  const safe = new BoardTransportError(error.code, error.message, { recoverable: error.recoverable });
+  const safe = new BoardTransportError(error.code, error.message, {
+    recoverable: error.recoverable,
+  });
   return Object.freeze(safe);
+}
+
+function publicTransportState(transport: BoardTransportState): BoardTransportState {
+  if (transport.status !== 'error') return transport;
+  return Object.freeze({
+    status: 'error',
+    device: transport.device,
+    error: publicTransportError(transport.error),
+  });
 }

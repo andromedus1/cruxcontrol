@@ -70,9 +70,7 @@ describe('sceneFromRoles', () => {
 
   it('rejects unknown and duplicate placements with their indexes', () => {
     expect(() =>
-      sceneFromRoles(definition, [
-        { placementId: boardPlacementId('unknown'), role: 'start' },
-      ]),
+      sceneFromRoles(definition, [{ placementId: boardPlacementId('unknown'), role: 'start' }]),
     ).toThrow(/Unknown board placement unknown.*index 0/);
     expect(() =>
       sceneFromRoles(definition, [
@@ -186,6 +184,13 @@ describe('Fullride light controller', () => {
     });
     expect(controller.getState().error?.cause).toBeUndefined();
     expect(Object.isFrozen(controller.getState().error)).toBe(true);
+    const transportState = controller.getState().transport;
+    expect(transportState).toMatchObject({ status: 'error' });
+    if (transportState.status !== 'error') {
+      throw new Error('Expected the transport error state to remain visible');
+    }
+    expect(transportState.error.cause).toBeUndefined();
+    expect(Object.isFrozen(transportState.error)).toBe(true);
   });
 
   it('republishes connection lifecycle and recovers after disconnect and reconnect', async () => {
