@@ -52,7 +52,10 @@ feature item bodies in `.work/`, not here. Capabilities are in
    encoding; transports own platform I/O. The first pair is Aurora API-level-3 over
    Web Bluetooth: deterministic framing/checksum/multi-packet encoding, serialized
    Nordic UART writes, explicit connection lifecycle, light/clear operations, and
-   bounded latest-frame-wins preview. A future iOS shell may supply CoreBluetooth
+   bounded latest-frame-wins preview. A collapsed, local-only capacity diagnostic uses
+   the same queue with bounded cases, optional inter-write pacing, sanitized timing
+   traces, hard timeout/disconnect, and explicit clear/reconnect recovery; it does not
+   infer hardware limits from encoder speed. A future iOS shell may supply CoreBluetooth
    behind the same port.
 5. **Board Renderer** — definition-driven geometry, role colors, and selection.
    The shared, independently authored schematic SVG renderer draws recognizable hold

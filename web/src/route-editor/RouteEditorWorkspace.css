@@ -60,6 +60,53 @@
   display: grid;
   gap: var(--space-3);
 }
+.board-capacity {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.board-capacity > summary {
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.board-capacity > p,
+.board-capacity__result p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+.board-capacity__controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.board-capacity__controls label {
+  display: grid;
+  gap: var(--space-1);
+  font: var(--font-size-xs)/1.3 var(--font-mono);
+}
+.board-capacity select,
+.board-capacity button {
+  min-height: 44px;
+  padding: var(--space-2);
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.board-capacity__cost {
+  font-family: var(--font-mono);
+}
+.board-capacity__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.board-capacity__result,
+.board-capacity__result fieldset {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
 .editor-fields label,
 .color-control label {
   display: grid;

@@ -69,7 +69,15 @@ export interface BoardByteTransport {
   requestAndConnect(): Promise<BoardDeviceRef>;
   reconnect(deviceId?: string): Promise<BoardDeviceRef>;
   disconnect(): Promise<void>;
-  writeBatch(chunks: readonly Uint8Array[]): Promise<void>;
+  writeBatch(chunks: readonly Uint8Array[], options?: DiagnosticWriteOptions): Promise<void>;
+  forceDisconnect(): void;
+}
+
+export interface DiagnosticWriteOptions {
+  readonly interChunkDelayMs: 0 | 5 | 10 | 20;
+  readonly signal: AbortSignal;
+  readonly onEvent: (event: import('./capacity-trace').CapacityTraceEvent) => void;
+  readonly frameIndex?: number;
 }
 
 export function freezeDevice(device: BoardDeviceRef): BoardDeviceRef {

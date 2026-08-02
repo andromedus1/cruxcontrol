@@ -7,6 +7,7 @@ import {
   type BoardTransportListener,
   type BoardTransportState,
   type Unsubscribe,
+  type DiagnosticWriteOptions,
 } from './transport.ts';
 
 export type MockTransportOperation =
@@ -88,7 +89,13 @@ export class MockBoardByteTransport implements BoardByteTransport {
     this.publish(Object.freeze({ status: 'disconnected', device }));
   }
 
-  async writeBatch(chunks: readonly Uint8Array[]): Promise<void> {
+  forceDisconnect(): void {
+    const device = 'device' in this.state ? this.state.device : null;
+    this.recorded.push(Object.freeze({ type: 'disconnect', device }));
+    this.publish(Object.freeze({ status: 'disconnected', device }));
+  }
+
+  async writeBatch(chunks: readonly Uint8Array[], options?: DiagnosticWriteOptions): Promise<void> {
     const copies = chunks.map((chunk) => new Uint8Array(chunk));
     if (copies.length === 0)
       throw new BoardTransportError('write-failed', 'No board data was provided.');
@@ -100,10 +107,48 @@ export class MockBoardByteTransport implements BoardByteTransport {
       this.publish(Object.freeze({ status: 'error', device: this.state.device, error: failure }));
       throw failure;
     }
+    options?.onEvent(
+      Object.freeze({
+        atMs: performance.now(),
+        stage: 'batch-started',
+        frameIndex: options.frameIndex,
+      }),
+    );
+    for (const [chunkIndex, chunk] of copies.entries()) {
+      if (options?.signal.aborted) throw new DOMException('Diagnostic cancelled', 'AbortError');
+      options?.onEvent(
+        Object.freeze({
+          atMs: performance.now(),
+          stage: 'chunk-called',
+          frameIndex: options.frameIndex,
+          chunkIndex,
+          byteLength: chunk.byteLength,
+        }),
+      );
+      if (options && chunkIndex < copies.length - 1 && options.interChunkDelayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, options.interChunkDelayMs));
+      }
+      options?.onEvent(
+        Object.freeze({
+          atMs: performance.now(),
+          stage: 'chunk-settled',
+          frameIndex: options.frameIndex,
+          chunkIndex,
+          byteLength: chunk.byteLength,
+        }),
+      );
+    }
     this.recorded.push(
       Object.freeze({
         type: 'write',
         chunks: Object.freeze(copies.map((chunk) => new Uint8Array(chunk))),
+      }),
+    );
+    options?.onEvent(
+      Object.freeze({
+        atMs: performance.now(),
+        stage: 'batch-settled',
+        frameIndex: options.frameIndex,
       }),
     );
   }

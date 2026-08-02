@@ -8,6 +8,7 @@ import {
   type BoardTransportListener,
   type BoardTransportState,
   type Unsubscribe,
+  type DiagnosticWriteOptions,
 } from './transport.ts';
 import type {
   BluetoothDeviceLike,
@@ -191,7 +192,16 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
     });
   }
 
-  writeBatch(chunks: readonly Uint8Array[]): Promise<void> {
+  forceDisconnect(): void {
+    const device = this.device;
+    (this.server ?? device?.gatt)?.disconnect();
+    this.clearHandles();
+    this.publish(
+      Object.freeze({ status: 'disconnected', device: device ? this.deviceRef(device) : null }),
+    );
+  }
+
+  writeBatch(chunks: readonly Uint8Array[], options?: DiagnosticWriteOptions): Promise<void> {
     const copies = chunks.map((chunk) => new Uint8Array(chunk));
     if (copies.length === 0) {
       return Promise.reject(new BoardTransportError('write-failed', 'No board data was provided.'));
@@ -206,15 +216,27 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
       const generation = this.generation;
       const write = this.writeMethod;
       try {
-        for (const chunk of copies) {
+        options?.onEvent(traceEvent('batch-started', options.frameIndex));
+        for (const [chunkIndex, chunk] of copies.entries()) {
+          if (options?.signal.aborted) throw new DOMException('Diagnostic cancelled', 'AbortError');
           if (generation !== this.generation || this.state.status !== 'connected') {
             throw new BoardTransportError(
               'disconnected',
               'The board disconnected while sending lights.',
             );
           }
+          options?.onEvent(
+            traceEvent('chunk-called', options.frameIndex, chunkIndex, chunk.byteLength),
+          );
           await write(chunk);
+          options?.onEvent(
+            traceEvent('chunk-settled', options.frameIndex, chunkIndex, chunk.byteLength),
+          );
+          if (options && chunkIndex < copies.length - 1 && options.interChunkDelayMs > 0) {
+            await abortableDelay(options.interChunkDelayMs, options.signal);
+          }
         }
+        options?.onEvent(traceEvent('batch-settled', options.frameIndex));
       } catch (cause) {
         if (generation !== this.generation) {
           const error = new BoardTransportError(
@@ -374,4 +396,27 @@ export class WebBluetoothByteTransport implements BoardByteTransport {
   private deviceRef(device: BluetoothDeviceLike): BoardDeviceRef {
     return freezeDevice({ id: device.id, name: device.name ?? null });
   }
+}
+
+function traceEvent(
+  stage: 'batch-started' | 'chunk-called' | 'chunk-settled' | 'batch-settled',
+  frameIndex?: number,
+  chunkIndex?: number,
+  byteLength?: number,
+) {
+  return Object.freeze({ atMs: performance.now(), stage, frameIndex, chunkIndex, byteLength });
+}
+
+function abortableDelay(durationMs: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, durationMs);
+    signal.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        reject(new DOMException('Diagnostic cancelled', 'AbortError'));
+      },
+      { once: true },
+    );
+  });
 }

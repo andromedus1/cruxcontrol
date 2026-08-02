@@ -357,3 +357,13 @@ workload; physical I/O targets come only from Optimization 2.
 
 The explicit physical-results checkpoint prevents autopilot from inventing thresholds
 between diagnostics and policy implementation.
+
+## Implementation progress
+
+- Optimization 1 is implemented: exact API 2/3 cost modeling, sanitized trace summaries,
+  paced/cancelable writes, hard timeout with immediate disconnect, bounded case scheduling,
+  and the collapsed local editor diagnostic/export surface. No capacity threshold was
+  inferred.
+- Optimization 2 remains the next checkpoint and requires the explicit Fullride/Android
+  physical campaign.
+- Optimization 3 remains blocked on those recorded physical results.

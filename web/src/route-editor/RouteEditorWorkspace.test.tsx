@@ -53,6 +53,7 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.queryByRole('button', { name: 'Save now' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Mark finished' })).toBeInTheDocument();
     expect(document.querySelector('.board-renderer__viewport')).toHaveAttribute('data-scale', '1');
+    expect(screen.getByText('Board capacity test')).toBeInTheDocument();
   });
 
   it('changes lifecycle status without imposing climb validity rules', () => {

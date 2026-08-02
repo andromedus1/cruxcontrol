@@ -44,6 +44,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Connect to the active board through a capability-selected controller adapter.
 - The first adapter controls the Kilter Fullride 7x10 via Web Bluetooth.
 - Light up holds for any selected climb using the Nordic UART protocol (API level 3).
+- Run explicit, bounded Fullride capacity cases from the editor with exact packet/write
+  estimates, stop/timeout recovery, operator observations, and private local JSON trace
+  export. No diagnostic runs automatically and no trace is uploaded.
 - Support the four user-facing Kilter role colors: Start (green), Middle (blue),
   Finish (red/pink), and Foot-only (gold/yellow), plus all 256 packed 3/3/2-bit
   hardware colors. Provider/source protocol RGB values remain preserved separately.

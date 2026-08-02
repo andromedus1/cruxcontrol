@@ -11,6 +11,12 @@ import type { BoardDefinition } from '../domain/boards/definition.ts';
 import type { LightScene } from '../domain/boards/light-scene.ts';
 import type { BoardPlacementId } from '../domain/boards/types.ts';
 import { assertBoardDefinition } from '../domain/boards/validate-definition.ts';
+import type { AuroraApiLevel } from './api-level-2-codec.ts';
+import {
+  summarizeCapacityTrace,
+  type CapacityTraceEvent,
+  type CapacityTraceSummary,
+} from './capacity-trace.ts';
 
 export type LightOperation = 'idle' | 'lighting' | 'clearing' | 'previewing';
 
@@ -34,6 +40,22 @@ export interface BoardLightController {
   light(scene: LightScene): Promise<void>;
   clear(): Promise<void>;
   preview(scene: LightScene): Promise<PreviewResult>;
+  runCapacityCase?(testCase: CapacityCase): Promise<CapacityCaseResult>;
+  stopCapacityCase?(): void;
+}
+
+export interface CapacityCase {
+  readonly apiLevel: AuroraApiLevel;
+  readonly lightCount: number;
+  readonly requestedFps: 0 | 1 | 2 | 4 | 6 | 8 | 10;
+  readonly durationMs: number;
+  readonly interChunkDelayMs: 0 | 5 | 10 | 20;
+}
+
+export interface CapacityCaseResult {
+  readonly status: 'completed' | 'cancelled' | 'timeout' | 'error';
+  readonly trace: readonly CapacityTraceEvent[];
+  readonly summary: CapacityTraceSummary;
 }
 
 export interface FullrideLightControllerOptions {
@@ -80,6 +102,7 @@ export function createFullrideLightController(
   const explicitTasks: ExplicitTask[] = [];
   let pendingPreview: PreviewTask | null = null;
   let processing = false;
+  let diagnosticAbort: AbortController | null = null;
   let state = freezeState(publicTransportState(options.transport.getState()), 'idle', null, null);
 
   const publish = (
@@ -98,8 +121,7 @@ export function createFullrideLightController(
       publicTransport.status === 'disconnected' || publicTransport.status === 'unsupported'
         ? 'idle'
         : state.operation;
-    const error =
-      publicTransport.status === 'error' ? publicTransport.error : state.error;
+    const error = publicTransport.status === 'error' ? publicTransport.error : state.error;
     publish(publicTransport, operation, state.lastAppliedScene, error);
   });
 
@@ -135,7 +157,8 @@ export function createFullrideLightController(
   const apply = async (task: ExplicitTask | PreviewTask, operation: LightOperation) => {
     publish(state.transport, operation, state.lastAppliedScene, null);
     try {
-      const deviceName = state.transport.status === 'connected' ? state.transport.device.name : null;
+      const deviceName =
+        state.transport.status === 'connected' ? state.transport.device.name : null;
       const writes =
         apiLevelForAuroraDeviceName(deviceName) === 3
           ? encodeApiLevel3Scene(task.resolved.lights)
@@ -241,7 +264,188 @@ export function createFullrideLightController(
         void pump();
       });
     },
+    async runCapacityCase(testCase) {
+      if (diagnosticAbort) throw new Error('A board capacity test is already running.');
+      if (processing || explicitTasks.length > 0 || pendingPreview) {
+        throw new Error('Wait for current board lighting to finish.');
+      }
+      if (testCase.lightCount > options.definition.placements.length) {
+        throw new RangeError(
+          `This board has only ${options.definition.placements.length} placements.`,
+        );
+      }
+      const actualApiLevel = apiLevelForAuroraDeviceName(
+        state.transport.status === 'connected' ? state.transport.device.name : null,
+      );
+      if (actualApiLevel !== testCase.apiLevel) {
+        throw new Error(`Connected board reports API level ${actualApiLevel}.`);
+      }
+      const abort = new AbortController();
+      diagnosticAbort = abort;
+      const trace: CapacityTraceEvent[] = [];
+      const startedAt = performance.now();
+      const event = (
+        stage: CapacityTraceEvent['stage'],
+        detail: Omit<CapacityTraceEvent, 'atMs' | 'stage'> = {},
+      ) => {
+        trace.push(Object.freeze({ atMs: performance.now() - startedAt, stage, ...detail }));
+      };
+      const onTransportEvent = (entry: CapacityTraceEvent) => {
+        trace.push(Object.freeze({ ...entry, atMs: entry.atMs - startedAt }));
+      };
+      const outcome: { status: CapacityCaseResult['status'] } = { status: 'completed' };
+      const deadlineMs = Math.min(60_000, Math.max(1_000, testCase.durationMs + 5_000));
+      const timeout = setTimeout(() => {
+        outcome.status = 'timeout';
+        event('timeout');
+        abort.abort();
+        options.transport.forceDisconnect();
+        event('disconnect');
+      }, deadlineMs);
+      try {
+        await diagnosticWrite([], -1, abort.signal, testCase, event, onTransportEvent);
+        event('clear');
+        const lights = options.definition.placements
+          .slice(0, testCase.lightCount)
+          .map((placement) => ({
+            ledPosition: placement.native.ledPosition,
+            color: 0xff,
+          }));
+        const periodMs = testCase.requestedFps === 0 ? 0 : 1000 / testCase.requestedFps;
+        const animationStartedAt = performance.now();
+        const endAt = animationStartedAt + (testCase.requestedFps === 0 ? 0 : testCase.durationMs);
+        let frameIndex = 0;
+        let alreadyScheduled = false;
+        do {
+          if (!alreadyScheduled) event('scheduled', { frameIndex });
+          alreadyScheduled = false;
+          event('rendered', { frameIndex });
+          await diagnosticWrite(
+            lights,
+            frameIndex,
+            abort.signal,
+            testCase,
+            event,
+            onTransportEvent,
+          );
+          frameIndex += 1;
+          if (periodMs > 0) {
+            let dueAt = animationStartedAt + frameIndex * periodMs;
+            while (dueAt <= performance.now() && dueAt < endAt) {
+              event('scheduled', { frameIndex });
+              alreadyScheduled = true;
+              frameIndex += 1;
+              dueAt = animationStartedAt + frameIndex * periodMs;
+            }
+            const waitMs = dueAt - performance.now();
+            if (waitMs > 0) await wait(waitMs, abort.signal);
+          }
+        } while (periodMs > 0 && performance.now() < endAt && !abort.signal.aborted);
+        if (abort.signal.aborted && outcome.status !== 'timeout') outcome.status = 'cancelled';
+        if (state.transport.status === 'connected') {
+          await diagnosticWrite([], frameIndex, abort.signal, testCase, event, onTransportEvent);
+          event('clear');
+        }
+      } catch (error) {
+        if (outcome.status !== 'timeout') {
+          outcome.status = abort.signal.aborted ? 'cancelled' : 'error';
+          event(outcome.status === 'cancelled' ? 'cancelled' : 'error', {
+            errorCode: sanitizeErrorCode(error),
+          });
+        }
+      } finally {
+        clearTimeout(timeout);
+        if (
+          state.transport.status === 'connected' &&
+          trace.filter(({ stage }) => stage === 'clear').length < 2
+        ) {
+          const recovery = new AbortController();
+          try {
+            await diagnosticWrite(
+              [],
+              Number.MAX_SAFE_INTEGER,
+              recovery.signal,
+              testCase,
+              event,
+              onTransportEvent,
+            );
+            event('clear');
+          } catch {
+            options.transport.forceDisconnect();
+            event('disconnect');
+          }
+        }
+        diagnosticAbort = null;
+      }
+      return Object.freeze({
+        status: outcome.status,
+        trace: Object.freeze(trace),
+        summary: summarizeCapacityTrace(trace, testCase.requestedFps),
+      });
+    },
+    stopCapacityCase() {
+      diagnosticAbort?.abort();
+    },
   };
+
+  async function diagnosticWrite(
+    lights: readonly ApiLevel3Light[],
+    frameIndex: number,
+    signal: AbortSignal,
+    testCase: CapacityCase,
+    event: (
+      stage: CapacityTraceEvent['stage'],
+      detail?: Omit<CapacityTraceEvent, 'atMs' | 'stage'>,
+    ) => void,
+    onEvent: (event: CapacityTraceEvent) => void,
+  ) {
+    const chunks =
+      testCase.apiLevel === 3 ? encodeApiLevel3Scene(lights) : encodeApiLevel2Scene(lights);
+    event('batch-queued', { frameIndex });
+    await Promise.race([
+      options.transport.writeBatch(chunks, {
+        interChunkDelayMs: testCase.interChunkDelayMs,
+        signal,
+        onEvent,
+        frameIndex,
+      }),
+      rejectOnAbort(signal),
+    ]);
+  }
+}
+
+function wait(durationMs: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, durationMs);
+    signal.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        reject(new DOMException('Diagnostic cancelled', 'AbortError'));
+      },
+      { once: true },
+    );
+  });
+}
+
+function rejectOnAbort(signal: AbortSignal): Promise<never> {
+  return new Promise((_, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException('Diagnostic cancelled', 'AbortError'));
+      return;
+    }
+    signal.addEventListener(
+      'abort',
+      () => reject(new DOMException('Diagnostic cancelled', 'AbortError')),
+      { once: true },
+    );
+  });
+}
+
+function sanitizeErrorCode(error: unknown): string {
+  if (error instanceof BoardTransportError) return error.code;
+  if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled';
+  return 'unknown';
 }
 
 function freezeState(

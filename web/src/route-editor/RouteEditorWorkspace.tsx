@@ -14,6 +14,7 @@ import { useEditorLighting } from './use-editor-lighting';
 import { useAnimationClock } from '../light-effects/use-animation-clock';
 import { renderAnimationFrame } from '../light-effects/frame';
 import './RouteEditorWorkspace.css';
+import { BoardCapacityDiagnostics } from '../board-control/BoardCapacityDiagnostics';
 
 export function RouteEditorWorkspace({
   definition,
@@ -200,6 +201,10 @@ export function RouteEditorWorkspace({
             selectedId={selectedEffectId}
             onSelectedIdChange={setSelectedEffectId}
             dispatch={dispatch}
+          />
+          <BoardCapacityDiagnostics
+            controller={controller}
+            maxLights={definition.placements.length}
           />
         </aside>
         <section className="route-editor__board" aria-labelledby={boardHeading}>
