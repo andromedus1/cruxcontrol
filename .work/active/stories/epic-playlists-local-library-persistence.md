@@ -1,7 +1,7 @@
 ---
 id: epic-playlists-local-library-persistence
 kind: story
-stage: implementing
+stage: done
 tags: [ui, data]
 parent: epic-playlists-local-library
 depends_on: []
@@ -22,3 +22,22 @@ contract and adapter tests.
 ## Implementation
 
 See the parent feature's Unit 1 and acceptance criteria.
+
+## Implementation notes
+
+- Execution capability: GPT-5.6 Sol at xhigh reasoning, selected by the caller for
+  the new persistence and runtime scope; direct-read implementation kept one owner
+  across the feature checkpoints.
+- Review weight: standard (caller and project convention).
+- Files changed: new `web/src/playlists/` domain types, strict codec, typed errors,
+  repository port, native IndexedDB adapter/opening lifecycle, public exports, and
+  focused fixtures/tests.
+- Tests added/removed: added 18 codec, repository, and database-open tests protecting
+  local/provider reference order, corruption paths, duplicate rejection, stable
+  identity, optimistic revisions, timestamp-tie ordering, reopen persistence, and
+  retryable storage failures; removed none.
+- Simplification: reused the established native IndexedDB port/adapter shape while
+  keeping playlist storage in one independent database and omitting climb-store joins
+  from persistence.
+- Discrepancies from design: none.
+- Adjacent issues parked: none.
