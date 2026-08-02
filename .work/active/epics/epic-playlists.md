@@ -1,7 +1,7 @@
 ---
 id: epic-playlists
 kind: epic
-stage: implementing
+stage: review
 tags: [ui]
 parent: null
 depends_on: [epic-climb-browser, epic-route-creation-climb-lifecycle]
@@ -114,3 +114,20 @@ parallel without duplicating persistence.
   must retain a downloadable/importable file fallback rather than silently truncating.
 - Provider-backed references remain a typed future branch until catalog installation
   ships; local-list usefulness must not depend on that deferred work.
+
+## Implementation aggregate
+
+- `epic-playlists-local-library` is done and independently reviewed: browser-local list
+  CRUD, notes, multiple membership, manual ordering, Trash-safe resolution, and compact
+  management UI.
+- `epic-playlists-play-through` is done and independently reviewed: exact-order offline
+  browsing, unavailable-entry truth, ephemeral position, and explicit-only serialized
+  board lighting.
+- `epic-playlists-portable-sharing` is done and independently reviewed: bounded strict
+  URL/file payloads, immutable local snapshots, fresh-ID imports, provider references,
+  compensation, and responsive Share/Import dialogs.
+- Integrated evidence at the final child boundary: 58 files / 362 Vitest tests passed;
+  typecheck, lint, production PWA build, and all four Chromium journeys passed. The root
+  independently reproduced the full unit and Chromium suites.
+- Accepted non-blocking review follow-ups are parked separately; no child has an open
+  correctness, persistence, BLE-safety, or privacy finding.
