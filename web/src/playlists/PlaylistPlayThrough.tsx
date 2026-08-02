@@ -1,0 +1,151 @@
+import { useEffect, useState } from 'react';
+import type { BoardLightController } from '../board-control/light-controller.ts';
+import { ClimbDetail } from '../climb-browser/ClimbDetail.tsx';
+import type { BoardDefinition } from '../domain/boards/definition.ts';
+import type { ResolvedPlaylistEntry } from './resolve.ts';
+import type { LocalPlaylist, PlaylistId } from './types.ts';
+import '../climb-browser/LocalClimbViewer.css';
+import './playlists.css';
+
+export interface PlaylistPlayThroughProps {
+  readonly playlist: LocalPlaylist;
+  readonly entries: readonly ResolvedPlaylistEntry[];
+  readonly definition: BoardDefinition;
+  readonly controller?: BoardLightController | null;
+  readonly compatibilityIssue: (entry: ResolvedPlaylistEntry) => string | null;
+  readonly onExit: () => void;
+}
+
+interface PlayThroughPosition {
+  readonly playlistId: PlaylistId;
+  readonly key: string | null;
+  readonly index: number;
+}
+
+function entryLabel(entry: ResolvedPlaylistEntry): string {
+  const name = entry.climb?.name.trim();
+  if (name) return name;
+  if (entry.reference.kind === 'local') return `Missing local climb ${entry.reference.id}`;
+  return `${entry.reference.id.provider} climb ${entry.reference.id.sourceId}`;
+}
+
+function unavailableReason(entry: ResolvedPlaylistEntry, issue: string | null): string {
+  if (entry.availability === 'trashed') {
+    return 'This climb is in Trash. Restore it before viewing or lighting it.';
+  }
+  if (entry.availability === 'missing') {
+    return entry.reference.kind === 'local'
+      ? 'This local climb is missing. Its list position is preserved until you remove it.'
+      : 'This provider climb is not installed or could not be resolved on this device.';
+  }
+  return issue ? `This climb ${issue}.` : 'This climb is unavailable on the active board.';
+}
+
+export function PlaylistPlayThrough({
+  playlist,
+  entries,
+  definition,
+  controller,
+  compatibilityIssue,
+  onExit,
+}: PlaylistPlayThroughProps) {
+  const [position, setPosition] = useState<PlayThroughPosition>(() => ({
+    playlistId: playlist.id,
+    key: entries[0]?.key ?? null,
+    index: 0,
+  }));
+
+  const playlistChanged = position.playlistId !== playlist.id;
+  const keyedIndex = playlistChanged ? -1 : entries.findIndex(({ key }) => key === position.key);
+  const currentIndex =
+    entries.length === 0
+      ? -1
+      : playlistChanged
+        ? 0
+        : keyedIndex >= 0
+          ? keyedIndex
+          : Math.min(position.index, entries.length - 1);
+  const current = currentIndex >= 0 ? (entries[currentIndex] ?? null) : null;
+
+  useEffect(() => {
+    const key = current?.key ?? null;
+    if (
+      position.playlistId !== playlist.id ||
+      position.key !== key ||
+      position.index !== Math.max(currentIndex, 0)
+    ) {
+      setPosition({ playlistId: playlist.id, key, index: Math.max(currentIndex, 0) });
+    }
+  }, [current?.key, currentIndex, playlist.id, position]);
+
+  const move = (index: number) => {
+    const entry = entries[index];
+    if (!entry) return;
+    setPosition({ playlistId: playlist.id, key: entry.key, index });
+  };
+
+  const issue = current?.availability === 'available' ? compatibilityIssue(current) : null;
+  const available = Boolean(current?.climb && current.availability === 'available' && !issue);
+  const headingId = `playlist-play-through-${playlist.id}`;
+
+  return (
+    <section className="playlist-play-through" aria-labelledby={headingId}>
+      <header className="playlist-play-through__header">
+        <div>
+          <p className="eyebrow">Playing list</p>
+          <h1 id={headingId}>{playlist.name}</h1>
+        </div>
+        <button className="button button--secondary" type="button" onClick={onExit}>
+          Exit play-through
+        </button>
+      </header>
+      {current ? (
+        <>
+          <nav className="playlist-play-through__navigation" aria-label="Playlist navigation">
+            <p role="status" aria-live="polite" aria-atomic="true">
+              {currentIndex + 1} of {entries.length}
+            </p>
+            <button
+              className="button button--secondary"
+              type="button"
+              disabled={currentIndex === 0}
+              onClick={() => move(currentIndex - 1)}
+            >
+              Previous
+            </button>
+            <button
+              className="button button--secondary"
+              type="button"
+              disabled={currentIndex === entries.length - 1}
+              onClick={() => move(currentIndex + 1)}
+            >
+              Next
+            </button>
+          </nav>
+          {available && current.climb ? (
+            <div className="playlist-play-through__climb" key={current.key}>
+              <ClimbDetail
+                definition={definition}
+                climb={current.climb}
+                controller={controller}
+                headingLevel={2}
+              />
+            </div>
+          ) : (
+            <article className="playlist-play-through__unavailable" key={current.key}>
+              <p className="eyebrow">Unavailable climb</p>
+              <h2>{entryLabel(current)}</h2>
+              <p className="playlist-play-through__reference">Reference: {current.key}</p>
+              <p>{unavailableReason(current, issue)}</p>
+            </article>
+          )}
+        </>
+      ) : (
+        <div className="playlist-play-through__unavailable">
+          <h2>This list is empty</h2>
+          <p>Exit play-through to add a climb.</p>
+        </div>
+      )}
+    </section>
+  );
+}

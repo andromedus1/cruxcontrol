@@ -1,7 +1,7 @@
 ---
 id: epic-playlists-play-through
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: epic-playlists
 depends_on: [epic-playlists-local-library, epic-board-control]
@@ -187,3 +187,48 @@ over stable repository and controller ports.
 - **Hardware verification**: CI proves controller calls through the mock port. Final physical
   confirmation remains a proportional smoke test on the home Fullride, not a reason to bypass
   the automated contract.
+
+## Implementation notes
+
+- Execution capability: GPT-5.6 Sol at xhigh reasoning, selected by the caller because
+  the feature integrates exact-order resolver truth, responsive Android UI, and the
+  serialized BLE controller boundary. Direct reading was sufficient for the cohesive
+  implementation surface; no exploratory delegation was needed.
+- Review weight: standard (caller and project convention); implementation stops at
+  feature `stage: review` for the root agent's independent pass.
+- Files changed: new `web/src/playlists/PlaylistPlayThrough.tsx` and focused tests;
+  playlist-library composition/tests/CSS/export; workspace controller/definition wiring;
+  the production Chromium journey; current-state `docs/SPEC.md` and
+  `docs/ARCHITECTURE.md` assertions.
+- Tests added/removed: added four component tests for exact-order unavailable traversal,
+  explicit current-climb lighting, stable-key reorder/removal reconciliation, and
+  incompatible-board suppression; extended the library test for empty gating and
+  write-free entry/switch/exit behavior; extended the Chromium journey with compact
+  play-through, overflow, immutable-storage, and ephemeral reload assertions. Removed none.
+- Test integrity: observable headings, status text, button states, controller calls,
+  repository calls, IndexedDB records, and viewport geometry are asserted. No tests were
+  skipped, weakened, deleted, or made implementation-conditional.
+- Simplification: play-through owns only one `{playlistId, key, index}` cursor and derives
+  each render from current resolver props. It adds no repository, session aggregate,
+  storage field, Bluetooth queue, preview path, or duplicated climb renderer/controller.
+- Discrepancies from design: none. The compact active mode hides the list selector to keep
+  list identity, position, navigation, board status, and Light action in the phone viewport;
+  Exit restores management, while the wide selector remains available and switching exits.
+- Adjacent issues parked: none.
+
+## Integrated verification
+
+- `npm test` — 49 files and 309 tests passed.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm run build` — TypeScript and Vite production/PWA build passed.
+- `npx playwright test` — all 3 Chromium journeys passed, including a 390×844
+  two-climb play-through with no horizontal overflow, unchanged playlist membership/order,
+  no persisted position/session field, and first-entry reset after reload.
+- Acceptance walk-through: first persisted entry (including unavailable) starts at 1 of N;
+  Previous/Next visit every Trash, missing-local, unresolved-provider, incompatible, and
+  available row in order with truthful boundaries and announcements; stable keys survive
+  reorder and bounded-index fallback handles removal; available rows reuse `ClimbDetail`,
+  disconnected browsing remains complete, and only explicit Connect/Light actions touch the
+  controller. Empty lists cannot enter, exit/switch restores management, and no play-through
+  action changes playlist or climb data.

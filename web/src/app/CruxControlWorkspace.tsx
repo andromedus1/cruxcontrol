@@ -367,6 +367,8 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
           playlists={playlists}
           localClimbs={drafts}
           repository={runtime.playlists}
+          definition={runtime.installation.definition}
+          controller={runtime.controller}
           compatibilityIssue={(draft) => draftCompatibilityIssue(draft, runtime)}
           onChanged={(playlist) => {
             if (playlist) replacePlaylist(playlist);

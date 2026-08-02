@@ -25,7 +25,9 @@
 .playlist-selector h1,
 .playlist-selector h2,
 .playlist-entries h2,
-.playlist-membership-dialog h2 {
+.playlist-membership-dialog h2,
+.playlist-play-through h1,
+.playlist-play-through h2 {
   margin: 0;
 }
 
@@ -276,6 +278,83 @@
   outline-offset: 2px;
 }
 
+.playlist-play-through {
+  min-width: 0;
+  max-width: 64rem;
+  margin-inline: auto;
+}
+
+.playlist-play-through__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.playlist-play-through__header > div {
+  min-width: 0;
+}
+
+.playlist-play-through__header h1 {
+  overflow-wrap: anywhere;
+}
+
+.playlist-play-through__header .button {
+  flex: none;
+}
+
+.playlist-play-through__navigation {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-bg-primary) 94%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.playlist-play-through__navigation p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font: var(--font-weight-semibold) var(--font-size-sm)/1.4 var(--font-mono);
+  text-align: center;
+}
+
+.playlist-play-through__navigation .button {
+  width: 100%;
+}
+
+.playlist-play-through__climb,
+.playlist-play-through__unavailable {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+  overflow: clip;
+}
+
+.playlist-play-through__unavailable {
+  padding: var(--space-5);
+}
+
+.playlist-play-through__unavailable > p:last-child {
+  margin-bottom: 0;
+  color: var(--color-text-secondary);
+}
+
+.playlist-play-through__reference {
+  overflow-wrap: anywhere;
+  color: var(--color-text-secondary);
+  font: var(--font-size-xs)/1.5 var(--font-mono);
+}
+
 @media (min-width: 900px) {
   .playlist-library {
     grid-template-columns: minmax(18rem, 32%) 1fr;
@@ -296,5 +375,26 @@
 
   .playlist-entry-actions {
     justify-content: flex-end;
+  }
+}
+
+@media (max-width: 899px) {
+  .playlist-library--playing .playlist-selector {
+    display: none;
+  }
+
+  .playlist-library--playing .playlist-editor {
+    padding: var(--space-3);
+  }
+}
+
+@media (max-width: 420px) {
+  .playlist-play-through__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .playlist-play-through__header .button {
+    width: 100%;
   }
 }

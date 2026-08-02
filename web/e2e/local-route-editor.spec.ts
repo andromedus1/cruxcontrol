@@ -188,4 +188,33 @@ test('persists multi-list membership, manual order, and Trash-safe resolution', 
     (value) => value.name === 'Projects',
   );
   expect(projectsAfterRestore!.entries).toEqual(referencesBeforeTrash);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Play list' }).click();
+  await expect(page.getByText('1 of 2')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Moon Arete' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Light this climb' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('2 of 2')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tidal Wave' })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
+
+  const [projectsDuringPlay] = (await readStoredPlaylists(page)).filter(
+    (value) => value.name === 'Projects',
+  );
+  expect(projectsDuringPlay!.entries).toEqual(referencesBeforeTrash);
+  expect(
+    Object.keys(projectsDuringPlay!).some((key) => /position|session|playing|current/i.test(key)),
+  ).toBe(false);
+
+  await page.reload();
+  await page.getByRole('button', { name: /Lists.*2 lists/ }).click();
+  await page.getByRole('button', { name: /Projects.*2 climbs/ }).click();
+  await page.getByRole('button', { name: 'Play list' }).click();
+  await expect(page.getByText('1 of 2')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Moon Arete' })).toBeVisible();
 });

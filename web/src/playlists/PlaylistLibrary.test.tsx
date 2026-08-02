@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { draftRevision, localDraftId } from '../drafts/codec.ts';
 import { draftContent } from '../drafts/test-fixtures.ts';
 import type { LocalClimbDraft } from '../drafts/types.ts';
+import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
 import { playlistId, playlistRevision } from './codec.ts';
 import { PlaylistLibrary } from './PlaylistLibrary.tsx';
 import type { LocalPlaylistRepository } from './repository.ts';
@@ -74,6 +75,7 @@ function renderLibrary(initial: readonly LocalPlaylist[], localClimbs: readonly 
         playlists={playlists}
         localClimbs={localClimbs}
         repository={repository}
+        definition={definition}
         compatibilityIssue={() => null}
         onChanged={(playlist) => {
           if (playlist)
@@ -176,5 +178,43 @@ describe('PlaylistLibrary', () => {
     expect(repository.list).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Retry save list' }));
     await waitFor(() => expect(repository.update).toHaveBeenCalledTimes(2));
+  });
+
+  it('disables empty play-through and enters, navigates, switches, and exits without writes', async () => {
+    const active = climb(ACTIVE_ID, 'Active climb');
+    const trashed = climb(TRASHED_ID, 'Trashed climb', true);
+    const empty = storedPlaylist(
+      { name: 'Empty list', notes: '', entries: [] },
+      1,
+      '00000000-0000-4000-8000-000000000062',
+    );
+    const mixed = storedPlaylist({
+      name: 'Mixed list',
+      notes: 'Keep the order.',
+      entries: [
+        { kind: 'local', id: ACTIVE_ID },
+        { kind: 'local', id: TRASHED_ID },
+      ],
+    });
+    const { repository } = renderLibrary([mixed, empty], [active, trashed]);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Play list' }));
+    expect(screen.getByText('1 of 2')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Active climb' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('2 of 2')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Trashed climb' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Empty list.*0 climbs/ }));
+    expect(screen.getByLabelText('List name')).toHaveValue('Empty list');
+    expect(screen.getByRole('button', { name: 'Play list' })).toBeDisabled();
+    expect(repository.update).not.toHaveBeenCalled();
+    expect(repository.delete).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /Mixed list.*2 climbs/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Play list' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Exit play-through' }));
+    expect(screen.getByLabelText('List name')).toHaveValue('Mixed list');
+    expect(screen.getByLabelText('Notes')).toHaveValue('Keep the order.');
   });
 });

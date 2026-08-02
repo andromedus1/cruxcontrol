@@ -175,7 +175,9 @@ The model mirrors the official Kilter SQLite schema (see
   incompatibility is surfaced while retaining the stored record unchanged.
 - Flexible lists are authoritative in a separate versioned native IndexedDB database.
   Their ordered references survive reload, allow one climb in multiple lists, and
-  resolve Trash or missing climbs without rewriting membership rows.
+  resolve Trash or missing climbs without rewriting membership rows. Exact-order
+  play-through keeps navigation position ephemeral, remains browsable while
+  disconnected, and lights only through the existing explicit controller action.
 - The editor is responsive at Android-phone and desktop Chromium widths, retains
   persistent save/light actions, and exposes named keyboard-operable controls and
   non-color-only role markers.
@@ -183,7 +185,8 @@ The model mirrors the official Kilter SQLite schema (see
   persistence/concurrency/recovery,
   API-level-3 bytes, Bluetooth lifecycle, lighting/preview, and the integrated
   create-save-light seams. Playwright Chromium covers autosave/reload/reopen,
-  multi-list membership/order, Trash/restore resolution, and compact/wide interaction.
+  multi-list membership/order, Trash/restore resolution, ephemeral play-through, and
+  compact/wide interaction.
 - Physical behavior on a powered Fullride 7x10 through Android Chrome remains a
   pending manual acceptance checkpoint; automated approval does not claim it passed.
 

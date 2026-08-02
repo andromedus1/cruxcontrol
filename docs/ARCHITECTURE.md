@@ -69,11 +69,13 @@ feature item bodies in `.work/`, not here. Capabilities are in
    adapters own future source-native encoding and optional publication.
 8. **Logbook & Sessions** — local store of ascents/attempts/sessions with
    analytics; optional push to the Kilter API via the Sync Engine.
-9. **Playlists** — an implemented separate native IndexedDB repository and responsive
-   management surface for named, annotated, manually ordered local/provider climb
-   references. Runtime resolution preserves unavailable Trash, missing, or
-   incompatible-board entries without cross-database writes. Shareable-URL routing
-   and board play-through build on this local aggregate later. A CruxControl-local
+9. **Playlists** — an implemented separate native IndexedDB repository, responsive
+   management surface, and exact-order board play-through for named, annotated,
+   manually ordered local/provider climb references. Runtime resolution preserves
+   unavailable Trash, missing, or incompatible-board entries without cross-database
+   writes. Play-through keeps position ephemeral and delegates preview, connection,
+   and explicit serialized lighting to the existing climb-detail/controller boundary;
+   shareable-URL routing builds on the local aggregate later. A CruxControl-local
    construct (no Kilter counterpart).
 10. **ML Pipeline** — offline (Python): feature extraction from the catalog →
     training dataset → grade-prediction model. Exports a model for in-browser
@@ -102,6 +104,7 @@ Editor ──▶ Local climb repository ──▶ native IndexedDB
 
 Lists ──▶ Local playlist repository ──▶ separate native IndexedDB
   └──▶ read-time climb resolver ──▶ available / Trash / missing entry view
+                                   └──▶ ephemeral play-through ──▶ Renderer / controller
 ```
 
 Local climb reads and writes are fully offline. Installed catalog reads are likewise

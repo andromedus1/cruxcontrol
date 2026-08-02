@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import type { BoardLightController } from '../board-control/light-controller.ts';
 import type { LocalClimbDraft, LocalDraftId } from '../drafts/types.ts';
+import type { BoardDefinition } from '../domain/boards/definition.ts';
 import { playlistReferenceKey } from './codec.ts';
+import { PlaylistPlayThrough } from './PlaylistPlayThrough.tsx';
 import type { LocalPlaylistRepository } from './repository.ts';
 import { resolvePlaylistEntries, type ResolvedPlaylistEntry } from './resolve.ts';
 import type { LocalPlaylist, PlaylistId } from './types.ts';
@@ -16,6 +19,8 @@ export interface PlaylistLibraryProps {
   readonly playlists: readonly LocalPlaylist[];
   readonly localClimbs: readonly LocalClimbDraft[];
   readonly repository: LocalPlaylistRepository;
+  readonly definition: BoardDefinition;
+  readonly controller?: BoardLightController | null;
   readonly compatibilityIssue: (draft: LocalClimbDraft) => string | null;
   readonly onChanged: (playlist: LocalPlaylist | null) => void;
   readonly onRefresh: () => Promise<void>;
@@ -33,6 +38,8 @@ export function PlaylistLibrary({
   playlists,
   localClimbs,
   repository,
+  definition,
+  controller,
   compatibilityIssue,
   onChanged,
   onRefresh,
@@ -43,6 +50,7 @@ export function PlaylistLibrary({
   const [newName, setNewName] = useState('');
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
+  const [playingId, setPlayingId] = useState<PlaylistId | null>(null);
   const [status, setStatus] = useState('');
   const [error, setError] = useState<RetryState | null>(null);
   playlistsRef.current = playlists;
@@ -58,6 +66,11 @@ export function PlaylistLibrary({
     setNotes(selected?.notes ?? '');
     setStatus('');
   }, [selected?.id, selected?.name, selected?.notes]);
+  useEffect(() => {
+    if (playingId && (!selected || selected.id !== playingId || selected.entries.length === 0)) {
+      setPlayingId(null);
+    }
+  }, [playingId, selected]);
 
   async function refreshTruth() {
     try {
@@ -171,9 +184,18 @@ export function PlaylistLibrary({
 
   const resolved = selected ? resolvePlaylistEntries(selected, localClimbs) : [];
   const localById = new Map(localClimbs.map((climb) => [climb.id, climb]));
+  const resolvedCompatibilityIssue = (entry: ResolvedPlaylistEntry) => {
+    if (entry.availability !== 'available' || entry.reference.kind !== 'local') return null;
+    const local = localById.get(entry.reference.id);
+    return local ? compatibilityIssue(local) : null;
+  };
+  const playing = Boolean(selected && selected.id === playingId && resolved.length > 0);
 
   return (
-    <section className="playlist-library" aria-labelledby="playlist-library-heading">
+    <section
+      className={`playlist-library${playing ? ' playlist-library--playing' : ''}`}
+      aria-labelledby="playlist-library-heading"
+    >
       <aside className="playlist-selector">
         <header>
           <div>
@@ -214,7 +236,10 @@ export function PlaylistLibrary({
                 <button
                   type="button"
                   aria-current={selected?.id === playlist.id ? 'true' : undefined}
-                  onClick={() => setSelectedId(playlist.id)}
+                  onClick={() => {
+                    setPlayingId(null);
+                    setSelectedId(playlist.id);
+                  }}
                 >
                   <strong>{playlist.name}</strong>
                   <span>
@@ -235,7 +260,16 @@ export function PlaylistLibrary({
             </button>
           </div>
         )}
-        {selected ? (
+        {selected && playing ? (
+          <PlaylistPlayThrough
+            playlist={selected}
+            entries={resolved}
+            definition={definition}
+            controller={controller}
+            compatibilityIssue={resolvedCompatibilityIssue}
+            onExit={() => setPlayingId(null)}
+          />
+        ) : selected ? (
           <>
             <form
               className="playlist-metadata"
@@ -263,6 +297,14 @@ export function PlaylistLibrary({
                 </span>
                 <button className="button button--secondary" type="submit">
                   Save changes
+                </button>
+                <button
+                  className="button button--primary"
+                  type="button"
+                  disabled={resolved.length === 0}
+                  onClick={() => setPlayingId(selected.id)}
+                >
+                  Play list
                 </button>
                 <button
                   className="button button--destructive"
