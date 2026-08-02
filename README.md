@@ -70,9 +70,9 @@ Requires Node ≥ 20 (see `.nvmrc`). Run scripts from the repo root with
 - **Immutable Fullride board domain** — a reproducible catalog projection generates
   the validated Fullride 7x10 definition: 305 controllable placements, geometry,
   source identities, LED positions, supported angles, and semantic role presets.
-- **Original SVG renderer** — definition-driven hold artwork, role shapes, custom
-  colors, pan/scale behavior, and roving keyboard interaction are shared by the climb
-  viewer and route editor.
+- **Independently authored schematic SVG renderer** — definition-driven hold artwork,
+  role shapes, custom colors, pan/scale behavior, and roving keyboard interaction are
+  shared by the climb viewer and route editor.
 - **Local drafts and editor** — unrestricted, schema-versioned drafts live in a
   dedicated native IndexedDB store with optimistic revisions. The responsive editor
   supports semantic roles, all 256 packed 3/3/2-bit colors, coalesced autosave,
@@ -100,11 +100,12 @@ Workers-over-Pages is in [.research/briefs/cloudflare-deploy/parent.md](.researc
 ### Status
 
 The **Fullride local create-save-light milestone is implemented**. The application now
-composes the generated 305-placement board definition, original SVG renderer, local
-climb viewer, unrestricted IndexedDB draft library, responsive route editor, and
-API-level-3 Web Bluetooth controller. The automated snapshot is green across 218
-Vitest tests, strict typecheck, lint, production build, and two Chromium end-to-end
-smokes covering autosave/reload/reopen and phone/desktop interaction.
+composes the generated 305-placement board definition, independently authored
+schematic SVG renderer, local climb viewer, unrestricted IndexedDB draft library,
+responsive route editor, and API-level-3 Web Bluetooth controller. The automated
+snapshot is green across 218 Vitest tests, strict typecheck, lint, production build,
+and two Chromium end-to-end smokes covering autosave/reload/reopen and phone/desktop
+interaction.
 
 Automated tests validate protocol bytes and the controller lifecycle through fakes;
 they do **not** prove behavior on a powered board. Fullride 7x10 + Android Chrome

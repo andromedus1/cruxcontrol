@@ -44,8 +44,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Connect to the active board through a capability-selected controller adapter.
 - The first adapter controls the Kilter Fullride 7x10 via Web Bluetooth.
 - Light up holds for any selected climb using the Nordic UART protocol (API level 3).
-- Support the full color role system: Start (green), Middle (cyan), Finish
-  (magenta), Foot-only (orange), plus all 256 packed 3/3/2-bit hardware colors.
+- Support the four user-facing Kilter role colors: Start (green), Middle (blue),
+  Finish (red/pink), and Foot-only (gold/yellow), plus all 256 packed 3/3/2-bit
+  hardware colors. Provider/source protocol RGB values remain preserved separately.
 - Handle framing, checksums, 16-bit LED positions, multi-packet scenes, and bounded
   20-byte writes for climbs with many holds.
 - Keep connection, reconnect, disconnect, light, clear, and latest-frame-wins preview
@@ -57,8 +58,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Filtering: grade range, angle, quality, ascent count, setter, hold count,
   grade-consensus accuracy.
 - Shareable URLs for individual climbs (a major gap in the official app).
-- Visual 2D board renderer showing original SVG hold artwork, positions, semantic role
-  shapes, and custom colors with pointer and roving-keyboard interaction.
+- Visual 2D board renderer showing independently authored schematic SVG hold artwork,
+  positions, semantic role shapes, and custom colors with pointer and roving-keyboard
+  interaction.
 - The generated immutable Fullride 7x10 definition contains 305 controllable Mainline
   and Auxiliary placements. Renderers consume its geometry and identities rather than
   hard-coded vendor coordinates.
@@ -160,8 +162,9 @@ The model mirrors the official Kilter SQLite schema (see
 ## Current Fullride Local Milestone
 
 - The application composes one configured Fullride 7x10 installation with the
-  generated 305-placement definition, the original SVG renderer, local draft list and
-  detail surfaces, route editor, and Web Bluetooth controller.
+  generated 305-placement definition, the independently authored schematic SVG
+  renderer, local draft list and detail surfaces, route editor, and Web Bluetooth
+  controller.
 - Drafts are authoritative in a dedicated native IndexedDB database and survive
   reload/reopen. Definition/layout/angle/placement incompatibility is surfaced while
   retaining the stored record unchanged.
@@ -204,6 +207,7 @@ The model mirrors the official Kilter SQLite schema (see
 - **Provider policy.** Acquisition uses public or user-authorized sources and does
   not bypass access controls. Import capability and redistribution are separate
   decisions recorded per provider.
-- **Mobile capability.** Responsive browsing/editing/logging works on modern phones.
-  Direct BLE control requires Web Bluetooth (Android Chromium) or a future native
-  iOS CoreBluetooth bridge; unsupported transports degrade explicitly to browse-only.
+- **Mobile capability.** Responsive local browsing and editing work on modern phones;
+  logging must do the same when its future milestone ships. Direct BLE control
+  requires Web Bluetooth (Android Chromium) or a future native iOS CoreBluetooth
+  bridge; unsupported transports degrade explicitly to browse-only.

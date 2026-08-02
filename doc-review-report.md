@@ -6,10 +6,11 @@
 
 **Documents reviewed:** 5 system planning documents; 0 module planning sets
 
-**Passes run:** 2 full system passes (initial audit + fresh exit-gate audit)
+**Passes run:** 3 full system passes (initial audit, exit-gate audit, and follow-up
+remediation audit)
 **Initial issues:** 0 Critical / 2 High / 2 Medium / 3 Low / 2 Info
 
-**Final issues:** 0 Critical / 0 High / 3 Medium / 4 Low / 3 Info
+**Final issues:** 0 Critical / 0 High / 0 Medium / 3 Low / 4 Info
 
 ## Initial System-Level Pass
 
@@ -44,7 +45,7 @@ but a live hosted deployment has not been verified.
 **Fix:** Describe the app as built for static hosted distribution and reserve “live”
 or “ships” claims for deployment acceptance evidence.
 
-### Medium (3)
+### Medium (3, resolved in follow-up)
 
 #### User-facing Kilter role terminology is stale
 
@@ -57,6 +58,9 @@ still be described separately as cyan and amber/orange.
 
 **Suggested fix:** Separate user-facing semantic labels from source protocol RGB.
 
+**Resolution:** `SPEC.md` now uses green, blue, red/pink, and gold/yellow for the
+user-facing roles while preserving provider/source protocol RGB separately.
+
 #### Architecture implies a currently active Kilter sync connection
 
 **File:** `docs/ARCHITECTURE.md`.
@@ -66,6 +70,9 @@ though the sync adapter is future work and `epic-catalog-sync` remains drafting.
 
 **Suggested fix:** Say a future provider adapter may connect to that API; retain BLE
 as the current external connection.
+
+**Resolution:** `ARCHITECTURE.md` now distinguishes configured-but-unverified static
+hosting, the current BLE edge, and the future Kilter provider adapter.
 
 #### Mobile constraint includes unimplemented logging
 
@@ -78,7 +85,10 @@ epic.
 **Suggested fix:** Describe current browsing/editing separately and state that logging
 must be responsive when its milestone ships.
 
-### Low (4)
+**Resolution:** `SPEC.md` now states that local browsing/editing are responsive today
+and makes responsive logging a requirement for its future milestone.
+
+### Low (4 initial/follow-up findings; 3 remain)
 
 1. `docs/VISION.md` frontmatter still describes friend distribution and shareable
    URLs more absolutely than the revised body. This records decision intent rather
@@ -86,10 +96,11 @@ must be responsive when its milestone ships.
 2. `docs/briefs/data-model.md` is a brief without `research_method` frontmatter.
 3. `docs/briefs/hardware-and-protocol.md` is a brief without `research_method`
    frontmatter.
-4. “Original SVG hold artwork” can be mistaken for vendor artwork. The renderer uses
-   independently authored schematic SVG archetypes; future wording should say so.
+4. “Original SVG hold artwork” could be mistaken for vendor artwork. This was resolved
+   in the follow-up by naming the renderer's independently authored schematic SVG
+   archetypes explicitly.
 
-### Info (3)
+### Info (4)
 
 1. No module-level planning documents were discovered. Code directories are modules,
    but their delivery designs correctly live in `.work/` rather than duplicate module
@@ -98,6 +109,9 @@ must be responsive when its milestone ships.
    `blocks_phase` brief exists on disk.
 3. The knowledge index contains 23 documents and matches the discovered corpus; all
    five planning documents have the index-required frontmatter.
+4. Canonical role terminology and source protocol RGB terminology are intentionally
+   separate: product docs use green/blue/red-pink/gold-yellow, while research primers
+   preserve exact provider/source values.
 
 ## Blocking Briefs Status
 
@@ -159,7 +173,12 @@ are also natural migration candidates.
   High findings in `VISION.md`, `SPEC.md`, and `DEPLOY.md`.
 - **Iteration 2 (fresh full exit-gate audit):** 0 Critical / 0 High / 3 Medium /
   4 Low / 3 Info.
+- **Follow-up remediation:** Corrected the three Medium findings and the concise SVG
+  provenance finding at the goal-closure checkpoint.
+- **Iteration 3 (fresh full follow-up audit):** 0 Critical / 0 High / 0 Medium /
+  3 Low / 4 Info.
 
 **Outcome: PASS.** The mechanical exit condition is satisfied by a freshly dispatched
-full audit returning zero Critical and zero High findings. Medium and Low findings
-remain intentionally unfixed for manual prioritization.
+full audit returning zero Critical, High, or Medium findings. The three remaining Low
+findings are optional VISION frontmatter phrasing and two legacy briefs without
+`research_method`; they remain for future corpus refresh rather than milestone closure.

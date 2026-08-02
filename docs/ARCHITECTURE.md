@@ -54,9 +54,10 @@ feature item bodies in `.work/`, not here. Capabilities are in
    bounded latest-frame-wins preview. A future iOS shell may supply CoreBluetooth
    behind the same port.
 5. **Board Renderer** — definition-driven geometry, role colors, and selection.
-   The shared original SVG renderer draws recognizable hold artwork, semantic shapes,
-   exact custom colors, and one accessible pointer/roving-keyboard surface from the
-   generated Fullride definition rather than renderer constants.
+   The shared, independently authored schematic SVG renderer draws recognizable hold
+   artwork, semantic shapes, exact custom colors, and one accessible
+   pointer/roving-keyboard surface from the generated Fullride definition rather than
+   renderer constants or vendor artwork.
 6. **Climb Browser** — the implemented source-neutral local list/detail surface drives
    the renderer and controller for browser-local drafts. Fast community-catalog
    filtering and shareable provider URLs remain downstream of catalog bootstrap.
@@ -118,12 +119,14 @@ browsing, editing, and logging remain testable without hardware or network.
   come from pipelines, not manual curation.
 - **Offline-first.** Every read works without network; sync is a background
   reconciliation, not a precondition.
-- **Static-first distribution.** The initial app is client-side and ships as a
-  static, installable PWA hosted on Cloudflare Workers (Static Assets). No application server, no
-  accounts, no shared database — each friend's client is fully independent with
-  browser-local storage. The only "backends" the client talks to are the Kilter sync
-  API (over the network) and the board (over BLE). A narrowly scoped service is
-  allowed later only for a provider or collaboration constraint demonstrated by research.
+- **Static-first distribution.** The initial app is a client-side, installable PWA
+  configured for future static hosting on Cloudflare Workers (Static Assets); live
+  deployment still requires operator setup and acceptance. There is no application
+  server, account system, or shared database, and each friend's client is independent
+  with browser-local storage. The current hardware edge is the board over BLE. A
+  future provider adapter may connect to the Kilter sync API, and a narrowly scoped
+  service is allowed later only for a provider or collaboration constraint
+  demonstrated by research.
 
 ## Key Dependencies
 
