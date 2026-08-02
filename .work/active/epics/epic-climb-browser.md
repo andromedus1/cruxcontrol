@@ -1,7 +1,7 @@
 ---
 id: epic-climb-browser
 kind: epic
-stage: review
+stage: done
 tags: [ui]
 parent: null
 depends_on: [epic-universal-board-platform]
@@ -122,3 +122,39 @@ and light a local climb and would pull catalog bootstrap into the critical path.
 
 Both direct child features are done, so this epic is ready for its separate aggregate
 review.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve
+
+**Blockers**: none
+
+**Important**: none
+
+**Nits**: none
+
+**Rejected**: none
+
+**Notes**: Aggregate substrate epic review at effective weight `standard`; exactly
+one balanced same-harness fresh-context pass ran, and no second independent pass ran.
+The pass reviewed the epic contract, both child-feature review records, locked hybrid
+and dedicated-detail mockups, app composition, the generated Fullride definition,
+renderer/viewer seams, installation compatibility, and the board-light controller
+contract without repeating child-feature line review. It traced one normalized local
+climb through controlled selection, the complete 305-hold definition-driven diagram,
+all four semantic roles plus arbitrary custom color, and the exact placement-addressed
+light-scene projection. It also confirmed that connection and light/clear actions stay
+explicit, persistent, stateful, and accessible; the source boundary performs no
+catalog, database, provider SQL, network, or Bluetooth work during render.
+
+Integrated verification passed `npm test` (27 files, 170 tests), `npm run typecheck`,
+`npm run lint`, and `npm run build`. A temporary local headless-Chrome fixture, removed
+before commit, exercised a selected six-assignment Fullride climb with all four roles
+and a custom color: the phone breakpoint produced one modal board-forward sheet with
+close and sticky light controls, while 1440px produced one wide split list/detail
+workspace with the same recognizable board and enabled explicit light action. Light
+and dark theme tokens, reduced-motion CSS, source-neutral empty/default composition,
+and foundation assertions were inspected. Persistence/migration, auth, external
+request, and community-catalog release lenses were inapplicable because this epic
+adds none of those boundaries; deferred catalog filtering and provider URLs remain
+future capability rather than a contradiction in the local create-save-light slice.
