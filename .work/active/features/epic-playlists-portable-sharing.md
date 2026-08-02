@@ -1,7 +1,7 @@
 ---
 id: epic-playlists-portable-sharing
 kind: feature
-stage: review
+stage: done
 tags: [ui, data]
 parent: epic-playlists
 depends_on: [epic-playlists-local-library]
@@ -310,7 +310,9 @@ offer retry without duplicating a successful prior attempt.
   preview/compatibility gate, fresh-record execution, and compensation data flow;
   `docs/SPEC.md` records the shipped URL/file, copy/reference, preview, and fresh-ID
   behavior plus browser coverage.
-- Adjacent issues parked: none.
+- Adjacent issues parked: `idea-share-domain-validation-invariants` and
+  `idea-native-share-cancel-status` capture the two worthwhile non-blocking follow-ups
+  from independent review.
 
 ## Implementation verification
 
@@ -324,3 +326,19 @@ offer retry without duplicating a successful prior attempt.
 - Post-child `npm -w web run test:e2e` — all 4 Chromium scenarios passed, including
   lifecycle, compact Android-sized interaction, list/play-through persistence, and the
   portable two-climb export/import/reload round trip.
+
+## Review
+
+- Review weight: standard; one independent Claude Opus pass reviewed commits `c4ec44d`,
+  `3be978c`, and `a57b8da` against this contract.
+- Verdict: ready. No blocking, high, or medium correctness findings. The reviewer
+  reproduced typecheck and all 58 focused sharing/integration tests; the root also
+  independently reproduced all 362 unit tests and four Chromium journeys.
+- Accepted follow-ups: share domain-validation bounds instead of duplicating them at
+  storage/portable boundaries, and treat native Web Share `AbortError` as neutral user
+  cancellation. Both are parked because current contracts and observable outcomes are
+  correct.
+- Adjudicated observations: synchronous object-URL revocation is proven in the supported
+  Android Chromium path (broader browser polish is deferred); live hash changes are not
+  part of the explicit startup-fragment contract; canonical timestamps and fail-closed
+  schema validation are intentional. No re-review is required under standard weight.
