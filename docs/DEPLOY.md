@@ -14,7 +14,7 @@ decisions:
 
 # Deploy
 
-CruxControl ships as a static SPA to **Cloudflare Workers (Static Assets)**. CI
+CruxControl is configured to deploy as a static SPA to **Cloudflare Workers (Static Assets)**. CI
 (`.github/workflows/ci.yml`) runs lint / typecheck / test / build on every PR and
 on push to `main`; the `deploy` job runs **only on push to `main`**, **only
 after the `web` CI lane is green** (`needs: [web]`), and **only once you opt in**

@@ -25,10 +25,10 @@ decisions:
 ## Vision
 
 CruxControl is a data-owning climbing-board app whose first complete target is a
-home Kilter Board Fullride 7x10. It provides the ordinary board-app loop—find or
-create a climb, light it, climb it, and save the result—through a fast,
-offline-first client, then extends that loop with grade prediction and personalized
-training.
+home Kilter Board Fullride 7x10. Its implemented first milestone creates, saves,
+reopens, and lights unrestricted browser-local climbs through a fast, offline-first
+client. Community-catalog browsing, logging results, sharing, grade prediction, and
+personalized training extend that wall-session loop in later milestones.
 
 The longer-term north star is one app for any supported Bluetooth climbing board,
 with each board community's climbs available through source-aware catalog adapters.
@@ -55,10 +55,11 @@ provider-independent contracts matter.
 ## Who It's For
 
 Andrew Clark — owner of a home Kilter Board Fullride 7x10 — and a small circle of
-**friends he distributes the app to**. Each user runs their own client against their
-own Kilter board, keeps their own local data, and shares climbs/playlists by URL.
-The design begins with this "distribute to friends" case: a hosted, installable
-PWA that any friend can open and use. It is not initially a commercial,
+**friends he intends to distribute the app to**. Each user runs their own client
+against their own Kilter board and keeps their own local data. Future sharing work
+will make climbs and playlists portable by URL. The design begins with this
+"distribute to friends" case: an installable PWA built for static hosting once the
+deployment setup and acceptance checks are complete. It is not initially a commercial,
 server-backed, multi-tenant product. Supporting more board types broadens the
 hardware and catalog surface, not the initial operating model.
 
@@ -74,8 +75,8 @@ hardware and catalog surface, not the initial operating model.
   defining features, designed in from the architecture, not bolted on.
 - **Web platform.** Web Bluetooth makes a no-install, shareable, cross-device
   client possible — lean into it.
-- **Distributable by default.** The app ships as a hosted, installable PWA a
-  friend can open from a URL — no per-user setup, no backend. Robustness for
+- **Distributable by default.** The app is built as a hosted, installable PWA a
+  friend can open from a URL once deployment is configured — no per-user setup, no backend. Robustness for
   distribution (stability across browsers/devices, easy install, no server to
   operate) is a first-class principle — and the criterion by which the framework
   (React + Vite) was chosen.
@@ -91,8 +92,8 @@ hardware and catalog surface, not the initial operating model.
 
 ## Non-Goals
 
-- **Not a server-backed / multi-tenant product.** The app is distributed to
-  friends as a static, hosted PWA, but there is no backend: no accounts, no
+- **Not a server-backed / multi-tenant product.** The app is designed for
+  distribution to friends as a static, hosted PWA, but there is no backend: no accounts, no
   billing, no server-side user data, no hosting of other people's boards. Each
   user's data stays in their own browser.
 - **Not simultaneous board rollout.** The Fullride 7x10 remains the first complete

@@ -1,63 +1,165 @@
 # Doc Review Report
 
 **Project:** CruxControl
-**Date:** 2026-06-13
-**Documents reviewed:** 4 system-level (VISION.md, SPEC.md, ARCHITECTURE.md, AGENTS.md). No module-level planning docs yet; no roadmap (substrate-based — work in `.work/`). Briefs out of scope (lint handles those).
-**Passes run:** 1 system-level (fresh-context Sonnet reviewer) + 1 fresh re-audit.
-**Issues found (initial):** Critical 0 / High 4 / Medium 3 / Low 2 / Info 1 — all fixed (High + Medium) or noted (Low/Info).
 
-## Pass 1: System-Level
+**Date:** 2026-08-02
 
-The dominant theme was **rolling-foundation drift**: `epic-foundation`'s decisions (React+Vite, wa-sqlite) were made and implemented, but `ARCHITECTURE.md` still described the framework as undecided and listed `sql.js`.
+**Documents reviewed:** 5 system planning documents; 0 module planning sets
 
-### High (4) — all FIXED
-- **H-1 Framework "not yet chosen"** — `ARCHITECTURE.md` said the framework was deferred; it is React 19 + Vite 6 + TypeScript, implemented in `web/`. → Replaced with the actual decision + brief reference.
-- **H-2 `sql.js or OPFS-backed`** — Module Map §1 + frontmatter `decisions[0]` named the rejected approach. → Changed to `wa-sqlite OPFSCoopSyncVFS in a Web Worker (IndexedDB fallback)`.
-- **H-3 Key Dependencies stale/incomplete** — listed `sql.js / OPFS` and `ONNX.js / TF.js`; omitted React/Vite + vite-plugin-pwa. → Replaced sql.js row with wa-sqlite; added React+Vite, vite-plugin-pwa rows; ONNX row corrected to ONNX Runtime Web (WASM); Cloudflare Pages named as the host.
-- **H-4 Orphaned table row** — the "Static PWA host" row sat outside the table (broken render). → Merged into the Key Dependencies table.
+**Passes run:** 2 full system passes (initial audit + fresh exit-gate audit)
+**Initial issues:** 0 Critical / 2 High / 2 Medium / 3 Low / 2 Info
 
-### Medium (3) — all FIXED
-- **M-1** SPEC `decisions[0]` said "seven areas"; there are eight (Playlists added). → "eight areas".
-- **M-2** VISION + SPEC phrased distribution robustness as a still-pending "framework-selection criterion". → reworded to "the criterion by which the framework (React + Vite) was chosen".
-- **M-3** ARCHITECTURE Conventions "Ports & adapters" omitted the Data Layer / `CatalogPort`. → added.
+**Final issues:** 0 Critical / 0 High / 3 Medium / 4 Low / 3 Info
 
-### Low (2) — noted, not blocking
-- **L-1** Two independent occurrences of the stale `sql.js` text (body + frontmatter) — both fixed under H-2.
-- **L-2** ARCHITECTURE frontmatter `decisions[4]` framework phrasing sharpened to name React + Vite.
+## Initial System-Level Pass
 
-### Info (1)
-- **I-1** SPEC/VISION list Netlify/Vercel as host alternatives while the epic pinned Cloudflare Pages. Acceptable for vision/spec (they define an acceptable *class*); ARCHITECTURE now names Cloudflare Pages as the current choice.
+### Critical (0)
 
-## Clean Areas
-- VISION non-goals / audience / principles — consistent and current.
-- SPEC body (capabilities, domain model incl. Playlist, constraints) — fully consistent with the ARCHITECTURE module map.
-- ARCHITECTURE modules 2–9, data flow, biggest risks — accurate.
-- AGENTS.md — operational substrate instructions only; no stack claims; clean.
-- `web/src/data/port.ts` — code was ahead of the docs (correct CatalogPort + wa-sqlite), not behind.
+None.
 
-## Cross-reference integrity
-All `docs/briefs/*` and `docs/architecture/history/north-star.md` references resolve. CLAUDE.md → AGENTS.md symlink intact.
+### High (2)
 
-## Frontmatter compliance
-All 4 docs have `description`, `type: planning`, `kind: planning`, `updated` — fully compliant.
+#### Implemented and future product outcomes are blurred in the vision
+
+**Files:** `docs/VISION.md`, compared with `README.md`, `docs/SPEC.md`, code, and
+the `.work/` substrate.
+
+**What:** The vision described find/create/light/climb/save-result and URL sharing as
+if they were all part of the completed first milestone. The implemented milestone is
+local create, save, reopen, render, and board lighting. Logbook/results, community
+catalog browsing, playlists, and shareable URLs remain future work.
+
+**Fix:** State the implemented create-save-light boundary explicitly and present
+logging, community browsing, playlists, and sharing as future outcomes.
+
+#### Hosted deployment is asserted without deployment acceptance evidence
+
+**Files:** `docs/VISION.md`, `docs/SPEC.md`, `docs/DEPLOY.md`.
+
+**What:** The documents said the application “ships” as a hosted app, while the deploy
+runbook states that Cloudflare secrets, opt-in configuration, and branch protection
+are still operator setup. The distributable PWA and CI deploy path are implemented,
+but a live hosted deployment has not been verified.
+
+**Fix:** Describe the app as built for static hosted distribution and reserve “live”
+or “ships” claims for deployment acceptance evidence.
+
+### Medium (3)
+
+#### User-facing Kilter role terminology is stale
+
+**Files:** `docs/SPEC.md`, compared with
+`web/src/domain/boards/definitions/kilter-fullride-7x10.ts`.
+
+**What:** The spec calls the middle role cyan and the foot-only role orange. The
+canonical user-facing names are blue and gold/yellow. Source protocol RGB values may
+still be described separately as cyan and amber/orange.
+
+**Suggested fix:** Separate user-facing semantic labels from source protocol RGB.
+
+#### Architecture implies a currently active Kilter sync connection
+
+**File:** `docs/ARCHITECTURE.md`.
+
+**What:** Static-distribution prose says the client talks to the Kilter sync API even
+though the sync adapter is future work and `epic-catalog-sync` remains drafting.
+
+**Suggested fix:** Say a future provider adapter may connect to that API; retain BLE
+as the current external connection.
+
+#### Mobile constraint includes unimplemented logging
+
+**File:** `docs/SPEC.md`.
+
+**What:** The constraint says responsive browsing, editing, and logging work on modern
+phones. Local draft browsing/editing are implemented, but logging remains a drafting
+epic.
+
+**Suggested fix:** Describe current browsing/editing separately and state that logging
+must be responsive when its milestone ships.
+
+### Low (4)
+
+1. `docs/VISION.md` frontmatter still describes friend distribution and shareable
+   URLs more absolutely than the revised body. This records decision intent rather
+   than claiming current behavior, but could be sharpened later.
+2. `docs/briefs/data-model.md` is a brief without `research_method` frontmatter.
+3. `docs/briefs/hardware-and-protocol.md` is a brief without `research_method`
+   frontmatter.
+4. “Original SVG hold artwork” can be mistaken for vendor artwork. The renderer uses
+   independently authored schematic SVG archetypes; future wording should say so.
+
+### Info (3)
+
+1. No module-level planning documents were discovered. Code directories are modules,
+   but their delivery designs correctly live in `.work/` rather than duplicate module
+   planning sets.
+2. All planning-document Markdown references resolve, and every indexed
+   `blocks_phase` brief exists on disk.
+3. The knowledge index contains 23 documents and matches the discovered corpus; all
+   five planning documents have the index-required frontmatter.
+
+## Blocking Briefs Status
+
+| Brief | Blocks | Exists | Status |
+|---|---|---:|---|
+| `docs/briefs/foundation-pwa-sqlite.md` | `epic-foundation` | Yes | Written |
+| `.research/briefs/cloudflare-deploy/parent.md` | `epic-foundation-ci-deploy` | Yes | Written |
+| `docs/briefs/board-control-web-bluetooth.md` | `epic-board-control` | Yes | Written |
+| `docs/briefs/board-rendering-and-filtering.md` | `epic-climb-browser` | Yes | Written |
+| `docs/briefs/catalog-sync-api.md` | `epic-catalog-sync` | Yes | Written |
+| `.research/briefs/kilter-grade-prediction/parent.md` | `epic-grade-prediction` | Yes | Written |
+| `docs/briefs/recommendations-and-training.md` | `epic-recommendations` | Yes | Written |
+
+The ready catalog-bootstrap feature is blocked by a documented VFS import decision,
+not a missing brief.
+
+## DONE Work Verification
+
+| Work | Expected output | Evidence |
+|---|---|---|
+| Universal board platform | Fullride definition and installation/controller contracts | Present; 305-placement tests pass |
+| Board control | API-level-3 codec, Web Bluetooth lifecycle, light/clear/preview | Present; contract and integration tests pass |
+| Climb browser | Fullride renderer and browser-local draft viewer | Present; renderer/viewer tests pass |
+| Route creation | Unrestricted IndexedDB drafts and responsive editor | Present; create-save-light and E2E specs exist |
+
+Automated verification: 38 Vitest files and 218 tests pass. Typecheck, lint, and
+production build were also green in the independent audit. Physical Fullride 7x10 +
+Android Chrome verification remains explicitly and consistently pending.
 
 ## Provenance Summary
-Briefs are out of scope for doc-review (knowledge-index lint covers them). The `.research/` corpus is `/brief` (5) + `/deep-research` (1 campaign, 6 specialist briefs + parent + report), all `updated: 2026-06-13`. No refresh candidates (single research pass, all current).
 
-## Re-audit (auto-fix loop — exit gate)
+| `research_method` | Documents | Latest updated |
+|---|---:|---|
+| `/deep-research` | 8 | 2026-06-14 |
+| `/research` | 1 | 2026-06-14 |
+| `/brief` | 5 | 2026-06-14 |
+| `(missing)` | 2 | — |
 
-Per the doc-review contract, fresh full audits were dispatched after each fix round; the
-loop exits only on an independent audit returning 0 Critical / 0 High. It converged in
-3 iterations, each surfacing correlated drift the prior fix exposed:
+### Refresh Candidates
 
-- **Iteration 1** (initial): 0C / 4H / 3M / 2L / 1I → fixed all H + M.
-- **Iteration 2**: 0C / 1H / 2M → residual `ONNX.js / TF.js` in frontmatter + Module §9 (missed by the deps-table fix); "deps listed but not installed" ambiguity. Fixed: ONNX naming, added the intended-dependency-set note.
-- **Iteration 3**: 0C / 1H / 1M → Cloudflare Pages hedge in Conventions ("e.g. … / Netlify / Vercel") contradicting the rest; TF.js name leaked into the deps table. Fixed both.
-- **Iteration 4 (exit gate): 0 Critical / 0 High — CLEAN** across all 11 checks (stale-tech, rolling-foundation prose, host consistency, capabilities count, module map, cross-doc consistency, deps honesty, cross-references, frontmatter, tables, AGENTS).
+Lower-tier documents older than the latest `/deep-research` work are informational
+refresh candidates: `board-control-web-bluetooth`, `board-rendering-and-filtering`,
+and `catalog-sync-api`. The method-missing data-model and hardware/protocol primers
+are also natural migration candidates.
 
-**Outcome: PASS.** Foundation docs are internally consistent and aligned with the
-implemented code. The Low/Info items (history link label; 9-modules-vs-8-capabilities, which
-is intentional — Data Layer is infra) were addressed or noted; none blocking.
+## Clean Areas
 
-Knowledge-index detail layer was updated in-step for the changed `decisions:` (SPEC capability
-count; ARCHITECTURE stack + ONNX decisions).
+- iOS direct control, multi-board providers, ML, and recommendations are consistently
+  future or deferred.
+- Catalog bootstrap/community browsing are separated from the completed local-draft
+  path.
+- No document claims the physical board smoke has passed.
+- Installed dependencies, CI configuration, and current code match the documented
+  React/Vite, IndexedDB, wa-sqlite, Web Bluetooth, and PWA boundaries.
+
+## Auto-Fix Loop
+
+- **Iteration 1:** 0 Critical / 2 High / 2 Medium / 3 Low / 2 Info. Fixed both
+  High findings in `VISION.md`, `SPEC.md`, and `DEPLOY.md`.
+- **Iteration 2 (fresh full exit-gate audit):** 0 Critical / 0 High / 3 Medium /
+  4 Low / 3 Info.
+
+**Outcome: PASS.** The mechanical exit condition is satisfied by a freshly dispatched
+full audit returning zero Critical and zero High findings. Medium and Low findings
+remain intentionally unfixed for manual prioritization.
