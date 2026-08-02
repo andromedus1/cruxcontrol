@@ -1,7 +1,7 @@
 ---
 id: epic-climb-browser
 kind: epic
-stage: drafting
+stage: implementing
 tags: [ui]
 parent: null
 depends_on: [epic-universal-board-platform]
@@ -51,15 +51,16 @@ research_refs:
 
 ## Brief
 
-The core "view" capability and the official app's biggest weakness to beat: a fast,
-responsive browser over the local catalog, a definition-driven 2D board renderer first
-validated on the Fullride 7x10, powerful filtering, and shareable per-climb URLs.
+The first-milestone "view" capability: a definition-driven 2D board renderer first
+validated on the Fullride 7x10, plus a responsive local climb list and detail surface
+that route creation and board control can compose into the create-save-light loop.
 
-When done, a user can browse the full catalog with grade/angle/quality/setter/etc.
-filters, see any climb rendered on a board diagram, and share a link to a specific
-climb. It does NOT cover lighting the physical board (epic-board-control), editing
-climbs (epic-route-creation), or logging (epic-logbook) — but it provides the
-selection + renderer surface those reuse.
+When done, a user can select a local climb and see it on a recognizable Fullride
+diagram. It does NOT cover lighting the physical board (epic-board-control), editing
+or persisting climbs (epic-route-creation), or logging (epic-logbook), but it provides
+the selection and renderer surfaces those reuse. The broad community-catalog filter
+matrix and shareable provider-climb URLs are deferred until catalog acquisition is
+back in scope; this decomposition keeps their normalized input and routing seams open.
 
 ## Research briefs
 
@@ -79,10 +80,33 @@ selection + renderer surface those reuse.
 - `docs/SPEC.md` — Capability 2 (Climb Browser); domain model (Climb, Hold/Placement,
   ClimbStats); shareable-URL constraint.
 
-## Anticipated child features
+## Decomposition
 
-Provisional:
-- 2D board renderer for the Fullride 7x10 layout
-- Catalog query + filter layer (grade/angle/quality/setter/hold-count/…)
-- Browser UI (list + detail)
-- Shareable climb-URL routing
+Split at the reusable visual boundary. The renderer owns definition geometry,
+recognizable hold artwork, role overlays, responsive scaling, and optional hit
+testing. The local viewer owns list/detail composition and navigation over normalized
+climb inputs. This is intentionally smaller than the provisional community-browser
+plan: catalog filtering and provider-climb sharing are not required to create, save,
+and light a local climb and would pull catalog bootstrap into the critical path.
+
+### Child features
+
+- `epic-climb-browser-fullride-renderer` — recognizable definition-driven Fullride
+  renderer and interaction surface — depends on:
+  `[epic-universal-board-platform-domain-definition]`
+- `epic-climb-browser-local-climb-viewer` — responsive local climb list/detail shell
+  over normalized climbs — depends on: `[epic-climb-browser-fullride-renderer]`
+
+### Decomposition risks
+
+- **Geometry/visual drift is the trickiest risk.** The catalog mapping must remain
+  authoritative while the screenshot is used to validate recognizable silhouettes
+  and alignment. Visual extraction must not silently replace placement identity or
+  LED mapping.
+- **Reference-image rights remain distinct from technical access.** Preserve the
+  source unchanged and keep derived renderer assets separable so public distribution
+  can use independently produced artwork or pause if redistribution provenance is
+  not established.
+- **Deferred catalog scope could leak into the local viewer.** The viewer must consume
+  normalized records through a narrow source boundary rather than query provider SQL,
+  preserving a clean later path to filtering and shareable provider-climb URLs.
