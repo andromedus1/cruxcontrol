@@ -60,3 +60,9 @@ and post-campaign one-light/clear recovery evidence are durably recorded.
 - Together, the clean visible 2 FPS case and 10-FPS trace show that the present 20-light
   path is transport-limited to roughly 2 FPS at 20 ms pacing. Product policy must not
   present requested 10 FPS as delivered motion.
+- Omitted-light semantics are resolved by the 128-light boundary case itself: the first
+  API-2 packet visibly established 127 lights, then the final one-light packet extinguished
+  those 127 and left only its own section. A later frame containing only changed lights
+  therefore represents a replacement scene, not a delta; sparse-frame optimization is
+  unsafe on this measured controller path. Every animation frame must resend the complete
+  route + decoration + effect scene and remain at or below 127 lights.
