@@ -1,7 +1,7 @@
 ---
 id: epic-board-control
 kind: epic
-stage: review
+stage: done
 tags: [ble]
 parent: null
 depends_on: [epic-universal-board-platform]
@@ -117,3 +117,39 @@ prevents Web Bluetooth lifecycle details from leaking into route creation.
 
 Automated verification is green. The aggregate epic review must keep the documented
 physical Fullride/Android Chrome smoke test pending until Andrew performs it.
+
+## Review (2026-08-02)
+
+**Verdict**: Approve with comments
+
+**Blockers**: none
+**Important**: none
+**Nits**: none
+**Rejected**: requiring the deferred production browser/editor UI or an unavailable
+physical-board run to block approval of the automated controller core. Those are real
+downstream and manual boundaries, not evidence that the scene-to-BLE contracts are
+incomplete.
+
+**Notes**: Substrate epic review with effective weight `standard`: exactly one balanced
+independent fresh-context aggregate pass (same OpenAI/Codex model class) over the epic,
+all three completed feature review records and contracts, their aggregate production
+code and tests, the Fullride definition, project rules, foundation assertions, and the
+cited protocol/Web Bluetooth research. The pass did not repeat line-level feature
+review. It traced unrestricted placement/color scenes through the validated generated
+Fullride placement-to-LED map, API-level-3 framing/checksum/packet and 20-byte chunk
+encoding, one atomic `writeBatch`, and the Web Bluetooth FIFO with disconnect-generation
+invalidation and fresh GATT resolution. Cross-feature capability, lifecycle, preview
+arbitration, typed error propagation, and public-state diagnostic redaction are coherent;
+the adapter reports insecure/unsupported clients explicitly and retains no board data
+beyond the browser-selected device reference and in-memory state. Persistence/migration
+and broad network/auth lenses were not applicable.
+
+Verification on the aggregate snapshot passed 147 tests, strict TypeScript production
+build, and full lint. The absence of production UI wiring is accepted because the
+browser/editor surfaces deliberately own later composition of the exported controller,
+transport, and scene contracts. Physical verification is still **pending** for Andrew
+on the powered Fullride 7x10 with Android Chrome, including observed controller name and
+`@APILevel`, all four role presets plus custom colors, multi-write lighting, clear,
+remote disconnect, explicit reconnect, and relight. This approval makes no claim that
+physical hardware behavior has passed; that manual evidence remains a release/acceptance
+checkpoint while downstream UI work may continue. No second independent pass ran.
