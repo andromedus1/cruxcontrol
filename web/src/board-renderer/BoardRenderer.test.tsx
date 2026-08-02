@@ -33,12 +33,14 @@ describe('BoardRenderer', () => {
         ]}
       />,
     );
-    expect(screen.getByRole('gridcell', { name: /Hold 1, Start/ })).toBeInTheDocument();
-    expect(screen.getByRole('gridcell', { name: /Middle/ })).toBeInTheDocument();
-    expect(screen.getByRole('gridcell', { name: /Finish/ })).toBeInTheDocument();
-    expect(screen.getByRole('gridcell', { name: /Foot-only/ })).toBeInTheDocument();
-    expect(screen.getByRole('gridcell', { name: /Custom #000000/ })).toBeInTheDocument();
-    expect(screen.getByRole('gridcell', { name: /Custom #FFFFFF/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('row')).toHaveLength(305);
+    expect(screen.getAllByRole('gridcell')).toHaveLength(305);
+    expect(screen.getByRole('button', { name: /Hold 1, Start/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Middle/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Finish/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Foot-only/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Custom #000000/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Custom #FFFFFF/ })).toBeInTheDocument();
   });
 
   it('uses one roving focus and activates through keyboard navigation', () => {
@@ -51,16 +53,26 @@ describe('BoardRenderer', () => {
       />,
     );
     expect(container.querySelectorAll('[tabindex="0"]')).toHaveLength(1);
-    const first = screen.getByRole('gridcell', { name: /Hold 1,/ });
+    const first = screen.getByRole('button', { name: /Hold 1,/ });
     fireEvent.keyDown(first, { key: 'ArrowUp' });
     const focused = document.activeElement as SVGGElement;
     expect(focused).not.toBe(first);
     fireEvent.keyDown(focused, { key: 'Enter' });
     expect(activated).toHaveBeenCalledOnce();
     expect(activated).toHaveBeenCalledWith(focused.dataset.placementId);
+
+    fireEvent.keyDown(focused, { key: 'Home' });
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(first, { key: 'End' });
+    const last = screen.getByRole('button', { name: /Hold 305,/ });
+    expect(document.activeElement).toBe(last);
+    fireEvent.keyDown(last, { key: ' ' });
+    expect(activated).toHaveBeenLastCalledWith(fullride.placements[304].id);
+    expect(activated).toHaveBeenCalledTimes(2);
+    expect(container.querySelectorAll('[tabindex="0"]')).toHaveLength(1);
   });
 
-  it('converts pointer coordinates and ignores taps when CTM is unavailable', () => {
+  it('converts responsive pointer coordinates for first, middle, and last holds', () => {
     const activated = vi.fn();
     render(
       <BoardRenderer
@@ -72,23 +84,43 @@ describe('BoardRenderer', () => {
     );
     const svg = screen.getByRole('grid') as unknown as SVGSVGElement;
     Object.defineProperty(svg, 'createSVGPoint', {
-      value: () => ({
-        x: 0,
-        y: 0,
-        matrixTransform() {
-          return { x: 8, y: 120 };
-        },
-      }),
+      value: () => {
+        const point = {
+          x: 0,
+          y: 0,
+          matrixTransform(matrix: { transformPoint(value: { x: number; y: number }): DOMPoint }) {
+            return matrix.transformPoint(point);
+          },
+        };
+        return point;
+      },
     });
     Object.defineProperty(svg, 'getScreenCTM', {
       configurable: true,
-      value: () => ({ inverse: () => ({}) }),
+      value: () => ({
+        inverse: () => ({
+          transformPoint: ({ x, y }: { x: number; y: number }) => ({
+            x: (x - 20) / 2,
+            y: (y - 40) / 2,
+          }),
+        }),
+      }),
     });
-    fireEvent.click(svg, { clientX: 12, clientY: 20 });
-    expect(activated).toHaveBeenCalledWith(fullride.placements[0].id);
+    const cases = [
+      { index: 0, clientX: 36, clientY: 280 },
+      { index: 152, clientX: 116, clientY: 168 },
+      { index: 304, clientX: 196, clientY: 56 },
+    ];
+    for (const testCase of cases) {
+      fireEvent.click(svg, { clientX: testCase.clientX, clientY: testCase.clientY });
+      expect(activated).toHaveBeenLastCalledWith(fullride.placements[testCase.index].id);
+    }
+    fireEvent.click(svg, { clientX: 20, clientY: 40 });
+    expect(activated).toHaveBeenCalledTimes(3);
+
     Object.defineProperty(svg, 'getScreenCTM', { configurable: true, value: () => null });
-    fireEvent.click(svg);
-    expect(activated).toHaveBeenCalledOnce();
+    fireEvent.click(svg, { clientX: 36, clientY: 280 });
+    expect(activated).toHaveBeenCalledTimes(3);
   });
 
   it('rejects invalid editor scales', () => {

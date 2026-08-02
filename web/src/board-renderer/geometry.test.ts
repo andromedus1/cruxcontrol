@@ -4,6 +4,9 @@ import { createBoardTransform, nearestPlacement, placementInDirection } from './
 describe('board geometry', () => {
   it('round-trips every Fullride point and inverts the vertical axis', () => {
     const transform = createBoardTransform(fullride);
+    expect(transform.viewBox).toEqual({ x: 0, y: 0, width: 96, height: 128 });
+    expect(transform.toSvg({ x: -44, y: 144 })).toEqual({ x: 4, y: 4 });
+    expect(transform.toSvg({ x: 44, y: 24 })).toEqual({ x: 92, y: 124 });
     for (const placement of fullride.placements) {
       const svg = transform.toSvg(placement.position);
       const restored = transform.toBoard(svg);
@@ -19,14 +22,44 @@ describe('board geometry', () => {
     expect(() => createBoardTransform(fullride, -1)).toThrow(RangeError);
     const first = fullride.placements[0];
     expect(nearestPlacement(fullride, first.position)).toBe(first.id);
+    expect(nearestPlacement(fullride, { x: -38, y: 30 })).toBe(first.id);
     expect(
       nearestPlacement(fullride, { x: fullride.bounds.left, y: fullride.bounds.bottom }),
     ).toBeNull();
   });
 
-  it('navigates spatially and stays put at an edge', () => {
+  it('navigates the interleaved Fullride lattice and stays put at an edge', () => {
     const first = fullride.placements[0];
-    expect(placementInDirection(fullride, first.id, 'up')).not.toBe(first.id);
+    const auxiliary = fullride.placements.find(
+      ({ position }) => position.x === -36 && position.y === 32,
+    );
+    expect(auxiliary).toBeDefined();
+    expect(placementInDirection(fullride, first.id, 'up')).toBe(auxiliary?.id);
     expect(placementInDirection(fullride, first.id, 'left')).toBe(first.id);
+  });
+
+  it('makes all 305 holds arrow-reachable from every roving focus', () => {
+    const directions = ['up', 'right', 'down', 'left'] as const;
+    const edges = new Map(
+      fullride.placements.map((placement) => [
+        placement.id,
+        directions.map((direction) => placementInDirection(fullride, placement.id, direction)),
+      ]),
+    );
+
+    for (const start of fullride.placements) {
+      const reached = new Set([start.id]);
+      const pending = [start.id];
+      while (pending.length > 0) {
+        const current = pending.shift();
+        if (!current) break;
+        for (const next of edges.get(current) ?? []) {
+          if (reached.has(next)) continue;
+          reached.add(next);
+          pending.push(next);
+        }
+      }
+      expect(reached.size, `reachable from ${start.id}`).toBe(305);
+    }
   });
 });

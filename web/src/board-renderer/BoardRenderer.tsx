@@ -152,27 +152,37 @@ export function BoardRenderer({
             return (
               <g
                 key={placement.id}
-                ref={(element) => {
-                  if (element) holdRefs.current.set(placement.id, element);
-                  else holdRefs.current.delete(placement.id);
-                }}
-                className="board-hold"
-                data-placement-id={placement.id}
-                data-assignment={appearance?.kind ?? 'none'}
                 transform={`translate(${center.x} ${center.y})`}
-                style={color ? { color } : undefined}
-                role={interactive ? 'gridcell' : undefined}
-                aria-roledescription={interactive ? 'button' : undefined}
-                aria-label={
-                  interactive ? `Hold ${index + 1}, ${appearanceLabel(appearance)}` : undefined
-                }
-                tabIndex={interactive ? (focused === placement.id ? 0 : -1) : undefined}
-                onFocus={interactive ? () => setFocused(placement.id) : undefined}
-                onKeyDown={interactive ? (event) => onHoldKeyDown(event, placement.id) : undefined}
+                role={interactive ? 'row' : undefined}
               >
-                {appearance && <circle className="board-hold__selection-ring" r="2.55" />}
-                <HoldArtwork choice={chooseHoldArtwork(placement)} selected={Boolean(appearance)} />
-                {appearance && <AssignmentMarker appearance={appearance} />}
+                <g role={interactive ? 'gridcell' : undefined}>
+                  <g
+                    ref={(element) => {
+                      if (element) holdRefs.current.set(placement.id, element);
+                      else holdRefs.current.delete(placement.id);
+                    }}
+                    className="board-hold"
+                    data-placement-id={placement.id}
+                    data-assignment={appearance?.kind ?? 'none'}
+                    style={color ? { color } : undefined}
+                    role={interactive ? 'button' : undefined}
+                    aria-label={
+                      interactive ? `Hold ${index + 1}, ${appearanceLabel(appearance)}` : undefined
+                    }
+                    tabIndex={interactive ? (focused === placement.id ? 0 : -1) : undefined}
+                    onFocus={interactive ? () => setFocused(placement.id) : undefined}
+                    onKeyDown={
+                      interactive ? (event) => onHoldKeyDown(event, placement.id) : undefined
+                    }
+                  >
+                    {appearance && <circle className="board-hold__selection-ring" r="2.55" />}
+                    <HoldArtwork
+                      choice={chooseHoldArtwork(placement)}
+                      selected={Boolean(appearance)}
+                    />
+                    {appearance && <AssignmentMarker appearance={appearance} />}
+                  </g>
+                </g>
               </g>
             );
           })}

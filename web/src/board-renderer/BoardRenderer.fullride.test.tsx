@@ -11,8 +11,16 @@ it('composes the generated Fullride fixture without changing placement centers',
   const { container } = render(<BoardRenderer definition={fullride} assignments={assignments} />);
   const groups = container.querySelectorAll<SVGGElement>('[data-placement-id]');
   expect(groups).toHaveLength(305);
+  groups.forEach((group, index) => {
+    const placement = fullride.placements[index];
+    const positionedGroup = group.parentElement?.parentElement;
+    expect(group).toHaveAttribute('data-placement-id', placement.id);
+    expect(positionedGroup).toHaveAttribute(
+      'transform',
+      `translate(${placement.position.x + 48} ${148 - placement.position.y})`,
+    );
+  });
   [0, 152, 304].forEach((index) => {
     expect(groups[index]).toHaveAttribute('data-placement-id', fullride.placements[index].id);
-    expect(groups[index].getAttribute('transform')).toMatch(/^translate\(/);
   });
 });

@@ -72,8 +72,17 @@ export function placementInDirection(
       const dy = placement.position.y - origin.position.y;
       const forward = axis === 'x' ? Math.abs(dx) : Math.abs(dy);
       const perpendicular = axis === 'x' ? Math.abs(dy) : Math.abs(dx);
-      return { placement, alignment: perpendicular / forward, distance: Math.hypot(dx, dy) };
+      const preferredSide = direction === 'up' || direction === 'left' ? -1 : 1;
+      const side = (axis === 'x' ? dy : dx) * preferredSide;
+      return {
+        placement,
+        alignment: perpendicular / forward,
+        distance: Math.hypot(dx, dy),
+        side,
+      };
     })
-    .sort((a, b) => a.alignment - b.alignment || a.distance - b.distance);
+    // Distance leads so interleaved hold lattices remain connected. A consistent
+    // counter-clockwise side preference resolves symmetric diagonal ties.
+    .sort((a, b) => a.distance - b.distance || a.alignment - b.alignment || b.side - a.side);
   return candidates[0]?.placement.id ?? from;
 }
