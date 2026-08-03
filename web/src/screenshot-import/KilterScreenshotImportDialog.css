@@ -43,6 +43,10 @@
   margin-block: var(--space-4);
   font-weight: var(--font-weight-semibold);
 }
+
+.screenshot-import-supplied {
+  min-height: 44px;
+}
 .screenshot-import-name input {
   min-height: 44px;
   padding: var(--space-2) var(--space-3);

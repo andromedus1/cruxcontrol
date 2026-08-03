@@ -23,6 +23,7 @@ decisions:
   - "Private Fullride builds may resolve one calibrated immutable raster artwork layer by exact definition ID and revision; schematics remain the distributable fallback."
   - "Unrestricted locally authored climbs use a dedicated versioned IndexedDB repository with Draft/Finished and recoverable-Trash lifecycle, separate from provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
+  - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
 ---
 
 # CruxControl — Architecture
@@ -76,9 +77,16 @@ feature item bodies in `.work/`, not here. Capabilities are in
    climbs, coalesces lifecycle-aware autosaves, exposes conflict/failure recovery, and
    composes the renderer with explicit Light Draft and opt-in Live Preview. Provider
    adapters own future source-native encoding and optional publication.
-8. **Logbook & Sessions** — local store of ascents/attempts/sessions with
+8. **Screenshot Import** — a local-only Kilter Android Fullride adapter hashes and
+   analyzes selected PNGs sequentially, maps detected role rings through the immutable
+   board definition, and presents an editable review before using the existing climb
+   repository. Source bitmaps, canvas pixels, and object URLs are transient and never
+   persisted or uploaded. A built-in 16-climb migration carries only checksum-linked
+   titles and role/placement facts. Confirmed climbs are ordinary 40° drafts; exact
+   content duplicates in active storage or Trash are skipped.
+9. **Logbook & Sessions** — local store of ascents/attempts/sessions with
    analytics; optional push to the Kilter API via the Sync Engine.
-9. **Playlists** — an implemented separate native IndexedDB repository, responsive
+10. **Playlists** — an implemented separate native IndexedDB repository, responsive
    management surface, and exact-order board play-through for named, annotated,
    manually ordered local/provider climb references. Runtime resolution preserves
    unavailable Trash, missing, or incompatible-board entries without cross-database
@@ -91,7 +99,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    compatibility preview, then creates fresh climbs in order and the fresh playlist
    last, with reverse-order compensation for partial failure. A CruxControl-local
    construct (no Kilter counterpart).
-10. **ML Pipeline** — offline (Python): feature extraction from the catalog →
+11. **ML Pipeline** — offline (Python): feature extraction from the catalog →
     training dataset → grade-prediction model. Exports a model for in-browser
     inference (ONNX Runtime Web / WASM); feeds prediction + recommendation features back
     into the app.
@@ -115,6 +123,10 @@ Editor ──▶ Local climb repository ──▶ native IndexedDB
   │               (versioned + optimistic)       (browser-local authority)
   ├──▶ Renderer ──▶ SVG board surface
   └──▶ Light controller ──▶ controller profile / transport
+
+Kilter screenshot PNG ──▶ transient local analysis ──▶ editable definition-mapped review
+                                                        └──▶ deduplicated 40° draft ──▶ Local climb repository
+Supplied 16-climb facts (no pixels) ────────────────────┘
 
 Lists ──▶ Local playlist repository ──▶ separate native IndexedDB
   └──▶ read-time climb resolver ──▶ available / Trash / missing entry view
@@ -148,6 +160,10 @@ browsing, editing, and logging remain testable without hardware or network.
   come from pipelines, not manual curation.
 - **Offline-first.** Every read works without network; sync is a background
   reconciliation, not a precondition.
+- **Image-minimizing imports.** Screenshot recognition runs entirely in the client;
+  decoded bitmap/canvas resources are released after analysis, while selected File
+  references and object-URL evidence remain only through review. None enter durable
+  storage or network I/O; only the confirmed climb aggregate reaches IndexedDB.
 - **Static-first distribution.** The initial app is a client-side, installable PWA
   configured for future static hosting on Cloudflare Workers (Static Assets); live
   deployment still requires operator setup and acceptance. There is no application

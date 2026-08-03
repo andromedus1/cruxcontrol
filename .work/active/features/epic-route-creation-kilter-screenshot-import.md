@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-kilter-screenshot-import
 kind: feature
-stage: implementing
+stage: review
 tags: [data, ui]
 parent: epic-route-creation
 depends_on: [epic-route-creation-local-draft-library, epic-climb-browser-private-kilter-hold-artwork]
@@ -287,3 +287,27 @@ and mandatory comparison against all 16 private sources. Rejected one recommenda
 derive detector prototypes from controller LED colors: the source screenshots visibly use
 a bright yellow foot-only ring even though the hardware preset is orange, so screenshot
 recognition must match source pixels and map the resulting semantic role separately.
+
+## Implementation notes
+
+- Execution capability: coordinated implementation across three dependency-ordered child
+  stories: pure recognition/facts, transient review/persistence, and the supplied migration.
+- Review weight: standard (project convention); implementation is complete and this feature
+  now awaits exactly one independent review pass.
+- Delivered: local connected-component ring recognition, checksum-linked facts for all 16
+  supplied climbs, definition-derived placements, editable review with transient title
+  evidence, exact duplicate handling across active climbs and Trash, and the pixel-free
+  `Load supplied 16` Android migration path.
+- Source-dependent evidence: all 16 private 1080×2400 PNGs were decoded read-only and passed
+  through the production detector; every recalculated checksum, linked title, and detected
+  semantic ring tuple matched the immutable manifest exactly. Only status-bar/off-board
+  candidates produced warnings.
+- Verification: 66 Vitest files / 399 tests, typecheck, lint, production/PWA build, and the
+  390×844 Chromium supplied-review smoke passed. The build emits no source screenshot PNG;
+  protected source directories remain unmodified and untracked.
+- Documentation: `docs/SPEC.md` and `docs/ARCHITECTURE.md` now describe the implemented
+  local-only import boundary; their planning-doc consistency review belongs to the feature's
+  independent review pass.
+- Implementation correction: direct visual inspection established that
+  `Screenshot_20260802-141819.png` uses straight ASCII quotes in `"do a kick flip" 4+`;
+  the manifest and tests preserve that authoritative text.

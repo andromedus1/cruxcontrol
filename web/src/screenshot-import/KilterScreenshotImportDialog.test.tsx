@@ -36,6 +36,40 @@ function analyzed(file: File, name: string, warning = false): AnalyzedScreenshot
 const emptyResult: ScreenshotImportResult = { created: [], skipped: [], failures: [] };
 
 describe('KilterScreenshotImportDialog', () => {
+  it('loads exactly 16 pixel-free supplied candidates into the same write-free review', async () => {
+    const repo = repository();
+    const importCandidates = vi.fn(async (_repo, _installation, candidates) => {
+      expect(candidates).toHaveLength(16);
+      expect(candidates[0]).toMatchObject({ name: 'Figure 5-?', assignments: expect.any(Array) });
+      expect(candidates[15]).toMatchObject({
+        name: 'Chinchiller 3',
+        assignments: expect.any(Array),
+      });
+      return emptyResult;
+    });
+    render(
+      <KilterScreenshotImportDialog
+        installation={installation}
+        repository={repo}
+        importCandidates={importCandidates}
+        createObjectUrl={vi.fn()}
+        revokeObjectUrl={vi.fn()}
+        onImported={vi.fn(async () => undefined)}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Load supplied 16' }));
+    expect(screen.getByText('Screenshot 1 of 16')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Figure 5-?')).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /Visible title/ })).not.toBeInTheDocument();
+    expect(repo.create).not.toHaveBeenCalled();
+    for (let index = 1; index < 16; index += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Import 16 drafts' }));
+    await waitFor(() => expect(importCandidates).toHaveBeenCalledOnce());
+  });
+
   it('analyzes selected files sequentially and performs no writes during review or cancel', async () => {
     const files = [new File(['a'], 'a.png'), new File(['b'], 'b.png')];
     let active = 0;

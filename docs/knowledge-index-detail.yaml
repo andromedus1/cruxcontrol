@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-08-02T18:51:38Z'
+generated_at: '2026-08-03T00:06:55Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -27,8 +27,15 @@ documents:
       application core.
     - The generated immutable Fullride definition is the shared geometry, placement identity, role, and
       LED-mapping authority.
-    - Unrestricted local drafts use a dedicated versioned IndexedDB repository, separate from provider
-      catalogs.
+    - Private Fullride builds may resolve one calibrated immutable raster artwork layer by exact definition
+      ID and revision; schematics remain the distributable fallback.
+    - Unrestricted locally authored climbs use a dedicated versioned IndexedDB repository with Draft/Finished
+      and recoverable-Trash lifecycle, separate from provider catalogs.
+    - Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports
+      preview before creating fresh local records and compensate partial failures.
+    - Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped
+      holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active
+      climbs and Trash.
   docs/DEPLOY.md:
     summary: 'Operator runbook for the CI-gated Cloudflare Workers Static Assets deployment, including
       secrets, opt-in enablement, branch protection, and verification.
@@ -69,8 +76,11 @@ documents:
       on demand.
     - Android/desktop Chromium provide Web Bluetooth control; iOS direct control is a later native-bridge
       capability.
-    - Local drafts are unrestricted, browser-authoritative aggregates; provider publication validation
-      is a separate future boundary.
+    - Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status
+      and recoverable Trash; provider publication validation is a separate future boundary.
+    - Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary
+      40-degree drafts without persisting or uploading source images; exact duplicates, including Trash,
+      are skipped.
   docs/VISION.md:
     summary: 'CruxControl is a Kilter-first, eventually universal climbing-board app. Its first complete
       vertical slice controls a home Fullride 7x10, while its domain, catalog, and controller boundaries

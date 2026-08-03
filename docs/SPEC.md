@@ -19,6 +19,7 @@ decisions:
   - "The Fullride 7x10 is the acceptance board for the first milestone; additional providers are installed on demand."
   - "Android/desktop Chromium provide Web Bluetooth control; iOS direct control is a later native-bridge capability."
   - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
+  - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
 ---
 
 # CruxControl — Specification
@@ -81,6 +82,13 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   and retryable; conflicts offer reload-stored or save-a-copy recovery without silent
   overwrites.
 - Explicit Light Draft and opt-in, default-off Live Preview reuse the board controller.
+- Import Kilter Android Fullride screenshots through an on-device detection and review
+  flow. Users can correct detected holds and roles before confirmation; confirmed
+  climbs enter the existing local lifecycle as ordinary drafts at 40°.
+- Screenshot pixels remain transient and are never persisted or uploaded. The supplied
+  16-climb migration is built from checksum-linked titles and definition-derived
+  role/placement facts, without bundling source pixels. Imports skip exact hold/role
+  duplicates already present in either active storage or Trash.
 - Publishing to the Kilter community is deferred until its current authentication and
   API contract are freshly researched; it is not part of local draft validity.
 
@@ -188,6 +196,12 @@ The model mirrors the official Kilter SQLite schema (see
   survive reload/reopen, move between Draft and Finished without content validation,
   and remain recoverable from Trash for 30 days. Definition/layout/angle/placement
   incompatibility is surfaced while retaining the stored record unchanged.
+- The Drafts workspace can import selected Kilter Android Fullride PNGs sequentially,
+  review and correct each detected climb, and save confirmed results as ordinary 40°
+  drafts. It also exposes the pixel-free built-in migration for the supplied 16 climbs.
+  Decoded bitmap/canvas resources are released after local analysis; selected File
+  references and object-URL title evidence are released when review closes. None are
+  persisted or uploaded, and exact duplicates are skipped across active climbs and Trash.
 - Flexible lists are authoritative in a separate versioned native IndexedDB database.
   Their ordered references survive reload, allow one climb in multiple lists, and
   resolve Trash or missing climbs without rewriting membership rows. Exact-order
@@ -201,7 +215,7 @@ The model mirrors the official Kilter SQLite schema (see
   persistent save/light actions, and exposes named keyboard-operable controls and
   non-color-only role markers.
 - Deterministic tests cover definition/renderer, climb and playlist
-  persistence/concurrency/recovery,
+  persistence/concurrency/recovery and screenshot recognition/review/import,
   API-level-3 bytes, Bluetooth lifecycle, lighting/preview, and the integrated
   create-save-light seams. Playwright Chromium covers autosave/reload/reopen,
   multi-list membership/order, Trash/restore resolution, ephemeral play-through, and

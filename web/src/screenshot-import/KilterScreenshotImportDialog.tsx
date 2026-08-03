@@ -6,15 +6,18 @@ import type { ConfiguredBoardInstallation } from '../installations/contracts';
 import { applyEditorTool } from '../route-editor/assignments';
 import { analyzeKilterScreenshotFile } from './file-analysis';
 import { importScreenshotCandidates } from './import-batch';
+import { createSuppliedFullrideCandidates } from './supplied-batch';
 import type {
   AnalyzedScreenshot,
   ConfirmedScreenshotCandidate,
+  ScreenshotImportCandidate,
   ScreenshotImportResult,
 } from './types';
 import './KilterScreenshotImportDialog.css';
 
 interface ReviewItem {
-  readonly analyzed: AnalyzedScreenshot;
+  readonly candidate: ScreenshotImportCandidate;
+  readonly file: File | null;
   readonly name: string;
   readonly assignments: readonly BoardHoldAssignment[];
   readonly warningsOverridden: boolean;
@@ -27,6 +30,7 @@ export interface KilterScreenshotImportDialogProps {
   readonly onClose: () => void;
   readonly analyzeFile?: typeof analyzeKilterScreenshotFile;
   readonly importCandidates?: typeof importScreenshotCandidates;
+  readonly loadSuppliedCandidates?: typeof createSuppliedFullrideCandidates;
   readonly createObjectUrl?: (file: File) => string;
   readonly revokeObjectUrl?: (url: string) => void;
 }
@@ -40,9 +44,20 @@ const browserRevokeObjectUrl = (url: string) => URL.revokeObjectURL(url);
 
 function toReviewItem(analyzed: AnalyzedScreenshot): ReviewItem {
   return Object.freeze({
-    analyzed,
+    candidate: analyzed.candidate,
+    file: analyzed.file,
     name: analyzed.candidate.name,
     assignments: analyzed.candidate.assignments,
+    warningsOverridden: false,
+  });
+}
+
+function suppliedReviewItem(candidate: ScreenshotImportCandidate): ReviewItem {
+  return Object.freeze({
+    candidate,
+    file: null,
+    name: candidate.name,
+    assignments: candidate.assignments,
     warningsOverridden: false,
   });
 }
@@ -54,6 +69,7 @@ export function KilterScreenshotImportDialog({
   onClose,
   analyzeFile = analyzeKilterScreenshotFile,
   importCandidates = importScreenshotCandidates,
+  loadSuppliedCandidates = createSuppliedFullrideCandidates,
   createObjectUrl = browserCreateObjectUrl,
   revokeObjectUrl = browserRevokeObjectUrl,
 }: KilterScreenshotImportDialogProps) {
@@ -67,7 +83,7 @@ export function KilterScreenshotImportDialog({
   const [titleUrl, setTitleUrl] = useState('');
   const [scale, setScale] = useState(1);
   const current = items[index];
-  const currentFile = current?.analyzed.file;
+  const currentFile = current?.file;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -118,6 +134,24 @@ export function KilterScreenshotImportDialog({
     }
   }
 
+  function loadSupplied(): void {
+    analysisGeneration.current += 1;
+    setError('');
+    setStatus('');
+    try {
+      setItems(
+        Object.freeze(loadSuppliedCandidates(installation.definition).map(suppliedReviewItem)),
+      );
+      setIndex(0);
+      setScale(1);
+      setPhase('review');
+    } catch (cause) {
+      setItems([]);
+      setPhase('choose');
+      setError(message(cause));
+    }
+  }
+
   function updateCurrent(changes: Partial<Omit<ReviewItem, 'analyzed'>>): void {
     setItems((values) =>
       Object.freeze(
@@ -131,7 +165,7 @@ export function KilterScreenshotImportDialog({
   async function confirm(): Promise<void> {
     if (phase !== 'review') return;
     const confirmed: ConfirmedScreenshotCandidate[] = items.map((item) => ({
-      sourceName: item.analyzed.candidate.sourceName,
+      sourceName: item.candidate.sourceName,
       name: item.name,
       assignments: item.assignments,
       warningsOverridden: item.warningsOverridden,
@@ -159,15 +193,14 @@ export function KilterScreenshotImportDialog({
   }
 
   const warningBlocked = Boolean(
-    current && current.analyzed.candidate.warnings.length > 0 && !current.warningsOverridden,
+    current && current.candidate.warnings.length > 0 && !current.warningsOverridden,
   );
   const itemReady = Boolean(current?.name.trim()) && !warningBlocked;
   const allReady =
     items.length > 0 &&
     items.every(
       (item) =>
-        item.name.trim() &&
-        (item.analyzed.candidate.warnings.length === 0 || item.warningsOverridden),
+        item.name.trim() && (item.candidate.warnings.length === 0 || item.warningsOverridden),
     );
 
   return (
@@ -210,6 +243,14 @@ export function KilterScreenshotImportDialog({
           }}
         />
       </label>
+      <button
+        className="button button--secondary screenshot-import-supplied"
+        type="button"
+        disabled={phase === 'analyzing' || phase === 'importing'}
+        onClick={loadSupplied}
+      >
+        Load supplied 16
+      </button>
       <p className="screenshot-import-help">
         Analysis stays on this device. Review every title and hold before importing; choosing or
         canceling files does not save climbs.
@@ -232,11 +273,14 @@ export function KilterScreenshotImportDialog({
             <span>
               Screenshot {index + 1} of {items.length}
             </span>
-            <span>{current.analyzed.file.name}</span>
+            <span>{current.file?.name ?? current.candidate.sourceName}</span>
           </div>
           {titleUrl && (
             <div className="screenshot-import-title-crop">
-              <img src={titleUrl} alt={`Visible title from ${current.analyzed.file.name}`} />
+              <img
+                src={titleUrl}
+                alt={`Visible title from ${current.file?.name ?? current.candidate.sourceName}`}
+              />
             </div>
           )}
           <label className="screenshot-import-name">
@@ -249,11 +293,11 @@ export function KilterScreenshotImportDialog({
             />
           </label>
 
-          {current.analyzed.candidate.warnings.length > 0 && (
+          {current.candidate.warnings.length > 0 && (
             <div className="screenshot-import-warnings">
               <h3>Needs confirmation</h3>
               <ul>
-                {current.analyzed.candidate.warnings.map((warning, warningIndex) => (
+                {current.candidate.warnings.map((warning, warningIndex) => (
                   <li key={`${warning.code}-${warningIndex}`}>{warning.message}</li>
                 ))}
               </ul>

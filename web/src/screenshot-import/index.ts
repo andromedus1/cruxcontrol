@@ -5,6 +5,7 @@ export { importScreenshotCandidates } from './import-batch';
 export { KilterScreenshotImportDialog } from './KilterScreenshotImportDialog';
 export { interpretKilterScreenshot, suppliedEntryToCandidate } from './interpret';
 export { SUPPLIED_FULLRIDE_CLIMBS } from './supplied-fullride-climbs';
+export { createSuppliedFullrideCandidates } from './supplied-batch';
 export type {
   AnalyzedScreenshot,
   ConfirmedScreenshotCandidate,
