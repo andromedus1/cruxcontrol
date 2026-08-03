@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-board-light-capacity-envelope-physical-results
 kind: story
-stage: implementing
+stage: done
 tags: [perf, ble]
 parent: epic-route-creation-board-light-capacity-envelope
 depends_on: [epic-route-creation-board-light-capacity-envelope-instrumentation]
@@ -66,3 +66,33 @@ and post-campaign one-light/clear recovery evidence are durably recorded.
   therefore represents a replacement scene, not a delta; sparse-frame optimization is
   unsafe on this measured controller path. Every animation frame must resend the complete
   route + decoration + effect scene and remain at or below 127 lights.
+
+## Accepted conservative profile
+
+- **Controller path**: API 2 on the current Android/Web Bluetooth Fullride installation.
+- **Static scene**: cap at one complete API-2 packet, 127 lights. The 127-light/20 ms case
+  passed once at 260 framed bytes, 13 writes, and 2,280.7 ms p95; 128 failed exactly at
+  the packet boundary. The product does not claim repeated-trial reliability or faster
+  pacing beyond this observation.
+- **Animation scene**: support only complete scenes of at most 20 total lights at 2 FPS
+  and 20 ms pacing. One visual 2 FPS case passed. The exported 10 FPS request delivered
+  9 complete frames over 4.18 seconds at 2.0266 effective FPS, p95/max 448.4 ms, proving
+  the transport—not the requested clock—is the limiting cadence.
+- **Scene semantics**: every packet/frame replaces the visible scene. Omitted placements
+  do not persist, so delta/sparse updates are forbidden; route, decoration, and effect
+  lights all consume the same complete-scene budget.
+- **Recovery**: the clean 2 FPS case cleared correctly. The manually stopped 10 FPS trace
+  force-disconnected after an incomplete recovery clear, so subsequent lighting must
+  require the normal reconnect path rather than claiming an in-place recovery succeeded.
+
+## Campaign closure
+
+The remaining repeated static trials, pacing sweep, 84–305-light animation points, and
+long confirmation runs were deliberately omitted. Above 127 cannot form one API-2 scene;
+above 20 lacks a measured animation pass; and continuing after the forced-disconnect trace
+would add hardware stress without changing the safe first policy. Those optimization
+measurements are preserved as `idea-expanded-fullride-capacity-matrix` rather than being
+invented or silently treated as passing.
+
+This story is complete as an empirical checkpoint for a conservative product profile,
+not as a claim that the board's maximum sustainable throughput has been found.
