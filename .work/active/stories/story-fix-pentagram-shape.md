@@ -1,7 +1,7 @@
 ---
 id: story-fix-pentagram-shape
 kind: story
-stage: review
+stage: done
 tags: [bug, ui, ble]
 parent: null
 depends_on: []
@@ -95,3 +95,9 @@ topology while keeping every outer light visibly in frame.
 
 The framing regression and full 443-test suite pass, followed by typecheck, lint, and the
 production PWA build.
+
+## Framing review
+
+Bounded review approved. The repair changes only the common star/ring radius and adds
+post-snap margin assertions on every emitted light. It preserves the previously approved
+topology, fade, deterministic placement, uniqueness, protected colors, and 20-light cap.
