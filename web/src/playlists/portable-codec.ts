@@ -154,19 +154,17 @@ function decodeAppearance(value: unknown, path: string): Readonly<BoardHoldAppea
   invalid(`${path}.kind`, 'expected role or custom');
 }
 
-function decodeEffectGroups(value: unknown, path: string): readonly LightEffectGroup[] {
+function decodeEffectGroups(value: unknown, path: string, legacy: boolean): readonly LightEffectGroup[] {
   const source = boundedArray(value, path, PORTABLE_PLAYLIST_LIMITS.effectGroupsPerClimb);
   const seen = new Set<string>();
   return Object.freeze(
     source.map((entry, index) => {
       const entryPath = `${path}[${index}]`;
       const raw = record(entry, entryPath);
-      exactKeys(raw, ['id', 'kind', 'palette', 'periodMs', 'intensity'], entryPath);
+      exactKeys(raw, legacy || raw.model === undefined ? ['id', 'kind', 'palette', 'periodMs', 'intensity'] : ['model', 'id', 'kind', 'recipeVersion', 'recipe', 'seed', 'palette', 'periodMs', 'intensity', 'footprint', 'target'], entryPath);
       const id = branded(lightEffectGroupId, raw.id, `${entryPath}.id`);
       if (seen.has(id)) invalid(`${entryPath}.id`, 'duplicate effect group ID');
       seen.add(id);
-      const kind = string(raw.kind, `${entryPath}.kind`) as LightEffectKind;
-      if (!EFFECT_KINDS.has(kind)) invalid(`${entryPath}.kind`, 'unknown effect kind');
       if (!Array.isArray(raw.palette) || raw.palette.length < 1 || raw.palette.length > 8) {
         invalid(`${entryPath}.palette`, 'expected 1 to 8 packed colors');
       }
@@ -199,7 +197,23 @@ function decodeEffectGroups(value: unknown, path: string): readonly LightEffectG
       ) {
         invalid(`${entryPath}.intensity`, 'expected a number from 0 to 1');
       }
-      return Object.freeze({ id, kind, palette, periodMs: raw.periodMs, intensity: raw.intensity });
+      const model = legacy || raw.model === undefined ? 'assigned' : string(raw.model, `${entryPath}.model`);
+      if (model === 'assigned') {
+        const kind = string(raw.kind, `${entryPath}.kind`) as LightEffectKind;
+        if (!EFFECT_KINDS.has(kind)) invalid(`${entryPath}.kind`, 'unknown effect kind');
+        return Object.freeze({ model: 'assigned' as const, id, kind, palette, periodMs: raw.periodMs, intensity: raw.intensity });
+      }
+      if (model !== 'spatial') invalid(`${entryPath}.model`, 'expected assigned or spatial');
+      if (raw.recipeVersion !== 1 || !Number.isSafeInteger(raw.seed) || !Number.isInteger(raw.footprint) || (raw.footprint as number) < 1 || (raw.footprint as number) > 20) invalid(entryPath, 'invalid spatial recipe version, seed, or footprint');
+      const recipe = record(raw.recipe, `${entryPath}.recipe`);
+      const spatialKinds = new Set(['ocean-tide','tie-dye-spiral','matrix-rain','snake','beach-ball','pac-man','pong','bird-flock']);
+      if (!spatialKinds.has(recipe.kind as string)) invalid(`${entryPath}.recipe.kind`, 'unknown spatial recipe');
+      const target = record(raw.target, `${entryPath}.target`);
+      if (!['unused','background-board','selected'].includes(target.scope as string)) invalid(`${entryPath}.target.scope`, 'unknown target scope');
+      const placements = (input: unknown, targetPath: string) => Object.freeze(boundedArray(input, targetPath, PORTABLE_PLAYLIST_LIMITS.assignmentsPerClimb).map((value, placementIndex) => branded(boardPlacementId, value, `${targetPath}[${placementIndex}]`)));
+      const include = placements(target.include, `${entryPath}.target.include`); const exclude = placements(target.exclude, `${entryPath}.target.exclude`);
+      if (new Set(include).size !== include.length || new Set(exclude).size !== exclude.length || include.some((placementId) => exclude.includes(placementId))) invalid(`${entryPath}.target`, 'target lists must be unique and disjoint');
+      return Object.freeze({ model: 'spatial' as const, id, recipeVersion: 1 as const, recipe: Object.freeze({ ...recipe }) as import('../board-renderer/types').SpatialRecipe, seed: raw.seed as number, palette, periodMs: raw.periodMs, intensity: raw.intensity, footprint: raw.footprint as number, target: Object.freeze({ scope: target.scope as 'unused'|'background-board'|'selected', include, exclude }) });
     }),
   );
 }
@@ -245,7 +259,7 @@ function decodeMetadata(value: unknown, path: string): Readonly<DraftMetadata> {
   return Object.freeze(metadata);
 }
 
-function decodeSnapshot(value: unknown, path: string): PortableClimbSnapshotV1 {
+function decodeSnapshot(value: unknown, path: string, legacy: boolean): PortableClimbSnapshotV1 {
   const raw = record(value, path);
   exactKeys(
     raw,
@@ -266,8 +280,8 @@ function decodeSnapshot(value: unknown, path: string): PortableClimbSnapshotV1 {
   if (typeof raw.angle !== 'number' || !Number.isFinite(raw.angle)) {
     invalid(`${path}.angle`, 'expected a finite number');
   }
-  const effectGroups = decodeEffectGroups(raw.effectGroups, `${path}.effectGroups`);
-  const effectGroupIds = new Set(effectGroups.map(({ id }) => id));
+  const effectGroups = decodeEffectGroups(raw.effectGroups, `${path}.effectGroups`, legacy);
+  const effectGroupIds = new Set(effectGroups.filter((group) => group.model !== 'spatial').map(({ id }) => id));
   return Object.freeze({
     status,
     definitionId: branded(boardDefinitionId, raw.definitionId, `${path}.definitionId`),
@@ -290,13 +304,13 @@ function decodeProviderId(value: unknown, path: string): ProviderClimbId {
   });
 }
 
-function decodeEntry(value: unknown, path: string): PortablePlaylistEntryV1 {
+function decodeEntry(value: unknown, path: string, legacy: boolean): PortablePlaylistEntryV1 {
   const raw = record(value, path);
   if (raw.kind === 'local-snapshot') {
     exactKeys(raw, ['kind', 'snapshot'], path);
     return Object.freeze({
       kind: 'local-snapshot',
-      snapshot: decodeSnapshot(raw.snapshot, `${path}.snapshot`),
+      snapshot: decodeSnapshot(raw.snapshot, `${path}.snapshot`, legacy),
     });
   }
   if (raw.kind === 'provider') {
@@ -321,7 +335,7 @@ export function decodePortablePlaylist(value: unknown): PortablePlaylistV1 {
   if (raw.format !== PORTABLE_PLAYLIST_FORMAT) {
     invalid('format', `expected ${PORTABLE_PLAYLIST_FORMAT}`);
   }
-  if (raw.schemaVersion !== PORTABLE_PLAYLIST_SCHEMA_VERSION) {
+  if (raw.schemaVersion !== 1 && raw.schemaVersion !== PORTABLE_PLAYLIST_SCHEMA_VERSION) {
     throw new PortablePlaylistSchemaError(raw.schemaVersion);
   }
   const playlist = record(raw.playlist, 'playlist');
@@ -338,7 +352,7 @@ export function decodePortablePlaylist(value: unknown): PortablePlaylistV1 {
   const seenProviders = new Set<string>();
   const entries = Object.freeze(
     sourceEntries.map((entry, index) => {
-      const decoded = decodeEntry(entry, `playlist.entries[${index}]`);
+      const decoded = decodeEntry(entry, `playlist.entries[${index}]`, raw.schemaVersion === 1);
       if (decoded.kind === 'provider') {
         const key = providerClimbKey(decoded.id);
         if (seenProviders.has(key)) {

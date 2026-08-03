@@ -42,6 +42,7 @@ const raw = {
           ],
           effectGroups: [
             {
+              model: 'assigned',
               id: 'ocean',
               kind: 'wave',
               palette: [181, 127, 31],
@@ -93,6 +94,13 @@ function playlist(): PortablePlaylistV1 {
 }
 
 describe('portable playlist codec', () => {
+  it('round-trips complete spatial recipe snapshots in v2', () => {
+    const value = clone();
+    snapshotOf(value).effectGroups = [{ model:'spatial', id:'pong-bg', recipeVersion:1, recipe:{kind:'pong',direction:'forward',paddleSize:2}, seed:7, palette:[255,27], periodMs:4500, intensity:1, footprint:6, target:{scope:'selected',include:['p-3'],exclude:[]} }];
+    assignmentsOf(value).forEach((assignment) => delete assignment.effectGroupId);
+    const decoded = decodePortablePlaylist(value);
+    expect(JSON.parse(encodePortablePlaylist(decoded))).toEqual(value);
+  });
   it('round-trips Unicode and mixed local/provider content in canonical order', () => {
     const decoded = playlist();
     const json = encodePortablePlaylist(decoded);
@@ -117,6 +125,7 @@ describe('portable playlist codec', () => {
     const roles = ['start', 'middle', 'finish', 'foot-only'] as const;
     const effectKinds = ['pulse', 'color-cycle', 'wave', 'twinkle', 'alternate'] as const;
     snapshotOf(value).effectGroups = effectKinds.map((kind, index) => ({
+      model: 'assigned',
       id: `effect-${index}`,
       kind,
       palette: [index, 255 - index],
@@ -190,11 +199,11 @@ describe('portable playlist codec', () => {
   });
 
   it('rejects unknown schema versions with a typed path-specific error', () => {
-    expect(() => decodePortablePlaylist({ ...clone(), schemaVersion: 2 })).toThrowError(
+    expect(() => decodePortablePlaylist({ ...clone(), schemaVersion: 3 })).toThrowError(
       expect.objectContaining<Partial<PortablePlaylistSchemaError>>({
         code: 'unsupported-schema',
         path: 'schemaVersion',
-        schemaVersion: 2,
+        schemaVersion: 3,
       }),
     );
   });

@@ -7,7 +7,7 @@ import type {
 } from '../domain/boards/types.ts';
 
 export const PORTABLE_PLAYLIST_FORMAT = 'cruxcontrol-playlist' as const;
-export const PORTABLE_PLAYLIST_SCHEMA_VERSION = 1 as const;
+export const PORTABLE_PLAYLIST_SCHEMA_VERSION = 2 as const;
 export const MAX_PORTABLE_PLAYLIST_BYTES = 1024 * 1024;
 
 /** Bounds applied before recursive decoding of untrusted portable payloads. */
@@ -36,7 +36,7 @@ export type PortablePlaylistEntryV1 =
 
 export interface PortablePlaylistV1 {
   readonly format: typeof PORTABLE_PLAYLIST_FORMAT;
-  readonly schemaVersion: typeof PORTABLE_PLAYLIST_SCHEMA_VERSION;
+  readonly schemaVersion: 1 | typeof PORTABLE_PLAYLIST_SCHEMA_VERSION;
   readonly exportedAt: string;
   readonly playlist: Readonly<{
     name: string;
@@ -44,3 +44,7 @@ export interface PortablePlaylistV1 {
     entries: readonly PortablePlaylistEntryV1[];
   }>;
 }
+
+export type PortableClimbSnapshotV2 = PortableClimbSnapshotV1;
+export type PortablePlaylistEntryV2 = PortablePlaylistEntryV1;
+export type PortablePlaylistV2 = PortablePlaylistV1 & { readonly schemaVersion: 2 };

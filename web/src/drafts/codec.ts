@@ -5,6 +5,8 @@ import {
   type LightEffectGroup,
   type LightEffectGroupId,
   type LightEffectKind,
+  type SpatialEffectKind,
+  type SpatialRecipe,
 } from '../board-renderer/types.ts';
 import { apiLevel3Color } from '../domain/boards/colors.ts';
 import {
@@ -21,7 +23,7 @@ import {
   type LocalClimbDraft,
   type LocalClimbStatus,
   type LocalDraftId,
-  type StoredDraftV3,
+  type StoredDraftV4,
 } from './types.ts';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -33,6 +35,9 @@ const EFFECT_KINDS = new Set<LightEffectKind>([
   'wave',
   'twinkle',
   'alternate',
+]);
+const SPATIAL_KINDS = new Set<SpatialEffectKind>([
+  'ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock',
 ]);
 
 export function localDraftId(value: string): LocalDraftId {
@@ -155,7 +160,7 @@ function decodeAssignments(
   );
 }
 
-function decodeEffectGroups(value: unknown, source: unknown): readonly LightEffectGroup[] {
+function decodeEffectGroups(value: unknown, source: unknown, legacy = false): readonly LightEffectGroup[] {
   if (!Array.isArray(value)) throw corrupt('effectGroups', 'expected an array', source);
   const seen = new Set<string>();
   return Object.freeze(
@@ -165,8 +170,7 @@ function decodeEffectGroups(value: unknown, source: unknown): readonly LightEffe
       const id = branded(lightEffectGroupId, raw.id, `${path}.id`, source);
       if (seen.has(id)) throw corrupt(`${path}.id`, 'duplicate effect group ID', source);
       seen.add(id);
-      const kind = string(raw.kind, `${path}.kind`, source) as LightEffectKind;
-      if (!EFFECT_KINDS.has(kind)) throw corrupt(`${path}.kind`, 'unknown effect kind', source);
+      const model = legacy || raw.model === undefined ? 'assigned' : string(raw.model, `${path}.model`, source);
       if (!Array.isArray(raw.palette) || raw.palette.length < 1 || raw.palette.length > 8) {
         throw corrupt(`${path}.palette`, 'expected 1 to 8 packed colors', source);
       }
@@ -200,12 +204,40 @@ function decodeEffectGroups(value: unknown, source: unknown): readonly LightEffe
       ) {
         throw corrupt(`${path}.intensity`, 'expected a number from 0 to 1', source);
       }
-      return Object.freeze({ id, kind, palette, periodMs: raw.periodMs, intensity: raw.intensity });
+      if (model === 'assigned') {
+        const kind = string(raw.kind, `${path}.kind`, source) as LightEffectKind;
+        if (!EFFECT_KINDS.has(kind)) throw corrupt(`${path}.kind`, 'unknown effect kind', source);
+        return Object.freeze({ model, id, kind, palette, periodMs: raw.periodMs, intensity: raw.intensity });
+      }
+      if (model !== 'spatial') throw corrupt(`${path}.model`, 'expected assigned or spatial', source);
+      if (raw.recipeVersion !== 1) throw corrupt(`${path}.recipeVersion`, 'expected recipe version 1', source);
+      if (!Number.isSafeInteger(raw.seed)) throw corrupt(`${path}.seed`, 'expected a safe integer', source);
+      if (!Number.isInteger(raw.footprint) || (raw.footprint as number) < 1 || (raw.footprint as number) > 20) {
+        throw corrupt(`${path}.footprint`, 'expected an integer from 1 to 20', source);
+      }
+      const recipeRaw = record(raw.recipe, `${path}.recipe`, source);
+      const recipeKind = string(recipeRaw.kind, `${path}.recipe.kind`, source) as SpatialEffectKind;
+      if (!SPATIAL_KINDS.has(recipeKind)) throw corrupt(`${path}.recipe.kind`, 'unknown spatial recipe', source);
+      const recipe = Object.freeze({ ...recipeRaw, kind: recipeKind }) as SpatialRecipe;
+      const targetRaw = record(raw.target, `${path}.target`, source);
+      if (!['unused', 'background-board', 'selected'].includes(targetRaw.scope as string)) {
+        throw corrupt(`${path}.target.scope`, 'unknown spatial target scope', source);
+      }
+      const decodePlacementList = (input: unknown, field: string) => {
+        if (!Array.isArray(input)) throw corrupt(`${path}.target.${field}`, 'expected an array', source);
+        const result = input.map((value, placementIndex) => branded(boardPlacementId, value, `${path}.target.${field}[${placementIndex}]`, source));
+        if (new Set(result).size !== result.length) throw corrupt(`${path}.target.${field}`, 'duplicate placement', source);
+        return Object.freeze(result);
+      };
+      const include = decodePlacementList(targetRaw.include, 'include');
+      const exclude = decodePlacementList(targetRaw.exclude, 'exclude');
+      if (include.some((placementId) => exclude.includes(placementId))) throw corrupt(`${path}.target`, 'include and exclude overlap', source);
+      return Object.freeze({ model, id, recipeVersion: 1, recipe, seed: raw.seed as number, palette, periodMs: raw.periodMs, intensity: raw.intensity, footprint: raw.footprint as number, target: Object.freeze({ scope: targetRaw.scope as 'unused' | 'background-board' | 'selected', include, exclude }) });
     }),
   );
 }
 
-export function encodeStoredDraft(draft: LocalClimbDraft): StoredDraftV3 {
+export function encodeStoredDraft(draft: LocalClimbDraft): StoredDraftV4 {
   return {
     schemaVersion: LOCAL_DRAFT_SCHEMA_VERSION,
     id: draft.id,
@@ -225,13 +257,9 @@ export function encodeStoredDraft(draft: LocalClimbDraft): StoredDraftV3 {
           : { kind: 'custom', color: appearance.color },
       ...(effectGroupId === undefined ? {} : { effectGroupId }),
     })),
-    effectGroups: draft.effectGroups.map(({ id, kind, palette, periodMs, intensity }) => ({
-      id,
-      kind,
-      palette: [...palette],
-      periodMs,
-      intensity,
-    })),
+    effectGroups: draft.effectGroups.map((group) => group.model === 'spatial'
+      ? { model: 'spatial', id: group.id, recipeVersion: group.recipeVersion, recipe: { ...group.recipe }, seed: group.seed, palette: [...group.palette], periodMs: group.periodMs, intensity: group.intensity, footprint: group.footprint, target: { scope: group.target.scope, include: [...group.target.include], exclude: [...group.target.exclude] } }
+      : { model: 'assigned', id: group.id, kind: group.kind, palette: [...group.palette], periodMs: group.periodMs, intensity: group.intensity }),
     metadata: { ...draft.metadata },
     createdAt: draft.createdAt,
     updatedAt: draft.updatedAt,
@@ -241,7 +269,7 @@ export function encodeStoredDraft(draft: LocalClimbDraft): StoredDraftV3 {
 
 export function decodeStoredDraft(value: unknown): LocalClimbDraft {
   const raw = record(value, '$', value);
-  if (raw.schemaVersion !== 1 && raw.schemaVersion !== 2 && raw.schemaVersion !== 3) {
+  if (raw.schemaVersion !== 1 && raw.schemaVersion !== 2 && raw.schemaVersion !== 3 && raw.schemaVersion !== 4) {
     throw new DraftSchemaError(raw.schemaVersion, typeof raw.id === 'string' ? raw.id : undefined);
   }
   let id: LocalDraftId;
@@ -271,11 +299,11 @@ export function decodeStoredDraft(value: unknown): LocalClimbDraft {
     throw corrupt('updatedOrder', 'must equal [updatedAt, id]', value);
   }
   const effectGroups =
-    raw.schemaVersion === 1 ? Object.freeze([]) : decodeEffectGroups(raw.effectGroups, value);
-  const effectGroupIds = new Set(effectGroups.map(({ id }) => id));
+    raw.schemaVersion === 1 ? Object.freeze([]) : decodeEffectGroups(raw.effectGroups, value, raw.schemaVersion < 4);
+  const effectGroupIds = new Set(effectGroups.filter((group) => group.model !== 'spatial').map(({ id }) => id));
   let status: LocalClimbStatus = 'draft';
   let trashedAt: string | undefined;
-  if (raw.schemaVersion === 3) {
+  if (raw.schemaVersion === 3 || raw.schemaVersion === 4) {
     const decodedStatus = string(raw.status, 'status', value) as LocalClimbStatus;
     if (!CLIMB_STATUSES.has(decodedStatus)) {
       throw corrupt('status', 'expected draft or finished', value);

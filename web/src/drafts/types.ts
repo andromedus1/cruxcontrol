@@ -5,7 +5,7 @@ import type { BoardInstallationId } from '../installations/contracts.ts';
 export type LocalDraftId = Brand<string, 'LocalDraftId'>;
 export type DraftRevision = Brand<number, 'DraftRevision'>;
 export type LocalClimbStatus = 'draft' | 'finished';
-export const LOCAL_DRAFT_SCHEMA_VERSION = 3 as const;
+export const LOCAL_DRAFT_SCHEMA_VERSION = 4 as const;
 
 export interface DraftMetadata {
   readonly grade?: string;
@@ -14,7 +14,8 @@ export interface DraftMetadata {
 }
 
 export interface LocalClimbDraft {
-  readonly schemaVersion: typeof LOCAL_DRAFT_SCHEMA_VERSION;
+  /** Repositories/codecs normalize persisted records to v4; older literals remain readable. */
+  readonly schemaVersion: 1 | 2 | 3 | typeof LOCAL_DRAFT_SCHEMA_VERSION;
   readonly id: LocalDraftId;
   readonly revision: DraftRevision;
   readonly status: LocalClimbStatus;
@@ -101,4 +102,9 @@ export interface StoredDraftV3 extends Omit<StoredDraftV2, 'schemaVersion'> {
   readonly schemaVersion: 3;
   readonly status: LocalClimbStatus;
   readonly trashedAt?: string;
+}
+
+export interface StoredDraftV4 extends Omit<StoredDraftV3, 'schemaVersion' | 'effectGroups'> {
+  readonly schemaVersion: 4;
+  readonly effectGroups: readonly unknown[];
 }

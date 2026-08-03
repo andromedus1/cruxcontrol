@@ -8,13 +8,50 @@ export type BoardHoldAppearance =
 export type LightEffectKind = 'pulse' | 'color-cycle' | 'wave' | 'twinkle' | 'alternate';
 export type LightEffectGroupId = Brand<string, 'LightEffectGroupId'>;
 
-export interface LightEffectGroup {
+export interface AssignedLightEffectGroup {
+  /** Omitted only by in-memory legacy callers; codecs always materialize `assigned`. */
+  readonly model?: 'assigned';
   readonly id: LightEffectGroupId;
   readonly kind: LightEffectKind;
   readonly palette: readonly ApiLevel3Color[];
   readonly periodMs: number;
   readonly intensity: number;
 }
+
+export type SpatialEffectKind =
+  | 'ocean-tide' | 'tie-dye-spiral' | 'matrix-rain' | 'snake'
+  | 'beach-ball' | 'pac-man' | 'pong' | 'bird-flock';
+
+export type SpatialRecipe =
+  | { readonly kind: 'ocean-tide'; readonly direction: 'in' | 'out'; readonly foam: number }
+  | { readonly kind: 'tie-dye-spiral'; readonly direction: 'clockwise' | 'counterclockwise'; readonly arms: 2 | 3 | 4 }
+  | { readonly kind: 'matrix-rain'; readonly direction: 'down' | 'up'; readonly columns: number }
+  | { readonly kind: 'snake'; readonly direction: 'forward' | 'reverse'; readonly bodyLength: number }
+  | { readonly kind: 'beach-ball'; readonly velocityX: number; readonly velocityY: number; readonly size: number }
+  | { readonly kind: 'pac-man'; readonly direction: 'forward' | 'reverse'; readonly mouthBeat: number }
+  | { readonly kind: 'pong'; readonly direction: 'forward' | 'reverse'; readonly paddleSize: number }
+  | { readonly kind: 'bird-flock'; readonly direction: 'left' | 'right'; readonly quietFraction: number };
+
+export interface SpatialEffectTarget {
+  readonly scope: 'unused' | 'background-board' | 'selected';
+  readonly include: readonly BoardPlacementId[];
+  readonly exclude: readonly BoardPlacementId[];
+}
+
+export interface SpatialLightEffectGroup {
+  readonly model: 'spatial';
+  readonly id: LightEffectGroupId;
+  readonly recipeVersion: 1;
+  readonly recipe: SpatialRecipe;
+  readonly seed: number;
+  readonly palette: readonly ApiLevel3Color[];
+  readonly periodMs: number;
+  readonly intensity: number;
+  readonly footprint: number;
+  readonly target: SpatialEffectTarget;
+}
+
+export type LightEffectGroup = AssignedLightEffectGroup | SpatialLightEffectGroup;
 
 export function lightEffectGroupId(value: string): LightEffectGroupId {
   if (value.length === 0) throw new TypeError('Light effect group ID must not be empty');

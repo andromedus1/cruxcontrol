@@ -9,7 +9,7 @@ import type { LocalClimbDraft } from './types.ts';
 function draft(overrides: Partial<LocalClimbDraft> = {}): LocalClimbDraft {
   const content = draftContent();
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     id: localDraftId(FIRST_DRAFT_ID),
     revision: draftRevision(1),
     ...content,
@@ -22,7 +22,21 @@ function draft(overrides: Partial<LocalClimbDraft> = {}): LocalClimbDraft {
 }
 
 describe('local draft codec', () => {
-  it('migrates valid v1 records to active v3 drafts without changing their climb content', () => {
+  it('round-trips a self-contained spatial recipe and rejects assignment references to it', () => {
+    const placementId = kilterFullride7x10Definition.placements[0]!.id;
+    const spatial = {
+      model: 'spatial' as const,
+      id: lightEffectGroupId('snake-background'), recipeVersion: 1 as const,
+      recipe: { kind: 'snake' as const, direction: 'forward' as const, bodyLength: 7 }, seed: 42,
+      palette: [apiLevel3Color(28)], periodMs: 4000, intensity: .8, footprint: 7,
+      target: { scope: 'selected' as const, include: [placementId], exclude: [] },
+    };
+    const source = draft({ effectGroups: [spatial] });
+    expect(decodeStoredDraft(encodeStoredDraft(source))).toEqual({ ...source, schemaVersion: 4 });
+    const dangling = encodeStoredDraft({ ...source, assignments: [{ placementId, appearance: { kind: 'custom', color: apiLevel3Color(1) }, effectGroupId: spatial.id }] });
+    expect(() => decodeStoredDraft(dangling)).toThrowError(expect.objectContaining({ path: 'assignments[0].effectGroupId' }));
+  });
+  it('migrates valid v1 records to active v4 drafts without changing their climb content', () => {
     const current = draft({
       name: 'Old wave',
       assignments: [
@@ -45,7 +59,7 @@ describe('local draft codec', () => {
 
     expect(decodeStoredDraft(v1)).toEqual({
       ...current,
-      schemaVersion: 3,
+      schemaVersion: 4,
       status: 'draft',
       effectGroups: [],
       assignments: current.assignments.map(({ placementId, appearance }) => ({
@@ -64,7 +78,7 @@ describe('local draft codec', () => {
     expect(decodeStoredDraft(v2)).toEqual({ ...source, status: 'draft' });
   });
 
-  it('round-trips v3 lifecycle, effect groups, and assignment membership exactly', () => {
+  it('round-trips v4 lifecycle, effect groups, and assignment membership exactly', () => {
     const placementId = kilterFullride7x10Definition.placements[0]!.id;
     const source = draft({
       status: 'finished',
@@ -78,6 +92,7 @@ describe('local draft codec', () => {
       ],
       effectGroups: [
         {
+          model: 'assigned',
           id: lightEffectGroupId('side-wave'),
           kind: 'wave',
           palette: [apiLevel3Color(181), apiLevel3Color(127), apiLevel3Color(31)],
@@ -235,11 +250,11 @@ describe('local draft codec', () => {
     );
     expect(duplicate).toEqual(snapshot);
 
-    const future = { ...encodeStoredDraft(draft()), schemaVersion: 4 };
+    const future = { ...encodeStoredDraft(draft()), schemaVersion: 5 };
     expect(() => decodeStoredDraft(future)).toThrowError(
       expect.objectContaining({
         code: 'schema-unsupported',
-        schemaVersion: 4,
+        schemaVersion: 5,
         id: FIRST_DRAFT_ID,
       }) as DraftSchemaError,
     );

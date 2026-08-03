@@ -82,6 +82,7 @@ describe('portable playlist export', () => {
       ],
       effectGroups: [
         {
+          model: 'assigned',
           id: lightEffectGroupId('wave'),
           kind: 'wave',
           palette: [apiLevel3Color(181), apiLevel3Color(31)],
