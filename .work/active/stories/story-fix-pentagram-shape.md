@@ -1,7 +1,7 @@
 ---
 id: story-fix-pentagram-shape
 kind: story
-stage: review
+stage: done
 tags: [bug, ui, ble]
 parent: null
 depends_on: []
@@ -49,3 +49,10 @@ symbol rather than clustering on the locally densest strokes.
   protected-color, and footprint tests remain green.
 - **Confirmation**: 443 tests pass, followed by typecheck, lint, and production PWA build.
 - **Adjacent issues**: none discovered.
+
+## Review
+
+Bounded standalone review approved. The diff is confined to pentagram geometry, its
+declared reserve, regression coverage, and the owning feature record. Anchor selection is
+deterministic, unique, capacity-bounded, and retains the existing target and role-color
+protection paths. No correctness or test-integrity findings remain.
