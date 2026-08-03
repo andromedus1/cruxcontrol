@@ -58,4 +58,3 @@ testable against a small schema-faithful fixture.
 - `docs/SPEC.md` — Climb Browser, Data Acquisition, and provider-aware domain model.
 - `docs/PRINCIPLES.md` — Preserve before normalizing; keep SQLite behind domain
   queries.
-

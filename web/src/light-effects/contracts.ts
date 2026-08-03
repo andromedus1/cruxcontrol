@@ -4,4 +4,3 @@ export {
   type LightEffectGroupId,
   type LightEffectKind,
 } from '../board-renderer/types';
-
