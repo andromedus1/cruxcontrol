@@ -234,6 +234,6 @@ describe('spatial effect rendering', () => {
     expect(scene.slice(15).map(({ placementId }) => {
       const placement = definition.placements.find(({ id }) => id === placementId)!;
       return [placement.position.x, placement.position.y];
-    })).toEqual([[20, 80], [-4, 104], [0, 60], [4, 104], [-20, 80]]);
+    })).toEqual([[12, 80], [-4, 104], [0, 68], [4, 104], [-12, 80]]);
   });
 });

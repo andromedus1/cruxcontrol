@@ -110,9 +110,9 @@ export function renderSpatialGroup(definition: BoardDefinition, assignments: rea
         const from = vertices[order[stroke]!]!; const to = vertices[order[stroke + 1]!]!;
         const x = (from.x + to.x) / 2; const y = (from.y + to.y) / 2;
         const dx = x - .5; const dy = y - .5;
-        return { x, y, outward: Math.abs(dx) > Math.abs(dy)
-          ? { x: Math.sign(dx) * 8 / width, y: 0 }
-          : { x: 0, y: Math.sign(dy) * 8 / height } };
+        return { x, y, outward: Math.abs(dy) >= Math.abs(dx) && dy > 0
+          ? { x: 0, y: 8 / height }
+          : null };
       }),
     ];
     const used = new Set<string>();

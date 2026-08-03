@@ -1,7 +1,7 @@
 ---
 id: story-fix-pentagram-shape
 kind: story
-stage: done
+stage: review
 tags: [bug, ui, ble]
 parent: null
 depends_on: []
@@ -118,3 +118,10 @@ spatial suite, lint, and production build pass.
 Bounded review approved. The change is limited to the five chord anchors, derives one
 physical eight-unit step from the already-snapped base placement, and has exact-coordinate
 coverage. The other fifteen lights and all existing effect invariants are unchanged.
+
+## Inner-point refinement
+
+Keep the two upper inner chord lights one spacing up, but return the left, right, and
+bottom inner lights to their original centerward positions. No other light changes.
+
+Exact-coordinate regression, all 443 tests, typecheck, lint, and production build pass.
