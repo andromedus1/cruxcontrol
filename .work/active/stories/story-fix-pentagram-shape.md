@@ -1,7 +1,7 @@
 ---
 id: story-fix-pentagram-shape
 kind: story
-stage: done
+stage: review
 tags: [bug, ui, ble]
 parent: null
 depends_on: []
@@ -101,3 +101,14 @@ production PWA build.
 Bounded review approved. The repair changes only the common star/ring radius and adds
 post-snap margin assertions on every emitted light. It preserves the previously approved
 topology, fade, deterministic placement, uniqueness, protected colors, and 20-light cap.
+
+## Inner-point dogfood adjustment
+
+Move the five inner chord lights one physical hold spacing radially outward: the bottom
+light down, the left/right lights sideways, and both upper lights up. Preserve the outer
+five star vertices, enclosing ring, framing margins, and fade.
+
+The regression first showed that shifting abstract anchors retained the same snapped
+holds. The renderer now shifts from each actual base placement and the test proves the
+five exact eight-unit coordinate changes. The full 443-test suite, typecheck, focused
+spatial suite, lint, and production build pass.

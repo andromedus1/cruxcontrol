@@ -205,7 +205,11 @@ describe('spatial effect rendering', () => {
       ...Array.from({ length: 5 }, (_, stroke) => {
         const from = vertices[starOrder[stroke]!]!;
         const to = vertices[starOrder[stroke + 1]!]!;
-        return { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+        const midpoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+        const dx = midpoint.x - .5; const dy = midpoint.y - .5;
+        return Math.abs(dx) > Math.abs(dy)
+          ? { x: midpoint.x + Math.sign(dx) * 8 / (definition.bounds.right - definition.bounds.left), y: midpoint.y }
+          : { x: midpoint.x, y: midpoint.y + Math.sign(dy) * 8 / (definition.bounds.top - definition.bounds.bottom) };
       }),
     ];
     const positions = new Map(definition.placements.map(({ id, position }) => [id, {
@@ -227,5 +231,9 @@ describe('spatial effect rendering', () => {
     expect(downwardPoint.y).toBeGreaterThan(.08);
     expect(downwardPoint.y).toBeLessThan(.18);
     expect(Math.abs(downwardPoint.x - .5)).toBeLessThan(.08);
+    expect(scene.slice(15).map(({ placementId }) => {
+      const placement = definition.placements.find(({ id }) => id === placementId)!;
+      return [placement.position.x, placement.position.y];
+    })).toEqual([[20, 80], [-4, 104], [0, 60], [4, 104], [-20, 80]]);
   });
 });

@@ -102,20 +102,30 @@ export function renderSpatialGroup(definition: BoardDefinition, assignments: rea
     const anchors = [
       ...Array.from({ length: circleCount }, (_, index) => {
         const angle = -Math.PI / 2 + Math.PI / Math.max(1, circleCount) + index * Math.PI * 2 / Math.max(1, circleCount);
-        return { x: .5 + Math.cos(angle) * radius, y: .5 + Math.sin(angle) * radius };
+        return { x: .5 + Math.cos(angle) * radius, y: .5 + Math.sin(angle) * radius, outward: null };
       }),
-      ...Array.from({ length: vertexCount }, (_, index) => vertices[order[Math.floor(index * 5 / Math.max(1, vertexCount))]!]!),
+      ...Array.from({ length: vertexCount }, (_, index) => ({ ...vertices[order[Math.floor(index * 5 / Math.max(1, vertexCount))]!]!, outward: null })),
       ...Array.from({ length: chordCount }, (_, index) => {
         const stroke = Math.floor(index * 5 / Math.max(1, chordCount));
         const from = vertices[order[stroke]!]!; const to = vertices[order[stroke + 1]!]!;
-        return { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+        const x = (from.x + to.x) / 2; const y = (from.y + to.y) / 2;
+        const dx = x - .5; const dy = y - .5;
+        return { x, y, outward: Math.abs(dx) > Math.abs(dy)
+          ? { x: Math.sign(dx) * 8 / width, y: 0 }
+          : { x: 0, y: Math.sign(dy) * 8 / height } };
       }),
     ];
     const used = new Set<string>();
     const selected = anchors.flatMap((anchor) => {
+      const base = anchor.outward ? normalized
+        .filter(({ placement }) => !used.has(placement.id))
+        .sort((a, b) => Math.hypot(a.x - anchor.x, a.y - anchor.y) - Math.hypot(b.x - anchor.x, b.y - anchor.y) || a.order - b.order)[0] : undefined;
+      const target = base && anchor.outward
+        ? { x: base.x + anchor.outward.x, y: base.y + anchor.outward.y }
+        : anchor;
       const match = normalized
         .filter(({ placement }) => !used.has(placement.id))
-        .sort((a, b) => Math.hypot(a.x - anchor.x, a.y - anchor.y) - Math.hypot(b.x - anchor.x, b.y - anchor.y) || a.order - b.order)[0];
+        .sort((a, b) => Math.hypot(a.x - target.x, a.y - target.y) - Math.hypot(b.x - target.x, b.y - target.y) || a.order - b.order)[0];
       if (!match) return [];
       used.add(match.placement.id);
       return [match];
