@@ -44,7 +44,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 
 - Connect to the active board through a capability-selected controller adapter.
 - The first adapter controls the Kilter Fullride 7x10 via Web Bluetooth.
-- Light up holds for any selected climb using the Nordic UART protocol (API level 3).
+- Light holds for any selected climb through the Nordic UART protocol, selecting API
+  level 2 or 3 from the connected controller identity. The powered Fullride acceptance
+  board currently exercises the measured API-2 path.
 - Run explicit, bounded Fullride capacity cases from the editor with exact packet/write
   estimates, stop/timeout recovery, operator observations, and private local JSON trace
   export. No diagnostic runs automatically and no trace is uploaded.
@@ -89,12 +91,14 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   overwrites.
 - Explicit Light Draft and opt-in, default-off Live Preview reuse the board controller.
 - Add editable assignment effects and independent spatial background presets: Ocean Tide,
-  Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, and Bird Flock. Presets
-  default to unused holds, can target the board background or a painted selection, persist
-  complete recipe snapshots, and always keep semantic climb roles exact and static.
+  Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger,
+  and a fading circled inverted pentagram. Presets default to unused holds, can target
+  the board background or a painted selection, persist complete recipe snapshots, and
+  always keep semantic climb roles exact and static.
 - Physical animation preflights route/static lights plus every spatial layer's declared
   worst-case reserve before the first write. API-2 playback refuses plans above 20 lights
   with a breakdown; it never thins a saved design. Screen preview and saving remain unrestricted.
+  Browser animation playback is foreground-only and stops when the page becomes hidden.
 - Import Kilter Android Fullride screenshots through an on-device detection and review
   flow. Users can correct detected holds and roles before confirmation; confirmed
   climbs enter the existing local lifecycle as ordinary drafts at 40°.
@@ -208,7 +212,8 @@ The model mirrors the official Kilter SQLite schema (see
 - Locally authored climbs are authoritative in a dedicated native IndexedDB database,
   survive reload/reopen, move between Draft and Finished without content validation,
   and remain recoverable from Trash for 30 days. Definition/layout/angle/placement
-  incompatibility is surfaced while retaining the stored record unchanged.
+  incompatibility is surfaced while retaining the stored record unchanged. Drafts remain
+  in their dedicated workspace rather than appearing in the finished My Climbs library.
 - The Drafts workspace can import selected Kilter Android Fullride PNGs sequentially,
   review and correct each detected climb, and save confirmed results as ordinary 40°
   drafts. It also exposes the pixel-free built-in migration for the supplied 16 climbs.
@@ -224,8 +229,8 @@ The model mirrors the official Kilter SQLite schema (see
   bounded fragment links and lossless files. Import previews compatibility before any
   write, creates fresh identities, and compensates created climb copies if list
   creation fails.
-- The editor is responsive at Android-phone and desktop Chromium widths, retains
-  persistent save/light actions, and exposes named keyboard-operable controls and
+- The editor is responsive at Android-phone and desktop Chromium widths, autosaves edits,
+  retains explicit lighting actions, and exposes named keyboard-operable controls and
   non-color-only role markers.
 - Deterministic tests cover definition/renderer, climb and playlist
   persistence/concurrency/recovery and screenshot recognition/review/import,
@@ -234,13 +239,16 @@ The model mirrors the official Kilter SQLite schema (see
   multi-list membership/order, Trash/restore resolution, ephemeral play-through, and
   portable list export/import with fresh identities and preserved content/order, plus
   compact/wide interaction.
-- Physical behavior on a powered Fullride 7x10 through Android Chrome remains a
-  pending manual acceptance checkpoint; automated approval does not claim it passed.
+- Powered-board dogfooding through Android Chrome confirms connect/light/clear, API-2
+  complete-scene replacement behavior and measured capacity, and recognizable spatial
+  animation on the Fullride. The saved recipes remain deterministic while successive
+  circuits vary supported game and ambient paths.
 
 ## Constraints & Non-Functional Requirements
 
-- **Browser support.** Web Bluetooth limits the client to Chromium browsers
-  (Chrome/Edge); other browsers can browse but not drive the board.
+- **Browser support.** Direct Web Bluetooth control runs in supported Android and
+  desktop Chromium browsers (Chrome/Edge); other browsers can browse but not drive
+  the board.
 - **Offline-first.** Local drafts already create, edit, and reopen without network.
   The catalog and logbook must likewise be usable from local storage when their
   milestones ship.
@@ -249,8 +257,8 @@ The model mirrors the official Kilter SQLite schema (see
   providers do not block that milestone.
 - **Data ownership.** Locally authored climbs are browser-authoritative today. The logbook will
   likewise be locally authoritative; Kilter sync remains optional and reversible.
-- **Protocol fidelity.** BLE packets must implement framing, checksums, and
-  multi-packet splitting exactly per API level 3 (see
+- **Protocol fidelity.** BLE packets implement framing, checksums, and packet splitting
+  for the controller-selected API level 2 or 3 (see
   [briefs/hardware-and-protocol.md](briefs/hardware-and-protocol.md)).
 - **Reproducible pipelines.** Catalog sync and model training must re-run as the
   catalog grows — not one-off scripts.
