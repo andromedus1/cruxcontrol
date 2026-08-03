@@ -109,7 +109,7 @@ describe('RouteEditorWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add effect' }));
     expect(screen.getByLabelText('Effect kind')).toHaveValue('pulse');
     fireEvent.change(screen.getByLabelText('Effect kind'), { target: { value: 'wave' } });
-    fireEvent.change(screen.getByLabelText('Effect speed'), { target: { value: '2400' } });
+    fireEvent.change(screen.getByLabelText('Effect cycle time'), { target: { value: '5000' } });
     fireEvent.change(screen.getByLabelText('Effect intensity'), { target: { value: '60' } });
     fireEvent.click(screen.getByRole('radio', { name: 'Apply selected effect' }));
     fireEvent.keyDown(screen.getByRole('button', { name: /^Hold 1, Start/ }), { key: 'Enter' });
@@ -124,6 +124,8 @@ describe('RouteEditorWorkspace', () => {
     render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()}/>);
     fireEvent.click(screen.getByRole('button', { name: /Snake 7 lights/ }));
     expect(screen.getByLabelText('Effect target')).toHaveValue('unused');
+    expect(screen.getByLabelText('Effect cycle time')).toHaveValue('120000');
+    expect(screen.getByLabelText('Effect cycle time')).toHaveAttribute('max', '180000');
     expect(screen.getByText(/0 route\/static \+ 7 effects = 7\/20/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Effect target'), { target:{ value:'selected' } });
     fireEvent.click(screen.getByRole('button', { name:'Paint targets' }));

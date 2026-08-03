@@ -5,6 +5,7 @@ import type { LightScene } from '../domain/boards/light-scene';
 import type { ApiLevel3Color } from '../domain/boards/types';
 
 const fraction = (value: number) => ((value % 1) + 1) % 1;
+export const BOARD_ANIMATION_FRAME_MS = 500;
 const hash = (value: string, seed: number) => { let h = seed | 0; for (const c of value) h = Math.imul(h ^ c.codePointAt(0)!, 16777619); return (h >>> 0) / 0x1_0000_0000; };
 const triangle = (value: number) => Math.abs(fraction(value) * 2 - 1);
 const distance = (a: number, b: number) => { const d = Math.abs(fraction(a) - fraction(b)); return Math.min(d, 1 - d); };
@@ -34,7 +35,10 @@ function eligible(definition: BoardDefinition, assignments: readonly BoardHoldAs
 export function renderSpatialGroup(definition: BoardDefinition, assignments: readonly BoardHoldAssignment[], group: SpatialLightEffectGroup, elapsedMs: number): LightScene {
   const candidates = eligible(definition, assignments, group);
   if (candidates.length === 0 || group.palette.length === 0) return Object.freeze([]);
-  const phase = fraction(elapsedMs / group.periodMs);
+  // API-2 can deliver only two complete scenes per second. Use the same held poses in
+  // the UI preview so it never advertises intermediate motion the board cannot show.
+  const boardElapsedMs = Math.floor(elapsedMs / BOARD_ANIMATION_FRAME_MS) * BOARD_ANIMATION_FRAME_MS;
+  const phase = fraction(boardElapsedMs / group.periodMs);
   const width = definition.bounds.right - definition.bounds.left || 1;
   const height = definition.bounds.top - definition.bounds.bottom || 1;
   const normalized = candidates.map((placement, order) => ({ placement, order, x: (placement.position.x - definition.bounds.left) / width, y: (placement.position.y - definition.bounds.bottom) / height }));

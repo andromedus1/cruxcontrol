@@ -5,11 +5,28 @@ import { kilterFullride7x10Definition as definition } from '../domain/boards/def
 import { spatialCapacityPlan } from './capacity-plan';
 import { renderAnimationFrame } from './frame';
 import { createSpatialPreset, SPATIAL_PRESETS } from './preset-library';
-import { renderSpatialGroup } from './spatial-frame';
+import { BOARD_ANIMATION_FRAME_MS, renderSpatialGroup } from './spatial-frame';
 
 const preset = (kind: Parameters<typeof createSpatialPreset>[0], seed = 42) => createSpatialPreset(kind, seed);
 
 describe('spatial effect rendering', () => {
+  it('holds one discrete pose for each measured two-FPS board frame', () => {
+    const snake = preset('snake');
+    const first = renderSpatialGroup(definition, [], snake, 0);
+    expect(renderSpatialGroup(definition, [], snake, BOARD_ANIMATION_FRAME_MS - 1)).toEqual(first);
+    expect(renderSpatialGroup(definition, [], snake, BOARD_ANIMATION_FRAME_MS)).not.toEqual(first);
+  });
+
+  it('gives physical traversal presets enough board frames to move legibly', () => {
+    const periods = new Map(SPATIAL_PRESETS.map(({ kind, periodMs }) => [kind, periodMs]));
+    expect(periods.get('snake')).toBeGreaterThanOrEqual(120_000);
+    expect(periods.get('pac-man')).toBeGreaterThanOrEqual(120_000);
+    for (const { periodMs } of SPATIAL_PRESETS) {
+      expect(periodMs).toBeGreaterThanOrEqual(30_000);
+      expect(periodMs % BOARD_ANIMATION_FRAME_MS).toBe(0);
+    }
+  });
+
   it.each(SPATIAL_PRESETS.map(({ kind, footprint }) => [kind, footprint] as const))('%s is deterministic, unique, role-color-safe, and within its %i-light reserve', (kind, footprint) => {
     const group = preset(kind);
     const reserved = new Set(Object.values(definition.rolePresets).map(({ lightColor }) => lightColor));

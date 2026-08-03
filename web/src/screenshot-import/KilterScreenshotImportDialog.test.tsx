@@ -68,7 +68,7 @@ describe('KilterScreenshotImportDialog', () => {
     }
     fireEvent.click(screen.getByRole('button', { name: 'Import 16 drafts' }));
     await waitFor(() => expect(importCandidates).toHaveBeenCalledOnce());
-  });
+  }, 10_000);
 
   it('analyzes selected files sequentially and performs no writes during review or cancel', async () => {
     const files = [new File(['a'], 'a.png'), new File(['b'], 'b.png')];

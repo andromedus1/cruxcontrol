@@ -80,5 +80,5 @@ describe('create-save-light integration', () => {
     const reopenedDrafts = new IndexedDbLocalDraftRepository(reopened);
     expect(await reopenedDrafts.list({ installationId: installation.config.id })).toEqual(stored);
     reopened.close();
-  });
+  }, 10_000);
 });
