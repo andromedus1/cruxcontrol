@@ -1,7 +1,7 @@
 ---
 id: story-fix-pentagram-shape
 kind: story
-stage: review
+stage: done
 tags: [bug, ui, ble]
 parent: null
 depends_on: []
@@ -74,3 +74,10 @@ snapped Fullride coordinates were inspected for centered bottom point, symmetric
 side points, inner crossings, and an enclosing ring.
 
 The second regression pass is green with 443 tests, typecheck, lint, and production build.
+
+## Second review
+
+Bounded review approved the bounced repair. The rendered set now contains the five actual
+point-down star vertices, five chord midpoints, and an offset ten-light enclosing ring.
+The regression checks the snapped Fullride coordinates and explicitly proves the centered
+downward point; fade, capacity, uniqueness, and protected colors remain covered.
