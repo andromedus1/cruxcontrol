@@ -152,7 +152,7 @@ export function KilterScreenshotImportDialog({
     }
   }
 
-  function updateCurrent(changes: Partial<Omit<ReviewItem, 'analyzed'>>): void {
+  function updateCurrent(changes: Partial<ReviewItem>): void {
     setItems((values) =>
       Object.freeze(
         values.map((item, itemIndex) =>
