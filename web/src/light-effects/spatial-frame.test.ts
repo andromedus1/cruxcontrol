@@ -97,4 +97,17 @@ describe('spatial effect rendering', () => {
     ).toEqual(paths[3]);
     expect(paths.every((path) => path.length <= snake.footprint)).toBe(true);
   });
+
+  it('varies Pac-Man maze orientation across consecutive circuits', () => {
+    const pacMan = preset('pac-man', 19);
+    const paths = Array.from({ length: 4 }, (_, cycle) =>
+      renderSpatialGroup(definition, [], pacMan, pacMan.periodMs * (cycle + 0.25))
+        .map(({ placementId }) => placementId),
+    );
+    expect(new Set(paths.map((path) => path.join('|'))).size).toBeGreaterThanOrEqual(3);
+    expect(
+      renderSpatialGroup(definition, [], pacMan, pacMan.periodMs * 1.25).map(({ placementId }) => placementId),
+    ).toEqual(paths[1]);
+    expect(paths.every((path) => path.length <= pacMan.footprint)).toBe(true);
+  });
 });
