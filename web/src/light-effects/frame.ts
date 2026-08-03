@@ -7,6 +7,7 @@ import { packApiLevel3Color, unpackApiLevel3Color } from '../domain/boards/color
 import type { BoardDefinition } from '../domain/boards/definition';
 import type { LightScene } from '../domain/boards/light-scene';
 import type { ApiLevel3Color, BoardPlacementId } from '../domain/boards/types';
+import { renderSpatialGroup } from './spatial-frame';
 
 export interface RenderAnimationFrameOptions {
   readonly definition: BoardDefinition;
@@ -76,7 +77,7 @@ function stablePhase(placementId: BoardPlacementId): number {
 function effectColor(options: {
   readonly definition: BoardDefinition;
   readonly assignment: BoardHoldAssignment;
-  readonly group: LightEffectGroup;
+  readonly group: Exclude<LightEffectGroup, { readonly model: 'spatial' }>;
   readonly elapsedMs: number;
   readonly placementOrder: ReadonlyMap<BoardPlacementId, number>;
 }): ApiLevel3Color {
@@ -122,11 +123,11 @@ export function renderAnimationFrame(options: RenderAnimationFrameOptions): Ligh
   const placementOrder = new Map(
     options.definition.placements.map((placement, index) => [placement.id, index]),
   );
-  return Object.freeze(
-    options.assignments.map((assignment) => {
-      const group = assignment.effectGroupId === undefined
+  const assigned = options.assignments.map((assignment) => {
+      const candidate = assignment.effectGroupId === undefined
         ? undefined
         : groups.get(assignment.effectGroupId);
+      const group = candidate?.model === 'spatial' ? undefined : candidate;
       return Object.freeze({
         placementId: assignment.placementId,
         color: group
@@ -139,7 +140,13 @@ export function renderAnimationFrame(options: RenderAnimationFrameOptions): Ligh
             })
           : baseColor(options.definition, assignment),
       });
-    }),
-  );
+    });
+  const composed = new Map(assigned.map((light) => [light.placementId, light]));
+  for (const group of options.effectGroups) {
+    if (group.model !== 'spatial') continue;
+    for (const light of renderSpatialGroup(options.definition, options.assignments, group, options.elapsedMs)) composed.set(light.placementId, light);
+  }
+  // Semantic route roles are exact and topmost regardless of spatial layer order.
+  for (const assignment of options.assignments) if (assignment.appearance.kind === 'role') composed.set(assignment.placementId, Object.freeze({ placementId: assignment.placementId, color: baseColor(options.definition, assignment) }));
+  return Object.freeze([...composed.values()]);
 }
-

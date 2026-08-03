@@ -20,7 +20,7 @@ function assignment(
   return { placementId, appearance: { kind: 'custom', color }, effectGroupId };
 }
 
-function group(overrides: Partial<LightEffectGroup> = {}): LightEffectGroup {
+function group(overrides: Partial<Extract<LightEffectGroup, { model?: 'assigned' }>> = {}): LightEffectGroup {
   return {
     id: groupId,
     kind: 'pulse',
