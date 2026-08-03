@@ -193,13 +193,13 @@ describe('spatial effect rendering', () => {
     const scene = renderSpatialGroup(definition, [], pentagram, 0);
     const vertices = Array.from({ length: 5 }, (_, index) => {
       const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
-      return { x: .5 + Math.cos(angle) * .48, y: .5 + Math.sin(angle) * .48 };
+      return { x: .5 + Math.cos(angle) * .4, y: .5 + Math.sin(angle) * .4 };
     });
     const starOrder = [0, 2, 4, 1, 3, 0];
     const anchors = [
       ...Array.from({ length: 10 }, (_, index) => {
         const angle = -Math.PI / 2 + Math.PI / 10 + index * Math.PI * 2 / 10;
-        return { x: .5 + Math.cos(angle) * .48, y: .5 + Math.sin(angle) * .48 };
+        return { x: .5 + Math.cos(angle) * .4, y: .5 + Math.sin(angle) * .4 };
       }),
       ...starOrder.slice(0, -1).map((vertex) => vertices[vertex]!),
       ...Array.from({ length: 5 }, (_, stroke) => {
@@ -218,9 +218,14 @@ describe('spatial effect rendering', () => {
       const position = positions.get(placementId)!;
       const anchor = anchors[index]!;
       expect(Math.hypot(position.x - anchor.x, position.y - anchor.y)).toBeLessThan(.13);
+      expect(position.x).toBeGreaterThan(.08);
+      expect(position.x).toBeLessThan(.92);
+      expect(position.y).toBeGreaterThan(.08);
+      expect(position.y).toBeLessThan(.92);
     });
     const downwardPoint = positions.get(scene[10]!.placementId)!;
-    expect(downwardPoint.y).toBeLessThan(.15);
+    expect(downwardPoint.y).toBeGreaterThan(.08);
+    expect(downwardPoint.y).toBeLessThan(.18);
     expect(Math.abs(downwardPoint.x - .5)).toBeLessThan(.08);
   });
 });

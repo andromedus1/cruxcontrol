@@ -1,7 +1,7 @@
 ---
 id: story-fix-pentagram-shape
 kind: story
-stage: done
+stage: review
 tags: [bug, ui, ble]
 parent: null
 depends_on: []
@@ -81,3 +81,17 @@ Bounded review approved the bounced repair. The rendered set now contains the fi
 point-down star vertices, five chord midpoints, and an offset ten-light enclosing ring.
 The regression checks the snapped Fullride coordinates and explicitly proves the centered
 downward point; fade, capacity, uniqueness, and protected colors remain covered.
+
+## Second dogfood bounce
+
+The corrected topology is recognizable, but its 0.48 normalized radius snaps the left and
+right vertices/ring anchors onto extreme edge holds. Physical framing clips those edges
+and weakens the silhouette. Reopened to scale the complete symbol inward uniformly and
+prove a visible margin using actual snapped Fullride coordinates.
+
+The complete symbol now uses a 0.40 normalized radius. Its snapped bounds are X ±36 on
+the board's ±44 range and Y 36–128 on the board's 24–144 range, preserving the point-down
+topology while keeping every outer light visibly in frame.
+
+The framing regression and full 443-test suite pass, followed by typecheck, lint, and the
+production PWA build.

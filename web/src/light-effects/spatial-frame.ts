@@ -89,11 +89,12 @@ export function renderSpatialGroup(definition: BoardDefinition, assignments: rea
     return Object.freeze(chooseNearest([...frogTargets, ...vehicles], group.footprint));
   }
   if (recipe.kind === 'pentagram') {
+    const radius = .4;
     const circleCount = Math.floor(group.footprint / 2);
     const starCount = group.footprint - circleCount;
     const vertices = Array.from({ length: 5 }, (_, index) => {
       const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
-      return { x: .5 + Math.cos(angle) * .48, y: .5 + Math.sin(angle) * .48 };
+      return { x: .5 + Math.cos(angle) * radius, y: .5 + Math.sin(angle) * radius };
     });
     const order = [0, 2, 4, 1, 3, 0];
     const vertexCount = Math.min(5, starCount);
@@ -101,7 +102,7 @@ export function renderSpatialGroup(definition: BoardDefinition, assignments: rea
     const anchors = [
       ...Array.from({ length: circleCount }, (_, index) => {
         const angle = -Math.PI / 2 + Math.PI / Math.max(1, circleCount) + index * Math.PI * 2 / Math.max(1, circleCount);
-        return { x: .5 + Math.cos(angle) * .48, y: .5 + Math.sin(angle) * .48 };
+        return { x: .5 + Math.cos(angle) * radius, y: .5 + Math.sin(angle) * radius };
       }),
       ...Array.from({ length: vertexCount }, (_, index) => vertices[order[Math.floor(index * 5 / Math.max(1, vertexCount))]!]!),
       ...Array.from({ length: chordCount }, (_, index) => {
