@@ -1,7 +1,7 @@
 ---
 id: story-fix-pentagram-shape
 kind: story
-stage: done
+stage: review
 tags: [bug, ui, ble]
 parent: null
 depends_on: []
@@ -56,3 +56,21 @@ Bounded standalone review approved. The diff is confined to pentagram geometry, 
 declared reserve, regression coverage, and the owning feature record. Anchor selection is
 deterministic, unique, capacity-bounded, and retains the existing target and role-color
 protection paths. No correctness or test-integrity findings remain.
+
+## Dogfood bounce
+
+The first anchor-distribution repair is closer but still does not read on the physical
+board as the requested point-down pentagram enclosed by a circle. Reopened for a visual-
+topology regression that verifies ordered star vertices/crossings and the enclosing ring
+after snapping to actual Fullride placements.
+
+## Second repair
+
+The first repair sampled only the quarter and three-quarter positions of each chord. It
+therefore omitted all five defining star vertices and inset the star away from the circle.
+The corrected 20-light topology uses ten ring anchors offset between the star vertices,
+five explicit point-down star vertices on the ring, and five inner chord midpoints. Actual
+snapped Fullride coordinates were inspected for centered bottom point, symmetric upper and
+side points, inner crossings, and an enclosing ring.
+
+The second regression pass is green with 443 tests, typecheck, lint, and production build.

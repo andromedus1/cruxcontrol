@@ -193,20 +193,19 @@ describe('spatial effect rendering', () => {
     const scene = renderSpatialGroup(definition, [], pentagram, 0);
     const vertices = Array.from({ length: 5 }, (_, index) => {
       const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
-      return { x: .5 + Math.cos(angle) * .39, y: .5 + Math.sin(angle) * .39 };
+      return { x: .5 + Math.cos(angle) * .48, y: .5 + Math.sin(angle) * .48 };
     });
     const starOrder = [0, 2, 4, 1, 3, 0];
     const anchors = [
       ...Array.from({ length: 10 }, (_, index) => {
-        const angle = -Math.PI / 2 + index * Math.PI * 2 / 10;
+        const angle = -Math.PI / 2 + Math.PI / 10 + index * Math.PI * 2 / 10;
         return { x: .5 + Math.cos(angle) * .48, y: .5 + Math.sin(angle) * .48 };
       }),
-      ...Array.from({ length: 10 }, (_, index) => {
-        const stroke = Math.floor(index / 2);
-        const amount = index % 2 === 0 ? .25 : .75;
+      ...starOrder.slice(0, -1).map((vertex) => vertices[vertex]!),
+      ...Array.from({ length: 5 }, (_, stroke) => {
         const from = vertices[starOrder[stroke]!]!;
         const to = vertices[starOrder[stroke + 1]!]!;
-        return { x: from.x + (to.x - from.x) * amount, y: from.y + (to.y - from.y) * amount };
+        return { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
       }),
     ];
     const positions = new Map(definition.placements.map(({ id, position }) => [id, {
@@ -220,5 +219,8 @@ describe('spatial effect rendering', () => {
       const anchor = anchors[index]!;
       expect(Math.hypot(position.x - anchor.x, position.y - anchor.y)).toBeLessThan(.13);
     });
+    const downwardPoint = positions.get(scene[10]!.placementId)!;
+    expect(downwardPoint.y).toBeLessThan(.15);
+    expect(Math.abs(downwardPoint.x - .5)).toBeLessThan(.08);
   });
 });

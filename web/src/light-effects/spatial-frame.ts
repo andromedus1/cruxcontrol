@@ -93,20 +93,21 @@ export function renderSpatialGroup(definition: BoardDefinition, assignments: rea
     const starCount = group.footprint - circleCount;
     const vertices = Array.from({ length: 5 }, (_, index) => {
       const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
-      return { x: .5 + Math.cos(angle) * .39, y: .5 + Math.sin(angle) * .39 };
+      return { x: .5 + Math.cos(angle) * .48, y: .5 + Math.sin(angle) * .48 };
     });
     const order = [0, 2, 4, 1, 3, 0];
+    const vertexCount = Math.min(5, starCount);
+    const chordCount = starCount - vertexCount;
     const anchors = [
       ...Array.from({ length: circleCount }, (_, index) => {
-        const angle = -Math.PI / 2 + index * Math.PI * 2 / Math.max(1, circleCount);
+        const angle = -Math.PI / 2 + Math.PI / Math.max(1, circleCount) + index * Math.PI * 2 / Math.max(1, circleCount);
         return { x: .5 + Math.cos(angle) * .48, y: .5 + Math.sin(angle) * .48 };
       }),
-      ...Array.from({ length: starCount }, (_, index) => {
-        const pathPosition = (index + .5) * 5 / Math.max(1, starCount);
-        const stroke = Math.min(4, Math.floor(pathPosition));
-        const amount = fraction(pathPosition);
+      ...Array.from({ length: vertexCount }, (_, index) => vertices[order[Math.floor(index * 5 / Math.max(1, vertexCount))]!]!),
+      ...Array.from({ length: chordCount }, (_, index) => {
+        const stroke = Math.floor(index * 5 / Math.max(1, chordCount));
         const from = vertices[order[stroke]!]!; const to = vertices[order[stroke + 1]!]!;
-        return { x: from.x + (to.x - from.x) * amount, y: from.y + (to.y - from.y) * amount };
+        return { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
       }),
     ];
     const used = new Set<string>();
