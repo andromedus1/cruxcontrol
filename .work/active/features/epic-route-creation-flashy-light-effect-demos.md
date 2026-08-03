@@ -24,6 +24,8 @@ demo designs that can be previewed, edited, saved with a climb, and played on th
 - a Matrix-inspired green-and-black falling-light effect;
 - additional visually distinctive demonstrations that show off coordinated spatial
   animation on the Fullride, including sparse moving beach-ball and snake demonstrations.
+- a Frogger scene with a green frog crossing through vertically moving red traffic; and
+- a board-spanning red pentagram that fades in and out within a declared light reserve.
 
 These should build on the shared saved-effect/frame engine rather than becoming a
 separate animation implementation. Applying a preset should target unused decorative
@@ -46,6 +48,12 @@ rather than changing unexpectedly when the built-in preset library evolves.
 - **Independent targeting**: unused background holds can belong to an effect without
   becoming assigned climb holds. Sparse beach-ball and snake presets are the first simple
   physical demonstrations because their maximum lit footprint is small and predictable.
+- **Grid-game movement**: Snake and Pac-Man traverse only horizontal/vertical nearest-
+  neighbor edges at one edge per physical frame; seeded starts and turn preferences vary
+  consecutive circuits.
+- **Additional demonstrations**: Frogger reserves ten lights for a green crossing frog
+  and vertical red traffic. The fading pentagram defaults to a stable 15-light outline,
+  leaving five lights under the measured API-2 ceiling.
 
 ## Simplification opportunity
 
