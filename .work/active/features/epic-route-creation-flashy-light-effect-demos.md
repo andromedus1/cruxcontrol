@@ -300,6 +300,14 @@ visibility/disconnect/unmount retain existing cancellation semantics.
 - **Panel density**: disclosures default closed and show one selected group at a time;
   the board and primary light action remain visually dominant.
 
+## Implementation notes
+
+- Execution capability: highest available because this feature crosses versioned persistence, procedural rendering, measured BLE limits, and mobile editing.
+- Review weight: standard (explicit caller selection); hand off for exactly one independent feature review.
+- Delivered: draft v4/portable v2 spatial snapshots; deterministic two-pass engine; Ocean, Tie-dye, Matrix, Snake, Beach Ball, Pac-Man, Pong, and Bird Flock presets; independent target painting/layering; editable palette/speed/intensity/direction/shape/footprint/scope; conservative API-2 preflight and runtime reserve assertion.
+- Verification: 68 files / 420 tests green, TypeScript typecheck, ESLint, Vite/PWA production build, and Playwright phone suite green. Refreshed production build opened on connected Android via `scripts/start-phone.sh`.
+- Manual checkpoint: physical Snake, Beach Ball, and Pong appearance has not yet been operator-observed. Software review may proceed, but the reviewer/root should retain this explicit dogfood checkpoint rather than infer hardware aesthetics from screen preview.
+
 ## Other agent review
 
 One Claude Sonnet advisory pass challenged the frame invariant, complete-scene capacity
