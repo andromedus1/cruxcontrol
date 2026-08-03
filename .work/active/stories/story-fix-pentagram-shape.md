@@ -1,7 +1,7 @@
 ---
 id: story-fix-pentagram-shape
 kind: story
-stage: review
+stage: done
 tags: [bug, ui, ble]
 parent: null
 depends_on: []
@@ -125,3 +125,9 @@ Keep the two upper inner chord lights one spacing up, but return the left, right
 bottom inner lights to their original centerward positions. No other light changes.
 
 Exact-coordinate regression, all 443 tests, typecheck, lint, and production build pass.
+
+## Refinement review
+
+Bounded review approved. Only the two upper chord anchors retain outward displacement;
+the other three resolve through their original centerward targets. Exact physical
+coordinates are covered and the remaining fifteen lights are unchanged.
