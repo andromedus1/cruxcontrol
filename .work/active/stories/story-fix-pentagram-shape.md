@@ -1,7 +1,7 @@
 ---
 id: story-fix-pentagram-shape
 kind: story
-stage: review
+stage: done
 tags: [bug, ui, ble]
 parent: null
 depends_on: []
@@ -112,3 +112,9 @@ The regression first showed that shifting abstract anchors retained the same sna
 holds. The renderer now shifts from each actual base placement and the test proves the
 five exact eight-unit coordinate changes. The full 443-test suite, typecheck, focused
 spatial suite, lint, and production build pass.
+
+## Inner-point review
+
+Bounded review approved. The change is limited to the five chord anchors, derives one
+physical eight-unit step from the already-snapped base placement, and has exact-coordinate
+coverage. The other fifteen lights and all existing effect invariants are unchanged.
