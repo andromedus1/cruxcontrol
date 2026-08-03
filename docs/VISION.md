@@ -101,9 +101,9 @@ hardware and catalog surface, not the initial operating model.
 - **Not simultaneous board rollout.** The Fullride 7x10 remains the first complete
   product milestone. Other Aurora boards and MoonBoard follow through separately
   researched adapters rather than delaying the Kilter path.
-- **Not a replacement for the Kilter social graph.** CruxControl reads the
-  public catalog and optionally syncs; it does not try to reproduce Kilter's
-  community/social features.
+- **Not a replacement for the Kilter social graph.** Future catalog adapters will read
+  authorized public catalog data and may optionally sync; those capabilities are not
+  implemented yet and will not reproduce Kilter's community/social features.
 - **Not native mobile.** A web app on Chrome/Edge is the delivery vehicle; no
   native app is required for the first milestone. Android and desktop Chromium can
   control boards; iPhone/iPad are browse/edit capable but need a later native

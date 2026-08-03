@@ -10,7 +10,7 @@ summary: >
   editing, logbook/session tracking, grade prediction, and recommendations in an
   offline-first client.
 decisions:
-  - "Capabilities are grouped into eight areas; board control + browser are the MVP surface."
+  - "Capabilities are grouped into nine areas; board control + browser are the MVP surface."
   - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
   - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
   - "Grade-prediction target is community consensus difficulty_average from climb_stats."
@@ -69,7 +69,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Fast, responsive browsing of the active board's installed community catalog.
 - Filtering: grade range, angle, quality, ascent count, setter, hold count,
   grade-consensus accuracy.
-- Shareable URLs for individual climbs (a major gap in the official app).
+- Add shareable URLs for individual/provider climbs with future catalog browsing;
+  current portable sharing is implemented for playlists through fragments or files.
 - Visual 2D board renderer showing recognizable hold artwork, positions, semantic role
   shapes, and custom colors with pointer and roving-keyboard interaction. The private
   Fullride prototype uses one immutable calibrated Kilter reference-image underlay;
@@ -234,7 +235,8 @@ The model mirrors the official Kilter SQLite schema (see
   non-color-only role markers.
 - Deterministic tests cover definition/renderer, climb and playlist
   persistence/concurrency/recovery and screenshot recognition/review/import,
-  API-level-3 bytes, Bluetooth lifecycle, lighting/preview, and the integrated
+  API-level-2/3 bytes, the measured API-2 capacity policy, Bluetooth lifecycle,
+  lighting/preview, and the integrated
   create-save-light seams. Playwright Chromium covers autosave/reload/reopen,
   multi-list membership/order, Trash/restore resolution, ephemeral play-through, and
   portable list export/import with fresh identities and preserved content/order, plus
@@ -270,7 +272,8 @@ The model mirrors the official Kilter SQLite schema (see
   installable, trivially hostable on static infra (Cloudflare Workers Static Assets) — is a hard
   requirement; it was the criterion by which the framework (React + Vite) was chosen.
 - **Per-user isolation.** One user's local data (logbook, playlists, drafts) is never
-  visible to another; sharing is explicit and URL-based (climbs, playlists).
+  visible to another. Current playlist sharing is explicit through bounded URL fragments
+  or lossless files; individual/provider climb URLs arrive with future catalog browsing.
 - **Provider policy.** Acquisition uses public or user-authorized sources and does
   not bypass access controls. Import capability and redistribution are separate
   decisions recorded per provider.

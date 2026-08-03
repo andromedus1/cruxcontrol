@@ -97,7 +97,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    persisted or uploaded. A built-in 16-climb migration carries only checksum-linked
    titles and role/placement facts. Confirmed climbs are ordinary 40° drafts; exact
    content duplicates in active storage or Trash are skipped.
-9. **Logbook & Sessions** — local store of ascents/attempts/sessions with
+9. **Future: Logbook & Sessions** — local store of ascents/attempts/sessions with
    analytics; optional push to the Kilter API via the Sync Engine.
 10. **Playlists** — an implemented separate native IndexedDB repository, responsive
    management surface, and exact-order board play-through for named, annotated,
@@ -112,7 +112,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    compatibility preview, then creates fresh climbs in order and the fresh playlist
    last, with reverse-order compensation for partial failure. A CruxControl-local
    construct (no Kilter counterpart).
-11. **ML Pipeline** — offline (Python): feature extraction from the catalog →
+11. **Future: ML Pipeline** — offline (Python): feature extraction from the catalog →
     training dataset → grade-prediction model. Exports a model for in-browser
     inference (ONNX Runtime Web / WASM); feeds prediction + recommendation features back
     into the app.

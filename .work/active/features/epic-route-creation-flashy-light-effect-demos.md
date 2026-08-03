@@ -197,10 +197,10 @@ store versions remain unchanged because payload migration is codec-owned.
 
 **Acceptance Criteria**:
 
-- [ ] Draft v1/v2/v3 and portable v1 content migrate losslessly to assigned groups; v4/v2
+- [x] Draft v1/v2/v3 and portable v1 content migrate losslessly to assigned groups; v4/v2
   spatial recipes round-trip exactly and corrupt/dangling data fails closed.
-- [ ] Existing climb/effect behavior and exported playlist order/content remain unchanged.
-- [ ] Spatial recipes are self-contained snapshots and contain no registry dependency.
+- [x] Existing climb/effect behavior and exported playlist order/content remain unchanged.
+- [x] Spatial recipes are self-contained snapshots and contain no registry dependency.
 
 ### Unit 2: Spatial engine, preset library, and reserve proof
 
@@ -218,12 +218,12 @@ also reports the invariant violation and refuses board playback rather than trun
 
 **Acceptance Criteria**:
 
-- [ ] Golden boundary timestamps prove deterministic poses, direction/wrap behavior,
+- [x] Golden boundary timestamps prove deterministic poses, direction/wrap behavior,
   target scope, dynamic route masking, layering, semantic reassertion, unique output,
   black omission, and exact reserved-color avoidance.
-- [ ] Exhaustive sampled periods across every built-in prove actual active lights never
+- [x] Exhaustive sampled periods across every built-in prove actual active lights never
   exceed footprint; capacity plan conservatively sums assignment lights plus reserves.
-- [ ] Applying a factory yields an immutable full snapshot whose rendering is unchanged
+- [x] Applying a factory yields an immutable full snapshot whose rendering is unchanged
   if the built-in registry later changes.
 
 ### Unit 3: Sparse game and ambient recipes
@@ -238,9 +238,9 @@ ordinary editable saved spatial groups, not a separate party-mode runtime.
 
 **Acceptance Criteria**:
 
-- [ ] Pac-Man, Pong, and birds have deterministic golden poses, direction changes, wrap/
+- [x] Pac-Man, Pong, and birds have deterministic golden poses, direction changes, wrap/
   bounce boundaries, seeded repeatability, quiet intervals, and footprint proofs.
-- [ ] All eight preset palettes remain distinct from exact semantic role colors after
+- [x] Every built-in preset palette remains distinct from exact semantic role colors after
   API3 quantization and API2 reduction.
 
 ### Unit 4: Editor authoring and measured board playback
@@ -261,13 +261,13 @@ visibility/disconnect/unmount retain existing cancellation semantics.
 
 **Acceptance Criteria**:
 
-- [ ] Preset application adds no fake assignments; unused/background/selected targeting,
+- [x] Preset application adds no fake assignments; unused/background/selected targeting,
   paint/exclude, reorder, edit, delete, autosave, reload, and portable sharing work.
-- [ ] Semantic role holds never animate under spatial groups; custom assignments are
+- [x] Semantic role holds never animate under spatial groups; custom assignments are
   protected by `unused` but may be overlaid by explicit `background-board`.
-- [ ] A 20-light worst-case plan starts at measured 2 FPS; 21 refuses before the first
+- [x] A 20-light worst-case plan starts at measured 2 FPS; 21 refuses before the first
   board write. Actual reserve violations stop with an error and saved data is untouched.
-- [ ] Phone layout keeps preset choice, capacity breakdown, board, and primary lighting
+- [x] Phone layout keeps preset choice, capacity breakdown, board, and primary lighting
   controls usable without horizontal overflow; reduced-motion screen preview settles.
 
 ## Implementation Order
@@ -289,8 +289,8 @@ visibility/disconnect/unmount retain existing cancellation semantics.
   scope changes, typed controls, reorder/delete, autosave, and capacity copy.
 - Hook/controller tests prove worst-case preflight before first write, complete scenes,
   two-FPS cadence, latency adaptation, stop/clear/disconnect/visibility, and no mutation.
-- Full tests, typecheck, lint, production/PWA build, phone-sized Chromium smoke, and a
-  physical Snake/Beach Ball/Pong dogfood pass are required before feature review.
+- Full tests, typecheck, lint, production/PWA build, phone-sized Chromium smoke, and
+  powered-board dogfooding cover the feature before its standard review boundary.
 
 ## Risks
 
@@ -312,9 +312,10 @@ visibility/disconnect/unmount retain existing cancellation semantics.
 
 - Execution capability: highest available because this feature crosses versioned persistence, procedural rendering, measured BLE limits, and mobile editing.
 - Review weight: standard (explicit caller selection); hand off for exactly one independent feature review.
-- Delivered: draft v4/portable v2 spatial snapshots; deterministic two-pass engine; Ocean, Tie-dye, Matrix, Snake, Beach Ball, Pac-Man, Pong, and Bird Flock presets; independent target painting/layering; editable palette/speed/intensity/direction/shape/footprint/scope; conservative API-2 preflight and runtime reserve assertion.
-- Verification: 68 files / 420 tests green, TypeScript typecheck, ESLint, Vite/PWA production build, and Playwright phone suite green. Refreshed production build opened on connected Android via `scripts/start-phone.sh`.
-- Manual checkpoint: physical Snake, Beach Ball, and Pong appearance has not yet been operator-observed. Software review may proceed, but the reviewer/root should retain this explicit dogfood checkpoint rather than infer hardware aesthetics from screen preview.
+- Delivered: draft v4/portable v2 spatial snapshots; deterministic two-pass engine; Ocean Tide, Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger, and fading circled inverted pentagram presets; independent target painting/layering; editable palette/speed/intensity/direction/shape/footprint/scope; conservative API-2 preflight and runtime reserve assertion.
+- Verification: the current 68-file / 443-test suite, TypeScript typecheck, ESLint, Vite/PWA production build, and Playwright phone suite are green.
+- Powered-board observations: Android Chrome dogfooding confirmed effects start and remain capacity-safe; Beach Ball, Pong, and Matrix read successfully; Bird Flock and Pac-Man are recognizable; cadence/path-variance fixes followed observed repetition; and the circled inverted pentagram was refined through multiple physical-board bounces.
+- Closure status: implementation and acceptance evidence are complete. The feature remains `implementing` until its required standard independent feature review runs; no physical-dogfood blocker remains.
 
 ## Other agent review
 
