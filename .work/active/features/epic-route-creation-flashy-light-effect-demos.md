@@ -52,8 +52,8 @@ rather than changing unexpectedly when the built-in preset library evolves.
   neighbor edges at one edge per physical frame; seeded starts and turn preferences vary
   consecutive circuits.
 - **Additional demonstrations**: Frogger reserves ten lights for a green crossing frog
-  and vertical red traffic. The fading pentagram defaults to a stable 15-light outline,
-  leaving five lights under the measured API-2 ceiling.
+  and vertical red traffic. The fading circled pentagram uses ten evenly distributed
+  circle anchors plus ten star-stroke anchors, consuming the full measured API-2 scene.
 
 ## Simplification opportunity
 

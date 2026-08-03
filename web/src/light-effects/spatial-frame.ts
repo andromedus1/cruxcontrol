@@ -9,12 +9,6 @@ export const BOARD_ANIMATION_FRAME_MS = 500;
 const hash = (value: string, seed: number) => { let h = seed | 0; for (const c of value) h = Math.imul(h ^ c.codePointAt(0)!, 16777619); return (h >>> 0) / 0x1_0000_0000; };
 const triangle = (value: number) => Math.abs(fraction(value) * 2 - 1);
 const distance = (a: number, b: number) => { const d = Math.abs(fraction(a) - fraction(b)); return Math.min(d, 1 - d); };
-const pointSegmentDistance = (x: number, y: number, ax: number, ay: number, bx: number, by: number) => {
-  const dx = bx - ax; const dy = by - ay;
-  const lengthSquared = dx * dx + dy * dy;
-  const t = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / lengthSquared));
-  return Math.hypot(x - (ax + t * dx), y - (ay + t * dy));
-};
 
 function colorAt(group: SpatialLightEffectGroup, phase: number): ApiLevel3Color {
   const palette = group.palette;
@@ -95,18 +89,35 @@ export function renderSpatialGroup(definition: BoardDefinition, assignments: rea
     return Object.freeze(chooseNearest([...frogTargets, ...vehicles], group.footprint));
   }
   if (recipe.kind === 'pentagram') {
+    const circleCount = Math.floor(group.footprint / 2);
+    const starCount = group.footprint - circleCount;
     const vertices = Array.from({ length: 5 }, (_, index) => {
       const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
-      return { x: .5 + Math.cos(angle) * .47, y: .5 + Math.sin(angle) * .47 };
+      return { x: .5 + Math.cos(angle) * .39, y: .5 + Math.sin(angle) * .39 };
     });
     const order = [0, 2, 4, 1, 3, 0];
-    const selected = normalized
-      .map((item) => ({ ...item, score: Math.min(...order.slice(0, -1).map((vertexIndex, index) => {
-        const from = vertices[vertexIndex]!; const to = vertices[order[index + 1]!]!;
-        return pointSegmentDistance(item.x, item.y, from.x, from.y, to.x, to.y);
-      })) }))
-      .sort((a, b) => a.score - b.score || a.order - b.order)
-      .slice(0, Math.min(group.footprint, candidates.length));
+    const anchors = [
+      ...Array.from({ length: circleCount }, (_, index) => {
+        const angle = -Math.PI / 2 + index * Math.PI * 2 / Math.max(1, circleCount);
+        return { x: .5 + Math.cos(angle) * .48, y: .5 + Math.sin(angle) * .48 };
+      }),
+      ...Array.from({ length: starCount }, (_, index) => {
+        const pathPosition = (index + .5) * 5 / Math.max(1, starCount);
+        const stroke = Math.min(4, Math.floor(pathPosition));
+        const amount = fraction(pathPosition);
+        const from = vertices[order[stroke]!]!; const to = vertices[order[stroke + 1]!]!;
+        return { x: from.x + (to.x - from.x) * amount, y: from.y + (to.y - from.y) * amount };
+      }),
+    ];
+    const used = new Set<string>();
+    const selected = anchors.flatMap((anchor) => {
+      const match = normalized
+        .filter(({ placement }) => !used.has(placement.id))
+        .sort((a, b) => Math.hypot(a.x - anchor.x, a.y - anchor.y) - Math.hypot(b.x - anchor.x, b.y - anchor.y) || a.order - b.order)[0];
+      if (!match) return [];
+      used.add(match.placement.id);
+      return [match];
+    });
     const fade = triangle(phase * recipe.fadeRate);
     const from = unpackApiLevel3Color(group.palette[0]!);
     const to = unpackApiLevel3Color(group.palette[group.palette.length - 1]!);

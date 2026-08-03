@@ -175,7 +175,7 @@ describe('spatial effect rendering', () => {
     const pentagram = preset('pentagram', 37);
     const bright = renderSpatialGroup(definition, [], pentagram, 0);
     const dim = renderSpatialGroup(definition, [], pentagram, pentagram.periodMs / 2);
-    expect(bright).toHaveLength(15);
+    expect(bright).toHaveLength(20);
     expect(dim.map(({ placementId }) => placementId)).toEqual(bright.map(({ placementId }) => placementId));
     expect(new Set(bright.map(({ color }) => color)).size).toBe(1);
     expect(new Set(dim.map(({ color }) => color)).size).toBe(1);
@@ -186,5 +186,39 @@ describe('spatial effect rendering', () => {
       expect(rgb.green).toBe(0);
       expect(rgb.blue).toBe(0);
     }
+  });
+
+  it('distributes a full 20-light pentagram across its circle and all five star strokes', () => {
+    const pentagram = preset('pentagram', 37);
+    const scene = renderSpatialGroup(definition, [], pentagram, 0);
+    const vertices = Array.from({ length: 5 }, (_, index) => {
+      const angle = -Math.PI / 2 + index * Math.PI * 2 / 5;
+      return { x: .5 + Math.cos(angle) * .39, y: .5 + Math.sin(angle) * .39 };
+    });
+    const starOrder = [0, 2, 4, 1, 3, 0];
+    const anchors = [
+      ...Array.from({ length: 10 }, (_, index) => {
+        const angle = -Math.PI / 2 + index * Math.PI * 2 / 10;
+        return { x: .5 + Math.cos(angle) * .48, y: .5 + Math.sin(angle) * .48 };
+      }),
+      ...Array.from({ length: 10 }, (_, index) => {
+        const stroke = Math.floor(index / 2);
+        const amount = index % 2 === 0 ? .25 : .75;
+        const from = vertices[starOrder[stroke]!]!;
+        const to = vertices[starOrder[stroke + 1]!]!;
+        return { x: from.x + (to.x - from.x) * amount, y: from.y + (to.y - from.y) * amount };
+      }),
+    ];
+    const positions = new Map(definition.placements.map(({ id, position }) => [id, {
+      x: (position.x - definition.bounds.left) / (definition.bounds.right - definition.bounds.left),
+      y: (position.y - definition.bounds.bottom) / (definition.bounds.top - definition.bounds.bottom),
+    }]));
+    expect(pentagram.footprint).toBe(20);
+    expect(scene).toHaveLength(20);
+    scene.forEach(({ placementId }, index) => {
+      const position = positions.get(placementId)!;
+      const anchor = anchors[index]!;
+      expect(Math.hypot(position.x - anchor.x, position.y - anchor.y)).toBeLessThan(.13);
+    });
   });
 });
