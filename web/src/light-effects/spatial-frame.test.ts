@@ -71,4 +71,30 @@ describe('spatial effect rendering', () => {
       expect(renderSpatialGroup(definition,[],forward,forward.periodMs*.2)).not.toEqual(renderSpatialGroup(definition,[],reverse,reverse.periodMs*.2));
     }
   });
+
+  it('varies the seeded bird flight path across consecutive cycles', () => {
+    const birds = preset('bird-flock', 7);
+    const paths = Array.from({ length: 4 }, (_, cycle) =>
+      renderSpatialGroup(definition, [], birds, birds.periodMs * (cycle + 0.75))
+        .map(({ placementId }) => placementId),
+    );
+    expect(new Set(paths.map((path) => path.join('|'))).size).toBeGreaterThanOrEqual(3);
+    expect(
+      renderSpatialGroup(definition, [], birds, birds.periodMs * 2.75).map(({ placementId }) => placementId),
+    ).toEqual(paths[2]);
+    expect(paths.every((path) => path.length <= birds.footprint)).toBe(true);
+  });
+
+  it('varies snake weave orientation across consecutive circuits', () => {
+    const snake = preset('snake', 11);
+    const paths = Array.from({ length: 4 }, (_, cycle) =>
+      renderSpatialGroup(definition, [], snake, snake.periodMs * (cycle + 0.25))
+        .map(({ placementId }) => placementId),
+    );
+    expect(new Set(paths.map((path) => path.join('|'))).size).toBeGreaterThanOrEqual(3);
+    expect(
+      renderSpatialGroup(definition, [], snake, snake.periodMs * 3.25).map(({ placementId }) => placementId),
+    ).toEqual(paths[3]);
+    expect(paths.every((path) => path.length <= snake.footprint)).toBe(true);
+  });
 });

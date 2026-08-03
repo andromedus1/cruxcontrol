@@ -39,21 +39,51 @@ export function renderSpatialGroup(definition: BoardDefinition, assignments: rea
   // the UI preview so it never advertises intermediate motion the board cannot show.
   const boardElapsedMs = Math.floor(elapsedMs / BOARD_ANIMATION_FRAME_MS) * BOARD_ANIMATION_FRAME_MS;
   const phase = fraction(boardElapsedMs / group.periodMs);
+  const cycleIndex = Math.floor(boardElapsedMs / group.periodMs);
   const width = definition.bounds.right - definition.bounds.left || 1;
   const height = definition.bounds.top - definition.bounds.bottom || 1;
   const normalized = candidates.map((placement, order) => ({ placement, order, x: (placement.position.x - definition.bounds.left) / width, y: (placement.position.y - definition.bounds.bottom) / height }));
   const recipe = group.recipe;
   if (recipe.kind === 'bird-flock' && phase < recipe.quietFraction) return Object.freeze([]);
   const serpentine = [...normalized].sort((a, b) => Math.round(a.y * 20) - Math.round(b.y * 20) || ((Math.round(a.y * 20) % 2 ? -1 : 1) * (a.x - b.x)) || a.order - b.order);
+  const weave = (
+    primary: (item: typeof normalized[number]) => number,
+    secondary: (item: typeof normalized[number]) => number,
+    descending = false,
+  ) => [...normalized].sort((a, b) => {
+    const aBand = Math.round(primary(a) * 20);
+    const bBand = Math.round(primary(b) * 20);
+    const bandOrder = descending ? bBand - aBand : aBand - bBand;
+    return bandOrder || ((Math.abs(aBand) % 2 ? -1 : 1) * (secondary(a) - secondary(b))) || a.order - b.order;
+  });
+  const snakeVariant = (cycleIndex + Math.floor(hash('snake-weave-offset', group.seed) * 4)) % 4;
+  const snakePath = snakeVariant === 0
+    ? weave((item) => item.x, (item) => item.y)
+    : snakeVariant === 1
+      ? weave((item) => item.x, (item) => item.y, true)
+      : snakeVariant === 2
+        ? weave((item) => (item.x + item.y) / 2, (item) => item.x - item.y)
+        : weave((item) => (item.x - item.y + 1) / 2, (item) => item.x + item.y);
   const score = (item: typeof normalized[number]) => {
     switch (recipe.kind) {
       case 'ocean-tide': return Math.abs(item.y - (recipe.direction === 'in' ? triangle(phase) : 1 - triangle(phase))) + hash(item.placement.id, group.seed) * recipe.foam * 0.08;
       case 'tie-dye-spiral': { const angle = Math.atan2(item.y - .5, item.x - .5) / (Math.PI * 2); const radius = Math.hypot(item.x - .5, item.y - .5); const turn = recipe.direction === 'clockwise' ? phase : -phase; return distance(angle * recipe.arms + radius * 1.8, turn); }
       case 'matrix-rain': return distance(item.x * recipe.columns, hash(String(Math.round(item.x * recipe.columns)), group.seed)) + distance(item.y, recipe.direction === 'down' ? 1 - phase : phase) * .3;
-      case 'snake': case 'pac-man': { const index = serpentine.findIndex((candidate) => candidate.placement.id === item.placement.id); const head = Math.floor((recipe.direction === 'forward' ? phase : 1 - phase) * serpentine.length) % serpentine.length; return (index - head + serpentine.length) % serpentine.length; }
+      case 'snake': { const index = snakePath.findIndex((candidate) => candidate.placement.id === item.placement.id); const head = Math.floor((recipe.direction === 'forward' ? phase : 1 - phase) * snakePath.length) % snakePath.length; return (index - head + snakePath.length) % snakePath.length; }
+      case 'pac-man': { const index = serpentine.findIndex((candidate) => candidate.placement.id === item.placement.id); const head = Math.floor((recipe.direction === 'forward' ? phase : 1 - phase) * serpentine.length) % serpentine.length; return (index - head + serpentine.length) % serpentine.length; }
       case 'beach-ball': return Math.hypot(item.x - triangle(phase * recipe.velocityX), item.y - triangle(phase * recipe.velocityY));
       case 'pong': { const travel = recipe.direction === 'forward' ? triangle(phase) : 1 - triangle(phase); const ball = Math.hypot(item.x - travel, item.y - triangle(phase * 1.37)); const paddle = Math.min(Math.abs(item.x) + Math.abs(item.y - triangle(phase * 1.37)), Math.abs(item.x - 1) + Math.abs(item.y - triangle(phase * 1.37))); return Math.min(ball, paddle); }
-      case 'bird-flock': { const travel = (phase - recipe.quietFraction) / (1 - recipe.quietFraction); const x = recipe.direction === 'left' ? 1 - travel : travel; return Math.abs(item.x - x) + Math.abs(Math.abs(item.y - .65) - Math.abs(item.x - x) * .5); }
+      case 'bird-flock': {
+        const travel = (phase - recipe.quietFraction) / (1 - recipe.quietFraction);
+        const x = recipe.direction === 'left' ? 1 - travel : travel;
+        const profileKey = `bird-cycle-${cycleIndex}`;
+        const entryY = .22 + hash(`${profileKey}-entry`, group.seed) * .56;
+        const exitY = .22 + hash(`${profileKey}-exit`, group.seed) * .56;
+        const arc = (hash(`${profileKey}-arc`, group.seed) - .5) * .36;
+        const centerY = entryY + (exitY - entryY) * travel + Math.sin(Math.PI * travel) * arc;
+        const spread = .28 + hash(`${profileKey}-spread`, group.seed) * .5;
+        return Math.abs(item.x - x) + Math.abs(Math.abs(item.y - centerY) - Math.abs(item.x - x) * spread);
+      }
     }
   };
   const reserved = new Set(Object.values(definition.rolePresets).map(({ lightColor }) => lightColor as number));
