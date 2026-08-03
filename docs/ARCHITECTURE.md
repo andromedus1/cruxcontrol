@@ -10,7 +10,7 @@ summary: >
   controller profiles, on-demand local catalogs, and a Fullride 7x10 first slice.
 decisions:
   - "Offline-first React + Vite SPA (TypeScript) with local SQLite through wa-sqlite AccessHandlePoolVFS in a Web Worker as the catalog read path."
-  - "BLE isolated behind a Web Bluetooth adapter implementing the API-level-3 packet protocol."
+  - "BLE is isolated behind a Web Bluetooth adapter with API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
   - "Sync engine is a separate module wrapping POST /sync with incremental shared_syncs cursors."
   - "ML training is offline (Python); inference runs in-browser via ONNX Runtime Web (WASM)."
   - "Distributed to friends as a static, backendless, installable PWA (no app server/accounts); React + Vite chosen for distribution robustness."
@@ -52,7 +52,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    later Aurora-family and MoonBoard providers are separately researched. Network,
    auth, reconciliation, and policy metadata remain outside domain and UI code.
 4. **Controller Profiles & Transports** — profiles own discovery and command
-   encoding; transports own platform I/O. The first pair is Aurora API-level-3 over
+   encoding; transports own platform I/O. The first pair is Aurora API level 2/3 over
    Web Bluetooth: deterministic framing/checksum/multi-packet encoding, serialized
    Nordic UART writes, explicit connection lifecycle, light/clear operations, and
    bounded latest-frame-wins preview. A collapsed, local-only capacity diagnostic uses
@@ -85,7 +85,11 @@ feature item bodies in `.work/`, not here. Capabilities are in
    groups share one two-pass pure frame engine: assignment effects render first, procedural
    spatial layers target definition geometry without fake assignments, and semantic roles
    are reasserted last. Saved recipe snapshots, dynamic target masks, deterministic footprints,
-   and a conservative reserve plan feed the existing complete-scene BLE scheduler.
+   and a conservative reserve plan feed the existing complete-scene BLE scheduler. The
+   snapshot-backed spatial registry contains Ocean Tide, Tie-dye Spiral, Matrix Rain,
+   Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger, and a fading circled inverted
+   pentagram. Browser playback is foreground-only: visibility loss, disconnect, clear,
+   or leaving the relevant view cancels scheduling rather than relying on suspended timers.
 8. **Screenshot Import** — a local-only Kilter Android Fullride adapter hashes and
    analyzes selected PNGs sequentially, maps detected role rings through the immutable
    board definition, and presents an editable review before using the existing climb
@@ -131,7 +135,8 @@ Board definition ──▶ Installation registry ─────┼──▶ Bro
 Editor ──▶ Local climb repository ──▶ native IndexedDB
   │               (versioned + optimistic)       (browser-local authority)
   ├──▶ Renderer ──▶ SVG board surface
-  └──▶ Light controller ──▶ controller profile / transport
+  ├──▶ Saved effect snapshots ──▶ two-pass frame engine ──▶ role-protected scene
+  └──▶ Light controller ──▶ measured capacity policy ──▶ controller profile / transport
 
 Kilter screenshot PNG ──▶ transient local analysis ──▶ editable definition-mapped review
                                                         └──▶ deduplicated 40° draft ──▶ Local climb repository
@@ -208,10 +213,11 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
 
 ## Biggest Risks
 
-- **Web Bluetooth reliability** across OS/browser versions — the codec, session,
-  reconnect/disconnect behavior, serialized writes, controller arbitration, and UI
-  composition are deterministic in CI through a mock byte transport. A powered
-  Fullride 7x10 + Android Chrome smoke is still pending and remains necessary.
+- **Web Bluetooth reliability** across OS/browser versions — deterministic CI coverage
+  is complemented by powered Fullride 7x10 + Android Chrome dogfooding of mapping,
+  light/clear, animation, and the measured API-2 envelope. The accepted 127-light static
+  and 20-light/2-FPS animation profile applies only to that observed controller path;
+  other firmware, browsers, and API levels still require their own measured profiles.
 - **Sync API drift / auth.** The Kilter API is undocumented and may change;
   personal data (ascents/bids) is auth-gated.
 - **ML signal quality.** Whether hold-placement features predict consensus grade

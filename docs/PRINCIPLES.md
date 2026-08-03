@@ -12,6 +12,7 @@ decisions:
   - "Keep board definitions, catalog providers, and controller protocols independent."
   - "Preserve native data and provenance; normalized fields are a read model, not a replacement source of truth."
   - "Prefer local and static operation, earning backend and native-shell complexity only when a capability requires it."
+  - "Treat measured board capacity, protected climb roles, and foreground-only browser animation as safety contracts rather than presentation details."
 ---
 
 # CruxControl — Principles
@@ -76,6 +77,14 @@ silently orphan user history.
 Boards and clients advertise what they can do: browse, control, edit, publish, import,
 or sync. Unsupported capabilities degrade explicitly. In particular, iOS browsing is
 not mistaken for iOS Web Bluetooth support.
+
+### Preserve physical truth under animation
+
+Never silently thin, truncate, or rewrite a saved design to fit a measured board
+capacity. Refuse or slow playback with an explicit explanation, keep semantic climb
+roles exact and visually protected from decorative effects, and require the controlling
+browser page to remain in the foreground because background timer suspension is a
+platform constraint, not a reliable animation mode.
 
 ### Evidence governs access
 

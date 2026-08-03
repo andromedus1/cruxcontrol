@@ -27,8 +27,9 @@ decisions:
 CruxControl is a data-owning climbing-board app whose first complete target is a
 home Kilter Board Fullride 7x10. Its implemented first milestone creates, saves,
 reopens, and lights unrestricted browser-local climbs through a fast, offline-first
-client. Community-catalog browsing, logging results, sharing, grade prediction, and
-personalized training extend that wall-session loop in later milestones.
+client; organizes them into shareable lists; and supports locally reviewed screenshot
+imports and editable light effects. Community-catalog browsing, logging results, grade
+prediction, and personalized training extend that wall-session loop in later milestones.
 
 The longer-term north star is one app for any supported Bluetooth climbing board,
 with each board community's climbs available through source-aware catalog adapters.
@@ -56,8 +57,9 @@ provider-independent contracts matter.
 
 Andrew Clark — owner of a home Kilter Board Fullride 7x10 — and a small circle of
 **friends he intends to distribute the app to**. Each user runs their own client
-against their own Kilter board and keeps their own local data. Future sharing work
-will make climbs and playlists portable by URL. The design begins with this
+against their own Kilter board and keeps their own local data. Local playlists are
+already portable by bounded URL or lossless file; provider climb URLs remain future
+catalog work. The design begins with this
 "distribute to friends" case: an installable PWA built for static hosting once the
 deployment setup and acceptance checks are complete. It is not initially a commercial,
 server-backed, multi-tenant product. Supporting more board types broadens the
