@@ -96,10 +96,17 @@ function playlist(): PortablePlaylistV1 {
 describe('portable playlist codec', () => {
   it('round-trips complete spatial recipe snapshots in v2', () => {
     const value = clone();
-    snapshotOf(value).effectGroups = [{ model:'spatial', id:'pong-bg', recipeVersion:1, recipe:{kind:'pong',direction:'forward',paddleSize:2}, seed:7, palette:[255,27], periodMs:4500, intensity:1, footprint:6, target:{scope:'selected',include:['p-3'],exclude:[]} }];
+    snapshotOf(value).effectGroups = [{ model:'spatial', id:'pong-bg', recipeVersion:1, recipe:{kind:'pong',direction:'forward',paddleSize:2}, seed:7, palette:[255,27], periodMs:120000, intensity:1, footprint:6, target:{scope:'selected',include:['p-3'],exclude:[]} }];
     assignmentsOf(value).forEach((assignment) => delete assignment.effectGroupId);
     const decoded = decodePortablePlaylist(value);
     expect(JSON.parse(encodePortablePlaylist(decoded))).toEqual(value);
+  });
+  it('rejects effect cycle times above the editor ceiling', () => {
+    const value = clone();
+    effectGroupsOf(value)[0]!.periodMs = 180_001;
+    expect(() => decodePortablePlaylist(value)).toThrowError(expect.objectContaining({
+      path: 'playlist.entries[0].snapshot.effectGroups[0].periodMs',
+    }));
   });
   it('round-trips Unicode and mixed local/provider content in canonical order', () => {
     const decoded = playlist();

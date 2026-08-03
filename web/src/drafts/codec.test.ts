@@ -28,7 +28,7 @@ describe('local draft codec', () => {
       model: 'spatial' as const,
       id: lightEffectGroupId('snake-background'), recipeVersion: 1 as const,
       recipe: { kind: 'snake' as const, direction: 'forward' as const, bodyLength: 7 }, seed: 42,
-      palette: [apiLevel3Color(28)], periodMs: 4000, intensity: .8, footprint: 7,
+      palette: [apiLevel3Color(28)], periodMs: 120_000, intensity: .8, footprint: 7,
       target: { scope: 'selected' as const, include: [placementId], exclude: [] },
     };
     const source = draft({ effectGroups: [spatial] });
@@ -132,6 +132,10 @@ describe('local draft codec', () => {
     [
       'effectGroups[0].periodMs',
       { effectGroups: [{ id: 'bad', kind: 'pulse', palette: [1], periodMs: 249, intensity: 1 }] },
+    ],
+    [
+      'effectGroups[0].periodMs',
+      { effectGroups: [{ id: 'bad', kind: 'pulse', palette: [1], periodMs: 180_001, intensity: 1 }] },
     ],
     [
       'effectGroups[0].intensity',

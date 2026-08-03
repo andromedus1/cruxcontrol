@@ -1,4 +1,6 @@
 import {
+  LIGHT_EFFECT_PERIOD_MAX_MS,
+  LIGHT_EFFECT_PERIOD_MIN_MS,
   lightEffectGroupId,
   type BoardHoldAssignment,
   type BoardHoldAppearance,
@@ -205,10 +207,10 @@ function decodeEffectGroups(value: unknown, source: unknown, legacy = false): re
       if (
         typeof raw.periodMs !== 'number' ||
         !Number.isFinite(raw.periodMs) ||
-        raw.periodMs < 250 ||
-        raw.periodMs > 10_000
+        raw.periodMs < LIGHT_EFFECT_PERIOD_MIN_MS ||
+        raw.periodMs > LIGHT_EFFECT_PERIOD_MAX_MS
       ) {
-        throw corrupt(`${path}.periodMs`, 'expected a number from 250 to 10000', source);
+        throw corrupt(`${path}.periodMs`, `expected a number from ${LIGHT_EFFECT_PERIOD_MIN_MS} to ${LIGHT_EFFECT_PERIOD_MAX_MS}`, source);
       }
       if (
         typeof raw.intensity !== 'number' ||

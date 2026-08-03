@@ -7,6 +7,8 @@ export type BoardHoldAppearance =
 
 export type LightEffectKind = 'pulse' | 'color-cycle' | 'wave' | 'twinkle' | 'alternate';
 export type LightEffectGroupId = Brand<string, 'LightEffectGroupId'>;
+export const LIGHT_EFFECT_PERIOD_MIN_MS = 250;
+export const LIGHT_EFFECT_PERIOD_MAX_MS = 180_000;
 
 export interface AssignedLightEffectGroup {
   /** Omitted only by in-memory legacy callers; codecs always materialize `assigned`. */
