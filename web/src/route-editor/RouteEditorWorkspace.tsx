@@ -46,7 +46,7 @@ export function RouteEditorWorkspace({
   );
   const hasAnimatedAssignments = useMemo(() => {
     const ids = new Set(state.content.effectGroups.map(({ id }) => id));
-    return state.content.assignments.some(
+    return state.content.effectGroups.some((group) => group.model === 'spatial') || state.content.assignments.some(
       ({ effectGroupId }) => effectGroupId !== undefined && ids.has(effectGroupId),
     );
   }, [state.content.assignments, state.content.effectGroups]);

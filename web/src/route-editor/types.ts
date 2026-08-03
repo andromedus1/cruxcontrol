@@ -12,7 +12,9 @@ export type EditorTool =
   | { readonly kind: 'eyedropper' }
   | { readonly kind: 'custom'; readonly color: ApiLevel3Color }
   | { readonly kind: 'apply-effect'; readonly effectGroupId: LightEffectGroupId }
-  | { readonly kind: 'remove-effect' };
+  | { readonly kind: 'remove-effect' }
+  | { readonly kind: 'spatial-include'; readonly effectGroupId: LightEffectGroupId }
+  | { readonly kind: 'spatial-exclude'; readonly effectGroupId: LightEffectGroupId };
 
 export type EditorSaveStatus = 'saved' | 'dirty' | 'saving' | 'error' | 'conflict';
 
@@ -41,9 +43,10 @@ export type RouteEditorAction =
   | {
       readonly type: 'update-effect-group';
       readonly id: LightEffectGroupId;
-      readonly changes: Partial<Omit<LightEffectGroup, 'id'>>;
+      readonly changes: Readonly<Record<string, unknown>>;
     }
   | { readonly type: 'remove-effect-group'; readonly id: LightEffectGroupId }
+  | { readonly type: 'replace-effect-groups'; readonly groups: readonly LightEffectGroup[] }
   | {
       readonly type: 'activate-placement';
       readonly placementId: import('../domain/boards/types').BoardPlacementId;

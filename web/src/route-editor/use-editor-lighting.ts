@@ -12,6 +12,7 @@ import {
   measuredCapacityProfile,
 } from '../board-control/capacity-policy';
 import { encodedSceneCost } from '../board-control/capacity-model';
+import { spatialCapacityPlan } from '../light-effects/capacity-plan';
 
 const unsupported: BoardLightState = Object.freeze({
   transport: {
@@ -193,9 +194,10 @@ export function useEditorLighting({
         setMessage(`API ${apiLevel} animation capacity has not been measured on this board.`);
         return;
       }
+      const plan = spatialCapacityPlan(assignmentsRef.current, effectGroupsRef.current);
       let schedule = chooseAnimationSchedule(
         profile,
-        assignmentsRef.current.length,
+        plan.worstCaseLights,
         recentBatchMs.current,
       );
       if (schedule.fps === 0) {
@@ -219,6 +221,11 @@ export function useEditorLighting({
           effectGroups: effectGroupsRef.current,
           elapsedMs: performance.now() - startedAt,
         });
+        if (frame.length > plan.worstCaseLights) {
+          setMessage(`Effect frame used ${frame.length} lights, exceeding its ${plan.worstCaseLights}-light reserve. Playback stopped.`);
+          cancelAnimation();
+          return;
+        }
         // API2 replacement semantics require every frame to contain the complete scene.
         const batchStartedAt = performance.now();
         try {
@@ -271,10 +278,11 @@ export function useEditorLighting({
       }
       setExplicitStatus('lighting');
       const groupIds = new Set(effectGroupsRef.current.map(({ id }) => id));
-      const animated = assignmentsRef.current.some(
+      const animated = effectGroupsRef.current.some((group) => group.model === 'spatial') || assignmentsRef.current.some(
         ({ effectGroupId }) => effectGroupId !== undefined && groupIds.has(effectGroupId),
       );
       const startedAt = performance.now();
+      const plan = spatialCapacityPlan(assignmentsRef.current, effectGroupsRef.current);
       const scene = animated
         ? renderAnimationFrame({
             definition,
@@ -288,6 +296,14 @@ export function useEditorLighting({
         connected.status === 'connected' ? connected.device.name : null,
       );
       const profile = measuredCapacityProfile(apiLevel);
+      if (animated && profile) {
+        const schedule = chooseAnimationSchedule(profile, plan.worstCaseLights, []);
+        if (schedule.fps === 0) {
+          const effects = plan.spatialReserves.reduce((sum, reserve) => sum + reserve.lights, 0);
+          setMessage(`Animation needs ${plan.worstCaseLights} lights (${plan.assignmentLights} route/static + ${effects} effects); measured API 2 playback allows 20. Reduce route lights or effect reserves.`);
+          return;
+        }
+      }
       if (profile) {
         const assessment = assessStaticScene(profile, scene.length);
         if (!assessment.accepted) {

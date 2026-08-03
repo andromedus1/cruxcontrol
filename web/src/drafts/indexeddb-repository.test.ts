@@ -90,11 +90,11 @@ describe('IndexedDbLocalDraftRepository', () => {
     await putRaw(database, secondRaw);
 
     expect(await context.repository.get(first.id)).toMatchObject({
-      schemaVersion: 3,
+      schemaVersion: 4,
       status: 'draft',
     });
     expect(await context.repository.get(second.id)).toMatchObject({
-      schemaVersion: 3,
+      schemaVersion: 4,
       status: 'draft',
     });
     expect(await readRaw(database, first.id)).toMatchObject({ schemaVersion: 1 });

@@ -23,7 +23,7 @@ export function applyEditorTool(
   placementId: BoardPlacementId,
   tool: EditorTool,
 ): readonly BoardHoldAssignment[] {
-  if (tool.kind === 'eyedropper') return assignments;
+  if (tool.kind === 'eyedropper' || tool.kind === 'spatial-include' || tool.kind === 'spatial-exclude') return assignments;
   const currentAssignment = assignments.find((value) => value.placementId === placementId);
   const current = currentAssignment?.appearance;
   if (tool.kind === 'apply-effect') {

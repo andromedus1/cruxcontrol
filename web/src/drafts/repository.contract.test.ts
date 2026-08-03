@@ -82,8 +82,9 @@ export function runLocalDraftRepositoryContract(
           },
         ],
         effectGroups: [
-          {
-            id: lightEffectGroupId('pulse-a'),
+        {
+          model: 'assigned',
+          id: lightEffectGroupId('pulse-a'),
             kind: 'pulse',
             palette: [apiLevel3Color(42)],
             periodMs: 1000,

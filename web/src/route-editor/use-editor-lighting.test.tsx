@@ -174,7 +174,7 @@ describe('useEditorLighting', () => {
     expect(result.current.message).toMatch(/128 lights.*14 writes.*still saved.*not sent/i);
   });
 
-  it('lights one complete frame but refuses API2 animation above 20 total lights', async () => {
+  it('refuses API2 animation above 20 total lights before the first board write', async () => {
     const assignments = kilterFullride7x10Definition.placements.slice(0, 21).map((placement) => ({
       placementId: placement.id,
       appearance: { kind: 'custom' as const, color: apiLevel3Color(3) },
@@ -199,10 +199,10 @@ describe('useEditorLighting', () => {
     await act(() => result.current.lightDraft());
 
     expect(assignments).toHaveLength(21);
-    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(1);
-    expect(controller.getState().lastAppliedScene).toHaveLength(21);
+    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(0);
+    expect(controller.getState().lastAppliedScene).toBeNull();
     expect(result.current.animationRunning).toBe(false);
-    expect(result.current.message).toMatch(/21 lights exceed the measured animation limit of 20/i);
+    expect(result.current.message).toMatch(/21 lights.*21 route\/static.*allows 20/i);
   });
 
   it('starts API2 animation at the measured two FPS and keeps slow preview writes bounded', async () => {

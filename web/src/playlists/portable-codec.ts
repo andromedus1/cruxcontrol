@@ -36,6 +36,20 @@ const EFFECT_KINDS = new Set<LightEffectKind>([
 ]);
 const MAX_BASE64URL_LENGTH = Math.ceil(PORTABLE_PLAYLIST_LIMITS.bytes / 3) * 4;
 
+function validSpatialRecipe(raw: Record<string, unknown>): boolean {
+  switch(raw.kind) {
+    case 'ocean-tide': return ['in','out'].includes(raw.direction as string) && typeof raw.foam==='number' && raw.foam>=0 && raw.foam<=1;
+    case 'tie-dye-spiral': return ['clockwise','counterclockwise'].includes(raw.direction as string) && [2,3,4].includes(raw.arms as number);
+    case 'matrix-rain': return ['down','up'].includes(raw.direction as string) && Number.isInteger(raw.columns) && (raw.columns as number)>=1 && (raw.columns as number)<=20;
+    case 'snake': return ['forward','reverse'].includes(raw.direction as string) && Number.isInteger(raw.bodyLength) && (raw.bodyLength as number)>=1 && (raw.bodyLength as number)<=20;
+    case 'beach-ball': return typeof raw.velocityX==='number' && Number.isFinite(raw.velocityX) && typeof raw.velocityY==='number' && Number.isFinite(raw.velocityY) && Number.isInteger(raw.size) && (raw.size as number)>=1 && (raw.size as number)<=20;
+    case 'pac-man': return ['forward','reverse'].includes(raw.direction as string) && typeof raw.mouthBeat==='number' && Number.isFinite(raw.mouthBeat) && raw.mouthBeat>0;
+    case 'pong': return ['forward','reverse'].includes(raw.direction as string) && Number.isInteger(raw.paddleSize) && (raw.paddleSize as number)>=1 && (raw.paddleSize as number)<=20;
+    case 'bird-flock': return ['left','right'].includes(raw.direction as string) && typeof raw.quietFraction==='number' && raw.quietFraction>=0 && raw.quietFraction<1;
+    default: return false;
+  }
+}
+
 export type PortablePlaylistErrorCode =
   | 'invalid-payload'
   | 'unsupported-schema'
@@ -208,6 +222,7 @@ function decodeEffectGroups(value: unknown, path: string, legacy: boolean): read
       const recipe = record(raw.recipe, `${entryPath}.recipe`);
       const spatialKinds = new Set(['ocean-tide','tie-dye-spiral','matrix-rain','snake','beach-ball','pac-man','pong','bird-flock']);
       if (!spatialKinds.has(recipe.kind as string)) invalid(`${entryPath}.recipe.kind`, 'unknown spatial recipe');
+      if (!validSpatialRecipe(recipe)) invalid(`${entryPath}.recipe`, 'invalid spatial recipe parameters');
       const target = record(raw.target, `${entryPath}.target`);
       if (!['unused','background-board','selected'].includes(target.scope as string)) invalid(`${entryPath}.target.scope`, 'unknown target scope');
       const placements = (input: unknown, targetPath: string) => Object.freeze(boundedArray(input, targetPath, PORTABLE_PLAYLIST_LIMITS.assignmentsPerClimb).map((value, placementIndex) => branded(boardPlacementId, value, `${targetPath}[${placementIndex}]`)));

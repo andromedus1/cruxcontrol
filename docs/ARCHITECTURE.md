@@ -81,7 +81,11 @@ feature item bodies in `.work/`, not here. Capabilities are in
 7. **Route Editor** — a reducer-driven responsive workspace edits unrestricted local
    climbs, coalesces lifecycle-aware autosaves, exposes conflict/failure recovery, and
    composes the renderer with explicit Light Draft and opt-in Live Preview. Provider
-   adapters own future source-native encoding and optional publication.
+   adapters own future source-native encoding and optional publication. Versioned effect
+   groups share one two-pass pure frame engine: assignment effects render first, procedural
+   spatial layers target definition geometry without fake assignments, and semantic roles
+   are reasserted last. Saved recipe snapshots, dynamic target masks, deterministic footprints,
+   and a conservative reserve plan feed the existing complete-scene BLE scheduler.
 8. **Screenshot Import** — a local-only Kilter Android Fullride adapter hashes and
    analyzes selected PNGs sequentially, maps detected role rings through the immutable
    board definition, and presents an editable review before using the existing climb

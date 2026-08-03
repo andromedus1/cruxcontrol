@@ -120,6 +120,20 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByText('0 holds in this effect')).toBeInTheDocument();
   });
 
+  it('applies editable spatial presets without fake assignments and paints independent targets', () => {
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()}/>);
+    fireEvent.click(screen.getByRole('button', { name: /Snake 7 lights/ }));
+    expect(screen.getByLabelText('Effect target')).toHaveValue('unused');
+    expect(screen.getByText(/0 route\/static \+ 7 effects = 7\/20/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Effect target'), { target:{ value:'selected' } });
+    fireEvent.click(screen.getByRole('button', { name:'Paint targets' }));
+    fireEvent.keyDown(screen.getByRole('button', { name:/^Hold 2, Unselected/ }), { key:'Enter' });
+    expect(screen.getByText(/Selected targets: 1/)).toBeInTheDocument();
+    expect(screen.getByText('0 lit')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Effect footprint'), { target:{ value:'5' } });
+    expect(screen.getByText(/0 route\/static \+ 5 effects = 5\/20/)).toBeInTheDocument();
+  });
+
   it('starts fitted and supports controls and pinch zoom in the editor', () => {
     render(
       <RouteEditorWorkspace

@@ -88,6 +88,13 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   and retryable; conflicts offer reload-stored or save-a-copy recovery without silent
   overwrites.
 - Explicit Light Draft and opt-in, default-off Live Preview reuse the board controller.
+- Add editable assignment effects and independent spatial background presets: Ocean Tide,
+  Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, and Bird Flock. Presets
+  default to unused holds, can target the board background or a painted selection, persist
+  complete recipe snapshots, and always keep semantic climb roles exact and static.
+- Physical animation preflights route/static lights plus every spatial layer's declared
+  worst-case reserve before the first write. API-2 playback refuses plans above 20 lights
+  with a breakdown; it never thins a saved design. Screen preview and saving remain unrestricted.
 - Import Kilter Android Fullride screenshots through an on-device detection and review
   flow. Users can correct detected holds and roles before confirmation; confirmed
   climbs enter the existing local lifecycle as ordinary drafts at 40°.

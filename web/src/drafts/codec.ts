@@ -40,6 +40,20 @@ const SPATIAL_KINDS = new Set<SpatialEffectKind>([
   'ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock',
 ]);
 
+function validRecipe(raw: Record<string, unknown>): boolean {
+  switch (raw.kind) {
+    case 'ocean-tide': return (raw.direction === 'in' || raw.direction === 'out') && typeof raw.foam === 'number' && raw.foam >= 0 && raw.foam <= 1;
+    case 'tie-dye-spiral': return (raw.direction === 'clockwise' || raw.direction === 'counterclockwise') && (raw.arms === 2 || raw.arms === 3 || raw.arms === 4);
+    case 'matrix-rain': return (raw.direction === 'down' || raw.direction === 'up') && Number.isInteger(raw.columns) && (raw.columns as number) >= 1 && (raw.columns as number) <= 20;
+    case 'snake': return (raw.direction === 'forward' || raw.direction === 'reverse') && Number.isInteger(raw.bodyLength) && (raw.bodyLength as number) >= 1 && (raw.bodyLength as number) <= 20;
+    case 'beach-ball': return typeof raw.velocityX === 'number' && Number.isFinite(raw.velocityX) && typeof raw.velocityY === 'number' && Number.isFinite(raw.velocityY) && Number.isInteger(raw.size) && (raw.size as number) >= 1 && (raw.size as number) <= 20;
+    case 'pac-man': return (raw.direction === 'forward' || raw.direction === 'reverse') && typeof raw.mouthBeat === 'number' && Number.isFinite(raw.mouthBeat) && raw.mouthBeat > 0;
+    case 'pong': return (raw.direction === 'forward' || raw.direction === 'reverse') && Number.isInteger(raw.paddleSize) && (raw.paddleSize as number) >= 1 && (raw.paddleSize as number) <= 20;
+    case 'bird-flock': return (raw.direction === 'left' || raw.direction === 'right') && typeof raw.quietFraction === 'number' && raw.quietFraction >= 0 && raw.quietFraction < 1;
+    default: return false;
+  }
+}
+
 export function localDraftId(value: string): LocalDraftId {
   if (!UUID.test(value)) throw new TypeError('Local draft ID must be a canonical UUID');
   return value as LocalDraftId;
@@ -218,6 +232,7 @@ function decodeEffectGroups(value: unknown, source: unknown, legacy = false): re
       const recipeRaw = record(raw.recipe, `${path}.recipe`, source);
       const recipeKind = string(recipeRaw.kind, `${path}.recipe.kind`, source) as SpatialEffectKind;
       if (!SPATIAL_KINDS.has(recipeKind)) throw corrupt(`${path}.recipe.kind`, 'unknown spatial recipe', source);
+      if (!validRecipe(recipeRaw)) throw corrupt(`${path}.recipe`, 'invalid spatial recipe parameters', source);
       const recipe = Object.freeze({ ...recipeRaw, kind: recipeKind }) as SpatialRecipe;
       const targetRaw = record(raw.target, `${path}.target`, source);
       if (!['unused', 'background-board', 'selected'].includes(targetRaw.scope as string)) {

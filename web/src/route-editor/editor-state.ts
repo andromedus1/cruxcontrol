@@ -2,6 +2,7 @@ import type { DraftContent, DraftMetadata, LocalClimbDraft } from '../drafts/typ
 import { applyEditorTool } from './assignments';
 import type { RouteEditorAction, RouteEditorState } from './types';
 import { apiLevel3Color } from '../domain/boards/colors';
+import type { LightEffectGroup } from '../board-renderer/types';
 
 function contentOf(draft: LocalClimbDraft): DraftContent {
   return Object.freeze({
@@ -75,10 +76,12 @@ export function routeEditorReducer(
         ...state.content,
         effectGroups: Object.freeze([...state.content.effectGroups, Object.freeze(action.group)]),
       });
+    case 'replace-effect-groups':
+      return changed(state, { ...state.content, effectGroups: Object.freeze([...action.groups]) });
     case 'update-effect-group': {
       const current = state.content.effectGroups.find(({ id }) => id === action.id);
       if (!current) return state;
-      const updated = Object.freeze({ ...current, ...action.changes, id: current.id });
+      const updated = Object.freeze({ ...current, ...action.changes, id: current.id }) as LightEffectGroup;
       return changed(state, {
         ...state.content,
         effectGroups: Object.freeze(
@@ -99,7 +102,7 @@ export function routeEditorReducer(
         {
           ...state,
           tool:
-            state.tool.kind === 'apply-effect' && state.tool.effectGroupId === action.id
+            (state.tool.kind === 'apply-effect' || state.tool.kind === 'spatial-include' || state.tool.kind === 'spatial-exclude') && state.tool.effectGroupId === action.id
               ? { kind: 'cycle' }
               : state.tool,
         },
@@ -113,6 +116,19 @@ export function routeEditorReducer(
       );
     }
     case 'activate-placement': {
+      if (state.tool.kind === 'spatial-include' || state.tool.kind === 'spatial-exclude') {
+        const spatialTool = state.tool;
+        const group = state.content.effectGroups.find(({ id }) => id === spatialTool.effectGroupId);
+        if (group?.model !== 'spatial') return state;
+        const field = spatialTool.kind === 'spatial-include' ? 'include' : 'exclude';
+        const other = field === 'include' ? 'exclude' : 'include';
+        const current = group.target[field];
+        const next = current.includes(action.placementId)
+          ? current.filter((id) => id !== action.placementId)
+          : [...current, action.placementId];
+        const target = Object.freeze({ ...group.target, [field]: Object.freeze(next), [other]: Object.freeze(group.target[other].filter((id) => id !== action.placementId)) });
+        return changed(state, { ...state.content, effectGroups: Object.freeze(state.content.effectGroups.map((candidate) => candidate.id === group.id ? Object.freeze({ ...group, target }) : candidate)) });
+      }
       const assignments = applyEditorTool(
         state.content.assignments,
         action.placementId,
