@@ -2,7 +2,8 @@
 description: Kilter Board Fullride 7x10 hardware, BLE/Nordic UART packet protocol, LED system, and angle adjustment
 type: brief
 kind: research
-updated: 2026-06-13
+updated: 2026-08-02
+research_method: migrated
 nav_priority: high
 summary: >
   Technical primer for the Fullride 7x10: board dimensions and hold/LED counts,

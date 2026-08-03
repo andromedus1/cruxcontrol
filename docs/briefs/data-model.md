@@ -2,7 +2,8 @@
 description: Kilter Board SQLite schema, frames encoding, hold roles, grading system, and the sync/web API
 type: brief
 kind: research
-updated: 2026-06-13
+updated: 2026-08-02
+research_method: migrated
 nav_priority: high
 summary: >
   Technical primer for the Kilter data model: the bundled SQLite database
