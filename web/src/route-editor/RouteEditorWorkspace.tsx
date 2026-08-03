@@ -276,12 +276,22 @@ export function RouteEditorWorkspace({
       )}
       <footer className="editor-actions">
         <p aria-live="polite">
-          {lighting.message ??
+          <span>
+            {lighting.message ??
             (unsupported
               ? 'Bluetooth control is unavailable here; editing and saving still work.'
               : lighting.status === 'previewing'
                 ? 'Previewing latest holds…'
                 : '')}
+          </span>
+          {lighting.capacity && (
+            <span className="editor-actions__capacity">
+              {lighting.capacity.label}
+              {lighting.capacity.effectiveAnimationFps !== null
+                ? ` · ${lighting.capacity.effectiveAnimationFps} FPS complete scenes`
+                : ''}
+            </span>
+          )}
         </p>
         <label className="live-toggle">
           <input

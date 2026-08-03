@@ -159,6 +159,21 @@ describe('Fullride light controller', () => {
     expect(controller.getState().lastAppliedScene).toEqual([]);
   });
 
+  it('paces normal API2 light and preview batches at the measured 20 ms interval', async () => {
+    const transport = new MockBoardByteTransport({
+      devices: [{ id: 'api2', name: 'Kilter Board' }],
+    });
+    const write = vi.spyOn(transport, 'writeBatch');
+    const controller = createFullrideLightController({ definition, transport });
+    await controller.requestAndConnect();
+
+    await controller.light(customScene(0, 1));
+    await controller.preview(customScene(1, 2));
+
+    expect(write).toHaveBeenCalledTimes(2);
+    expect(write.mock.calls.map((call) => call[1]?.interChunkDelayMs)).toEqual([20, 20]);
+  });
+
   it('rejects invalid scenes without writing or changing operation state', async () => {
     const transport = new MockBoardByteTransport();
     const controller = createFullrideLightController({ definition, transport });

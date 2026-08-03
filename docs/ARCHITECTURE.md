@@ -58,8 +58,13 @@ feature item bodies in `.work/`, not here. Capabilities are in
    bounded latest-frame-wins preview. A collapsed, local-only capacity diagnostic uses
    the same queue with bounded cases, optional inter-write pacing, sanitized timing
    traces, hard timeout/disconnect, and explicit clear/reconnect recovery; it does not
-   infer hardware limits from encoder speed. A future iOS shell may supply CoreBluetooth
-   behind the same port.
+   infer hardware limits from encoder speed. The measured API-2 policy shares that queue:
+   normal writes use 20 ms pacing, static scenes are bounded to one 127-light packet,
+   and the editor's absolute-time animation scheduler sends complete scenes of at most
+   20 lights at up to 2 FPS with one frame in flight and stale deadlines coalesced. Since
+   omitted lights replace rather than preserve the previous scene, sparse delta frames
+   are forbidden. Refused playback never rewrites saved assignments. A future iOS shell
+   may supply CoreBluetooth behind the same port.
 5. **Board Renderer** — definition-driven geometry, role colors, and selection.
    For the exact Fullride ID and revision, the private/local prototype resolves one
    immutable, affinely calibrated reference-image underlay beneath 305 semantic

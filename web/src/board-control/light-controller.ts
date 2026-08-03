@@ -12,6 +12,7 @@ import type { LightScene } from '../domain/boards/light-scene.ts';
 import type { BoardPlacementId } from '../domain/boards/types.ts';
 import { assertBoardDefinition } from '../domain/boards/validate-definition.ts';
 import type { AuroraApiLevel } from './api-level-2-codec.ts';
+import { measuredCapacityProfile } from './capacity-policy.ts';
 import {
   summarizeCapacityTrace,
   type CapacityTraceEvent,
@@ -163,7 +164,18 @@ export function createFullrideLightController(
         apiLevelForAuroraDeviceName(deviceName) === 3
           ? encodeApiLevel3Scene(task.resolved.lights)
           : encodeApiLevel2Scene(task.resolved.lights);
-      await options.transport.writeBatch(writes);
+      const apiLevel = apiLevelForAuroraDeviceName(deviceName);
+      const capacityProfile = measuredCapacityProfile(apiLevel);
+      await options.transport.writeBatch(
+        writes,
+        capacityProfile
+          ? {
+              interChunkDelayMs: capacityProfile.safeInterChunkDelayMs,
+              signal: new AbortController().signal,
+              onEvent: () => undefined,
+            }
+          : undefined,
+      );
       publish(state.transport, 'idle', task.resolved.scene, null);
       if ('operation' in task) task.resolve();
       else task.resolve(APPLIED);

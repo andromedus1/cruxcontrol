@@ -151,7 +151,61 @@ describe('useEditorLighting', () => {
     expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(1);
   });
 
-  it('starts API2 animation at six frames per second and keeps slow preview writes bounded', async () => {
+  it('keeps an over-cap static design intact and refuses to send it', async () => {
+    const assignments = kilterFullride7x10Definition.placements.slice(0, 128).map((placement) => ({
+      placementId: placement.id,
+      appearance: { kind: 'role' as const, role: 'middle' as const },
+    }));
+    const transport = new MockBoardByteTransport({
+      devices: [{ id: 'api2', name: 'Kilter Board' }],
+    });
+    const controller = createFullrideLightController({
+      definition: kilterFullride7x10Definition,
+      transport,
+    });
+    const { result } = renderHook(() =>
+      useEditorLighting({ definition: kilterFullride7x10Definition, assignments, controller }),
+    );
+
+    await act(() => result.current.lightDraft());
+
+    expect(assignments).toHaveLength(128);
+    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(0);
+    expect(result.current.message).toMatch(/128 lights.*14 writes.*still saved.*not sent/i);
+  });
+
+  it('lights one complete frame but refuses API2 animation above 20 total lights', async () => {
+    const assignments = kilterFullride7x10Definition.placements.slice(0, 21).map((placement) => ({
+      placementId: placement.id,
+      appearance: { kind: 'custom' as const, color: apiLevel3Color(3) },
+      effectGroupId,
+    }));
+    const transport = new MockBoardByteTransport({
+      devices: [{ id: 'api2', name: 'Kilter Board' }],
+    });
+    const controller = createFullrideLightController({
+      definition: kilterFullride7x10Definition,
+      transport,
+    });
+    const { result } = renderHook(() =>
+      useEditorLighting({
+        definition: kilterFullride7x10Definition,
+        assignments,
+        effectGroups,
+        controller,
+      }),
+    );
+
+    await act(() => result.current.lightDraft());
+
+    expect(assignments).toHaveLength(21);
+    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(1);
+    expect(controller.getState().lastAppliedScene).toHaveLength(21);
+    expect(result.current.animationRunning).toBe(false);
+    expect(result.current.message).toMatch(/21 lights exceed the measured animation limit of 20/i);
+  });
+
+  it('starts API2 animation at the measured two FPS and keeps slow preview writes bounded', async () => {
     vi.useFakeTimers();
     const transport = new MockBoardByteTransport({
       devices: [{ id: 'api2', name: 'Kilter Board' }],
@@ -183,7 +237,11 @@ describe('useEditorLighting', () => {
         }),
     );
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(167);
+      await vi.advanceTimersByTimeAsync(499);
+    });
+    expect(slow).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
     });
     expect(slow).toHaveBeenCalledOnce();
     await act(async () => {

@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-board-light-capacity-envelope
 kind: feature
-stage: implementing
+stage: review
 tags: [perf, ble]
 parent: epic-route-creation
 depends_on: [epic-route-creation-animated-light-designs, epic-board-control]
@@ -364,6 +364,14 @@ between diagnostics and policy implementation.
   paced/cancelable writes, hard timeout with immediate disconnect, bounded case scheduling,
   and the collapsed local editor diagnostic/export surface. No capacity threshold was
   inferred.
-- Optimization 2 remains the next checkpoint and requires the explicit Fullride/Android
-  physical campaign.
-- Optimization 3 remains blocked on those recorded physical results.
+- Optimization 2 is complete with an accepted conservative Fullride/Android API-2
+  profile: 127 static lights, 20 animated lights at 2 FPS / 20 ms pacing, replacement
+  scene semantics, and no sparse deltas.
+- Optimization 3 is implemented from exactly that profile. API-2 writes use measured
+  pacing; editor static sends stop above 127; animation sends complete scenes only,
+  stops above 20, and uses absolute due times, one in-flight preview, missed-deadline
+  coalescing, and recent-p95 downgrade/pause. Cost and effective FPS remain visible,
+  while refused playback leaves the saved climb and effect data unchanged. No API-3
+  physical capacity claim was added.
+- All three child checkpoints are done; the feature is ready for its standard independent
+  review pass.
