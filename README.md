@@ -1,118 +1,97 @@
 # CruxControl
 
-## In plain terms
+CruxControl is a local-first, installable web app for creating climbs and controlling
+a home **Kilter Fullride 7x10**. It runs on Android and desktop Chromium, connects to
+the board through Web Bluetooth, and keeps personal climbs and lists in the browser—no
+account or application server required.
 
-A **Kilter Board** is an interactive climbing wall: a grid of plastic holds with LEDs
-behind them. You pick a climb, the right holds light up, and you try to get to the top
-using only those holds. Normally you drive the board with Kilter's official phone app.
+## What works now
 
-That app is slow, hard to get your data out of, and not very smart. **CruxControl is a
-replacement for it** — a web app (it runs in your browser, nothing to install from an
-app store) that talks to a home Kilter Board over Bluetooth.
+- Create unrestricted climbs on a recognizable 305-hold board, use the four Kilter
+  roles or any of the controller's 256 packed colors, and autosave locally.
+- Move climbs between **Draft**, **Finished**, and recoverable **Trash** without losing
+  their identity or contents.
+- Organize climbs into multiple named lists, reorder them, play through them on the
+  board, and share complete lists by bounded URL or JSON file.
+- Import Kilter Fullride screenshots through a local review-and-correction flow, or
+  import the supplied set of 16 climbs as ordinary 40° drafts. Screenshot pixels are
+  never uploaded or persisted.
+- Light and clear the physical board from Android or desktop Chromium. The measured
+  Android/API-2 profile supports complete static scenes of up to 127 lights and
+  complete animated scenes of up to 20 lights at 2 FPS; unsafe scenes are preserved
+  but refused rather than silently truncated.
+- Save and edit assignment effects and independent background presets, including
+  Ocean Tide, Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird
+  Flock, Frogger, and a fading circled inverted pentagram. Semantic route holds remain
+  recognizable and animation capacity is preflighted before board playback.
 
-The completed first local milestone can:
+The installed PWA must remain in the foreground while an animation is playing. Page
+visibility loss, disconnect, clear, or leaving the relevant view stops playback safely.
 
-- **Create and edit climbs in any state**, including empty or unconventional routes,
-  and autosave them in this browser.
-- **Show all 305 controllable Fullride holds** in an accessible, responsive board
-  diagram with the four normal climb roles or any of the board's 256 light colors.
-- **Light or clear the wall from Android or desktop Chromium** through the browser's
-  Web Bluetooth support, with an optional live preview while setting.
+The calibrated Fullride hold photograph is private, user-supplied source material for
+local use. Public distribution requires permission or replacement artwork; the
+definition-driven schematic renderer remains the distributable fallback. The original
+Kilter reference documents and screenshot sources are also private inputs and are not
+application assets.
 
-Community-catalog browsing and sharing, a local logbook, ML grade prediction, and
-personalized training remain later milestones.
+Community-catalog installation and browsing, publication to Kilter, logbook/session
+tracking, grade prediction, recommendations, iOS board control, and other board models
+remain future work. See [docs/VISION.md](docs/VISION.md) for the broader direction.
 
-It's built for one specific board — a home **Kilter Board Fullride 7x10** — and shared
-with a small circle of friends. Each person runs their own copy against their own board,
-with their own local data. There's no central server, no accounts, and no sign-up.
+## Development
 
-For the full picture, see [docs/VISION.md](docs/VISION.md).
+CruxControl is a client-only React 19 + Vite 6 TypeScript PWA. The repository also
+contains research, future catalog/ML foundations, and the agile-workflow substrate;
+the deployed artifact is `/web`.
 
----
-
-## For developers
-
-A distributable, offline-first, installable **PWA** that replaces the official Kilter
-app and adds intelligence (ML grade prediction, personalized training). Client-only —
-no backend, no accounts; each user runs their own client with local data.
-
-### Layout (monorepo)
-
+```text
+/web       TypeScript PWA
+/ml        Future Python grade-prediction pipeline
+/docs      Foundation docs, briefs, and knowledge index
+/.research Research corpus and source attestations
+/.work     Delivery substrate and current work state
+/.github   CI and gated Cloudflare deployment
 ```
-/web      — TypeScript PWA (React + Vite). The client app. The only deployed artifact.
-/ml       — Python ML training pipeline (grade prediction). Exports artifacts to /web/public.
-/docs     — foundation docs (VISION/SPEC/ARCHITECTURE), research briefs, knowledge index.
-/.research— research corpus: domain briefs + source attestations (the citation chain).
-/.work    — agile-workflow substrate (epics/features/stories). Source of truth for work.
-/.github  — CI workflow (lint/typecheck/test/build + gated Cloudflare Workers deploy).
-```
 
-`/web` is an npm workspace; `/ml` is a standalone Python project (not an npm workspace).
-
-### Develop (web)
+From the repository root:
 
 ```bash
-npm install          # installs the web workspace
-npm run dev          # vite dev server
-npm run build        # static production build → web/dist
-npm test             # vitest contract and integration suite
-npm run typecheck    # tsc --noEmit (strict)
-npm run lint         # eslint
-npm run format       # prettier --write
-npm -w web run test:e2e  # Playwright Chromium smoke tests (build first)
+npm install
+npm run dev
+npm run build
+npm test
+npm run typecheck
+npm run lint
+npm run format
+npm -w web run test:e2e  # build first
 ```
 
-Requires Node ≥ 20 (see `.nvmrc`). Run scripts from the repo root with
-`-w @cruxcontrol/web`, or from inside `web/`.
+Node 20 or newer is required (see `.nvmrc`). `/web` is an npm workspace; `/ml` is a
+separate Python project.
 
-### Architecture highlights (foundation)
+### Implementation highlights
 
-- **Immutable Fullride board domain** — a reproducible catalog projection generates
-  the validated Fullride 7x10 definition: 305 controllable placements, geometry,
-  source identities, LED positions, supported angles, and semantic role presets.
-- **Independently authored schematic SVG renderer** — definition-driven hold artwork,
-  role shapes, custom colors, pan/scale behavior, and roving keyboard interaction are
-  shared by the climb viewer and route editor.
-- **Local drafts and editor** — unrestricted, schema-versioned drafts live in a
-  dedicated native IndexedDB store with optimistic revisions. The responsive editor
-  supports semantic roles, all 256 packed 3/3/2-bit colors, coalesced autosave,
-  reload/retry/save-copy recovery, explicit lighting, and opt-in live preview.
-- **Board control** — the API-level-3 codec, Web Bluetooth session, and light-scene
-  controller are isolated behind typed ports and covered with deterministic transport
-  fakes. A powered-board Android Chrome verification is still required.
-- **Local catalog read path** — the Kilter catalog is an in-browser SQLite database
-  (`wa-sqlite`, `AccessHandlePoolVFS`) running in a Web Worker, behind the `CatalogPort`
-  interface ([web/src/data/](web/src/data/)). All climb/hold/stats queries go through it.
-- **Offline-first PWA** — `vite-plugin-pwa` (Workbox, silent auto-update); installable,
-  app shell precached, catalog DB deliberately kept in OPFS (never the SW cache).
-- **Catalog snapshot** — `web/scripts/build-catalog-snapshot.py` runs BoardLib and prunes
-  the full catalog to the Fullride 7x10 (~5 MB gzipped), shipped as a same-origin static
-  asset. See [web/public/catalog/manifest.json](web/public/catalog/manifest.json).
+- One immutable Fullride definition owns all 305 placement identities, coordinates,
+  LED positions, supported angles, and semantic role presets.
+- Independent versioned IndexedDB repositories own local climbs and lists, including
+  optimistic revisions, lifecycle recovery, portable list snapshots, and offline use.
+- A pure frame engine drives both screen preview and BLE output. Saved recipe snapshots
+  remain editable and do not change when the built-in preset library evolves.
+- API-2 and API-3 codecs, Web Bluetooth transport, latest-frame controller arbitration,
+  and the measured capacity policy sit behind typed boundaries.
+- The installable Workbox app shell is precached and updates automatically. Animation
+  remains deliberately foreground-bound because mobile browsers suspend background work.
 
-### Deploy
+The current automated baseline is **68 Vitest files / 443 tests**, plus strict
+TypeScript, ESLint, production PWA build checks, and Playwright Chromium smokes. Physical
+Android/Fullride dogfooding has verified pairing, hold mapping, lighting, and the API-2
+capacity boundary described above; automated transport tests still use deterministic
+fakes for repeatability.
 
-Ships as static assets to **Cloudflare Workers (Static Assets)** via GitHub Actions
-(`cloudflare/wrangler-action`), with the deploy gated behind a green CI run. The deploy
-is inert until the one-time setup (Cloudflare token + account ID, `ENABLE_DEPLOY=true`,
-branch protection) is done — see **[docs/DEPLOY.md](docs/DEPLOY.md)**. Rationale for
-Workers-over-Pages is in [.research/briefs/cloudflare-deploy/parent.md](.research/briefs/cloudflare-deploy/parent.md).
+## Deployment
 
-### Status
+Static assets deploy to **Cloudflare Workers (Static Assets)** through the gated GitHub
+Actions workflow. One-time setup and safety controls are documented in
+[docs/DEPLOY.md](docs/DEPLOY.md).
 
-The **Fullride local create-save-light milestone is implemented**. The application now
-composes the generated 305-placement board definition, independently authored
-schematic SVG renderer, local climb viewer, unrestricted IndexedDB draft library,
-responsive route editor, and API-level-3 Web Bluetooth controller. The automated
-snapshot is green across 218 Vitest tests, strict typecheck, lint, production build,
-and two Chromium end-to-end smokes covering autosave/reload/reopen and phone/desktop
-interaction.
-
-Automated tests validate protocol bytes and the controller lifecycle through fakes;
-they do **not** prove behavior on a powered board. Fullride 7x10 + Android Chrome
-physical verification remains an explicit pending checkpoint.
-
-Community-catalog first-run installation is still blocked on the VFS-import decision
-in `epic-foundation-catalog-bootstrap`. Catalog browsing/filtering and provider
-publication, iOS direct control, other boards, ML grade prediction, logbook,
-playlists, sharing, and recommendations remain future work. Query current work with
-`.work/bin/work-view --ready`.
+Query current delivery state with `.work/bin/work-view --ready`.
