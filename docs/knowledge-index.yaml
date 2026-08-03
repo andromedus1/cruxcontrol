@@ -6,7 +6,7 @@
 #   2 = enforce (missing v2 fields are errors)
 # Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-08-03T00:06:55Z
+generated_at: 2026-08-03T03:57:30Z
 generated_from: frontmatter
 total_docs: 23
 
@@ -158,7 +158,8 @@ documents:
     title: "Kilter Board Data Model: A Technical Primer"
     type: brief
     kind: research
-    updated: 2026-06-13
+    updated: 2026-08-02
+    research_method: migrated
     consumer_hint: Kilter Board SQLite schema, frames encoding, hold roles, grading system, and the sync/web API
 
   - path: docs/briefs/foundation-pwa-sqlite.md
@@ -175,7 +176,8 @@ documents:
     title: Kilter Board Fullride 7x10 -- Technical Primer
     type: brief
     kind: research
-    updated: 2026-06-13
+    updated: 2026-08-02
+    research_method: migrated
     consumer_hint: Kilter Board Fullride 7x10 hardware, BLE/Nordic UART packet protocol, LED system, and angle adjustment
 
   - path: docs/briefs/recommendations-and-training.md
