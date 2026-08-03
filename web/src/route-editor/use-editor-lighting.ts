@@ -61,6 +61,7 @@ export function useEditorLighting({
 
   const cancelAnimation = useCallback(() => {
     animationSequence.current += 1;
+    recentBatchMs.current = [];
     if (animationTimer.current !== null) window.clearTimeout(animationTimer.current);
     animationTimer.current = null;
     if (mounted.current) {

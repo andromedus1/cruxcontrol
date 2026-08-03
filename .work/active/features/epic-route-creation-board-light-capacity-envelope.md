@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-board-light-capacity-envelope
 kind: feature
-stage: review
+stage: done
 tags: [perf, ble]
 parent: epic-route-creation
 depends_on: [epic-route-creation-animated-light-designs, epic-board-control]
@@ -375,3 +375,20 @@ between diagnostics and policy implementation.
   physical capacity claim was added.
 - All three child checkpoints are done; the feature is ready for its standard independent
   review pass.
+
+## Review
+
+**Verdict**: Ready — one independent standard-weight Claude Opus pass at `27b292e`; no
+blocking findings.
+
+- Independently reran 67 files / 406 tests, typecheck, lint, and re-derived the API-2
+  127/128 cost boundary from the codecs; all matched the recorded profile.
+- Confirmed truthful API-2-only enforcement, full-scene replacement, 20-light/2-FPS/
+  20-ms animation scheduling, one in-flight frame, absolute due-time coalescing,
+  latency downgrade/pause, lifecycle cancellation, diagnostic privacy, and saved-data
+  immutability. API 3 remains explicitly unmeasured.
+- Fixed the one Low finding without rereview: stopping/restarting animation now clears
+  prior-session batch-latency samples so a fresh session is not needlessly downgraded by
+  stale history. Existing cancellation and scheduler coverage remains green.
+- Accepted as intentional: the current profile is conservative and thinly measured;
+  the expanded repeated matrix remains parked rather than represented as current truth.
