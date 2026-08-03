@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BoardHoldAssignment, SpatialLightEffectGroup } from '../board-renderer/types';
-import { apiLevel3Color } from '../domain/boards/colors';
+import { apiLevel3Color, unpackApiLevel3Color } from '../domain/boards/colors';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10';
 import { spatialCapacityPlan } from './capacity-plan';
 import { renderAnimationFrame } from './frame';
@@ -98,6 +98,21 @@ describe('spatial effect rendering', () => {
     expect(paths.every((path) => path.length <= snake.footprint)).toBe(true);
   });
 
+  it('moves the Snake head only along orthogonal taxicab edges', () => {
+    const snake = preset('snake', 11);
+    const positions = new Map(definition.placements.map((placement) => [placement.id, placement.position]));
+    const heads = Array.from({ length: 80 }, (_, frame) =>
+      renderSpatialGroup(definition, [], snake, frame * BOARD_ANIMATION_FRAME_MS)[0]!.placementId,
+    );
+    for (let index = 1; index < heads.length; index += 1) {
+      const before = positions.get(heads[index - 1]!)!;
+      const after = positions.get(heads[index]!)!;
+      const dx = Math.abs(after.x - before.x);
+      const dy = Math.abs(after.y - before.y);
+      expect(dx === 0 || dy === 0, `Snake moved diagonally from ${before.x},${before.y} to ${after.x},${after.y}`).toBe(true);
+    }
+  });
+
   it('varies Pac-Man maze orientation across consecutive circuits', () => {
     const pacMan = preset('pac-man', 19);
     const paths = Array.from({ length: 4 }, (_, cycle) =>
@@ -109,5 +124,67 @@ describe('spatial effect rendering', () => {
       renderSpatialGroup(definition, [], pacMan, pacMan.periodMs * 1.25).map(({ placementId }) => placementId),
     ).toEqual(paths[1]);
     expect(paths.every((path) => path.length <= pacMan.footprint)).toBe(true);
+  });
+
+  it('moves Pac-Man only along orthogonal maze edges', () => {
+    const pacMan = preset('pac-man', 19);
+    const positions = new Map(definition.placements.map((placement) => [placement.id, placement.position]));
+    const heads = Array.from({ length: 80 }, (_, frame) =>
+      renderSpatialGroup(definition, [], pacMan, frame * BOARD_ANIMATION_FRAME_MS)[0]!.placementId,
+    );
+    for (let index = 1; index < heads.length; index += 1) {
+      const before = positions.get(heads[index - 1]!)!;
+      const after = positions.get(heads[index]!)!;
+      const dx = Math.abs(after.x - before.x);
+      const dy = Math.abs(after.y - before.y);
+      expect(dx === 0 || dy === 0, `Pac-Man moved diagonally from ${before.x},${before.y} to ${after.x},${after.y}`).toBe(true);
+    }
+  });
+
+  it.each(['matrix-rain', 'beach-ball', 'pong'] as const)('varies %s motion across consecutive cycles', (kind) => {
+    const group = preset(kind, 23);
+    const paths = Array.from({ length: 4 }, (_, cycle) =>
+      renderSpatialGroup(definition, [], group, group.periodMs * (cycle + 0.4))
+        .map(({ placementId }) => placementId),
+    );
+    expect(new Set(paths.map((path) => path.join('|'))).size).toBeGreaterThanOrEqual(3);
+    expect(
+      renderSpatialGroup(definition, [], group, group.periodMs * 2.4).map(({ placementId }) => placementId),
+    ).toEqual(paths[2]);
+    expect(paths.every((path) => path.length <= group.footprint)).toBe(true);
+  });
+
+  it('renders Frogger with a green frog, red traffic, and a bounded crossing', () => {
+    const frogger = preset('frogger', 31);
+    const first = renderSpatialGroup(definition, [], frogger, 8_000);
+    const later = renderSpatialGroup(definition, [], frogger, 28_000);
+    expect(first).toHaveLength(frogger.footprint);
+    expect(new Set(first.map(({ placementId }) => placementId)).size).toBe(first.length);
+    expect(first.slice(0, 2).every(({ color }) => {
+      const rgb = unpackApiLevel3Color(color);
+      return rgb.green > rgb.red && rgb.green > rgb.blue;
+    })).toBe(true);
+    expect(first.slice(2).every(({ color }) => {
+      const rgb = unpackApiLevel3Color(color);
+      return rgb.red > rgb.green && rgb.red > rgb.blue;
+    })).toBe(true);
+    expect(later.map(({ placementId }) => placementId)).not.toEqual(first.map(({ placementId }) => placementId));
+  });
+
+  it('keeps a stable pentagram outline while fading every red light together', () => {
+    const pentagram = preset('pentagram', 37);
+    const bright = renderSpatialGroup(definition, [], pentagram, 0);
+    const dim = renderSpatialGroup(definition, [], pentagram, pentagram.periodMs / 2);
+    expect(bright).toHaveLength(15);
+    expect(dim.map(({ placementId }) => placementId)).toEqual(bright.map(({ placementId }) => placementId));
+    expect(new Set(bright.map(({ color }) => color)).size).toBe(1);
+    expect(new Set(dim.map(({ color }) => color)).size).toBe(1);
+    expect(dim[0]!.color).not.toBe(bright[0]!.color);
+    for (const scene of [bright, dim]) {
+      const rgb = unpackApiLevel3Color(scene[0]!.color);
+      expect(rgb.red).toBeGreaterThan(0);
+      expect(rgb.green).toBe(0);
+      expect(rgb.blue).toBe(0);
+    }
   });
 });

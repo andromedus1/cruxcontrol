@@ -39,7 +39,7 @@ const EFFECT_KINDS = new Set<LightEffectKind>([
   'alternate',
 ]);
 const SPATIAL_KINDS = new Set<SpatialEffectKind>([
-  'ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock',
+  'ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock', 'frogger', 'pentagram',
 ]);
 
 function validRecipe(raw: Record<string, unknown>): boolean {
@@ -52,6 +52,8 @@ function validRecipe(raw: Record<string, unknown>): boolean {
     case 'pac-man': return (raw.direction === 'forward' || raw.direction === 'reverse') && typeof raw.mouthBeat === 'number' && Number.isFinite(raw.mouthBeat) && raw.mouthBeat > 0;
     case 'pong': return (raw.direction === 'forward' || raw.direction === 'reverse') && Number.isInteger(raw.paddleSize) && (raw.paddleSize as number) >= 1 && (raw.paddleSize as number) <= 20;
     case 'bird-flock': return (raw.direction === 'left' || raw.direction === 'right') && typeof raw.quietFraction === 'number' && raw.quietFraction >= 0 && raw.quietFraction < 1;
+    case 'frogger': return Number.isInteger(raw.lanes) && (raw.lanes as number) >= 1 && (raw.lanes as number) <= 8;
+    case 'pentagram': return typeof raw.fadeRate === 'number' && Number.isFinite(raw.fadeRate) && raw.fadeRate > 0 && raw.fadeRate <= 8;
     default: return false;
   }
 }

@@ -101,6 +101,15 @@ describe('portable playlist codec', () => {
     const decoded = decodePortablePlaylist(value);
     expect(JSON.parse(encodePortablePlaylist(decoded))).toEqual(value);
   });
+  it.each([
+    ['frogger', { kind:'frogger', lanes:4 }],
+    ['pentagram', { kind:'pentagram', fadeRate:1 }],
+  ])('round-trips the %s portable recipe', (_, recipe) => {
+    const value = clone();
+    snapshotOf(value).effectGroups = [{ model:'spatial', id:`${recipe.kind}-bg`, recipeVersion:1, recipe, seed:9, palette:[28,192], periodMs:45000, intensity:1, footprint:10, target:{scope:'unused',include:[],exclude:[]} }];
+    assignmentsOf(value).forEach((assignment) => delete assignment.effectGroupId);
+    expect(JSON.parse(encodePortablePlaylist(decodePortablePlaylist(value)))).toEqual(value);
+  });
   it('rejects effect cycle times above the editor ceiling', () => {
     const value = clone();
     effectGroupsOf(value)[0]!.periodMs = 180_001;

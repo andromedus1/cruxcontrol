@@ -22,7 +22,7 @@ export interface AssignedLightEffectGroup {
 
 export type SpatialEffectKind =
   | 'ocean-tide' | 'tie-dye-spiral' | 'matrix-rain' | 'snake'
-  | 'beach-ball' | 'pac-man' | 'pong' | 'bird-flock';
+  | 'beach-ball' | 'pac-man' | 'pong' | 'bird-flock' | 'frogger' | 'pentagram';
 
 export type SpatialRecipe =
   | { readonly kind: 'ocean-tide'; readonly direction: 'in' | 'out'; readonly foam: number }
@@ -32,7 +32,9 @@ export type SpatialRecipe =
   | { readonly kind: 'beach-ball'; readonly velocityX: number; readonly velocityY: number; readonly size: number }
   | { readonly kind: 'pac-man'; readonly direction: 'forward' | 'reverse'; readonly mouthBeat: number }
   | { readonly kind: 'pong'; readonly direction: 'forward' | 'reverse'; readonly paddleSize: number }
-  | { readonly kind: 'bird-flock'; readonly direction: 'left' | 'right'; readonly quietFraction: number };
+  | { readonly kind: 'bird-flock'; readonly direction: 'left' | 'right'; readonly quietFraction: number }
+  | { readonly kind: 'frogger'; readonly lanes: number }
+  | { readonly kind: 'pentagram'; readonly fadeRate: number };
 
 export interface SpatialEffectTarget {
   readonly scope: 'unused' | 'background-board' | 'selected';

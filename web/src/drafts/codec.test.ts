@@ -36,6 +36,18 @@ describe('local draft codec', () => {
     const dangling = encodeStoredDraft({ ...source, assignments: [{ placementId, appearance: { kind: 'custom', color: apiLevel3Color(1) }, effectGroupId: spatial.id }] });
     expect(() => decodeStoredDraft(dangling)).toThrowError(expect.objectContaining({ path: 'assignments[0].effectGroupId' }));
   });
+  it.each([
+    ['frogger', { kind: 'frogger' as const, lanes: 4 }],
+    ['pentagram', { kind: 'pentagram' as const, fadeRate: 1 }],
+  ])('round-trips the %s spatial recipe', (_, recipe) => {
+    const spatial = {
+      model: 'spatial' as const, id: lightEffectGroupId(`effect-${recipe.kind}`), recipeVersion: 1 as const,
+      recipe, seed: 17, palette: [apiLevel3Color(28), apiLevel3Color(192)], periodMs: 45_000,
+      intensity: 1, footprint: 10, target: { scope: 'unused' as const, include: [], exclude: [] },
+    };
+    const source = draft({ effectGroups: [spatial] });
+    expect(decodeStoredDraft(encodeStoredDraft(source))).toEqual(source);
+  });
   it('migrates valid v1 records to active v4 drafts without changing their climb content', () => {
     const current = draft({
       name: 'Old wave',
