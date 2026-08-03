@@ -62,6 +62,36 @@ describe('ClimbDetail', () => {
     expect(vi.mocked(connected.light).mock.calls[0]![0].length).toBeGreaterThan(climb.assignments.length);
   });
 
+  it('keeps animation controls stable while a complete-scene preview write is in flight', async () => {
+    vi.useFakeTimers();
+    let state: BoardLightState = { transport: { status: 'connected', device: { id: 'board', name: 'Homewall' } }, operation: 'idle', lastAppliedScene: null, error: null };
+    let listener: ((value: BoardLightState) => void) | undefined;
+    let finishPreview: (() => void) | undefined;
+    const previewGate = new Promise<void>((resolve) => { finishPreview = resolve; });
+    const controller: BoardLightController = {
+      ...controllerWith(state),
+      getState: () => state,
+      subscribe: (next) => { listener = next; return () => { listener = undefined; }; },
+      preview: vi.fn(async () => {
+        state = { ...state, operation: 'previewing' };
+        listener?.(state);
+        await previewGate;
+        return { status: 'applied' as const };
+      }),
+    };
+    const animated = { ...climb, effectGroups: [createSpatialPreset('beach-ball', 7)] };
+    const view = render(<ClimbDetail definition={definition} climb={animated} controller={controller} />);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Light this climb' })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+    expect(controller.preview).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Restart animation' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Previewing…' })).not.toBeInTheDocument();
+    finishPreview?.();
+    await act(async () => { await Promise.resolve(); });
+    view.unmount();
+    vi.useRealTimers();
+  });
+
   it('labels an empty scene as a clear-board operation', async () => {
     const connected = controllerWith({ transport: { status: 'connected', device: { id: 'board', name: null } }, operation: 'idle', lastAppliedScene: null, error: null });
     render(<ClimbDetail definition={definition} climb={{ ...climb, assignments: [] }} controller={connected} />);

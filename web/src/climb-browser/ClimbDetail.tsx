@@ -41,7 +41,8 @@ export function ClimbDetail({
   const state = lighting.controllerState;
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
   const connected = state.transport.status === 'connected';
-  const ready = connected && state.operation === 'idle';
+  const lightBusy = lighting.status === 'connecting' || lighting.status === 'lighting';
+  const ready = connected && !lightBusy && (state.operation === 'idle' || lighting.animationRunning);
   const empty = climb.assignments.length === 0 && effectGroups.length === 0;
   const effectIds = useMemo(() => new Set(effectGroups.map(({ id }) => id)), [effectGroups]);
   const animated = effectGroups.some(({ model }) => model === 'spatial') || climb.assignments.some(
@@ -53,9 +54,12 @@ export function ClimbDetail({
     [climb.assignments, definition, effectGroups, previewElapsedMs],
   );
   const hasCustom = climb.assignments.some(({ appearance }) => appearance.kind === 'custom');
-  let actionLabel = lighting.animationRunning ? 'Restart animation' : empty ? 'Clear board' : 'Light this climb';
+  let actionLabel = empty ? 'Clear board' : 'Light this climb';
   let operationStatus = '';
-  if (state.operation === 'lighting') {
+  if (lighting.animationRunning) {
+    actionLabel = 'Restart animation';
+    operationStatus = 'Animation running. Keep CruxControl in the foreground.';
+  } else if (state.operation === 'lighting') {
     actionLabel = 'Lighting…';
     operationStatus = 'Lighting this climb…';
   } else if (state.operation === 'clearing') {
