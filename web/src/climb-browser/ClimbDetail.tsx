@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import type { BoardLightController } from '../board-control/light-controller';
 import { BoardRenderer } from '../board-renderer/BoardRenderer';
 import type { BoardDefinition, ClimbRole } from '../domain/boards/definition';
 import { BoardControlBar } from './BoardControlBar';
-import { lightSceneFromAssignments } from './light-scene';
+import { renderAnimationFrame } from '../light-effects/frame';
+import { useAnimationClock } from '../light-effects/use-animation-clock';
+import { useEditorLighting } from '../route-editor/use-editor-lighting';
 import type { ClimbViewRecord } from './types';
-import { useBoardLightState } from './use-board-light-state';
 
 export interface ClimbDetailProps {
   readonly definition: BoardDefinition;
@@ -30,14 +31,29 @@ export function ClimbDetail({
   primaryAction,
   destructiveAction,
 }: ClimbDetailProps) {
-  const state = useBoardLightState(controller);
-  const [localError, setLocalError] = useState('');
+  const effectGroups = useMemo(() => climb.effectGroups ?? [], [climb.effectGroups]);
+  const lighting = useEditorLighting({
+    definition,
+    assignments: climb.assignments,
+    effectGroups,
+    controller,
+  });
+  const state = lighting.controllerState;
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
   const connected = state.transport.status === 'connected';
   const ready = connected && state.operation === 'idle';
-  const empty = climb.assignments.length === 0;
+  const empty = climb.assignments.length === 0 && effectGroups.length === 0;
+  const effectIds = useMemo(() => new Set(effectGroups.map(({ id }) => id)), [effectGroups]);
+  const animated = effectGroups.some(({ model }) => model === 'spatial') || climb.assignments.some(
+    ({ effectGroupId }) => effectGroupId !== undefined && effectIds.has(effectGroupId),
+  );
+  const previewElapsedMs = useAnimationClock({ active: animated, fps: 10 });
+  const visualScene = useMemo(
+    () => renderAnimationFrame({ definition, assignments: climb.assignments, effectGroups, elapsedMs: previewElapsedMs }),
+    [climb.assignments, definition, effectGroups, previewElapsedMs],
+  );
   const hasCustom = climb.assignments.some(({ appearance }) => appearance.kind === 'custom');
-  let actionLabel = empty ? 'Clear board' : 'Light this climb';
+  let actionLabel = lighting.animationRunning ? 'Restart animation' : empty ? 'Clear board' : 'Light this climb';
   let operationStatus = '';
   if (state.operation === 'lighting') {
     actionLabel = 'Lighting…';
@@ -53,13 +69,7 @@ export function ClimbDetail({
 
   const light = () => {
     if (!controller || !ready) return;
-    setLocalError('');
-    const action = empty
-      ? controller.clear()
-      : controller.light(lightSceneFromAssignments(definition, climb.assignments));
-    void action.catch((error: unknown) => {
-      setLocalError(error instanceof Error ? error.message : 'The board could not be updated.');
-    });
+    void lighting.lightDraft();
   };
 
   return (
@@ -93,6 +103,7 @@ export function ClimbDetail({
         <BoardRenderer
           definition={definition}
           assignments={climb.assignments}
+          lightScene={visualScene}
           labelledBy={boardHeadingId}
         />
       </section>
@@ -112,7 +123,7 @@ export function ClimbDetail({
       </ul>
       <div className="climb-detail__actions">
         <p className="action-status" aria-live="polite">
-          {localError ||
+          {lighting.message ||
             state.error?.message ||
             operationStatus ||
             (!connected ? 'Connect a board to light this scene.' : '')}
@@ -143,6 +154,11 @@ export function ClimbDetail({
             onClick={destructiveAction.onActivate}
           >
             {destructiveAction.label}
+          </button>
+        )}
+        {lighting.animationRunning && (
+          <button className="button button--secondary" type="button" onClick={() => void lighting.stopAnimation()}>
+            Stop animation
           </button>
         )}
         <button className="button button--primary" type="button" disabled={!ready} onClick={light}>

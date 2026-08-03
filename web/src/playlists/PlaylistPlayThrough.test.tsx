@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BoardLightController, BoardLightState } from '../board-control/light-controller.ts';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
@@ -139,7 +139,7 @@ describe('PlaylistPlayThrough', () => {
     expect(controller.preview).not.toHaveBeenCalled();
   });
 
-  it('lights exactly the current available climb only after the explicit action', () => {
+  it('lights exactly the current available climb only after the explicit action', async () => {
     const first = entry(FIRST_ID, 'First climb', 0);
     const second = entry(SECOND_ID, 'Second climb', 1);
     const entries = [first, second];
@@ -161,7 +161,7 @@ describe('PlaylistPlayThrough', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(controller.light).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Light this climb' }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Light this climb' })); });
     expect(controller.light).toHaveBeenCalledOnce();
     expect(controller.light).toHaveBeenCalledWith([
       {

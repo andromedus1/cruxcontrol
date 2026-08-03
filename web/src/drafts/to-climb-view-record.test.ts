@@ -33,11 +33,13 @@ describe('local draft viewer projection', () => {
       name: 'Wave',
       angle: 45,
       assignments: draft.assignments,
+      effectGroups: draft.effectGroups,
       origin: 'local-draft',
       grade: 'V5',
       description: 'Flow',
     });
     expect(record.assignments).toBe(draft.assignments);
+    expect(record.effectGroups).toBe(draft.effectGroups);
     expect(record).not.toHaveProperty('setter');
     expect(record.key).not.toContain('provider');
   });

@@ -1,4 +1,4 @@
-import type { BoardHoldAssignment } from '../board-renderer/types';
+import type { BoardHoldAssignment, LightEffectGroup } from '../board-renderer/types';
 import { providerClimbKey } from '../domain/boards/identity';
 import type { Brand, ProviderClimbId } from '../domain/boards/types';
 
@@ -18,6 +18,7 @@ export interface ClimbViewRecord {
   readonly name: string;
   readonly angle: number;
   readonly assignments: readonly BoardHoldAssignment[];
+  readonly effectGroups?: readonly LightEffectGroup[];
   readonly origin: 'local-draft' | 'provider';
   readonly grade?: string;
   readonly setter?: string;

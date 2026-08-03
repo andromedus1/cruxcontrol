@@ -12,6 +12,7 @@ export function toClimbViewRecord(draft: LocalClimbDraft): ClimbViewRecord {
     name: draft.name,
     angle: draft.angle,
     assignments: draft.assignments,
+    effectGroups: draft.effectGroups,
     origin: 'local-draft',
     ...(draft.metadata.grade === undefined ? {} : { grade: draft.metadata.grade }),
     ...(draft.metadata.description === undefined

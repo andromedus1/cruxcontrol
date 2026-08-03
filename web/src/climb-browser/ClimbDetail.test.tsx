@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BoardLightController, BoardLightState } from '../board-control/light-controller';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10';
 import { ClimbDetail } from './ClimbDetail';
 import { climbViewKey, type ClimbViewRecord } from './types';
+import { createSpatialPreset } from '../light-effects/preset-library';
 
 const climb: ClimbViewRecord = {
   key: climbViewKey('local:detail'), name: 'Color Study', angle: 40, origin: 'local-draft',
@@ -34,7 +35,7 @@ describe('ClimbDetail', () => {
     expect(screen.getByRole('button', { name: 'Light this climb' })).toBeDisabled();
   });
 
-  it('keeps connection explicit and lights exactly one projected scene', () => {
+  it('keeps connection explicit and lights exactly one projected scene', async () => {
     const disconnected = controllerWith({ transport: { status: 'disconnected', device: null }, operation: 'idle', lastAppliedScene: null, error: null });
     const firstRender = render(<ClimbDetail definition={definition} climb={climb} controller={disconnected} />);
     expect(disconnected.requestAndConnect).not.toHaveBeenCalled();
@@ -44,7 +45,7 @@ describe('ClimbDetail', () => {
 
     const connected = controllerWith({ transport: { status: 'connected', device: { id: 'board', name: 'Homewall' } }, operation: 'idle', lastAppliedScene: null, error: null });
     render(<ClimbDetail definition={definition} climb={climb} controller={connected} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Light this climb' }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Light this climb' })); });
     expect(connected.light).toHaveBeenCalledOnce();
     expect(connected.light).toHaveBeenCalledWith([
       { placementId: definition.placements[0].id, color: definition.rolePresets.start.lightColor },
@@ -52,10 +53,19 @@ describe('ClimbDetail', () => {
     ]);
   });
 
-  it('labels an empty scene as a clear-board operation', () => {
+  it('lights saved spatial effects through the shared animated scene', async () => {
+    const connected = controllerWith({ transport: { status: 'connected', device: { id: 'board', name: 'Homewall' } }, operation: 'idle', lastAppliedScene: null, error: null });
+    const animated = { ...climb, effectGroups: [createSpatialPreset('beach-ball', 7)] };
+    render(<ClimbDetail definition={definition} climb={animated} controller={connected} />);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Light this climb' })); });
+    expect(connected.light).toHaveBeenCalledOnce();
+    expect(vi.mocked(connected.light).mock.calls[0]![0].length).toBeGreaterThan(climb.assignments.length);
+  });
+
+  it('labels an empty scene as a clear-board operation', async () => {
     const connected = controllerWith({ transport: { status: 'connected', device: { id: 'board', name: null } }, operation: 'idle', lastAppliedScene: null, error: null });
     render(<ClimbDetail definition={definition} climb={{ ...climb, assignments: [] }} controller={connected} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Clear board' }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Clear board' })); });
     expect(connected.clear).toHaveBeenCalledOnce();
   });
 
