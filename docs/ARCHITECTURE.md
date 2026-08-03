@@ -9,21 +9,16 @@ summary: >
   definitions and namespaced identities, independent catalog providers and
   controller profiles, on-demand local catalogs, and a Fullride 7x10 first slice.
 decisions:
-  - "Offline-first React + Vite SPA (TypeScript) with local SQLite through wa-sqlite AccessHandlePoolVFS in a Web Worker as the catalog read path."
-  - "BLE is isolated behind a Web Bluetooth adapter with API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
-  - "Sync engine is a separate module wrapping POST /sync with incremental shared_syncs cursors."
-  - "ML training is offline (Python); inference runs in-browser via ONNX Runtime Web (WASM)."
-  - "Distributed to friends as a static, backendless, installable PWA (no app server/accounts); React + Vite chosen for distribution robustness."
-  - "This doc stays high-level; detailed module design lives in epic/feature item bodies."
+  - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; local SQLite through wa-sqlite AccessHandlePoolVFS in a Web Worker is the catalog read path."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
-  - "Provider-native records and provenance are retained beside the normalized read model."
-  - "Catalogs are installed per provider/layout; a universal bundled database is rejected."
+  - "Provider-native records and provenance are retained beside the normalized read model; catalogs install per provider/layout rather than as one universal bundled database."
+  - "BLE is isolated behind a Web Bluetooth adapter with API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
   - "A native iOS shell, if prioritized, exposes a narrow CoreBluetooth transport bridge to the shared application core."
-  - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority."
-  - "Private Fullride builds may resolve one calibrated immutable raster artwork layer by exact definition ID and revision; schematics remain the distributable fallback."
-  - "Unrestricted locally authored climbs use a dedicated versioned IndexedDB repository with Draft/Finished and recoverable-Trash lifecycle, separate from provider catalogs."
+  - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
+  - "Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
+  - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
 ---
 
 # CruxControl — Architecture
