@@ -29,3 +29,16 @@ prove exact stored values survive reload/no-op/conflict.
 Root owns library-backup source/tests and its browser scenario. Safe-update application
 worker owns surrounding UI gating and requests any necessary interface additions. One
 standard review already completed; child closes directly on meaningful green verification.
+
+## Dialog correction evidence
+
+Six failing UI regressions reproduced before correction. Outcome state now retains
+phase and committed counts, excludes stale preflight counts after failures, and reports
+no-write versus partial-commit results precisely. A synchronous operation guard spans
+export/restore/refresh promises and blocks duplicate actions/close; every async result
+checks its generation, including before download dispatch. Read-only file selection can
+be replaced/cancelled, invalidating the older read. Refresh success clears prior errors
+without repeating restoration. Partial retry performs a fresh review and recognizes
+already-added climbs. Fourteen focused dialog tests pass, including conflicts, exact
+counts, failed-refresh retry, unmounted export, stale files, size-before-read and busy
+controls. Native focus return will be verified in the richer browser scenario.
