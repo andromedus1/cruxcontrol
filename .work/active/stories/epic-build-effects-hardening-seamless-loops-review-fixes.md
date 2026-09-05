@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-seamless-loops-review-fixes
 kind: story
-stage: implementing
+stage: done
 tags: [ui, ble, tests]
 parent: epic-build-effects-hardening-seamless-loops
 depends_on: []
@@ -44,3 +44,8 @@ no second independent pass.
   24 tests pass. These include bird/rain off-board gaps, fixed pulsing star anchors,
   beach-ball cluster continuity, reverse trails and explicit protagonist colors.
 - Foundation wording corrected in ca91b6e. Integrated checks pending before closure.
+
+Integrated verification: lint and production typecheck/build pass; Vitest with two workers
+passes 75 files / 509 tests; real Chromium suite passes all 8 tests. Default unconstrained
+parallel run hit CPU-contention timeouts and a preexisting playlist initialization test
+race under diagnosis. No production data changes in this correction.
