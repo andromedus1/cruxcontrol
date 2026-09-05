@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-library-backup
 kind: feature
-stage: review
+stage: implementing
 tags: [ui, data]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-curious-bee]
@@ -436,3 +436,13 @@ Root integration: all 9 production browser scenarios pass after making the two
 existing per-climb Restore selectors exact (the new backup launcher contains the
 same word). This was locator drift, with no production behavior change. Independent
 feature review is running against 7e8c386.
+
+## Review (2026-09-05)
+
+Verdict: Request changes. One independent standard Sol xhigh pass against 7e8c386;
+same-harness fallback after earlier different-class OAuth failure. Root confirms all
+four proposals: ambiguous partial-failure counts, stale/raceable refresh retry, export
+continuation after Escape, and missing verification of the specified data-loss boundaries.
+Root owns the named correction child and backup source/tests. Safe-update owner proceeds
+with disjoint code and coordinates any backup operation interface. No rereview; close
+by verification of accepted fixes plus full integrated checks and CI.
