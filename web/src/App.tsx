@@ -6,6 +6,7 @@ import type { BoardDefinition } from './domain/boards/definition';
 import { kilterFullride7x10Definition } from './domain/boards/definitions/kilter-fullride-7x10';
 import { CruxControlWorkspace } from './app/CruxControlWorkspace';
 import { createCruxControlRuntime, type CruxControlRuntime } from './app/create-runtime';
+import { ScreenAwakeControl } from './pwa/ScreenAwakeControl';
 
 const noClimbs: readonly ClimbViewRecord[] = Object.freeze([]);
 
@@ -88,5 +89,10 @@ export function App({
         Opening your local climbs…
       </main>
     );
-  return <CruxControlWorkspace runtime={runtime} />;
+  return (
+    <>
+      <ScreenAwakeControl />
+      <CruxControlWorkspace runtime={runtime} />
+    </>
+  );
 }

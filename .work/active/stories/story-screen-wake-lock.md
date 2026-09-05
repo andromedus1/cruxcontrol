@@ -1,7 +1,7 @@
 ---
 id: story-screen-wake-lock
 kind: story
-stage: implementing
+stage: review
 tags: [ui]
 parent: null
 depends_on: []
@@ -52,3 +52,34 @@ background execution and cannot override manual screen locking or OS power polic
 
 One app-owned lock lifecycle avoids duplicating acquisition across editor and playlist
 playback. Keep wake-lock state separate from saved climbs and board transport.
+
+## Implementation notes
+
+- Execution capability: inline owner; focused browser lifecycle with no domain/storage changes.
+- Review weight: standard from `.work/CONVENTIONS.md`; bounded standalone-story review.
+- `ScreenAwakeControl.tsx` owns one session checkbox, native lock, request generation,
+  actual status and explicit retry. `App.tsx` keeps it mounted across workspace changes.
+- Reused existing tokens, checkbox and button patterns; CSS adapts to narrow widths.
+- Added nine unit cases covering acquire/release, system release, denial/retry,
+  visibility recovery, stale pending requests, unmount, already-released responses,
+  and unsupported clients. Added one browser scenario for navigation continuity and
+  saving/reloading a climb while using the toggle.
+- README documents the capability and limits. The documentation-update skill's
+  bounded edit agent verified existing foundation foreground assertions remain true.
+- No dependencies added, storage accessed, schemas migrated, or animation behavior changed.
+- Simplification: one mounted owner, no duplicate lock acquisition per playback surface.
+- Adjacent review improvements and longer seamless loops are captured in
+  `epic-build-effects-hardening`, rather than folded into this control.
+
+## Verification
+
+- 452 tests in 69 Vitest files passed.
+- ESLint and production build (including TypeScript) passed.
+- All six Playwright Chromium scenarios passed against the production build.
+- Native headless Chromium exposed the API but refused acquisition; the UI truthfully
+  showed that the screen can sleep and offered retry. Mocked acquisition/lifecycle tests
+  passed; screen-timeout prevention has not been validated on Andrew's physical phone.
+- Phone (390×844) and desktop (1440×900) screenshots inspected; phone has no horizontal overflow.
+- `git diff --check` passed.
+- PR/remote CI unavailable: `gh repo view` cannot resolve configured origin
+  `andromedus1/cruxcontrol`. No deployment performed.
