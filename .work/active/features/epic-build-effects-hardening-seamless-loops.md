@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-seamless-loops
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: epic-build-effects-hardening
 depends_on: []
@@ -390,3 +390,11 @@ foundation-doc update. All are receiver-confirmed against source and the feature
 Root owns named fixes, coordinating the shared v2 renderer with the active bee owner.
 After the fixes and integrated checks pass, standard review closes by verification,
 without another independent review. No feature approval until all named blockers close.
+
+## Fix verification
+
+All six accepted blockers have corrections and focused regressions in 1245255,
+e9918d2, ca91b6e and f7df873. Integrated lint/typecheck/build pass, 75 Vitest files /
+509 tests pass with two workers, and all 8 real browser scenarios pass. Child correction
+is done. Standard single-pass review closes by this verification; current PR CI remains
+the final delivery gate before advancing the feature to done. No rereview requested.
