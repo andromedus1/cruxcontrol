@@ -16,11 +16,29 @@ updated: 2026-09-05
 ## Brief
 
 Andrew endorsed the September 5 project-review recommendations and added screen-awake
-support plus seamless, longer, more interesting themed animation loops. Improve the
+support plus seamless, longer, more interesting themed animation loops and a bumblebee
+background effect that flies and hovers around the board. Improve the
 existing application incrementally. No rebuild is justified by the review. His existing
 climbs and playlists are irreplaceable acceptance data: preserve their identities,
 relationships, content, Trash state and saved effect recipes through any migration.
 This epic records the accepted work; feature decomposition and recipe design remain to do.
+
+## Delivery priority
+
+Andrew's requested order for the next work arc is:
+
+1. **Animation improvements first:** make the existing themed loops longer, more
+   interesting and seamless, then add the new flying and hovering bumblebee effect.
+   Design and preview the motion before implementation. Include the rendering and
+   playback correctness fixes needed for those effects to behave reliably.
+2. **Backup protection second:** deliver faithful whole-library backup and restore,
+   then address safe application updates alongside that protection work.
+
+The priority change does not relax preservation of existing climbs, playlists or
+saved recipes. Animation work must preserve those records without requiring a storage
+rewrite; any necessary schema/identity/origin migration must still have tested recovery
+before it ships. Other accepted reliability and performance work remains in scope;
+schedule independent optimizations after these two priorities unless needed by them.
 
 ## Accepted review work
 
@@ -41,8 +59,8 @@ This epic records the accepted work; feature decomposition and recipe design rem
 - Reduce redundant preview work: 10-FPS previews recompute 2-FPS spatial poses, and
   Snake/Pac-Man rebuild board adjacency and cycle paths on every call. Profile the
   intended mobile client before changing performance architecture.
-- Run browser persistence/export/import coverage in CI. Review repaired stale SVG click
-  targets and a schema-3 assertion locally; CI currently omits Playwright.
+- Run browser persistence/export/import coverage in CI. Delivered in PR #12, including
+  repairs to stale SVG click targets and a schema-3 assertion.
 
 Evidence areas: `web/src/light-effects/spatial-frame.ts`,
 `web/src/board-control/api-level-2-codec.ts`,
@@ -75,10 +93,24 @@ seamlessly, and that they be longer and more interesting while respecting each t
   workflow. Preserve existing saved designs or provide an explicit, non-destructive
   recipe-version upgrade choice; do not silently reinterpret old snapshots.
 
+## Bumblebee background effect
+
+Add a selectable bumblebee theme after the existing-loop improvements, within the
+first-priority animation arc. The bee flies between parts of the background and pauses
+to hover, with motion that reads as a bee on the board's sparse lights. Its longer
+flight-and-hover sequence must loop seamlessly, including its position, direction,
+brightness and any supporting visual state at the join.
+
+Use the existing background-effect selection, preview, saved-recipe and playback paths.
+Keep route holds legible and unchanged, respect the same light budget and output cadence,
+and make seeded playback repeatable. Motion mockups must establish readable flight and
+hovering before production changes; detailed paths, timing and appearance remain design
+decisions rather than assumptions in this scope item.
+
 ## Related delivery
 
 `story-screen-wake-lock` and `story-browser-regressions-ci` are complete, with local
-review and Linux CI verification in [PR #12](https://github.com/andromedus1/cruxcontrol/pull/12).
+review and Linux CI verification in merged [PR #12](https://github.com/andromedus1/cruxcontrol/pull/12).
 Their full records are in Git and indexed by the `.work/archive/` stubs. The screen
 toggle prevents automatic timeout while visible, not execution after switching apps or
 manually locking the device. Browser regression failures now gate deployment. Physical
