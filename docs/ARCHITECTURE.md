@@ -17,6 +17,7 @@ decisions:
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
+  - "Whole-library backup uses a bounded local JSON file and missing-only, identity-preserving restore with conflict blocking and one transaction per IndexedDB store; the two stores are never treated as one atomic snapshot."
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
   - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
 ---
@@ -42,7 +43,10 @@ feature item bodies in `.work/`, not here. Capabilities are in
    fallback is deferred. Small locally authored climb and playlist aggregates use
    independent native IndexedDB repositories with versioned codecs and atomic
    optimistic updates; climb storage additionally owns explicit lifecycle commands.
-   catalog bootstrap remains a separate incomplete boundary.
+   Library backup reads both stores through their codecs and restores saved records with
+   stable IDs in separate per-store transactions; it is a bounded local file workflow,
+   not a schema migration or cloud service. Catalog bootstrap remains a separate
+   incomplete boundary.
 3. **Catalog Providers** — source-specific import/sync adapters. Kilter is first;
    later Aurora-family and MoonBoard providers are separately researched. Network,
    auth, reconciliation, and policy metadata remain outside domain and UI code.
@@ -119,7 +123,19 @@ feature item bodies in `.work/`, not here. Capabilities are in
    compatibility preview, then creates fresh climbs in order and the fresh playlist
    last, with reverse-order compensation for partial failure. A CruxControl-local
    construct (no Kilter counterpart).
-11. **Future: ML Pipeline** — offline (Python): feature extraction from the catalog →
+11. **Library Backup & Recovery** — the library workspace exports a versioned, bounded
+   local JSON file containing all saved climb rows across installations (including orphan
+   and Trash rows) and all playlist rows with ordered shared references, IDs, revisions,
+   timestamps, metadata, and effect recipes. Export reads both independent stores twice
+   with a bounded stability check and asks users to finish other-tab edits; it cannot
+   provide a cross-database atomic snapshot. Restore validates the whole file, then adds
+   missing IDs, skips identical records, and blocks differing IDs without overwrite or
+   replacement IDs. Draft and playlist stores commit independently in their own
+   transactions, so a playlist failure after a committed climb batch is reported as a
+   partial outcome for retry; no compensating deletion is used. Bounds are 25 MiB UTF-8,
+   10,000 climbs, 1,000 playlists, and 100,000 references. The workflow operates on
+   saved contents in the existing origin and does not rewrite schemas or upload data.
+12. **Future: ML Pipeline** — offline (Python): feature extraction from the catalog →
     training dataset → grade-prediction model. Exports a model for in-browser
     inference (ONNX Runtime Web / WASM); feeds prediction + recommendation features back
     into the app.
@@ -155,6 +171,9 @@ Lists ──▶ Local playlist repository ──▶ separate native IndexedDB
   ├──▶ portable snapshot envelope ──▶ fragment URL / JSON file
   └──◀ preview + compatibility gate ── imported envelope
                  └──▶ fresh climb copies, then fresh playlist (compensated on failure)
+
+Library workspace ──▶ backup service ──▶ bounded local JSON file
+  └──◀ imported file ──▶ full review/conflict gate ──▶ per-store missing-only restore
 ```
 
 Local climb reads and writes are fully offline. Installed catalog reads are likewise
@@ -177,6 +196,11 @@ browsing, editing, and logging remain testable without hardware or network.
   the native IndexedDB climb store is authoritative for locally authored climbs; the
   independent native IndexedDB playlist store is authoritative for list metadata and
   ordered references. The future logbook store owns personal activity.
+- **Local backup semantics.** Backup captures saved records from the existing climb and
+  playlist stores, including Trash, orphan rows, other installations, shared references,
+  revisions, and recipes. Export stability checks are bounded because the stores cannot
+  share one transaction. Restore validates before writes, preserves IDs, and treats a
+  playlist failure after a committed climb batch as a reportable partial result for retry.
 - **Generated over hand-written.** Catalog data, feature tables, and the model
   come from pipelines, not manual curation.
 - **Offline-first.** Every read works without network; sync is a background

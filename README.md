@@ -10,9 +10,14 @@ account or application server required.
 - Create unrestricted climbs on a recognizable 305-hold board, use the four Kilter
   roles or any of the controller's 256 packed colors, and autosave locally.
 - Move climbs between **Draft**, **Finished**, and recoverable **Trash** without losing
-  their identity or contents.
+  their identity or contents. Trash remains until you explicitly choose **Delete forever**.
 - Organize climbs into multiple named lists, reorder them, play through them on the
   board, and share complete lists by bounded URL or JSON file.
+- Download and restore a bounded whole-library JSON backup containing saved climbs,
+  Trash, orphan climbs, all installations, playlists, shared memberships, IDs, revisions,
+  timestamps, and animation recipes. Recovery adds missing IDs, skips identical records,
+  and pauses on conflicts without overwriting current data. A playlist-store failure after
+  a committed climb batch is reported as partial and can be retried with the retained file.
 - Import Kilter Fullride screenshots through a local review-and-correction flow, or
   import the supplied set of 16 climbs as ordinary 40° drafts. Screenshot pixels are
   never uploaded or persisted.
@@ -85,7 +90,13 @@ separate Python project.
 - One immutable Fullride definition owns all 305 placement identities, coordinates,
   LED positions, supported angles, and semantic role presets.
 - Independent versioned IndexedDB repositories own local climbs and lists, including
-  optimistic revisions, lifecycle recovery, portable list snapshots, and offline use.
+  optimistic revisions, lifecycle recovery, portable list snapshots, whole-library backup,
+  and offline use.
+- Library backup uses a 25 MiB file limit with limits of 10,000 climbs, 1,000 playlists,
+  and 100,000 playlist references. Export checks for changes across the two stores and
+  asks you to finish edits in other tabs; the check is bounded and does not form one
+  cross-database atomic snapshot. It uses the existing browser-local origin and saved
+  records only; no schema rewrite, cloud upload, or account is involved.
 - A version-dispatched pure frame engine drives both screen preview and BLE output. It
   preserves v1 snapshots, uses prepared definition geometry and per-group held-frame/path
   reuse for v2, and leaves saved recipes editable as the preset library evolves. Stable

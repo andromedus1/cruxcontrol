@@ -20,6 +20,7 @@ decisions:
   - "Android/desktop Chromium provide Web Bluetooth control; iOS direct control is a later native-bridge capability."
   - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
+  - "Whole-library backup is a bounded local file of saved records; restore is missing-only, identity-preserving, conflict-blocking, and transactional per IndexedDB store."
 ---
 
 # CruxControl — Specification
@@ -229,8 +230,8 @@ The model mirrors the official Kilter SQLite schema (see
   or replacement with redistributable imagery.
 - Locally authored climbs are authoritative in a dedicated native IndexedDB database,
   survive reload/reopen, move between Draft and Finished without content validation,
-  and remain recoverable from Trash for 30 days. Definition/layout/angle/placement
-  incompatibility is surfaced while retaining the stored record unchanged. Drafts remain
+  and remain in Trash until the user explicitly chooses Delete forever. Definition/layout/
+  angle/placement incompatibility is surfaced while retaining the stored record unchanged. Drafts remain
   in their dedicated workspace rather than appearing in the finished My Climbs library.
 - The Drafts workspace can import selected Kilter Android Fullride PNGs sequentially,
   review and correct each detected climb, and save confirmed results as ordinary 40°
@@ -247,6 +248,20 @@ The model mirrors the official Kilter SQLite schema (see
   bounded fragment links and lossless files. Import previews compatibility before any
   write, creates fresh identities, and compensates created climb copies if list
   creation fails.
+- Whole-library backup and restore are available from the library workspace for saved
+  contents only. A version-1 local JSON file includes every climb across installations,
+  including orphan records and Trash, plus every playlist, ordered shared membership,
+  stable ID, revision, lifecycle timestamp, metadata, and saved effect recipe. Its limits
+  are 25 MiB UTF-8, 10,000 climbs, 1,000 playlists, and 100,000 playlist references.
+  Export performs a bounded stability check across the independent stores and asks users
+  to finish edits in other tabs; it is not a cross-database atomic snapshot. Restore
+  reviews the complete file first, adds missing IDs, skips canonically identical IDs, and
+  blocks any differing ID without overwriting or allocating replacement IDs. Each store
+  commits in its own transaction and aborts that store on error; a playlist failure can
+  therefore follow a committed climb batch and is reported for honest retry with the
+  retained file. The workflow uses the existing browser-local databases and origin for
+  saved contents only; it does not rewrite schemas or upload to a cloud/account service.
+  Trash remains until explicit Delete forever.
 - The editor is responsive at Android-phone and desktop Chromium widths, autosaves edits,
   retains explicit lighting actions, and exposes named keyboard-operable controls and
   non-color-only role markers.
