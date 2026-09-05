@@ -61,12 +61,19 @@ immediate activation. No unsolicited reload on controllerchange in any tab.
 
 1. `web/src/pwa/update-service.ts`: `createAppUpdateService(dependencies): AppUpdateService`
    with stable `getSnapshot`, `subscribe`, awaitable `start`, `apply`, `dispose` and `setBlocked(reason)`.
-   Snapshot distinguishes unavailable/current/waiting/applying/error and actionable text.
+   Snapshot distinguishes unavailable/current/waiting/applying/reload-required/error and actionable text.
    Dependencies abstract ServiceWorkerContainer, LockManager, visibility and reload for
    deterministic tests. Register same-origin `BASE_URL + sw.js`, inspect both existing waiting
    and installing workers after registration resolves, observe updatefound/installed, and
    expose failures honestly. `start` admits runtime/workspace only after the shared lock
-   callback has actually been granted. Before exclusive acquisition, resolve the shared
+   callback has actually been granted. An available LockManager rejecting acquisition keeps
+   admission blocked with Retry; do not quietly admit an unprotected tab that other tabs
+   cannot detect. Absence of the API uses the documented no-immediate-activation mode.
+   Capture controller identity before awaiting admission/reacquisition. If it changes while
+   this tab waits, keep the workspace blocked and offer explicit Reload to continue; do
+   not resume old JavaScript under the new controller or auto-reload another tab. This
+   covers a new tab waiting during activation and two tabs attempting apply concurrently.
+   Before exclusive acquisition, resolve the shared
    callback and await its outer request promise; if exclusive is unavailable, reacquire
    and await shared admission before enabling work. Hold exclusive callback through reload.
    Explicit apply requires visible, unblocked state, exclusive lease and a still-waiting
@@ -107,6 +114,8 @@ immediate activation. No unsolicited reload on controllerchange in any tab.
   blocks apply. The explanatory action is save/back/disconnect/finish, not silent discard.
 - Two tabs: one update attempt is blocked while another app holds its lease; closing the
   other permits apply; a newly opening tab cannot edit during exclusive activation.
+  If two tabs apply concurrently, a losing tab remains protected through reacquisition
+  and requires an explicit reload if its controller changed while waiting.
 - Update arrival before app subscription, existing waiting worker, dismiss/reopen, hidden
   requester, registration failure and unsupported locks stay usable. After activation was
   posted, delayed activation/timeout remains protected until reload/close; test that it
@@ -171,3 +180,9 @@ skipWaiting without an application acknowledgement or cancellation protocol.
 Mock verification: both update options checked in Chromium at 390px after the advisory;
 connected state blocks apply, explicit Disconnect enables it, editor state blocks it,
 and neither option has JavaScript errors or horizontal overflow.
+
+Host lifecycle reconciliation: admission is a version boundary as well as a lock boundary.
+A tab that loaded old JavaScript just before another tab acquired exclusive activation
+must compare controllers when admitted. Explicit reload-required state avoids both stale
+editing and an unsolicited reload. Acquisition failure with an available lock API is
+retryable blocked admission, not silent uncoordinated fallback. Verify both paths.
