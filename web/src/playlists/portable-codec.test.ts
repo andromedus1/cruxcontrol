@@ -101,6 +101,15 @@ describe('portable playlist codec', () => {
     const decoded = decodePortablePlaylist(value);
     expect(JSON.parse(encodePortablePlaylist(decoded))).toEqual(value);
   });
+  it('round-trips a recipeVersion 2 snapshot and rejects a future embedded version', () => {
+    const value = clone();
+    snapshotOf(value).effectGroups = [{ model:'spatial', id:'snake-v2', recipeVersion:2, recipe:{kind:'snake',direction:'reverse',bodyLength:3}, seed:-7, palette:[181,28], periodMs:150000, intensity:.4, footprint:6, target:{scope:'background-board',include:[],exclude:[]} }];
+    assignmentsOf(value).forEach((assignment) => delete assignment.effectGroupId);
+    expect(JSON.parse(encodePortablePlaylist(decodePortablePlaylist(value)))).toEqual(value);
+    const future = clone();
+    snapshotOf(future).effectGroups = [{ model:'spatial', id:'future', recipeVersion:3, recipe:{kind:'snake',direction:'forward',bodyLength:3}, seed:1, palette:[28], periodMs:150000, intensity:1, footprint:6, target:{scope:'unused',include:[],exclude:[]} }];
+    expect(() => decodePortablePlaylist(future)).toThrowError(expect.objectContaining({ path: 'playlist.entries[0].snapshot.effectGroups[0]' }));
+  });
   it.each([
     ['frogger', { kind:'frogger', lanes:4 }],
     ['pentagram', { kind:'pentagram', fadeRate:1 }],

@@ -172,14 +172,14 @@ function decodeAppearance(value: unknown, path: string): Readonly<BoardHoldAppea
   invalid(`${path}.kind`, 'expected role or custom');
 }
 
-function decodeEffectGroups(value: unknown, path: string, legacy: boolean): readonly LightEffectGroup[] {
+function decodeEffectGroups(value: unknown, path: string, _legacy: boolean): readonly LightEffectGroup[] {
   const source = boundedArray(value, path, PORTABLE_PLAYLIST_LIMITS.effectGroupsPerClimb);
   const seen = new Set<string>();
   return Object.freeze(
     source.map((entry, index) => {
       const entryPath = `${path}[${index}]`;
       const raw = record(entry, entryPath);
-      exactKeys(raw, legacy || raw.model === undefined ? ['id', 'kind', 'palette', 'periodMs', 'intensity'] : ['model', 'id', 'kind', 'recipeVersion', 'recipe', 'seed', 'palette', 'periodMs', 'intensity', 'footprint', 'target'], entryPath);
+      exactKeys(raw, raw.model === undefined ? ['id', 'kind', 'palette', 'periodMs', 'intensity'] : raw.model === 'assigned' ? ['model', 'id', 'kind', 'palette', 'periodMs', 'intensity'] : ['model', 'id', 'kind', 'recipeVersion', 'recipe', 'seed', 'palette', 'periodMs', 'intensity', 'footprint', 'target'], entryPath);
       const id = branded(lightEffectGroupId, raw.id, `${entryPath}.id`);
       if (seen.has(id)) invalid(`${entryPath}.id`, 'duplicate effect group ID');
       seen.add(id);
@@ -215,14 +215,14 @@ function decodeEffectGroups(value: unknown, path: string, legacy: boolean): read
       ) {
         invalid(`${entryPath}.intensity`, 'expected a number from 0 to 1');
       }
-      const model = legacy || raw.model === undefined ? 'assigned' : string(raw.model, `${entryPath}.model`);
+      const model = raw.model === undefined ? 'assigned' : string(raw.model, `${entryPath}.model`);
       if (model === 'assigned') {
         const kind = string(raw.kind, `${entryPath}.kind`) as LightEffectKind;
         if (!EFFECT_KINDS.has(kind)) invalid(`${entryPath}.kind`, 'unknown effect kind');
         return Object.freeze({ model: 'assigned' as const, id, kind, palette, periodMs: raw.periodMs, intensity: raw.intensity });
       }
       if (model !== 'spatial') invalid(`${entryPath}.model`, 'expected assigned or spatial');
-      if (raw.recipeVersion !== 1 || !Number.isSafeInteger(raw.seed) || !Number.isInteger(raw.footprint) || (raw.footprint as number) < 1 || (raw.footprint as number) > 20) invalid(entryPath, 'invalid spatial recipe version, seed, or footprint');
+      if ((raw.recipeVersion !== 1 && raw.recipeVersion !== 2) || !Number.isSafeInteger(raw.seed) || !Number.isInteger(raw.footprint) || (raw.footprint as number) < 1 || (raw.footprint as number) > 20) invalid(entryPath, 'invalid spatial recipe version, seed, or footprint');
       const recipe = record(raw.recipe, `${entryPath}.recipe`);
       const spatialKinds = new Set(['ocean-tide','tie-dye-spiral','matrix-rain','snake','beach-ball','pac-man','pong','bird-flock','frogger','pentagram']);
       if (!spatialKinds.has(recipe.kind as string)) invalid(`${entryPath}.recipe.kind`, 'unknown spatial recipe');
@@ -232,7 +232,7 @@ function decodeEffectGroups(value: unknown, path: string, legacy: boolean): read
       const placements = (input: unknown, targetPath: string) => Object.freeze(boundedArray(input, targetPath, PORTABLE_PLAYLIST_LIMITS.assignmentsPerClimb).map((value, placementIndex) => branded(boardPlacementId, value, `${targetPath}[${placementIndex}]`)));
       const include = placements(target.include, `${entryPath}.target.include`); const exclude = placements(target.exclude, `${entryPath}.target.exclude`);
       if (new Set(include).size !== include.length || new Set(exclude).size !== exclude.length || include.some((placementId) => exclude.includes(placementId))) invalid(`${entryPath}.target`, 'target lists must be unique and disjoint');
-      return Object.freeze({ model: 'spatial' as const, id, recipeVersion: 1 as const, recipe: Object.freeze({ ...recipe }) as import('../board-renderer/types').SpatialRecipe, seed: raw.seed as number, palette, periodMs: raw.periodMs, intensity: raw.intensity, footprint: raw.footprint as number, target: Object.freeze({ scope: target.scope as 'unused'|'background-board'|'selected', include, exclude }) });
+      return Object.freeze({ model: 'spatial' as const, id, recipeVersion: raw.recipeVersion as 1 | 2, recipe: Object.freeze({ ...recipe }) as import('../board-renderer/types').SpatialRecipe, seed: raw.seed as number, palette, periodMs: raw.periodMs, intensity: raw.intensity, footprint: raw.footprint as number, target: Object.freeze({ scope: target.scope as 'unused'|'background-board'|'selected', include, exclude }) });
     }),
   );
 }

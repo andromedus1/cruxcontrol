@@ -307,7 +307,7 @@ export function useEditorLighting({
       // bird quiet interval). Send it through preview so the controller's
       // clearing operation cannot be mistaken for an explicit stop.
       if (scene.length === 0 && !animated) await controller.clear();
-      else if (animated) await previewScene(scene);
+      else if (scene.length === 0 && animated) await previewScene(scene);
       else await controller.light(scene);
       if (animated) startAnimation(startedAt);
     } catch (error) {

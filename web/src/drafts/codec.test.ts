@@ -36,6 +36,25 @@ describe('local draft codec', () => {
     const dangling = encodeStoredDraft({ ...source, assignments: [{ placementId, appearance: { kind: 'custom', color: apiLevel3Color(1) }, effectGroupId: spatial.id }] });
     expect(() => decodeStoredDraft(dangling)).toThrowError(expect.objectContaining({ path: 'assignments[0].effectGroupId' }));
   });
+  it('round-trips an explicitly upgraded v2 spatial recipe without changing authored data', () => {
+    const source = draft({
+      effectGroups: [{
+        model: 'spatial' as const,
+        id: lightEffectGroupId('v2-background'),
+        recipeVersion: 2 as const,
+        recipe: { kind: 'snake' as const, direction: 'reverse' as const, bodyLength: 3 },
+        seed: -7,
+        palette: [apiLevel3Color(181), apiLevel3Color(28)],
+        periodMs: 150_000,
+        intensity: .4,
+        footprint: 6,
+        target: { scope: 'background-board' as const, include: [], exclude: [] },
+      }],
+    });
+    expect(decodeStoredDraft(encodeStoredDraft(source))).toEqual(source);
+    const future = { ...encodeStoredDraft(source), effectGroups: [{ ...(encodeStoredDraft(source).effectGroups[0] as Record<string, unknown>), recipeVersion: 3 }] };
+    expect(() => decodeStoredDraft(future)).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
+  });
   it.each([
     ['frogger', { kind: 'frogger' as const, lanes: 4 }],
     ['pentagram', { kind: 'pentagram' as const, fadeRate: 1 }],

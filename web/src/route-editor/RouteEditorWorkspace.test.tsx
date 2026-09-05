@@ -7,6 +7,7 @@ import { draftContent } from '../drafts/test-fixtures';
 import type { LocalDraftRepository } from '../drafts/repository';
 import type { LocalClimbDraft } from '../drafts/types';
 import { RouteEditorWorkspace } from './RouteEditorWorkspace';
+import { createSpatialPreset } from '../light-effects/preset-library';
 
 const draft: LocalClimbDraft = {
   ...draftContent(),
@@ -124,7 +125,7 @@ describe('RouteEditorWorkspace', () => {
     render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()}/>);
     fireEvent.click(screen.getByRole('button', { name: /Snake 7 lights/ }));
     expect(screen.getByLabelText('Effect target')).toHaveValue('unused');
-    expect(screen.getByLabelText('Effect cycle time')).toHaveValue('120000');
+    expect(screen.getByLabelText('Effect cycle time')).toHaveValue('150000');
     expect(screen.getByLabelText('Effect cycle time')).toHaveAttribute('max', '180000');
     expect(screen.getByText(/0 route\/static \+ 7 effects = 7\/20/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Effect target'), { target:{ value:'selected' } });
@@ -134,6 +135,17 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByText('0 lit')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Effect footprint'), { target:{ value:'5' } });
     expect(screen.getByText(/0 route\/static \+ 5 effects = 5\/20/)).toBeInTheDocument();
+  });
+
+  it('shows and explicitly adopts the longer seamless loop for a saved v1 effect', () => {
+    const legacy = { ...createSpatialPreset('snake', 4), recipeVersion: 1 as const, periodMs: 5_000 };
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={{ ...draft, effectGroups: [legacy] }} repository={repository} onBack={vi.fn()} />);
+    expect(screen.getByText('Original loop')).toBeInTheDocument();
+    expect(screen.getByText(/Uses a 150-second loop/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Use seamless loop' }));
+    expect(screen.getByText('Seamless loop')).toBeInTheDocument();
+    expect(screen.getByLabelText('Effect cycle time')).toHaveValue('150000');
+    expect(document.querySelector('.save-chip')).toHaveTextContent('dirty');
   });
 
   it('starts fitted and supports controls and pinch zoom in the editor', () => {

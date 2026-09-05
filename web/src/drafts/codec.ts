@@ -178,7 +178,7 @@ function decodeAssignments(
   );
 }
 
-function decodeEffectGroups(value: unknown, source: unknown, legacy = false): readonly LightEffectGroup[] {
+function decodeEffectGroups(value: unknown, source: unknown, _legacy = false): readonly LightEffectGroup[] {
   if (!Array.isArray(value)) throw corrupt('effectGroups', 'expected an array', source);
   const seen = new Set<string>();
   return Object.freeze(
@@ -188,7 +188,7 @@ function decodeEffectGroups(value: unknown, source: unknown, legacy = false): re
       const id = branded(lightEffectGroupId, raw.id, `${path}.id`, source);
       if (seen.has(id)) throw corrupt(`${path}.id`, 'duplicate effect group ID', source);
       seen.add(id);
-      const model = legacy || raw.model === undefined ? 'assigned' : string(raw.model, `${path}.model`, source);
+      const model = raw.model === undefined ? 'assigned' : string(raw.model, `${path}.model`, source);
       if (!Array.isArray(raw.palette) || raw.palette.length < 1 || raw.palette.length > 8) {
         throw corrupt(`${path}.palette`, 'expected 1 to 8 packed colors', source);
       }
@@ -228,7 +228,7 @@ function decodeEffectGroups(value: unknown, source: unknown, legacy = false): re
         return Object.freeze({ model, id, kind, palette, periodMs: raw.periodMs, intensity: raw.intensity });
       }
       if (model !== 'spatial') throw corrupt(`${path}.model`, 'expected assigned or spatial', source);
-      if (raw.recipeVersion !== 1) throw corrupt(`${path}.recipeVersion`, 'expected recipe version 1', source);
+      if (raw.recipeVersion !== 1 && raw.recipeVersion !== 2) throw corrupt(`${path}.recipeVersion`, 'expected recipe version 1 or 2', source);
       if (!Number.isSafeInteger(raw.seed)) throw corrupt(`${path}.seed`, 'expected a safe integer', source);
       if (!Number.isInteger(raw.footprint) || (raw.footprint as number) < 1 || (raw.footprint as number) > 20) {
         throw corrupt(`${path}.footprint`, 'expected an integer from 1 to 20', source);
@@ -251,7 +251,7 @@ function decodeEffectGroups(value: unknown, source: unknown, legacy = false): re
       const include = decodePlacementList(targetRaw.include, 'include');
       const exclude = decodePlacementList(targetRaw.exclude, 'exclude');
       if (include.some((placementId) => exclude.includes(placementId))) throw corrupt(`${path}.target`, 'include and exclude overlap', source);
-      return Object.freeze({ model, id, recipeVersion: 1, recipe, seed: raw.seed as number, palette, periodMs: raw.periodMs, intensity: raw.intensity, footprint: raw.footprint as number, target: Object.freeze({ scope: targetRaw.scope as 'unused' | 'background-board' | 'selected', include, exclude }) });
+      return Object.freeze({ model, id, recipeVersion: raw.recipeVersion as 1 | 2, recipe, seed: raw.seed as number, palette, periodMs: raw.periodMs, intensity: raw.intensity, footprint: raw.footprint as number, target: Object.freeze({ scope: targetRaw.scope as 'unused' | 'background-board' | 'selected', include, exclude }) });
     }),
   );
 }
