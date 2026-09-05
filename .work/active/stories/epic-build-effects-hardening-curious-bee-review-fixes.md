@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-curious-bee-review-fixes
 kind: story
-stage: implementing
+stage: done
 tags: [ui, ble, tests]
 parent: epic-build-effects-hardening-curious-bee
 depends_on: []
@@ -37,3 +37,8 @@ real browser save/reopen assertions now require the same ordered values.
 
 Focused renderer/editor verification: 36 tests pass. Full integrated checks await the
 concurrent backup wave; no rereview is needed under standard review weight.
+
+Verified independently of unfinished backup files in a detached 972d04c checkout:
+lint/typecheck/build pass; full Vitest 513 pass, one existing optional private-source
+test skips because its untracked local images are absent; all 8 real browser scenarios
+pass on dedicated port 4175. Exact Body/Wings values survive save and reopen.
