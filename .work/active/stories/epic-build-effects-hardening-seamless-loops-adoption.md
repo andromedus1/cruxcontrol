@@ -26,8 +26,8 @@ verification; independent review happens at feature level.
 ## Implementation notes
 - Execution capability: GPT-5.6 Luna at xhigh, as selected by the authorized autopilot for this multi-module feature.
 - Review weight: standard (project convention).
-- Files changed: `web/src/board-renderer/types.ts`, `web/src/light-effects/preset-library.ts`, `web/src/drafts/codec.ts`, `web/src/playlists/portable-codec.ts`, `web/src/route-editor/LightEffectsPanel.tsx`, `web/src/route-editor/RouteEditorWorkspace.test.tsx`, `web/src/drafts/codec.test.ts`, and `web/src/playlists/portable-codec.test.ts`.
-- Tests added/removed: stored and portable round trips cover recipeVersion 1 and 2, future embedded versions fail explicitly, and the editor test verifies the displayed 150-second adoption plus dirty autosave state.
+- Files changed: `web/src/board-renderer/types.ts`, `web/src/light-effects/preset-library.ts`, `web/src/drafts/codec.ts`, `web/src/playlists/portable-codec.ts`, `web/src/route-editor/LightEffectsPanel.tsx`, `web/src/route-editor/RouteEditorWorkspace.test.tsx`, `web/src/drafts/codec.test.ts`, `web/src/playlists/portable-codec.test.ts`, and `web/e2e/spatial-effects.spec.ts`.
+- Tests added/removed: stored and portable round trips cover recipeVersion 1 and 2, future embedded versions fail explicitly, editor tests verify the displayed 150-second adoption plus dirty autosave state, and the production build browser scenario reloads the explicit upgrade as v2 with its timing retained.
 - Simplification: adoption dispatches the existing `update-effect-group` action and keeps current draft/playlist schema versions; no read-time migration or duplicate storage path was added.
 - Discrepancies from design: the panel uses existing effect controls and inline status text rather than introducing a modal.
 - Adjacent issues parked: none.

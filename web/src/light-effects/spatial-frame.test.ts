@@ -15,7 +15,52 @@ const preset = (kind: Parameters<typeof createSpatialPreset>[0], seed = 42) => O
   recipeVersion: 1 as const,
 });
 
+const legacyPeriods: Readonly<Record<Parameters<typeof createSpatialPreset>[0], number>> = {
+  'ocean-tide': 30_000,
+  'tie-dye-spiral': 45_000,
+  'matrix-rain': 30_000,
+  snake: 120_000,
+  'beach-ball': 30_000,
+  'pac-man': 120_000,
+  pong: 30_000,
+  'bird-flock': 45_000,
+  frogger: 45_000,
+  pentagram: 30_000,
+};
+
+const legacyFixtureDigest = (value: unknown) => {
+  let hash = 2_166_136_261;
+  for (const character of JSON.stringify(value)) hash = Math.imul(hash ^ character.codePointAt(0)!, 16_777_619);
+  return hash >>> 0;
+};
+
+// Captured from the pre-v2 renderer before extraction (commit 35f3e9a^). These
+// compact signatures cover every legacy kind at the start, first held frame,
+// and midpoint of its original period, so changing v1 cannot hide in renamed
+// compatibility tests.
+const legacyFixtures: Readonly<Record<Parameters<typeof createSpatialPreset>[0], readonly number[]>> = {
+  'ocean-tide': [4_224_458_149, 325_333_317, 4_155_721_315],
+  'tie-dye-spiral': [4_084_709_788, 197_703_641, 3_508_339_920],
+  'matrix-rain': [1_812_823_694, 1_971_461_301, 54_920_232],
+  snake: [239_246_827, 1_088_580_957, 4_002_854_225],
+  'beach-ball': [885_908_544, 3_155_516_174, 2_777_638_559],
+  'pac-man': [1_371_413_797, 2_388_967_391, 833_336_901],
+  pong: [1_746_601_821, 2_646_287_541, 578_187_231],
+  'bird-flock': [1_947_613_349, 1_947_613_349, 3_218_963_428],
+  frogger: [832_166_139, 2_412_491_029, 4_282_969_948],
+  pentagram: [2_839_950_041, 2_839_950_041, 2_378_991_699],
+};
+
 describe('spatial effect rendering', () => {
+  it('retains captured v1 fixtures for every legacy theme', () => {
+    for (const kind of SPATIAL_PRESETS.map(({ kind }) => kind)) {
+      const periodMs = legacyPeriods[kind];
+      const group = { ...createSpatialPreset(kind, 42), recipeVersion: 1 as const, periodMs };
+      const frames = [0, BOARD_ANIMATION_FRAME_MS, periodMs / 2];
+      expect(frames.map((elapsedMs) => legacyFixtureDigest(renderSpatialGroup(definition, [], group, elapsedMs)))).toEqual(legacyFixtures[kind]);
+    }
+  });
+
   it('holds one discrete pose for each measured two-FPS board frame', () => {
     const snake = preset('snake');
     const first = renderSpatialGroup(definition, [], snake, 0);

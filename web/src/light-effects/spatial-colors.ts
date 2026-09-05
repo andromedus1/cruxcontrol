@@ -3,7 +3,7 @@ import { apiLevel3Color, packApiLevel3Color, unpackApiLevel3Color } from '../dom
 import type { BoardDefinition } from '../domain/boards/definition';
 import type { ApiLevel3Color } from '../domain/boards/types';
 
-let lookup = new WeakMap<BoardDefinition, readonly ApiLevel3Color[]>();
+const lookup = new WeakMap<BoardDefinition, readonly ApiLevel3Color[]>();
 
 function buildLookup(definition: BoardDefinition): readonly ApiLevel3Color[] {
   const reservedLogical = new Set(Object.values(definition.rolePresets).map(({ lightColor }) => lightColor as number));
@@ -38,8 +38,4 @@ export function spatialDisplayColor(definition: BoardDefinition, color: ApiLevel
   const colors = lookup.get(definition) ?? buildLookup(definition);
   if (!lookup.has(definition)) lookup.set(definition, colors);
   return colors[color as number] ?? packApiLevel3Color(unpackApiLevel3Color(color));
-}
-
-export function clearSpatialColorCache(): void {
-  lookup = new WeakMap<BoardDefinition, readonly ApiLevel3Color[]>();
 }

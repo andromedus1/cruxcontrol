@@ -4,6 +4,7 @@ import type { BoardDefinition } from '../domain/boards/definition';
 import type { LightScene } from '../domain/boards/light-scene';
 import type { ApiLevel3Color } from '../domain/boards/types';
 import { spatialDisplayColor } from './spatial-colors';
+import { prepareFroggerPlan, sampleFroggerPlan, type FroggerPlan } from './spatial-frogger';
 import { prepareSpatialGeometry, type PreparedSpatialGeometry, type SpatialPoint } from './spatial-geometry';
 
 export const BOARD_ANIMATION_FRAME_MS = 500;
@@ -50,6 +51,38 @@ interface FrameMemo {
   readonly path?: readonly SpatialPoint[];
 }
 const frameCache = new WeakMap<SpatialLightEffectGroup, FrameMemo>();
+interface PathMemo {
+  readonly definition: BoardDefinition;
+  readonly assignments: readonly BoardHoldAssignment[];
+  readonly frameCount: number;
+  readonly path: readonly SpatialPoint[];
+}
+const pathCache = new WeakMap<SpatialLightEffectGroup, PathMemo>();
+const froggerCache = new WeakMap<SpatialLightEffectGroup, FroggerPlan>();
+
+function pathForCached(
+  definition: BoardDefinition,
+  assignments: readonly BoardHoldAssignment[],
+  group: SpatialLightEffectGroup,
+  geometry: PreparedSpatialGeometry,
+  frameCount: number,
+  eligiblePoints: readonly SpatialPoint[],
+): readonly SpatialPoint[] {
+  const cached = pathCache.get(group);
+  if (cached?.definition === definition && cached.assignments === assignments && cached.frameCount === frameCount) return cached.path;
+  const path = pathFor(geometry, group, frameCount, eligiblePoints);
+  pathCache.set(group, { definition, assignments, frameCount, path });
+  return path;
+}
+
+function froggerPlanFor(group: SpatialLightEffectGroup): FroggerPlan {
+  const cached = froggerCache.get(group);
+  if (cached) return cached;
+  if (group.recipe.kind !== 'frogger') throw new TypeError('Frogger plan requested for a different spatial recipe');
+  const plan = prepareFroggerPlan(group.recipe.lanes, group.seed, Math.max(0, group.footprint - 2));
+  froggerCache.set(group, plan);
+  return plan;
+}
 
 function geometryFor(definition: BoardDefinition): PreparedSpatialGeometry {
   const prepared = geometryCache.get(definition);
@@ -111,6 +144,9 @@ function project(
   const output: Array<Readonly<{ placementId: SpatialPoint['id']; color: ApiLevel3Color }>> = [];
   for (const target of targets) {
     if (output.length >= limit || target.color === 0) continue;
+    // A target outside the normalized board is genuinely off-board. Clipping
+    // here keeps moving actors from reappearing on an unrelated edge hold.
+    if (target.x < 0 || target.x > 1 || target.y < 0 || target.y > 1) continue;
     if (target.placementId !== undefined) {
       const exact = points.find((point) => point.id === target.placementId);
       if (!exact || used.has(exact.id)) continue;
@@ -246,8 +282,10 @@ function ballScene(definition: BoardDefinition, group: SpatialLightEffectGroup, 
   if (recipe.kind !== 'beach-ball') return Object.freeze([]);
   const xBounces = Math.max(1, Math.round(Math.abs(recipe.velocityX) * 3));
   const yBounces = Math.max(1, Math.round(Math.abs(recipe.velocityY) * 3));
-  const x = .1 + triangle(clock.phase * xBounces + hash('ball-x', group.seed)) * .8;
-  const y = .1 + triangle(clock.phase * yBounces + hash('ball-y', group.seed)) * .8;
+  const xFold = triangle(clock.phase * xBounces + hash('ball-x', group.seed));
+  const yFold = triangle(clock.phase * yBounces + hash('ball-y', group.seed));
+  const x = .1 + (recipe.velocityX >= 0 ? xFold : 1 - xFold) * .8;
+  const y = .1 + (recipe.velocityY >= 0 ? yFold : 1 - yFold) * .8;
   const radius = .035 + Math.min(20, Math.max(1, recipe.size)) / 220;
   const targets: Target[] = [];
   const count = Math.min(group.footprint, Math.max(1, Math.round(recipe.size)));
@@ -263,14 +301,18 @@ function pongScene(definition: BoardDefinition, group: SpatialLightEffectGroup, 
   if (recipe.kind !== 'pong') return Object.freeze([]);
   const rallies = 2 + Math.max(1, Math.round(group.periodMs / 45_000));
   const travel = triangle(clock.phase * rallies + hash('pong-x', group.seed));
-  const x = .08 + travel * .84;
-  const y = .1 + triangle(clock.phase * (rallies + 1) + hash('pong-y', group.seed)) * .8;
-  const paddle = Math.max(1, Math.min(group.footprint - 1, Math.round(recipe.paddleSize)));
+  const x = recipe.direction === 'forward' ? .08 + travel * .84 : .92 - travel * .84;
+  const yAt = (phase: number) => .1 + triangle(phase * (rallies + 1) + hash('pong-y', group.seed)) * .8;
+  const y = yAt(clock.phase);
+  const upcomingImpactY = yAt(clock.phase + 1 / Math.max(1, rallies * 2));
+  const paddleY = y * .25 + upcomingImpactY * .75;
+  const paddle = Math.min(Math.round(recipe.paddleSize), Math.floor(Math.max(0, group.footprint - 1) / 2));
+  const paddleSpacing = .04 + Math.min(20, Math.round(recipe.paddleSize)) * .015;
   const targets: Target[] = [{ x, y, color: colorAt(definition, group, clock.phase) }];
   for (let side = 0; side < 2; side += 1) {
     for (let index = 0; index < paddle; index += 1) {
-      const offset = (index - (paddle - 1) / 2) * .07;
-      targets.push({ x: side === 0 ? .06 : .94, y: Math.max(.06, Math.min(.94, y + offset)), color: colorAt(definition, group, clock.phase, .5) });
+      const offset = (index - (paddle - 1) / 2) * paddleSpacing;
+      targets.push({ x: side === 0 ? .06 : .94, y: Math.max(.06, Math.min(.94, paddleY + offset)), color: colorAt(definition, group, clock.phase, .5) });
     }
   }
   return project(targets, points, group.footprint);
@@ -305,22 +347,48 @@ function birdScene(definition: BoardDefinition, group: SpatialLightEffectGroup, 
 function froggerScene(definition: BoardDefinition, group: SpatialLightEffectGroup, points: readonly SpatialPoint[], clock: SpatialLoopClock): LightScene {
   const recipe = group.recipe;
   if (recipe.kind !== 'frogger') return Object.freeze([]);
-  const crossings = 2 + Math.min(4, Math.max(1, Math.round(recipe.lanes / 2)));
-  const journey = triangle(clock.phase * crossings);
-  const frogY = .08 + triangle(clock.phase * crossings + .25) * .84;
-  const frogX = .08 + journey * .84;
-  const frogColor = colorAt(definition, group, clock.phase);
+  const pose = sampleFroggerPlan(froggerPlanFor(group), clock.phase);
+  const frogColor = scaledColor(definition, group, group.palette[0]!);
   const targets: Target[] = [
-    { x: frogX, y: frogY, color: frogColor },
-    { x: Math.max(.04, frogX - .035), y: Math.min(.96, frogY + .035), color: frogColor },
+    { x: pose.frog.x - .018, y: pose.frog.y, color: frogColor },
+    { x: pose.frog.x + .018, y: pose.frog.y, color: frogColor },
   ];
-  const vehicleCount = Math.max(0, group.footprint - 2);
-  const lanes = Math.max(1, Math.min(8, Math.round(recipe.lanes)));
-  for (let index = 0; index < vehicleCount; index += 1) {
-    const lane = index % lanes;
-    const laneX = .12 + (lane / Math.max(1, lanes - 1)) * .76;
-    const y = triangle(clock.phase * (1 + (lane % 3)) + hash(`frogger-${index}`, group.seed));
-    targets.push({ x: laneX, y, color: colorAt(definition, group, clock.phase, .45 + index / 16) });
+  for (const vehicle of pose.traffic) {
+    const vehiclePaletteIndex = group.palette.length > 1
+      ? 1 + vehicle.id % (group.palette.length - 1)
+      : 0;
+    targets.push({
+      x: vehicle.x,
+      y: vehicle.y,
+      color: scaledColor(definition, group, group.palette[vehiclePaletteIndex]!),
+    });
+  }
+  return project(targets, points, group.footprint);
+}
+
+function matrixScene(definition: BoardDefinition, group: SpatialLightEffectGroup, points: readonly SpatialPoint[], clock: SpatialLoopClock): LightScene {
+  const recipe = group.recipe;
+  if (recipe.kind !== 'matrix-rain') return Object.freeze([]);
+  const columns = Math.max(1, Math.min(20, Math.round(recipe.columns)));
+  const fallCount = 3 + Math.max(1, Math.round(columns / 2));
+  const direction = recipe.direction === 'down' ? 1 : -1;
+  const columnXs = [...new Set(points.map((point) => point.x))].sort((a, b) => a - b);
+  const targets: Target[] = [];
+  const streamCount = Math.min(columns, columnXs.length);
+  const maxTail = 4;
+  for (let tail = 0; tail < maxTail && targets.length < group.footprint * 2; tail += 1) {
+    for (let column = 0; column < streamCount && targets.length < group.footprint * 2; column += 1) {
+      const x = columnXs[Math.min(columnXs.length - 1, Math.floor((column + .5) * columnXs.length / streamCount))]!;
+      const offset = hash(`matrix-column-${column}`, group.seed);
+      const head = direction > 0
+        ? 1.16 - fraction(clock.phase * fallCount + offset) * 1.48
+        : -.16 + fraction(clock.phase * fallCount + offset) * 1.48;
+      const y = head + direction * tail * .075;
+      // Heads and tails genuinely leave the board. Omit off-board points so
+      // projection cannot snap a stream to an unrelated edge hold.
+      if (y < 0 || y > 1) continue;
+      targets.push({ x, y, color: colorAt(definition, group, clock.phase, (column + tail) / Math.max(1, columns * 2)) });
+    }
   }
   return project(targets, points, group.footprint);
 }
@@ -353,7 +421,8 @@ function pentagramScene(definition: BoardDefinition, group: SpatialLightEffectGr
     targets.push({ x, y: Math.abs(y - .5) >= Math.abs(x - .5) && y > .5 ? y + .067 : y, color: colorAt(definition, group, clock.phase) });
   }
   const fadeBeats = Math.max(2, Math.round(recipe.fadeRate) * 2);
-  const brightness = .2 + triangle(clock.phase * fadeBeats) * .8;
+  const slowEnvelope = .78 + .22 * (.5 + .5 * Math.cos(Math.PI * 2 * 2 * clock.phase));
+  const brightness = (.2 + triangle(clock.phase * fadeBeats) * .8) * slowEnvelope;
   return project(targets.map((target) => ({ ...target, color: scaledColor(definition, group, target.color, brightness) })), points, group.footprint);
 }
 
@@ -374,11 +443,11 @@ export function renderSpatialGroupV2(
   let path: readonly SpatialPoint[] | undefined;
   switch (recipe.kind) {
     case 'snake':
-      path = pathFor(geometry, group, clock.frameCount, points);
+      path = pathForCached(definition, assignments, group, geometry, clock.frameCount, points);
       scene = pathScene(definition, group, points, clock, path, false);
       break;
     case 'pac-man':
-      path = pathFor(geometry, group, clock.frameCount, points);
+      path = pathForCached(definition, assignments, group, geometry, clock.frameCount, points);
       scene = pathScene(definition, group, points, clock, path, true);
       break;
     case 'beach-ball': scene = ballScene(definition, group, points, clock); break;
@@ -397,20 +466,13 @@ export function renderSpatialGroupV2(
       scene = selectByScore(points, (point) => {
         const angle = Math.atan2(point.y - .5, point.x - .5) / (Math.PI * 2);
         const radius = Math.hypot(point.x - .5, point.y - .5);
-        return Math.abs(fraction(angle * recipe.arms + radius * 2.2 - signed * clock.phase * recipe.arms));
+        const breathingRadius = radius + .055 * Math.sin(Math.PI * 2 * 2 * clock.phase) + .02 * Math.sin(Math.PI * 2 * 4 * clock.phase);
+        return Math.abs(fraction(angle * recipe.arms + breathingRadius * 2.2 - signed * clock.phase * recipe.arms));
       }, group, definition, clock.phase);
       break;
     }
     case 'matrix-rain': {
-      const fallCount = 3 + Math.max(1, Math.round(recipe.columns / 2));
-      const direction = recipe.direction === 'down' ? 1 : -1;
-      scene = selectByScore(points, (point) => {
-        const column = Math.round(point.x * recipe.columns);
-        const columnPhase = hash(`matrix-column-${column}`, group.seed);
-        const y = direction > 0 ? 1.15 - fraction(clock.phase * fallCount + columnPhase) * 1.3 : -.15 + fraction(clock.phase * fallCount + columnPhase) * 1.3;
-        if (y < -.08 || y > 1.08) return Number.POSITIVE_INFINITY;
-        return Math.abs(point.x * recipe.columns - column) + Math.abs(point.y - y) * .4;
-      }, group, definition, clock.phase);
+      scene = matrixScene(definition, group, points, clock);
       break;
     }
   }

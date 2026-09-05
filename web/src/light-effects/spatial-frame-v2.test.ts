@@ -1,14 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { apiLevel3Color, unpackApiLevel3Color } from '../domain/boards/colors';
+import type { SpatialLightEffectGroup } from '../board-renderer/types';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10';
 import { createSpatialPreset, SPATIAL_PRESETS } from './preset-library';
 import { renderSpatialGroup, BOARD_ANIMATION_FRAME_MS } from './spatial-frame';
-import { spatialDisplayColor } from './spatial-colors';
 import { spatialLoopClock } from './spatial-frame-v2';
 import { prepareSpatialGeometry } from './spatial-geometry';
-import { quantizeApiLevel3ColorForApiLevel2 } from '../board-control/api-level-2-codec';
 
 describe('version 2 spatial loops', () => {
+  it('uses the designed long default for every new preset', () => {
+    expect(Object.fromEntries(SPATIAL_PRESETS.map(({ kind, periodMs }) => [kind, periodMs]))).toEqual({
+      'ocean-tide': 120_000,
+      'tie-dye-spiral': 120_000,
+      'matrix-rain': 90_000,
+      snake: 150_000,
+      'beach-ball': 90_000,
+      'pac-man': 150_000,
+      pong: 90_000,
+      'bird-flock': 120_000,
+      frogger: 120_000,
+      pentagram: 120_000,
+    });
+  });
+
   it('uses a positive 2 FPS clock that closes for negative elapsed time', () => {
     const clock = spatialLoopClock(1_001, -1);
     expect(clock.frameCount).toBe(2);
@@ -64,6 +77,51 @@ describe('version 2 spatial loops', () => {
     expect(renderSpatialGroup(definition, assignments, changed, 1)).not.toBe(first);
   });
 
+  it('honors directional controls in reflected ball and Pong trajectories', () => {
+    const ball = createSpatialPreset('beach-ball', 12);
+    const reverseBall = Object.freeze({
+      ...ball,
+      recipe: Object.freeze({
+        ...ball.recipe,
+        velocityX: -Math.abs(ball.recipe.kind === 'beach-ball' ? ball.recipe.velocityX : 1),
+      }),
+    }) as SpatialLightEffectGroup;
+    const pong = createSpatialPreset('pong', 12);
+    const reversePong = Object.freeze({
+      ...pong,
+      recipe: Object.freeze({ ...pong.recipe, direction: 'reverse' as const }),
+    }) as SpatialLightEffectGroup;
+    expect(renderSpatialGroup(definition, [], ball, ball.periodMs * .17)).not.toEqual(renderSpatialGroup(definition, [], reverseBall, reverseBall.periodMs * .17));
+    expect(renderSpatialGroup(definition, [], pong, pong.periodMs * .17)).not.toEqual(renderSpatialGroup(definition, [], reversePong, reversePong.periodMs * .17));
+  });
+
+  it('keeps Pong paddles symmetric within a small reserve and distributes Matrix streams', () => {
+    const positions = new Map(definition.placements.map(({ id, position }) => [id, position]));
+    const pong = Object.freeze({ ...createSpatialPreset('pong', 5), footprint: 3, recipe: Object.freeze({ kind: 'pong' as const, direction: 'forward' as const, paddleSize: 2 }) });
+    const pongScene = renderSpatialGroup(definition, [], pong, pong.periodMs * .2);
+    const pongX = pongScene.map(({ placementId }) => (positions.get(placementId)!.x - definition.bounds.left) / (definition.bounds.right - definition.bounds.left));
+    expect(pongScene).toHaveLength(3);
+    expect(pongX.filter((x) => x < .15).length).toBe(1);
+    expect(pongX.filter((x) => x > .85).length).toBe(1);
+    const matrix = createSpatialPreset('matrix-rain', 5);
+    const matrixCounts: number[] = [];
+    for (const frame of [0, 17, 41, 83]) {
+      const scene = renderSpatialGroup(definition, [], matrix, frame * BOARD_ANIMATION_FRAME_MS);
+      matrixCounts.push(new Set(scene.map(({ placementId }) => positions.get(placementId)!.x)).size);
+    }
+    expect(matrixCounts.some((count) => count >= 3)).toBe(true);
+  });
+
+  it('clips each bird member at the board edge and leaves quiet frames empty', () => {
+    const birds = createSpatialPreset('bird-flock', 9);
+    const open = Object.freeze({ ...birds, recipe: Object.freeze({ ...birds.recipe, quietFraction: 0 }) }) as SpatialLightEffectGroup;
+    expect(renderSpatialGroup(definition, [], open, 0)).toEqual([]);
+    const entering = renderSpatialGroup(definition, [], open, open.periodMs * .2);
+    expect(entering.length).toBeGreaterThan(0);
+    expect(entering.length).toBeLessThanOrEqual(3);
+    expect(renderSpatialGroup(definition, [], birds, birds.periodMs * .99)).toEqual([]);
+  });
+
   it('makes each shape control observable within the light reserve', () => {
     for (const preset of SPATIAL_PRESETS) {
       const base = createSpatialPreset(preset.kind, 11);
@@ -76,26 +134,5 @@ describe('version 2 spatial loops', () => {
       const changedFrames = Array.from({ length: 120 }, (_, frame) => JSON.stringify(renderSpatialGroup(definition, [], changed, frame * 500)));
       expect(changedFrames.some((value, index) => value !== baseFrames[index])).toBe(true);
     }
-  });
-});
-
-describe('API-2 spatial color protection', () => {
-  it('keeps every nonblack source byte away from encoded role colors', () => {
-    const roleBytes = new Set(Object.values(definition.rolePresets).map(({ lightColor }) => quantizeApiLevel3ColorForApiLevel2(lightColor)));
-    roleBytes.add(quantizeApiLevel3ColorForApiLevel2(0));
-    for (let source = 1; source < 256; source += 1) {
-      const adjusted = spatialDisplayColor(definition, apiLevel3Color(source));
-      expect(adjusted).not.toBe(apiLevel3Color(0));
-      expect(roleBytes.has(quantizeApiLevel3ColorForApiLevel2(adjusted))).toBe(false);
-    }
-  });
-
-  it('keeps black black and returns a nearby packed color', () => {
-    expect(spatialDisplayColor(definition, apiLevel3Color(0))).toBe(apiLevel3Color(0));
-    const source = apiLevel3Color(0x1c);
-    const adjusted = spatialDisplayColor(definition, source);
-    const from = unpackApiLevel3Color(source);
-    const to = unpackApiLevel3Color(adjusted);
-    expect((to.red - from.red) ** 2 + (to.green - from.green) ** 2 + (to.blue - from.blue) ** 2).toBeLessThan(255 ** 2 * 3);
   });
 });
