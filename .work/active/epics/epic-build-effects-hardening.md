@@ -214,3 +214,15 @@ these multi-module changes per implement-orchestrator. One owner per feature, se
 production to respect dependencies; independent review and read-only design preparation
 may overlap. User-facing mockups precede production changes; delegated design resolves
 routine choices using the accepted direction and existing UI patterns.
+
+## Animation wave evidence
+
+Both animation features are done after their one independent standard review, named
+corrections and green GitHub CI (33998435604 loops;33999011346 bee). Local real-browser
+coverage includes explicit legacy adoption and exact Body/Wings color persistence.
+
+Final current-renderer CPU diagnostic after bee corrections: Darwin arm64 Node25.9.0,
+all11themes seed42,240newposes+960heldticks pertheme,onewarmup+fivemeasuredrounds.
+Median round-average newpose57.66µs versus heldtick0.087µs; every heldtick returned the
+same immutable scene reference. This measures local computation reuse, not phone/BLE
+throughput or increased light capacity. The20-light/2-FPS contract remains unchanged.
