@@ -5,6 +5,7 @@ import { createSpatialPreset, SPATIAL_PRESETS } from './preset-library';
 import { renderSpatialGroup, BOARD_ANIMATION_FRAME_MS } from './spatial-frame';
 import { spatialDisplayColor } from './spatial-colors';
 import { spatialLoopClock } from './spatial-frame-v2';
+import { prepareSpatialGeometry } from './spatial-geometry';
 import { quantizeApiLevel3ColorForApiLevel2 } from '../board-control/api-level-2-codec';
 
 describe('version 2 spatial loops', () => {
@@ -17,26 +18,32 @@ describe('version 2 spatial loops', () => {
   });
 
   it.each(SPATIAL_PRESETS.map(({ kind }) => kind))('%s has a deterministic complete cycle and state join', (kind) => {
-    const group = createSpatialPreset(kind, 42);
-    expect(group.recipeVersion).toBe(2);
-    const first = renderSpatialGroup(definition, [], group, 0);
-    const repeat = renderSpatialGroup(definition, [], group, group.periodMs);
-    expect(repeat).toEqual(first);
-    expect(first.length).toBeLessThanOrEqual(group.footprint);
-    expect(new Set(first.map(({ placementId }) => placementId)).size).toBe(first.length);
+    for (const seed of [0, 7, 42]) {
+      for (const periodMs of [createSpatialPreset(kind, seed).periodMs, 61_000]) {
+        const group = { ...createSpatialPreset(kind, seed), periodMs };
+        expect(group.recipeVersion).toBe(2);
+        const first = renderSpatialGroup(definition, [], group, 0);
+        const repeat = renderSpatialGroup(definition, [], group, periodMs);
+        expect(repeat).toEqual(first);
+        expect(first.length).toBeLessThanOrEqual(group.footprint);
+        expect(new Set(first.map(({ placementId }) => placementId)).size).toBe(first.length);
+      }
+    }
   });
 
-  it.each(['snake', 'pac-man'] as const)('%s keeps head frames on orthogonal graph edges, including the join', (kind) => {
-    const group = createSpatialPreset(kind, 7);
-    const positions = new Map(definition.placements.map(({ id, position }) => [id, position]));
-    const frames = Math.round(group.periodMs / BOARD_ANIMATION_FRAME_MS);
-    const heads = Array.from({ length: frames }, (_, frame) => renderSpatialGroup(definition, [], group, frame * BOARD_ANIMATION_FRAME_MS)[0]?.placementId);
-    for (let index = 0; index < heads.length; index += 1) {
-      const before = positions.get(heads[index]!)!;
-      const after = positions.get(heads[(index + 1) % heads.length]!)!;
-      expect(before).toBeDefined();
-      expect(after).toBeDefined();
-      expect(before.x === after.x || before.y === after.y).toBe(true);
+  it.each(['snake', 'pac-man'] as const)('%s keeps head frames on prepared graph edges, including the join', (kind) => {
+    const geometry = prepareSpatialGeometry(definition);
+    for (const seed of [0, 7, 42]) {
+      const group = { ...createSpatialPreset(kind, seed), periodMs: 61_000 };
+      const frames = Math.round(group.periodMs / BOARD_ANIMATION_FRAME_MS);
+      const heads = Array.from({ length: frames }, (_, frame) => renderSpatialGroup(definition, [], group, frame * BOARD_ANIMATION_FRAME_MS)[0]?.placementId);
+      for (let index = 0; index < heads.length; index += 1) {
+        const before = heads[index]!;
+        const after = heads[(index + 1) % heads.length]!;
+        expect(before).toBeDefined();
+        expect(after).toBeDefined();
+        expect(geometry.neighbors.get(before)?.some((neighbor) => neighbor.id === after)).toBe(true);
+      }
     }
   });
 

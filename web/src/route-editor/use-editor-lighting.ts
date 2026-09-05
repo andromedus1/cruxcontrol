@@ -141,14 +141,6 @@ export function useEditorLighting({
   }, [cancelAnimation, controllerState.transport.status]);
 
   useEffect(() => {
-    if (controllerState.operation === 'clearing') cancelAnimation();
-  }, [cancelAnimation, controllerState.operation]);
-
-  useEffect(() => {
-    if (animationRunning && controllerState.lastAppliedScene?.length === 0) cancelAnimation();
-  }, [animationRunning, cancelAnimation, controllerState.lastAppliedScene]);
-
-  useEffect(() => {
     const onVisibilityChange = () => {
       if (document.hidden) cancelAnimation();
     };
@@ -311,7 +303,11 @@ export function useEditorLighting({
           return;
         }
       }
-      if (scene.length === 0) await controller.clear();
+      // An empty spatial pose is a valid held animation frame (for example a
+      // bird quiet interval). Send it through preview so the controller's
+      // clearing operation cannot be mistaken for an explicit stop.
+      if (scene.length === 0 && !animated) await controller.clear();
+      else if (animated) await previewScene(scene);
       else await controller.light(scene);
       if (animated) startAnimation(startedAt);
     } catch (error) {
@@ -320,7 +316,7 @@ export function useEditorLighting({
       busyRef.current = false;
       if (mounted.current) setExplicitStatus('idle');
     }
-  }, [cancelAnimation, controller, definition, startAnimation, staticScene]);
+  }, [cancelAnimation, controller, definition, previewScene, startAnimation, staticScene]);
 
   const stopAnimation = useCallback(async () => {
     cancelAnimation();

@@ -8,6 +8,7 @@ import { lightEffectGroupId, type LightEffectGroup } from '../board-renderer/typ
 import { apiLevel3Color } from '../domain/boards/colors';
 import { kilterFullride7x10Definition } from '../domain/boards/definitions/kilter-fullride-7x10';
 import { useEditorLighting } from './use-editor-lighting';
+import { createSpatialPreset } from '../light-effects/preset-library';
 
 afterEach(() => vi.useRealTimers());
 
@@ -253,6 +254,28 @@ describe('useEditorLighting', () => {
       await Promise.resolve();
     });
     expect(slow).toHaveBeenCalledOnce();
+  });
+
+  it('keeps an intentionally empty bird frame alive until an explicit stop', async () => {
+    vi.useFakeTimers();
+    const transport = new MockBoardByteTransport({ devices: [{ id: 'api2', name: 'Kilter Board' }] });
+    const controller = createFullrideLightController({ definition: kilterFullride7x10Definition, transport });
+    const { result } = renderHook(() => useEditorLighting({
+      definition: kilterFullride7x10Definition,
+      assignments: [],
+      effectGroups: [createSpatialPreset('bird-flock', 7)],
+      controller,
+    }));
+    await act(async () => { await result.current.lightDraft(); });
+    expect(result.current.animationRunning).toBe(true);
+    const firstWriteCount = transport.operations.filter(({ type }) => type === 'write').length;
+    await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
+    expect(transport.operations.filter(({ type }) => type === 'write').length).toBeGreaterThan(firstWriteCount);
+    expect(result.current.animationRunning).toBe(true);
+    await act(async () => { await result.current.stopAnimation(); });
+    const stoppedWriteCount = transport.operations.filter(({ type }) => type === 'write').length;
+    await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
+    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(stoppedWriteCount);
   });
 
   it('stops and settles the static base scene, then schedules no later frames', async () => {
