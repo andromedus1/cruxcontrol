@@ -222,7 +222,15 @@ corrections and green GitHub CI (33998435604 loops;33999011346 bee). Local real-
 coverage includes explicit legacy adoption and exact Body/Wings color persistence.
 
 Final current-renderer CPU diagnostic after bee corrections: Darwin arm64 Node25.9.0,
-all11themes seed42,240newposes+960heldticks pertheme,onewarmup+fivemeasuredrounds.
-Median round-average newpose57.66µs versus heldtick0.087µs; every heldtick returned the
+all 11 themes, seed 42, 240 new poses and 960 held ticks per theme, one warmup and
+five measured rounds.
+Median round-average new pose 57.66µs versus held tick 0.087µs; every held tick returned the
 same immutable scene reference. This measures local computation reuse, not phone/BLE
-throughput or increased light capacity. The20-light/2-FPS contract remains unchanged.
+throughput or increased light capacity. The 20-light/2-FPS contract remains unchanged.
+
+Animation documentation review: fresh system pass at 972d04c found zero Critical,
+High, Medium or Low issues across five current planning documents. Four informational
+observations concern inventory/provenance/verified boundaries. Report is retained in
+`doc-review-report.md`; final backup/update documentation will be checked after its
+implementation batch. Knowledge regeneration at 3a6b32a passed with zero lint warnings
+or errors and indexed only tracked project content.
