@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-library-backup
 kind: feature
-stage: drafting
+stage: implementing
 tags: [ui, data]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-curious-bee]
@@ -411,3 +411,12 @@ retention contract, preserving CRUD/conflict test coverage.
   from eight to zero while retaining the two missing playlists.
 - Phone screenshot inspected at 390px; touch actions remain readable and stack without
   clipping. Mock verification is UI-design evidence only, not production recovery testing.
+
+## Implementation dispatch
+
+Bee dependency is verified at review (75 files / 509 unit tests, 8 browser scenarios,
+lint/typecheck/build green). Prepared design and committed flow are ready. One Luna
+xhigh feature owner carries codec, transaction adapter, service, retention and dialog
+together because the recovery guarantee spans them. Standard review from project
+conventions; root handles independent review and foundation documentation. No schema
+replacement, destructive restore, identity rewrite or cloud backend is authorized.
