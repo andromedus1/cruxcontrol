@@ -77,9 +77,12 @@ seamlessly, and that they be longer and more interesting while respecting each t
 
 ## Related delivery
 
-`story-screen-wake-lock` is a separately scoped, independent first improvement. It
-prevents automatic screen timeout while visible, not execution after switching apps or
-manually locking the device. The remaining arcs need scoped feature design and tests;
+`story-screen-wake-lock` and `story-browser-regressions-ci` are complete, with local
+review and Linux CI verification in [PR #12](https://github.com/andromedus1/cruxcontrol/pull/12).
+Their full records are in Git and indexed by the `.work/archive/` stubs. The screen
+toggle prevents automatic timeout while visible, not execution after switching apps or
+manually locking the device. Browser regression failures now gate deployment. Physical
+phone dogfooding remains a later acceptance check. The remaining arcs need feature design and tests;
 this epic is not an instruction to implement an unreviewed recipe rewrite immediately.
 
 ## Simplification opportunity
