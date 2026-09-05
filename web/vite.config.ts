@@ -7,10 +7,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // autoUpdate: a new service worker activates and the app picks up the new
-      // version on next load, with no reload prompt (design decision — silent
-      // updates, no update UI until the design system lands at climb-browser).
-      registerType: 'autoUpdate',
+      // Keep a new worker waiting until the app has settled local edits,
+      // playback, and repository mutations. Registration is owned by
+      // pwa/update-service.ts, so the plugin must not inject a second helper.
+      registerType: 'prompt',
+      injectRegister: false,
       // generateSW (the default mode): Workbox generates the service worker and
       // precaches the built app shell. We have no custom SW logic yet.
       manifest: {
@@ -54,6 +55,8 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        skipWaiting: false,
+        clientsClaim: false,
       },
       // Keep dev simple — no service worker during `vite dev`.
       devOptions: { enabled: false },

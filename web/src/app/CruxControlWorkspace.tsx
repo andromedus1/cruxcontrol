@@ -10,6 +10,9 @@ import { RouteEditorWorkspace } from '../route-editor/RouteEditorWorkspace';
 import { KilterScreenshotImportDialog } from '../screenshot-import/KilterScreenshotImportDialog';
 import { LibraryBackupDialog } from '../library-backup';
 import type { CruxControlRuntime } from './create-runtime';
+import { AppUpdateControl } from '../pwa/AppUpdateControl.tsx';
+import type { AppUpdateService } from '../pwa/update-service.ts';
+import type { BoardLightState } from '../board-control/light-controller.ts';
 import './CruxControlWorkspace.css';
 
 export type LocalClimbCollection = 'finished' | 'drafts' | 'trash';
@@ -83,7 +86,26 @@ interface RetryAction {
   readonly run: () => void;
 }
 
-export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxControlRuntime }) {
+export interface PlaylistSafetyState {
+  readonly dirty: boolean;
+  readonly playing: boolean;
+  readonly modalOpen: boolean;
+  readonly pendingOperations: number;
+}
+
+const CLEAR_PLAYLIST_SAFETY: PlaylistSafetyState = Object.freeze({
+  dirty: false,
+  playing: false,
+  modalOpen: false,
+  pendingOperations: 0,
+});
+
+export interface CruxControlWorkspaceProps {
+  readonly runtime: CruxControlRuntime;
+  readonly updateService?: AppUpdateService;
+}
+
+export function CruxControlWorkspace({ runtime, updateService }: CruxControlWorkspaceProps) {
   const [drafts, setDrafts] = useState<readonly LocalClimbDraft[]>([]);
   const [playlists, setPlaylists] = useState<readonly LocalPlaylist[]>([]);
   const [collection, setCollection] = useState<WorkspaceDestination>(() =>
@@ -97,6 +119,29 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
   const backupButtonRef = useRef<HTMLButtonElement>(null);
   const [error, setError] = useState('');
   const [retryAction, setRetryAction] = useState<RetryAction | null>(null);
+  const [playlistSafety, setPlaylistSafety] = useState<PlaylistSafetyState>(CLEAR_PLAYLIST_SAFETY);
+  const [controllerState, setControllerState] = useState<BoardLightState | null>(() => runtime.controller?.getState() ?? null);
+  const operationCount = useRef(0);
+  const [pendingOperations, setPendingOperations] = useState(0);
+
+  useEffect(() => {
+    const controller = runtime.controller;
+    if (!controller) {
+      setControllerState(null);
+      return;
+    }
+    setControllerState(controller.getState());
+    return controller.subscribe(setControllerState);
+  }, [runtime.controller]);
+
+  const beginOperation = useCallback(() => {
+    operationCount.current += 1;
+    setPendingOperations(operationCount.current);
+  }, []);
+  const endOperation = useCallback(() => {
+    operationCount.current = Math.max(0, operationCount.current - 1);
+    setPendingOperations(operationCount.current);
+  }, []);
 
   const refresh = useCallback(async (throwOnError = false) => {
     try {
@@ -141,6 +186,7 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
   }, []);
 
   async function retryable(label: string, action: () => Promise<void>) {
+    beginOperation();
     try {
       await action();
       setError('');
@@ -152,8 +198,46 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
         label: `Retry ${label.toLowerCase()}`,
         run: () => void retryable(label, action),
       });
+    } finally {
+      endOperation();
     }
   }
+
+  const boardBlockReason = (() => {
+    const transport = controllerState?.transport.status;
+    if (transport === 'selecting' || transport === 'connecting') {
+      return 'Finish connecting to the board before updating.';
+    }
+    if (transport === 'connected' || transport === 'disconnecting') {
+      return 'Disconnect the board when your session is finished before updating.';
+    }
+    if (controllerState && controllerState.operation !== 'idle') {
+      return 'Finish the board operation before updating.';
+    }
+    return null;
+  })();
+  const workspaceBlockReason = editing
+    ? 'Finish saving your climb and return to the library before updating.'
+    : backingUp
+      ? 'Wait for your backup or restore to finish before updating.'
+      : importingScreenshots
+        ? 'Finish importing screenshots before updating.'
+        : membershipDraft
+          ? 'Finish updating list memberships before updating.'
+          : pendingOperations > 0 || playlistSafety.pendingOperations > 0
+            ? 'Wait for the current library change to finish before updating.'
+            : playlistSafety.dirty
+              ? 'Save your list changes before updating.'
+              : playlistSafety.playing
+                ? 'Finish the list play-through before updating.'
+                : playlistSafety.modalOpen
+                  ? 'Finish the open list task before updating.'
+                  : boardBlockReason;
+
+  useEffect(() => {
+    updateService?.setBlocked(workspaceBlockReason);
+    return () => updateService?.setBlocked(null);
+  }, [updateService, workspaceBlockReason]);
 
   const create = async () => {
     await retryable('create climb', async () => {
@@ -266,22 +350,38 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
 
   if (active) {
     return (
-      <RouteEditorWorkspace
-        definition={runtime.installation.definition}
-        draft={active}
-        repository={runtime.drafts}
-        controller={runtime.controller}
-        onBack={() => {
-          setEditing(null);
-          void refresh();
-        }}
-        onDraftIdentityChange={adoptDraftIdentity}
-      />
+      <>
+        {updateService && (
+          <AppUpdateControl
+            service={updateService}
+            boardConnected={controllerState?.transport.status === 'connected'}
+            onDisconnectBoard={() => runtime.controller?.disconnect()}
+          />
+        )}
+        <RouteEditorWorkspace
+          definition={runtime.installation.definition}
+          draft={active}
+          repository={runtime.drafts}
+          controller={runtime.controller}
+          onBack={() => {
+            setEditing(null);
+            void refresh();
+          }}
+          onDraftIdentityChange={adoptDraftIdentity}
+        />
+      </>
     );
   }
 
   return (
     <main className="climb-workspace">
+      {updateService && (
+        <AppUpdateControl
+          service={updateService}
+          boardConnected={controllerState?.transport.status === 'connected'}
+          onDisconnectBoard={() => runtime.controller?.disconnect()}
+        />
+      )}
       <nav className="collection-switch" aria-label="Workspace destinations">
         {destinations.map((value) => (
           <button
@@ -394,6 +494,7 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
             else void refreshPlaylists();
           }}
           onRefresh={refresh}
+          onSafetyStateChange={setPlaylistSafety}
           onOpenLocalClimb={(id) => {
             const draft = drafts.find((candidate) => candidate.id === id);
             if (!draft || draft.trashedAt !== undefined) return;
@@ -468,6 +569,8 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
           onChanged={replacePlaylist}
           onRefresh={refreshPlaylists}
           onClose={() => setMembershipDraft(null)}
+          onOperationStart={beginOperation}
+          onOperationEnd={endOperation}
         />
       )}
       {importingScreenshots && (
@@ -478,6 +581,8 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
             await refresh();
             setCollection('drafts');
           }}
+          onOperationStart={beginOperation}
+          onOperationEnd={endOperation}
           onClose={() => setImportingScreenshots(false)}
         />
       )}

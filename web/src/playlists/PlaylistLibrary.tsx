@@ -37,6 +37,14 @@ export interface PlaylistLibraryProps {
   readonly history?: PlaylistHistoryAdapter;
   readonly transports?: PlaylistTransportAdapters;
   readonly shareBaseUrl?: URL;
+  readonly onSafetyStateChange?: (state: PlaylistSafetyState) => void;
+}
+
+export interface PlaylistSafetyState {
+  readonly dirty: boolean;
+  readonly playing: boolean;
+  readonly modalOpen: boolean;
+  readonly pendingOperations: number;
 }
 
 function entryLabel(entry: ResolvedPlaylistEntry): string {
@@ -62,6 +70,7 @@ export function PlaylistLibrary({
   history,
   transports,
   shareBaseUrl,
+  onSafetyStateChange,
 }: PlaylistLibraryProps) {
   const playlistsRef = useRef(playlists);
   const [selectedId, setSelectedId] = useState<PlaylistId | null>(playlists[0]?.id ?? null);
@@ -74,6 +83,7 @@ export function PlaylistLibrary({
   const [pendingImportFragment, setPendingImportFragment] = useState(initialImportFragment);
   const [status, setStatus] = useState('');
   const [error, setError] = useState<RetryState | null>(null);
+  const [pendingOperations, setPendingOperations] = useState(0);
   const importButtonRef = useRef<HTMLButtonElement>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   playlistsRef.current = playlists;
@@ -104,6 +114,7 @@ export function PlaylistLibrary({
   }
 
   async function mutate(label: string, action: () => Promise<void>) {
+    setPendingOperations((count) => count + 1);
     setStatus(`${label}…`);
     setError(null);
     try {
@@ -118,6 +129,8 @@ export function PlaylistLibrary({
         label: `Retry ${label.toLowerCase()}`,
         run: () => mutate(label, action),
       });
+    } finally {
+      setPendingOperations((count) => Math.max(0, count - 1));
     }
   }
 
@@ -213,6 +226,15 @@ export function PlaylistLibrary({
     return local ? compatibilityIssue(local) : null;
   };
   const playing = Boolean(selected && selected.id === playingId && resolved.length > 0);
+
+  useEffect(() => {
+    onSafetyStateChange?.({
+      dirty: Boolean(selected && (name !== selected.name || notes !== selected.notes)),
+      playing,
+      modalOpen: sharing || importing,
+      pendingOperations,
+    });
+  }, [importing, name, notes, onSafetyStateChange, pendingOperations, playing, selected, sharing]);
 
   function closePortableDialog(kind: 'share' | 'import') {
     if (kind === 'share') setSharing(false);
@@ -473,6 +495,8 @@ export function PlaylistLibrary({
             await onRefresh();
           }}
           onRefresh={onRefresh}
+          onOperationStart={() => setPendingOperations((count) => count + 1)}
+          onOperationEnd={() => setPendingOperations((count) => Math.max(0, count - 1))}
           onClose={() => closePortableDialog('import')}
         />
       )}

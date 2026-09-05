@@ -7,6 +7,8 @@ import { kilterFullride7x10Definition } from './domain/boards/definitions/kilter
 import { CruxControlWorkspace } from './app/CruxControlWorkspace';
 import { createCruxControlRuntime, type CruxControlRuntime } from './app/create-runtime';
 import { ScreenAwakeControl } from './pwa/ScreenAwakeControl';
+import type { AppUpdateService } from './pwa/update-service.ts';
+import { AppUpdateControl } from './pwa/AppUpdateControl.tsx';
 
 const noClimbs: readonly ClimbViewRecord[] = Object.freeze([]);
 
@@ -16,6 +18,8 @@ export interface AppProps {
   readonly controller?: BoardLightController | null;
   readonly onCreateClimb?: () => void;
   readonly createRuntime?: () => Promise<CruxControlRuntime>;
+  readonly updateService?: AppUpdateService;
+  readonly startupAdmission?: Promise<void>;
 }
 
 export function App({
@@ -24,6 +28,8 @@ export function App({
   controller,
   onCreateClimb,
   createRuntime: runtimeFactory = createCruxControlRuntime,
+  updateService,
+  startupAdmission,
 }: AppProps) {
   const [selectedKey, setSelectedKey] = useState<ClimbViewKey | null>(null);
   const injected =
@@ -34,11 +40,14 @@ export function App({
   const [runtime, setRuntime] = useState<CruxControlRuntime | null>(null);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
+  const [admissionOverride, setAdmissionOverride] = useState<Promise<void> | null>(null);
   useEffect(() => {
     if (injected) return;
     let active = true;
     let created: CruxControlRuntime | null = null;
-    void runtimeFactory()
+    const admission = admissionOverride ?? startupAdmission ?? Promise.resolve();
+    void admission
+      .then(() => runtimeFactory())
       .then((value) => {
         created = value;
         if (active) setRuntime(value);
@@ -52,7 +61,7 @@ export function App({
       active = false;
       created?.close();
     };
-  }, [attempt, injected, runtimeFactory]);
+  }, [admissionOverride, attempt, injected, runtimeFactory, startupAdmission]);
   if (injected)
     return (
       <LocalClimbViewer
@@ -69,7 +78,19 @@ export function App({
     );
   if (error)
     return (
-      <main className="app-startup">
+      <>
+        {updateService && (
+          <AppUpdateControl
+            service={updateService}
+            onRetry={() => {
+              const nextAdmission = updateService.start();
+              setAdmissionOverride(nextAdmission);
+              setError('');
+              setAttempt((value) => value + 1);
+            }}
+          />
+        )}
+        <main className="app-startup">
         <h1>CruxControl couldn’t start</h1>
         <p role="alert">{error}</p>
         <button
@@ -81,7 +102,8 @@ export function App({
         >
           Retry
         </button>
-      </main>
+        </main>
+      </>
     );
   if (!runtime)
     return (
@@ -92,7 +114,7 @@ export function App({
   return (
     <>
       <ScreenAwakeControl />
-      <CruxControlWorkspace runtime={runtime} />
+      <CruxControlWorkspace runtime={runtime} updateService={updateService} />
     </>
   );
 }
