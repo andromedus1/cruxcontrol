@@ -281,7 +281,11 @@ export function encodeStoredDraft(draft: LocalClimbDraft): StoredDraftV4 {
       ...(effectGroupId === undefined ? {} : { effectGroupId }),
     })),
     effectGroups: draft.effectGroups.map((group) => group.model === 'spatial'
-      ? { model: 'spatial', id: group.id, recipeVersion: group.recipeVersion, recipe: { ...group.recipe }, seed: group.seed, palette: [...group.palette], periodMs: group.periodMs, intensity: group.intensity, footprint: group.footprint, target: { scope: group.target.scope, include: [...group.target.include], exclude: [...group.target.exclude] } }
+      ? (() => {
+        if (group.recipe.kind === 'bumblebee' && group.recipeVersion !== 2) throw new TypeError('Bumblebee recipes require version 2');
+        if (group.recipe.kind === 'bumblebee' && !validRecipe(group.recipe as unknown as Record<string, unknown>)) throw new TypeError('Bumblebee hover fraction must be finite and between 0 and 0.8');
+        return { model: 'spatial', id: group.id, recipeVersion: group.recipeVersion, recipe: { ...group.recipe }, seed: group.seed, palette: [...group.palette], periodMs: group.periodMs, intensity: group.intensity, footprint: group.footprint, target: { scope: group.target.scope, include: [...group.target.include], exclude: [...group.target.exclude] } };
+      })()
       : { model: 'assigned', id: group.id, kind: group.kind, palette: [...group.palette], periodMs: group.periodMs, intensity: group.intensity }),
     metadata: { ...draft.metadata },
     createdAt: draft.createdAt,

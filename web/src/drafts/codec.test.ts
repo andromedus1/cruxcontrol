@@ -63,6 +63,7 @@ describe('local draft codec', () => {
     const encoded = encodeStoredDraft(source);
     const group = encoded.effectGroups[0] as Record<string, unknown>;
     const recipe = group.recipe as Record<string, unknown>;
+    expect(() => encodeStoredDraft({ ...source, effectGroups: [{ ...bee, recipeVersion: 1 as const }] })).toThrow('Bumblebee recipes require version 2');
     expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipeVersion: 1 }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
     expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipeVersion: 3 }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
     for (const hoverFraction of [-.01, .81, Number.NaN, Number.POSITIVE_INFINITY]) {
