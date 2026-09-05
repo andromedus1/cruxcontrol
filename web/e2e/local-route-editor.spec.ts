@@ -1,5 +1,16 @@
 import { expect, test } from '@playwright/test';
 
+async function clickBoardHold(page: import('@playwright/test').Page, number: number) {
+  const hold = page.getByRole('button', { name: new RegExp(`^Hold ${number},`) });
+  // Pointer selection belongs to the SVG's coordinate hit test. With raster
+  // artwork loaded, the hold's transparent shapes intentionally don't catch clicks.
+  await hold.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+  const bounds = await hold.boundingBox();
+  if (!bounds) throw new Error(`Hold ${number} has no visible bounds`);
+  await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await expect(hold).not.toHaveAttribute('data-assignment', 'none');
+}
+
 async function readStoredClimbs(page: import('@playwright/test').Page) {
   return page.evaluate(
     () =>
@@ -43,7 +54,7 @@ async function createFinishedClimb(
 ) {
   await page.getByRole('button', { name: 'Create climb' }).click();
   await page.getByLabel('Name').fill(name);
-  await page.getByRole('button', { name: new RegExp(`^Hold ${hold}, Unselected`) }).click();
+  await clickBoardHold(page, hold);
   await expect(page.locator('.save-chip')).toHaveText('saved');
   await page.getByRole('button', { name: 'Mark finished' }).click();
   await expect(page.locator('.save-chip')).toHaveText('saved');
@@ -55,12 +66,12 @@ test('persists one climb through Draft, Finished, Trash, restore, and reload', a
   await page.goto('/');
   await page.getByRole('button', { name: 'Create climb' }).click();
   await page.getByLabel('Name').fill('Tidal Wave');
-  await page.getByRole('button', { name: /^Hold 1, Unselected/ }).click();
+  await clickBoardHold(page, 1);
   await page.getByRole('radio', { name: /Advanced Light/ }).click();
   await page.getByLabel('red channel').fill('7');
   await page.getByLabel('green channel').fill('3');
   await page.getByLabel('blue channel').fill('2');
-  await page.getByRole('button', { name: /^Hold 2,/ }).click();
+  await clickBoardHold(page, 2);
   await expect(page.locator('.save-chip')).toHaveText('saved');
 
   const [draft] = await readStoredClimbs(page);
@@ -87,7 +98,7 @@ test('persists one climb through Draft, Finished, Trash, restore, and reload', a
 
   const [restored] = await readStoredClimbs(page);
   expect(restored).toMatchObject({
-    schemaVersion: 3,
+    schemaVersion: 4,
     id: localId,
     status: 'finished',
     name: 'Tidal Wave',
