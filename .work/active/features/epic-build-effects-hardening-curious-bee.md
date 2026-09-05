@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-curious-bee
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-seamless-loops]
@@ -136,3 +136,12 @@ no child stories because this is a cohesive addition to the now-verified shared 
 - Simplification: reused the existing v2 clock, geometry, role/mask filtering, encoded-color guard, projection, cache, IndexedDB repository, and generic palette controls; no new runtime or storage layer.
 - Discrepancies from design: none for the bee contract. The shared v2 module was committed separately at `62cdfe4`, with the loop-join follow-up at `eb53371`, for root's concurrent actor review fixes.
 - Adjacent issues parked: none.
+
+## Integrated review readiness
+
+Root integrated bee with named loop corrections. Lint/typecheck/production build pass;
+75 Vitest files / 509 tests pass with two workers; all 8 production browser scenarios
+pass including editing Body/Wings and reloading their actual stored recipe. Default
+unbounded local test concurrency caused timeouts; isolated playlist initialization test
+passes and its race is being diagnosed separately. Independent standard feature review
+and current PR CI remain required. No physical-board verification is claimed.
