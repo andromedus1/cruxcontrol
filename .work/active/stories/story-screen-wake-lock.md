@@ -1,7 +1,7 @@
 ---
 id: story-screen-wake-lock
 kind: story
-stage: review
+stage: implementing
 tags: [ui]
 parent: null
 depends_on: []
@@ -83,3 +83,19 @@ playback. Keep wake-lock state separate from saved climbs and board transport.
 - `git diff --check` passed.
 - PR/remote CI unavailable: `gh repo view` cannot resolve configured origin
   `andromedus1/cruxcontrol`. No deployment performed.
+
+## Review (2026-09-05)
+
+**Verdict**: Block — local implementation review passed; required PR/CI delivery is unavailable.
+
+**Blockers**: GitHub cannot resolve the configured repository, preventing a pull request
+and required remote checks. Restore access or correct the remote before completing delivery.
+
+**Notes**: Bounded inline standalone-story review at standard weight. Reviewed opt-in
+behavior, truthful held/requested distinction, concurrent pending requests, visibility
+and unmount cleanup, cross-view session ownership, browser denial, accessibility and
+data preservation. No code blockers found. No auth/network/storage boundary is introduced.
+Existing animation cancellation remains intact. Local tests/build/lint and browser
+validation passed as recorded above; physical phone acceptance remains unverified.
+Keep this story active until the PR/CI requirement is met. Verify those checks and close
+administratively; another independent review is not required for an unchanged patch.
