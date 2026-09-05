@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-curious-bee
 kind: feature
-stage: review
+stage: implementing
 tags: [ui, ble]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-seamless-loops]
@@ -145,3 +145,14 @@ pass including editing Body/Wings and reloading their actual stored recipe. Defa
 unbounded local test concurrency caused timeouts; isolated playlist initialization test
 passes and its race is being diagnosed separately. Independent standard feature review
 and current PR CI remain required. No physical-board verification is claimed.
+
+## Review (2026-09-05)
+
+Verdict: Request changes. Standard one balanced independent same-harness fresh-context
+Sol xhigh pass against a083e52; different-class peer remained unavailable. All proposals
+receiver-confirmed: out-of-range hover input reaches throwing renderer; orientation
+changes abruptly at waypoint/cycle joins; palette assertions don't prove slot identity.
+Fix the two production blockers and strengthen exact selected-color round trips in child
+`epic-build-effects-hardening-curious-bee-review-fixes`. Root owns these isolated files
+while backup proceeds from the already-verified implementation wave. No second review;
+closure is named fix verification plus integrated checks/CI. No rejected findings.
