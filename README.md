@@ -90,8 +90,9 @@ separate Python project.
   remains deliberately foreground-bound because mobile browsers suspend background work.
 
 Automated checks include Vitest tests, strict TypeScript, ESLint, production PWA build
-checks, and Playwright Chromium smokes. Physical Android/Fullride dogfooding has verified
-pairing, hold mapping, lighting, and the API-2
+checks, and Playwright Chromium browser workflows. CI runs the browser workflows against
+the production build and retains traces and screenshots from failures for seven days.
+Physical Android/Fullride dogfooding has verified pairing, hold mapping, lighting, and the API-2
 capacity boundary described above; automated transport tests still use deterministic
 fakes for repeatability.
 

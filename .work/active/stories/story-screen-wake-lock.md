@@ -1,7 +1,7 @@
 ---
 id: story-screen-wake-lock
 kind: story
-stage: implementing
+stage: review
 tags: [ui]
 parent: null
 depends_on: []
@@ -99,3 +99,11 @@ Existing animation cancellation remains intact. Local tests/build/lint and brows
 validation passed as recorded above; physical phone acceptance remains unverified.
 Keep this story active until the PR/CI requirement is met. Verify those checks and close
 administratively; another independent review is not required for an unchanged patch.
+
+## Delivery unblock (2026-09-05)
+
+Repository access succeeds using the existing `andromedus1` login through a command-
+scoped GH_TOKEN. The global CLI account was `andrewclark88`; no login or permission
+change was needed and the default account remains unchanged. Owner access and the
+origin/main baseline were verified. The review blocker is reduced to the pending PR
+CI run; the local implementation review remains valid.

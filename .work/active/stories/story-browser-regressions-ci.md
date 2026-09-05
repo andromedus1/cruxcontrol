@@ -1,7 +1,7 @@
 ---
 id: story-browser-regressions-ci
 kind: story
-stage: implementing
+stage: review
 tags: [infra]
 parent: null
 depends_on: []
@@ -43,3 +43,30 @@ build job or new testing framework. Existing deploy `needs: [web]` inherits the 
 Implements the browser-CI recommendation in `epic-build-effects-hardening` and clears
 remote verification for `story-screen-wake-lock`. No database migration or production
 animation changes are included.
+
+## Implementation notes
+
+- Execution capability: inline owner; existing CI job and existing browser suite.
+- Review weight: standard from project conventions, bounded standalone-story review.
+- Added Chromium/system dependency installation, browser execution, a 15-minute web-job
+  timeout and seven-day failure artifacts to `.github/workflows/ci.yml`.
+- Playwright refuses focused tests in CI, starts a fresh preview server and retains
+  failed-test traces/screenshots. No added retries or bypassed assertions.
+- Preserved the web job name and deploy dependency; browser failures block deployment.
+- Documented account-specific authentication in AGENTS.md. The user confirmed multiple
+  concurrent sessions use both accounts, so global auth state must remain untouched.
+- No new tests: the existing six browser scenarios are the contract being gated.
+- Local `CI=true npm -w web run test:e2e`: six passed. ESLint and diff checks passed.
+- Linux dependency installation and the full remote job remain to verify in the PR.
+
+## Review (2026-09-05)
+
+**Verdict**: Local review passed; awaiting the pull-request CI run.
+
+Reviewed workspace resolution, build-before-preview ordering, failure propagation,
+deployment gating, focused-test prevention and bounded synthetic-data artifacts.
+No code blockers found. Close after remote execution verifies the Linux CI path.
+
+## Grounding
+
+- [Playwright GitHub Actions setup](https://playwright.dev/docs/ci-intro)
