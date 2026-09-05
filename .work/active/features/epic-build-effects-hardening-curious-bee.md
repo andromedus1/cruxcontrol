@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-curious-bee
 kind: feature
-stage: review
+stage: done
 tags: [ui, ble]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-seamless-loops]
@@ -165,3 +165,11 @@ committed snapshot passes lint/typecheck/build, 513 unit tests (one existing opt
 private-image test skipped), and all 8 real browser scenarios including exact ordered
 Body/Wings persistence. Standard review needs no second pass. GitHub run 33999011346
 is checking this corrected snapshot before final done transition.
+
+## Review closure
+
+Approved after one independent standard review and verification of every accepted
+finding. GitHub run33999011346 at972d04c passed all web lint/typecheck/unit/build/browser
+and ML checks; deploy skipped by the existing gate. Corrective child is done. Curious
+motion, editable ordered palette persistence and strict versioned codecs are verified;
+physical LED readability remains Andrew’s later dogfooding.
