@@ -22,10 +22,12 @@ account or application server required.
   rather than silently truncated.
 - Save and edit assignment effects and independent background presets, including
   Ocean Tide, Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird
-  Flock, Frogger, and a fading circled inverted pentagram. New presets use 90–150-second
-  closed themed loops; saved v1 recipes keep their original renderer until explicitly
-  upgraded. Semantic route holds remain recognizable and animation capacity is preflighted
-  before board playback, while intentionally empty frames remain valid animation output.
+  Flock, Frogger, a fading circled inverted pentagram, and Curious Bumblebee. Version-2
+  presets default to 90–150-second closed themed loops; Bumblebee adds wandering
+  hover, flight, and dart phases with independently editable Body and Wings colors.
+  Saved v1 recipes keep their original renderer until explicitly upgraded. Semantic route
+  holds remain recognizable and animation capacity is preflighted before board playback,
+  while intentionally empty frames remain valid animation output.
 
 The installed PWA must remain in the foreground while an animation is playing. Page
 visibility loss, disconnect, clear, or leaving the relevant view stops playback safely.
@@ -86,7 +88,9 @@ separate Python project.
   optimistic revisions, lifecycle recovery, portable list snapshots, and offline use.
 - A version-dispatched pure frame engine drives both screen preview and BLE output. It
   preserves v1 snapshots, uses prepared definition geometry and per-group held-frame/path
-  reuse for v2, and leaves saved recipes editable as the preset library evolves.
+  reuse for v2, and leaves saved recipes editable as the preset library evolves. Stable
+  target samples carry tide bands and spiral geometry through loop joins; actor ordering
+  and Pong paddle contacts remain coherent when direction reverses.
 - API-2 and API-3 codecs, Web Bluetooth transport, latest-frame controller arbitration,
   and the existing capacity policy sit behind typed boundaries. V2 decorative colors avoid
   exact encoded role colors and black after API-2 conversion; this is byte-level protection,

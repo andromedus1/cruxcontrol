@@ -79,10 +79,14 @@ feature item bodies in `.work/`, not here. Capabilities are in
    adapters own future source-native encoding and optional publication. Versioned effect
    groups share one two-pass pure frame engine: assignment effects render first, procedural
    spatial layers target definition geometry without fake assignments, and semantic roles
-   are reasserted last. Version 1 dispatch preserves existing saved recipes; the ten
-   version-2 spatial presets use 90–150-second closed themed trajectories, and explicit
+   are reasserted last. Version 1 dispatch preserves existing saved recipes; version-2
+   spatial presets default to 90–150-second closed themed trajectories, and explicit
    upgrades preserve authored settings except the version and max(old period, new default).
    Prepared geometry and bounded per-group held-frame/path reuse avoid repeated spatial work.
+   The ten established backgrounds plus Curious Bumblebee are v2 presets; the bee uses a
+   seeded six-stop hover/flight/dart tour and independent body/wing palette slots. Stable
+   tide/spiral samples carry their target bands through loop joins, reverse paths retain
+   actor ordering, and Pong plans each paddle to its own wall contact.
    API-2 decorative colors avoid exact encoded role colors and black after quantization; this
    protects encoded bytes rather than promising perceptual contrast. Saved recipe snapshots,
    dynamic target masks, deterministic footprints, and a conservative reserve plan feed the
@@ -90,8 +94,9 @@ feature item bodies in `.work/`, not here. Capabilities are in
    only explicit stop/clear/disconnect/visibility cancellation ends playback. The
    snapshot-backed spatial registry contains Ocean Tide, Tie-dye Spiral, Matrix Rain,
    Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger, and a fading circled inverted
-   pentagram. Browser playback is foreground-only and leaving the relevant view cancels
-   scheduling rather than relying on suspended timers.
+   pentagram and Curious Bumblebee. Browser playback is foreground-only; an empty spatial
+   scene is a valid animation frame, while direct clear, stop, disconnect, visibility loss,
+   or leaving the relevant view cancels scheduling rather than relying on suspended timers.
 8. **Screenshot Import** — a local-only Kilter Android Fullride adapter hashes and
    analyzes selected PNGs sequentially, maps detected role rings through the immutable
    board definition, and presents an editable review before using the existing climb

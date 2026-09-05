@@ -93,8 +93,11 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Explicit Light Draft and opt-in, default-off Live Preview reuse the board controller.
 - Add editable assignment effects and independent spatial background presets: Ocean Tide,
   Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger,
-  and a fading circled inverted pentagram. New presets use version-2, closed themed
-  trajectories with 90–150-second defaults. Version-1 saved recipes remain on their
+  a fading circled inverted pentagram, and Curious Bumblebee. All eleven presets use
+  version-2, closed themed trajectories with 90–150-second defaults. Bumblebee is v2-only:
+  it provides a seeded six-stop, 120-second tour with hover, flight, and dart phases plus
+  independently editable Body and Wings palette slots; malformed or version-1 bee recipes
+  are rejected by the strict codecs. Version-1 saved recipes remain on their
   original renderer until the user explicitly upgrades them; an upgrade preserves the
   authored settings and changes only the recipe version and period to the maximum of
   the old period and the new preset default. Presets default to unused holds, can target
@@ -106,6 +109,10 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   an encoded-byte invariant, not a perceptual color-distinction guarantee. Zero-intensity
   spatial groups emit dark/empty scenes, and intentionally empty animation frames remain
   part of playback until an explicit stop, clear, disconnect, or visibility cancellation.
+  Stable tide and spiral target samples carry color bands and geometry through loop joins;
+  actor ordering remains coherent in reverse paths, and Pong plans each paddle to its own
+  wall contact. A direct clear explicitly cancels playback, while an empty animated frame
+  is sent as preview and does not cancel the animation.
 - Physical animation preflights route/static lights plus every spatial layer's declared
   worst-case reserve before the first write. API-2 playback refuses plans above 20 lights
   with a breakdown; it never thins a saved design. Screen preview and saving remain unrestricted.
@@ -254,7 +261,8 @@ The model mirrors the official Kilter SQLite schema (see
 - The existing local draft schema remains version 4 and the portable playlist envelope
   remains unchanged; embedded effect recipe versions carry this evolution without a
   storage or playlist migration. Deterministic tests cover v1 compatibility, v2 cycle
-  closure, masks, role protection, color encoding, cache reuse, and empty-frame playback.
+  closure, masks, role protection, color encoding, cache reuse, empty-frame playback,
+  Bumblebee Body/Wings editing, reverse actor ordering, and Pong contacts.
 
 ## Constraints & Non-Functional Requirements
 
