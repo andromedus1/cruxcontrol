@@ -1,7 +1,7 @@
 ---
 id: story-browser-regressions-ci
 kind: story
-stage: review
+stage: done
 tags: [infra]
 parent: null
 depends_on: []
@@ -70,3 +70,11 @@ No code blockers found. Close after remote execution verifies the Linux CI path.
 ## Grounding
 
 - [Playwright GitHub Actions setup](https://playwright.dev/docs/ci-intro)
+
+## Completion (2026-09-05)
+
+**Verdict**: Approve. Local implementation review and required remote CI passed.
+
+[PR #12](https://github.com/andromedus1/cruxcontrol/pull/12), commit `a4f6e91`: [CI evidence](https://github.com/andromedus1/cruxcontrol/actions/runs/33983750361). The Linux web job passed lint, typecheck, all 452 unit tests, production build, Chromium/system dependency installation and all six browser scenarios. The ML stub job passed. Deployment was correctly skipped for the PR. No unresolved code or CI blockers remain.
+
+Failure artifact upload is configured but was not exercised by intentionally failing CI; the successful run correctly skipped it.

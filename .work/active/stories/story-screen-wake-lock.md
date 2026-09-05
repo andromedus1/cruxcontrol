@@ -1,7 +1,7 @@
 ---
 id: story-screen-wake-lock
 kind: story
-stage: review
+stage: done
 tags: [ui]
 parent: null
 depends_on: []
@@ -107,3 +107,11 @@ scoped GH_TOKEN. The global CLI account was `andrewclark88`; no login or permiss
 change was needed and the default account remains unchanged. Owner access and the
 origin/main baseline were verified. The review blocker is reduced to the pending PR
 CI run; the local implementation review remains valid.
+
+## Completion (2026-09-05)
+
+**Verdict**: Approve. Local implementation review and required remote CI passed.
+
+[PR #12](https://github.com/andromedus1/cruxcontrol/pull/12), commit `a4f6e91`: [CI evidence](https://github.com/andromedus1/cruxcontrol/actions/runs/33983750361). The Linux web job passed lint, typecheck, all 452 unit tests, production build, Chromium/system dependency installation and all six browser scenarios. The ML stub job passed. Deployment was correctly skipped for the PR. No unresolved code or CI blockers remain.
+
+Physical-phone wake-lock acceptance is deliberately reserved for later dogfooding; native headless refusal and simulated success/recovery are separately documented above. No automatic background playback or storage migration is introduced.
