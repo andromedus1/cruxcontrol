@@ -137,6 +137,9 @@ describe('version 2 spatial loops', () => {
     ));
     expect(new Set(samples.map(({ activity }) => activity))).toEqual(new Set(['hover', 'flight', 'dart']));
     expect(new Set(samples.map(({ wingPose }) => wingPose))).toEqual(new Set(['up', 'down']));
+    expect(samples.at(-1)?.wingPose).toBe(samples[0]?.wingPose);
+    expect(new Set(samples.filter(({ activity }) => activity === 'hover').map(({ center }) => `${center.x}:${center.y}`)).size).toBeGreaterThan(1);
+    expect(new Set(samples.filter(({ activity }) => activity !== 'hover').map(({ center }) => `${center.x}:${center.y}`)).size).toBeGreaterThan(1);
     expect(samples.some(({ center }, index) => index > 0 && center.x !== samples[index - 1]!.center.x)).toBe(true);
     expect(sampleBumblebeePose(bee, spatialLoopClock(bee.periodMs, bee.periodMs))).toEqual(samples[0]);
 

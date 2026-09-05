@@ -150,9 +150,9 @@ export function sampleBumblebeePose(
     });
     activity = plan.flightWeights[segment]! < .72 ? 'dart' : 'flight';
   }
-  // Twelve held poses per complete cycle make the wing movement visible at
-  // the board's 2 FPS cadence without introducing a faster animation clock.
-  const wingPose = Math.floor(fraction(clock.phase) * 12) % 2 === 0 ? 'up' : 'down';
+  // An odd number of held intervals leaves the final sampled pose matching
+  // frame zero, so wing orientation joins cleanly with the closed flight.
+  const wingPose = Math.floor(fraction(clock.phase) * 11) % 2 === 0 ? 'up' : 'down';
   return Object.freeze({ center, activity, segment, progress, heading, wingPose });
 }
 
