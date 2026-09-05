@@ -66,6 +66,16 @@
   padding: var(--space-3) var(--space-4) 0;
 }
 
+.workspace-library-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.workspace-library-actions .button {
+  min-height: 44px;
+}
+
 .workspace-import-actions .button {
   min-height: 44px;
 }
@@ -126,6 +136,14 @@
 
   .workspace-import-actions {
     padding-inline: var(--space-2);
+  }
+
+  .workspace-library-actions {
+    padding-inline: var(--space-2);
+  }
+
+  .workspace-library-actions .button {
+    width: 100%;
   }
 
   .workspace-import-actions .button {

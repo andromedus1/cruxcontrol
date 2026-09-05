@@ -66,7 +66,6 @@ function runtimeWith(
       trash: vi.fn(),
       restore: vi.fn(),
       deletePermanently: vi.fn(),
-      purgeExpiredTrash: vi.fn().mockResolvedValue(0),
       ...overrides,
     },
     playlists: {
@@ -225,7 +224,7 @@ describe('CruxControlWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: /Original/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Move to trash' }));
     await waitFor(() => expect(trash).toHaveBeenCalledWith(original.id, draftRevision(2)));
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('restore it for 30 days'));
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('delete it forever'));
 
     fireEvent.click(screen.getByRole('button', { name: /Trash.*1 climb/ }));
     fireEvent.click(screen.getByRole('button', { name: /Original/ }));
@@ -375,30 +374,16 @@ describe('CruxControlWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Delete Stale trash forever' })).toBeInTheDocument();
   });
 
-  it('reports cleanup failures without hiding successfully loaded climbs', async () => {
-    const finished = persisted(
-      original.id,
-      1,
-      draftContent({ name: 'Visible', status: 'finished' }),
-    );
-    const purgeExpiredTrash = vi
-      .fn<LocalDraftRepository['purgeExpiredTrash']>()
-      .mockRejectedValueOnce(new Error('Cleanup is temporarily unavailable.'))
-      .mockResolvedValueOnce(0);
-    const runtime = runtimeWith({
-      list: listCollections([finished], []),
-      purgeExpiredTrash,
-    });
-
+  it('keeps old Trash rows under explicit Delete forever control during refresh', async () => {
+    const trashed = {
+      ...persisted(original.id, 1, draftContent({ name: 'Old Trash' })),
+      trashedAt: '2026-07-01T00:00:00.000Z',
+    };
+    const runtime = runtimeWith({ list: listCollections([], [trashed]) });
     render(<CruxControlWorkspace runtime={runtime} />);
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Cleanup is temporarily unavailable.',
-    );
-    expect(screen.getByRole('button', { name: /Visible/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Retry refreshing climbs' }));
-    await waitFor(() => expect(purgeExpiredTrash).toHaveBeenCalledTimes(2));
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: /Trash.*1 climb/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Old Trash/ }));
+    expect(screen.getByRole('button', { name: 'Delete forever' })).toBeInTheDocument();
   });
 
   it('adopts Save-a-copy identity so later saves target the copy', async () => {

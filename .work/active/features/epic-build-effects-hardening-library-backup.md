@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-library-backup
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, data]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-curious-bee]
@@ -411,6 +411,17 @@ retention contract, preserving CRUD/conflict test coverage.
   from eight to zero while retaining the two missing playlists.
 - Phone screenshot inspected at 390px; touch actions remain readable and stack without
   clipping. Mock verification is UI-design evidence only, not production recovery testing.
+
+## Implementation notes
+
+- Execution capability: GPT-5.6 Luna xhigh, selected for the cross-store persistence and recovery risk.
+- Review weight: standard, from `.work/CONVENTIONS.md`; stop at feature review for an independent pass.
+- Files changed: `web/src/library-backup/{types,codec,indexeddb-store,service,LibraryBackupDialog,library-backup.css,index}.ts`; runtime/workspace composition; draft repository retention contract; related repository mocks/tests; `web/e2e/library-backup.spec.ts`.
+- Tests added/removed: codec, service, transaction-boundary and dialog tests (12 tests); real Chromium isolated-context download/restore/no-op/conflict test. Removed obsolete automatic-purge assertions and mocks while retaining CRUD, lifecycle and conflict coverage.
+- Simplification: removed the 30-day purge constant and repository method; recovery uses existing v1 IndexedDB object stores and existing stored-record codecs with one small private transaction algorithm shared by both stores.
+- Discrepancies from design: the backup action is a single workspace-level library action visible on all four destinations, which keeps it outside the editor without duplicating controls in each child surface. The browser dialog exposes injectable file/download adapters for deterministic UI tests; production uses native File/Blob APIs.
+- Adjacent issues parked: none. Foundation documentation still needs the current Trash retention and backup scope/limitation claims updated by the root documentation owner.
+- Verification: `npm --prefix web test -- --maxWorkers=2` (80 files / 526 tests), `npm --prefix web run lint`, `npm --prefix web run typecheck`, `npm --prefix web run build`, and `npm --prefix web run test:e2e -- e2e/library-backup.spec.ts` (1 passed).
 
 ## Implementation dispatch
 

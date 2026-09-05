@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LocalClimbViewer } from '../climb-browser/LocalClimbViewer';
 import type { ClimbViewKey } from '../climb-browser/types';
 import { toClimbViewRecord } from '../drafts/to-climb-view-record';
@@ -8,6 +8,7 @@ import { PlaylistMembershipDialog } from '../playlists/PlaylistMembershipDialog'
 import type { LocalPlaylist } from '../playlists/types';
 import { RouteEditorWorkspace } from '../route-editor/RouteEditorWorkspace';
 import { KilterScreenshotImportDialog } from '../screenshot-import/KilterScreenshotImportDialog';
+import { LibraryBackupDialog } from '../library-backup';
 import type { CruxControlRuntime } from './create-runtime';
 import './CruxControlWorkspace.css';
 
@@ -31,7 +32,7 @@ const collectionCopy: Record<
   trash: {
     label: 'Trash',
     emptyTitle: 'Trash is empty',
-    emptyDescription: 'Deleted climbs stay recoverable here for 30 days.',
+    emptyDescription: 'Climbs stay in Trash until you delete them forever.',
   },
 };
 
@@ -92,17 +93,12 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
   const [selectedKey, setSelectedKey] = useState<ClimbViewKey | null>(null);
   const [membershipDraft, setMembershipDraft] = useState<LocalClimbDraft | null>(null);
   const [importingScreenshots, setImportingScreenshots] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
+  const backupButtonRef = useRef<HTMLButtonElement>(null);
   const [error, setError] = useState('');
   const [retryAction, setRetryAction] = useState<RetryAction | null>(null);
 
-  const refresh = useCallback(async () => {
-    let cleanupError = '';
-    try {
-      await runtime.drafts.purgeExpiredTrash();
-    } catch (cause) {
-      cleanupError =
-        cause instanceof Error ? cause.message : 'Could not remove expired Trash climbs.';
-    }
+  const refresh = useCallback(async (throwOnError = false) => {
     try {
       const [active, trash, storedPlaylists] = await Promise.all([
         runtime.drafts.list({ collection: 'active' }),
@@ -111,13 +107,12 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
       ]);
       setDrafts(Object.freeze([...active, ...trash]));
       setPlaylists(storedPlaylists);
-      setError(cleanupError);
-      setRetryAction(
-        cleanupError ? { label: 'Retry refreshing climbs', run: () => void refresh() } : null,
-      );
+      setError('');
+      setRetryAction(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load the local workspace.');
       setRetryAction({ label: 'Retry refreshing climbs', run: () => void refresh() });
+      if (throwOnError) throw cause;
     }
   }, [runtime]);
 
@@ -192,7 +187,7 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
   }
 
   function moveToTrash(draft: LocalClimbDraft) {
-    if (!window.confirm(`Move “${climbName(draft)}” to Trash? You can restore it for 30 days.`)) {
+    if (!window.confirm(`Move “${climbName(draft)}” to Trash? You can restore it until you delete it forever.`)) {
       return Promise.resolve();
     }
     return retryable('move to Trash', async () => {
@@ -317,6 +312,13 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
           </button>
         ))}
       </nav>
+      {runtime.backup && (
+        <div className="workspace-library-actions">
+          <button ref={backupButtonRef} className="button button--secondary" type="button" onClick={() => setBackingUp(true)}>
+            Back up &amp; restore
+          </button>
+        </div>
+      )}
       {error && (
         <div className="workspace-error" role="alert">
           <p>{error}</p>
@@ -477,6 +479,16 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
             setCollection('drafts');
           }}
           onClose={() => setImportingScreenshots(false)}
+        />
+      )}
+      {backingUp && runtime.backup && (
+        <LibraryBackupDialog
+          service={runtime.backup}
+          onClose={() => {
+            setBackingUp(false);
+            queueMicrotask(() => backupButtonRef.current?.focus());
+          }}
+          onRestored={() => refresh(true)}
         />
       )}
     </main>

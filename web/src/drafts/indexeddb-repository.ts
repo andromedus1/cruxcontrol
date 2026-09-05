@@ -19,8 +19,6 @@ import {
   type LocalDraftId,
 } from './types.ts';
 
-const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
-
 function transactionError(transaction: IDBTransaction, message: string): DraftRepositoryError {
   return translateDraftStorageError(transaction.error, message);
 }
@@ -332,47 +330,6 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
           semanticError ??
             transactionError(transaction, 'Could not permanently delete local climb'),
         );
-    });
-  }
-
-  purgeExpiredTrash(): Promise<number> {
-    const expiresAtOrBefore = this.#now().valueOf() - TRASH_RETENTION_MS;
-    let transaction: IDBTransaction;
-    let store: IDBObjectStore;
-    let request: IDBRequest<IDBCursorWithValue | null>;
-    try {
-      transaction = this.#database.transaction(DRAFT_STORE_NAME, 'readwrite');
-      store = transaction.objectStore(DRAFT_STORE_NAME);
-      request = store.openCursor();
-    } catch (cause) {
-      return Promise.reject(
-        translateDraftStorageError(cause, 'Could not remove expired Trash climbs'),
-      );
-    }
-    let deleted = 0;
-    request.onsuccess = () => {
-      const cursor = request.result;
-      if (!cursor) return;
-      try {
-        const draft = decodeStoredDraft(cursor.value);
-        if (
-          draft.trashedAt !== undefined &&
-          new Date(draft.trashedAt).valueOf() <= expiresAtOrBefore
-        ) {
-          deleteStoredDraft(store, draft.id);
-          deleted += 1;
-        }
-      } catch (error) {
-        if (!(error instanceof DraftRepositoryError)) throw error;
-      }
-      cursor.continue();
-    };
-    return new Promise((resolve, reject) => {
-      request.onerror = () =>
-        reject(translateDraftStorageError(request.error, 'Could not remove expired Trash climbs'));
-      transaction.oncomplete = () => resolve(deleted);
-      transaction.onabort = () =>
-        reject(transactionError(transaction, 'Could not remove expired Trash climbs'));
     });
   }
 

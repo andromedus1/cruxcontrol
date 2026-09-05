@@ -18,7 +18,6 @@ export interface LocalDraftRepository {
   trash(id: LocalDraftId, expectedRevision: DraftRevision): Promise<LocalClimbDraft>;
   restore(id: LocalDraftId, expectedRevision: DraftRevision): Promise<LocalClimbDraft>;
   deletePermanently(id: LocalDraftId, expectedRevision: DraftRevision): Promise<void>;
-  purgeExpiredTrash(): Promise<number>;
 }
 
 export interface DraftRepositoryOptions {

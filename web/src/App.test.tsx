@@ -16,7 +16,6 @@ describe('App', () => {
         trash: vi.fn(),
         restore: vi.fn(),
         deletePermanently: vi.fn(),
-        purgeExpiredTrash: vi.fn(),
       },
       playlists: {
         create: vi.fn(),

@@ -85,7 +85,6 @@ function renderLibrary(
     trash: vi.fn(),
     restore: vi.fn(),
     deletePermanently: vi.fn(),
-    purgeExpiredTrash: vi.fn(),
   };
 
   function Harness() {
