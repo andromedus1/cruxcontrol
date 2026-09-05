@@ -41,6 +41,15 @@ standalone plan docs.
 
 <!-- agile-workflow:end -->
 
+## GitHub access
+
+The repository is `andromedus1/cruxcontrol`. When the default GitHub CLI account
+cannot see it, use the existing `andromedus1` login for project commands via a
+command-scoped `GH_TOKEN` from `gh auth token --hostname github.com --user andromedus1`.
+Do not print or persist the token, or change the global active account. For HTTPS Git
+operations, use `gh auth git-credential` as a command-scoped credential helper so Git
+uses the same account. Keep application and infrastructure changes on pull requests.
+
 <!-- ux-ui-design:installed -->
 ## UI/UX Design Convention
 

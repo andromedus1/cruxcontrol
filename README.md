@@ -27,6 +27,13 @@ account or application server required.
 
 The installed PWA must remain in the foreground while an animation is playing. Page
 visibility loss, disconnect, clear, or leaving the relevant view stops playback safely.
+The app-wide **Keep screen awake** toggle prevents automatic screen timeout while the
+app is visible on supported browsers. It starts off for each app session and requests
+screen wakefulness again when you return to the app if still enabled. The device can
+deny or release the request; the control shows its status and offers **Retry screen
+awake**. Keeping the screen on uses more battery. This does not restart playback stopped
+by hiding the app or allow animation in the background or after manually locking the
+screen.
 
 The calibrated Fullride hold photograph is private, user-supplied source material for
 local use. Public distribution requires permission or replacement artwork; the
@@ -82,9 +89,10 @@ separate Python project.
 - The installable Workbox app shell is precached and updates automatically. Animation
   remains deliberately foreground-bound because mobile browsers suspend background work.
 
-The current automated baseline is **68 Vitest files / 443 tests**, plus strict
-TypeScript, ESLint, production PWA build checks, and Playwright Chromium smokes. Physical
-Android/Fullride dogfooding has verified pairing, hold mapping, lighting, and the API-2
+Automated checks include Vitest tests, strict TypeScript, ESLint, production PWA build
+checks, and Playwright Chromium browser workflows. CI runs the browser workflows against
+the production build and retains traces and screenshots from failures for seven days.
+Physical Android/Fullride dogfooding has verified pairing, hold mapping, lighting, and the API-2
 capacity boundary described above; automated transport tests still use deterministic
 fakes for repeatability.
 
