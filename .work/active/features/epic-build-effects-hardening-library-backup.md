@@ -431,3 +431,8 @@ xhigh feature owner carries codec, transaction adapter, service, retention and d
 together because the recovery guarantee spans them. Standard review from project
 conventions; root handles independent review and foundation documentation. No schema
 replacement, destructive restore, identity rewrite or cloud backend is authorized.
+
+Root integration: all 9 production browser scenarios pass after making the two
+existing per-climb Restore selectors exact (the new backup launcher contains the
+same word). This was locator drift, with no production behavior change. Independent
+feature review is running against 7e8c386.

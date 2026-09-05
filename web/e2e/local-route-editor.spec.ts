@@ -89,7 +89,7 @@ test('persists one climb through Draft, Finished, Trash, restore, and reload', a
   await page.getByRole('button', { name: 'Move to trash' }).click();
   await page.getByRole('button', { name: /Trash.*1 climb/ }).click();
   await page.getByRole('button', { name: /Tidal Wave/ }).click();
-  await page.getByRole('button', { name: 'Restore' }).click();
+  await page.getByRole('button', { name: 'Restore', exact: true }).click();
 
   await page.getByRole('button', { name: /My Climbs.*1 climb/ }).click();
   await expect(page.getByRole('button', { name: /Tidal Wave/ })).toBeVisible();
@@ -183,7 +183,7 @@ test('persists multi-list membership, manual order, and Trash-safe resolution', 
 
   await page.getByRole('button', { name: /Trash.*1 climb/ }).click();
   await page.getByRole('button', { name: /Tidal Wave/ }).click();
-  await page.getByRole('button', { name: 'Restore' }).click();
+  await page.getByRole('button', { name: 'Restore', exact: true }).click();
   await expect(page.getByRole('button', { name: /My Climbs.*2 climbs/ })).toBeVisible();
   await page.reload();
   await page.getByRole('button', { name: /Lists.*2 lists/ }).click();
