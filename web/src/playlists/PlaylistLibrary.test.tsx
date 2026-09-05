@@ -128,6 +128,9 @@ describe('PlaylistLibrary', () => {
       await screen.findByRole('button', { name: /Weekend projects.*0 climbs/ }),
     ).toBeInTheDocument();
 
+    // The selector renders before the selected record hydrates the edit form.
+    // Wait for that form state before simulating the next user interaction.
+    await waitFor(() => expect(screen.getByLabelText('List name')).toHaveValue('Weekend projects'));
     fireEvent.change(screen.getByLabelText('List name'), {
       target: { value: 'Saturday projects' },
     });
@@ -140,6 +143,7 @@ describe('PlaylistLibrary', () => {
       expect.objectContaining({ name: 'Saturday projects', notes: 'Warm up first.' }),
     );
 
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     fireEvent.click(screen.getByRole('button', { name: 'Delete list' }));
     await waitFor(() => expect(repository.delete).toHaveBeenCalledOnce());
