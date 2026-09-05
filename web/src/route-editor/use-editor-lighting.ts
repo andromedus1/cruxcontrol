@@ -58,8 +58,6 @@ export function useEditorLighting({
   assignmentsRef.current = assignments;
   effectGroupsRef.current = effectGroups;
 
-  useEffect(() => controller?.subscribe(setControllerState), [controller]);
-
   const cancelAnimation = useCallback(() => {
     animationSequence.current += 1;
     recentBatchMs.current = [];
@@ -70,6 +68,13 @@ export function useEditorLighting({
       setEffectiveAnimationFps(null);
     }
   }, []);
+
+  useEffect(() => controller?.subscribe((state) => {
+    // Observe the operation synchronously: React may batch clearing and idle
+    // notifications into one render. Empty animation previews use previewing.
+    if (state.operation === 'clearing') cancelAnimation();
+    setControllerState(state);
+  }), [cancelAnimation, controller]);
 
   useEffect(() => {
     mounted.current = true;

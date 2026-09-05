@@ -280,7 +280,7 @@ describe('useEditorLighting', () => {
 
   it('stops and settles the static base scene, then schedules no later frames', async () => {
     vi.useFakeTimers();
-    const transport = new MockBoardByteTransport();
+    const transport = new MockBoardByteTransport({ devices: [{ id: 'api2', name: 'Kilter Board' }] });
     const controller = createFullrideLightController({
       definition: kilterFullride7x10Definition,
       transport,
@@ -300,6 +300,7 @@ describe('useEditorLighting', () => {
       await vi.advanceTimersByTimeAsync(100);
     });
     await act(async () => {
+      expect(result.current.animationRunning).toBe(true);
       await result.current.stopAnimation();
     });
     expect(result.current.animationRunning).toBe(false);
@@ -313,9 +314,9 @@ describe('useEditorLighting', () => {
     expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(writes);
   });
 
-  it('cancels animation on visibility loss, disconnect, and unmount', async () => {
+  it('cancels active animation on visibility loss, disconnect, direct clear, and unmount', async () => {
     vi.useFakeTimers();
-    const transport = new MockBoardByteTransport();
+    const transport = new MockBoardByteTransport({ devices: [{ id: 'api2', name: 'Kilter Board' }] });
     const controller = createFullrideLightController({
       definition: kilterFullride7x10Definition,
       transport,
@@ -331,6 +332,7 @@ describe('useEditorLighting', () => {
     await act(async () => {
       await view.result.current.lightDraft();
     });
+    expect(view.result.current.animationRunning).toBe(true);
     Object.defineProperty(document, 'hidden', { configurable: true, value: true });
     act(() => document.dispatchEvent(new Event('visibilitychange')));
     expect(view.result.current.animationRunning).toBe(false);
@@ -339,6 +341,7 @@ describe('useEditorLighting', () => {
     await act(async () => {
       await view.result.current.lightDraft();
     });
+    expect(view.result.current.animationRunning).toBe(true);
     act(() => transport.simulateRemoteDisconnect());
     expect(view.result.current.animationRunning).toBe(false);
 
@@ -348,13 +351,19 @@ describe('useEditorLighting', () => {
     await act(async () => {
       await view.result.current.lightDraft();
     });
+    expect(view.result.current.animationRunning).toBe(true);
     await act(async () => {
       await controller.clear();
     });
     expect(view.result.current.animationRunning).toBe(false);
+    const clearedWrites = transport.operations.filter(({ type }) => type === 'write').length;
+    await act(async () => { await vi.advanceTimersByTimeAsync(2_000); });
+    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(clearedWrites);
+    expect(controller.getState().lastAppliedScene).toEqual([]);
     await act(async () => {
       await view.result.current.lightDraft();
     });
+    expect(view.result.current.animationRunning).toBe(true);
     const writes = transport.operations.filter(({ type }) => type === 'write').length;
     view.unmount();
     await act(async () => {
