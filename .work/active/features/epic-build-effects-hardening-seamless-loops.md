@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-seamless-loops
 kind: feature
-stage: review
+stage: implementing
 tags: [ui, ble]
 parent: epic-build-effects-hardening
 depends_on: []
@@ -371,3 +371,22 @@ PR #13 head cc24bbd (verified implementation af31755 plus bee design readiness) 
 web lint/typecheck/unit/build/browser and ML stub checks green. Deployment skipped on
 this PR as configured. Independent feature review is running against immutable af31755
 in a separate worktree; CI green alone is not feature approval.
+
+## Review (2026-09-05)
+
+**Verdict**: Request changes
+**Weight/pass**: standard, one balanced independent pass, same-harness fresh-context
+Sol xhigh against immutable af31755. Different-class peer was unavailable due expired
+OAuth. Targeted 84-test review subset and CI green do not waive actor correctness gaps.
+
+**Blockers accepted**: reverse Snake/Pac-Man relative actor ordering; fixed Pac-Man
+protagonist/ghost palette roles; actual Pong paddle/ball impact alignment; explicit
+controller-clear cancellation with a non-vacuous measured-device regression; v2 theme
+join/state verification; SPEC v1/v2 circuit wording. Tracked in child
+`epic-build-effects-hardening-seamless-loops-review-fixes` and the concurrent bounded
+foundation-doc update. All are receiver-confirmed against source and the feature contract.
+**Important/nits/rejected**: none.
+
+Root owns named fixes, coordinating the shared v2 renderer with the active bee owner.
+After the fixes and integrated checks pass, standard review closes by verification,
+without another independent review. No feature approval until all named blockers close.
