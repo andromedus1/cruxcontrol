@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { AppUpdateService, AppUpdateSnapshot } from './update-service.ts';
 import { AppUpdateControl } from './AppUpdateControl.tsx';
@@ -36,14 +36,14 @@ const waiting: AppUpdateSnapshot = {
 };
 
 describe('AppUpdateControl', () => {
-  it('explains a board blocker and offers an explicit disconnect action', () => {
+  it('explains a board blocker and offers an explicit disconnect action', async () => {
     const updateService = service(waiting);
     const disconnect = vi.fn();
     render(<AppUpdateControl service={updateService} boardConnected onDisconnectBoard={disconnect} />);
     expect(screen.getByText(waiting.message)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Update and reload' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect board' }));
-    expect(disconnect).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(disconnect).toHaveBeenCalledTimes(1));
   });
 
   it('keeps an accessible update entry after Later dismisses the banner', () => {
