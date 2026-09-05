@@ -301,23 +301,6 @@ function project(
   return Object.freeze(output);
 }
 
-function selectByScore(
-  points: readonly SpatialPoint[],
-  score: (point: SpatialPoint) => number,
-  group: SpatialLightEffectGroup,
-  definition: BoardDefinition,
-  phase: number,
-): LightScene {
-  const selected = points
-    .map((point) => ({ point, score: score(point) }))
-    .filter(({ score: value }) => Number.isFinite(value))
-    .sort((a, b) => a.score - b.score || a.point.order - b.point.order)
-    .slice(0, Math.min(group.footprint, points.length));
-  return Object.freeze(selected.flatMap(({ point }, index) => {
-    const color = colorAt(definition, group, phase, index / Math.max(1, selected.length));
-    return color === 0 ? [] : [Object.freeze({ placementId: point.id, color })];
-  }));
-}
 
 function pathFor(
   geometry: PreparedSpatialGeometry,
@@ -601,18 +584,36 @@ export function renderSpatialGroupV2(
     case 'pentagram': scene = pentagramScene(definition, group, points, clock); break;
     case 'ocean-tide': {
       const direction = recipe.direction === 'in' ? 1 : -1;
-      const wave = .5 + direction * (.3 * Math.sin(Math.PI * 2 * 3 * clock.phase) + .08 * Math.sin(Math.PI * 2 * 6 * clock.phase));
-      scene = selectByScore(points, (point) => Math.abs(point.y - wave) + hash(`ocean-${point.id}`, group.seed) * recipe.foam * .08, group, definition, clock.phase);
+      const envelope = .85 + .15 * Math.cos(Math.PI * 2 * clock.phase);
+      const wave = .5 + direction * envelope * (.3 * Math.sin(Math.PI * 2 * 3 * clock.phase) + .08 * Math.sin(Math.PI * 2 * 6 * clock.phase));
+      // Stable samples carry their own color along the shoreline. Ranking all
+      // holds by distance made unrelated pixels trade places and hues each tick.
+      const count = Math.min(group.footprint, points.length);
+      const targets = Array.from({ length: count }, (_, index) => {
+        const x = (index + .5) / count;
+        const foam = recipe.foam * .08 * Math.sin(Math.PI * 2 * (x * 3 + clock.phase * 9 + hash(`ocean-${index}`, group.seed)));
+        return { x, y: wave + foam, color: colorAt(definition, group, clock.phase, x * .5) };
+      });
+      scene = project(targets, points, group.footprint);
       break;
     }
     case 'tie-dye-spiral': {
       const signed = recipe.direction === 'clockwise' ? 1 : -1;
-      scene = selectByScore(points, (point) => {
-        const angle = Math.atan2(point.y - .5, point.x - .5) / (Math.PI * 2);
-        const radius = Math.hypot(point.x - .5, point.y - .5);
-        const breathingRadius = radius + .055 * Math.sin(Math.PI * 2 * 2 * clock.phase) + .02 * Math.sin(Math.PI * 2 * 4 * clock.phase);
-        return Math.abs(fraction(angle * recipe.arms + breathingRadius * 2.2 - signed * clock.phase * recipe.arms));
-      }, group, definition, clock.phase);
+      const count = Math.min(group.footprint, points.length);
+      const breathing = 1 + .12 * Math.sin(Math.PI * 2 * 2 * clock.phase) + .04 * Math.sin(Math.PI * 2 * 4 * clock.phase);
+      const targets = Array.from({ length: count }, (_, index) => {
+        const arm = index % recipe.arms;
+        const ring = Math.floor(index / recipe.arms);
+        const rings = Math.ceil((count - arm) / recipe.arms);
+        const radius = (.08 + .3 * (ring + .5) / rings) * breathing;
+        const angle = Math.PI * 2 * (arm / recipe.arms + radius * 2.2 - signed * clock.phase * 3);
+        return {
+          x: .5 + radius * Math.cos(angle),
+          y: .5 + radius * Math.sin(angle),
+          color: colorAt(definition, group, clock.phase, index / count),
+        };
+      });
+      scene = project(targets, points, group.footprint);
       break;
     }
     case 'matrix-rain': {
