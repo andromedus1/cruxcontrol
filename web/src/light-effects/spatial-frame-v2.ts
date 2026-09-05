@@ -16,6 +16,23 @@ export interface SpatialLoopClock {
   readonly effectivePeriodMs: number;
 }
 
+export interface BumblebeePose {
+  readonly center: Readonly<{ x: number; y: number }>;
+  readonly activity: 'hover' | 'flight' | 'dart';
+  readonly segment: number;
+  /** Progress through the current hover or flight, in the range 0..1. */
+  readonly progress: number;
+  readonly heading: Readonly<{ x: number; y: number }>;
+  readonly wingPose: 'up' | 'down';
+}
+
+interface BumblebeePlan {
+  readonly waypoints: readonly Readonly<{ x: number; y: number }>[];
+  readonly flightWeights: readonly number[];
+  readonly curvePhases: readonly number[];
+  readonly hoverFraction: number;
+}
+
 const positiveModulo = (value: number, modulo: number) => ((value % modulo) + modulo) % modulo;
 const fraction = (value: number) => positiveModulo(value, 1);
 const triangle = (value: number) => Math.abs(fraction(value) * 2 - 1);
@@ -24,6 +41,118 @@ function hash(value: string, seed: number): number {
   let h = seed | 0;
   for (const character of value) h = Math.imul(h ^ character.codePointAt(0)!, 16777619);
   return (h >>> 0) / 0x1_0000_0000;
+}
+
+const BUMBLEBEE_BASE_WAYPOINTS = Object.freeze([
+  { x: .22, y: .25 },
+  { x: .61, y: .19 },
+  { x: .82, y: .43 },
+  { x: .69, y: .78 },
+  { x: .35, y: .73 },
+  { x: .17, y: .50 },
+] as const);
+
+const clampUnitInterior = (value: number) => Math.max(.1, Math.min(.9, value));
+
+/** Six deterministic interior stops used by every complete bumblebee tour. */
+export function bumblebeeWaypoints(seed: number): readonly Readonly<{ x: number; y: number }>[] {
+  if (!Number.isSafeInteger(seed)) throw new RangeError('Bumblebee seed must be a safe integer');
+  return Object.freeze(BUMBLEBEE_BASE_WAYPOINTS.map((point, index) => Object.freeze({
+    x: clampUnitInterior(point.x + (hash(`bumblebee-waypoint-x-${index}`, seed) - .5) * .08),
+    y: clampUnitInterior(point.y + (hash(`bumblebee-waypoint-y-${index}`, seed) - .5) * .08),
+  })));
+}
+
+const bumblebeePlanCache = new WeakMap<SpatialLightEffectGroup, BumblebeePlan>();
+
+function bumblebeePlanFor(group: SpatialLightEffectGroup): BumblebeePlan {
+  const cached = bumblebeePlanCache.get(group);
+  if (cached) return cached;
+  if (group.recipe.kind !== 'bumblebee') throw new TypeError('Bumblebee plan requested for a different spatial recipe');
+  const hoverFraction = group.recipe.hoverFraction;
+  if (!Number.isFinite(hoverFraction) || hoverFraction < 0 || hoverFraction > .8) {
+    throw new RangeError('Bumblebee hover fraction must be finite and between 0 and 0.8');
+  }
+  // Fixed, seeded weights keep the tour authored and closed while making three
+  // of the six flights noticeably quicker darts.
+  const bases = [.62, .96, .56, .88, .66, .48] as const;
+  const flightWeights = Object.freeze(bases.map((base, index) => Math.max(.35, Math.min(1.05,
+    base + (hash(`bumblebee-flight-${index}`, group.seed) - .5) * .12))));
+  const plan = Object.freeze({
+    waypoints: bumblebeeWaypoints(group.seed),
+    flightWeights,
+    curvePhases: Object.freeze(flightWeights.map((_, index) => hash(`bumblebee-curve-${index}`, group.seed) * Math.PI * 2)),
+    hoverFraction,
+  });
+  bumblebeePlanCache.set(group, plan);
+  return plan;
+}
+
+/**
+ * Sample the authored bee motion at a v2 clock position. The hover envelope
+ * and eased flight both have zero displacement and velocity at their joins,
+ * including the final flight back to waypoint zero.
+ */
+export function sampleBumblebeePose(
+  group: SpatialLightEffectGroup,
+  clock: Pick<SpatialLoopClock, 'phase' | 'frame' | 'frameCount'>,
+): BumblebeePose {
+  if (group.recipe.kind !== 'bumblebee') throw new TypeError('Bumblebee pose requested for a different spatial recipe');
+  const plan = bumblebeePlanFor(group);
+  const lengths = plan.flightWeights.map((weight) => weight);
+  const total = lengths.reduce((sum, length) => sum + length, 0);
+  const elapsed = fraction(clock.phase) * total;
+  let cursor = 0;
+  let segment = lengths.length - 1;
+  let offset = lengths[segment]!;
+  for (let index = 0; index < lengths.length; index += 1) {
+    if (elapsed < cursor + lengths[index]! || index === lengths.length - 1) {
+      segment = index;
+      offset = elapsed - cursor;
+      break;
+    }
+    cursor += lengths[index]!;
+  }
+  const start = plan.waypoints[segment]!;
+  const end = plan.waypoints[(segment + 1) % plan.waypoints.length]!;
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const distance = Math.hypot(dx, dy) || 1;
+  const heading = Object.freeze({ x: dx / distance, y: dy / distance });
+  const perpendicular = { x: -heading.y, y: heading.x };
+  const segmentLength = lengths[segment]!;
+  const hoverLength = segmentLength * plan.hoverFraction;
+  const flightLength = segmentLength - hoverLength;
+  let center: Readonly<{ x: number; y: number }>;
+  let activity: BumblebeePose['activity'];
+  let progress: number;
+  if (hoverLength > 0 && offset <= hoverLength) {
+    progress = Math.max(0, Math.min(1, offset / hoverLength));
+    const envelope = Math.sin(Math.PI * progress) ** 2;
+    const phase = plan.curvePhases[segment]!;
+    const wobble = .012 * envelope * Math.sin(Math.PI * 2 * progress + phase);
+    const drift = .006 * envelope * Math.sin(Math.PI * progress + phase * .7);
+    center = Object.freeze({
+      x: start.x + perpendicular.x * wobble + heading.x * drift,
+      y: start.y + perpendicular.y * wobble + heading.y * drift,
+    });
+    activity = 'hover';
+  } else {
+    progress = flightLength <= 0 ? 1 : Math.max(0, Math.min(1, (offset - hoverLength) / flightLength));
+    const eased = progress * progress * (3 - 2 * progress);
+    const curve = Math.sin(Math.PI * progress) ** 2
+      * Math.sin(Math.PI * 2 * progress + plan.curvePhases[segment]!)
+      * (.02 + .012 * hash(`bumblebee-curve-size-${segment}`, group.seed));
+    center = Object.freeze({
+      x: start.x + dx * eased + perpendicular.x * curve,
+      y: start.y + dy * eased + perpendicular.y * curve,
+    });
+    activity = plan.flightWeights[segment]! < .72 ? 'dart' : 'flight';
+  }
+  // Twelve held poses per complete cycle make the wing movement visible at
+  // the board's 2 FPS cadence without introducing a faster animation clock.
+  const wingPose = Math.floor(fraction(clock.phase) * 12) % 2 === 0 ? 'up' : 'down';
+  return Object.freeze({ center, activity, segment, progress, heading, wingPose });
 }
 
 export function spatialLoopClock(periodMs: number, elapsedMs: number): SpatialLoopClock {
@@ -344,6 +473,25 @@ function birdScene(definition: BoardDefinition, group: SpatialLightEffectGroup, 
   return project(targets, points, group.footprint);
 }
 
+function bumblebeeScene(definition: BoardDefinition, group: SpatialLightEffectGroup, points: readonly SpatialPoint[], clock: SpatialLoopClock): LightScene {
+  const recipe = group.recipe;
+  if (recipe.kind !== 'bumblebee') return Object.freeze([]);
+  const pose = sampleBumblebeePose(group, clock);
+  const { center, heading } = pose;
+  const perpendicular = { x: -heading.y, y: heading.x };
+  const bodyColor = scaledColor(definition, group, group.palette[0]!);
+  const wingColor = scaledColor(definition, group, group.palette[1] ?? group.palette[0]!);
+  const wingLift = pose.wingPose === 'up' ? .012 : -.012;
+  const targets: Target[] = [
+    { x: center.x + heading.x * .026, y: center.y + heading.y * .026, color: bodyColor },
+    { x: center.x, y: center.y, color: bodyColor },
+    { x: center.x - heading.x * .026, y: center.y - heading.y * .026, color: bodyColor },
+    { x: center.x + perpendicular.x * .036 + heading.x * wingLift, y: center.y + perpendicular.y * .036 + heading.y * wingLift, color: wingColor },
+    { x: center.x - perpendicular.x * .036 - heading.x * wingLift, y: center.y - perpendicular.y * .036 - heading.y * wingLift, color: wingColor },
+  ];
+  return project(targets, points, group.footprint);
+}
+
 function froggerScene(definition: BoardDefinition, group: SpatialLightEffectGroup, points: readonly SpatialPoint[], clock: SpatialLoopClock): LightScene {
   const recipe = group.recipe;
   if (recipe.kind !== 'frogger') return Object.freeze([]);
@@ -453,6 +601,7 @@ export function renderSpatialGroupV2(
     case 'beach-ball': scene = ballScene(definition, group, points, clock); break;
     case 'pong': scene = pongScene(definition, group, points, clock); break;
     case 'bird-flock': scene = birdScene(definition, group, points, clock); break;
+    case 'bumblebee': scene = bumblebeeScene(definition, group, points, clock); break;
     case 'frogger': scene = froggerScene(definition, group, points, clock); break;
     case 'pentagram': scene = pentagramScene(definition, group, points, clock); break;
     case 'ocean-tide': {
