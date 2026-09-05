@@ -167,3 +167,7 @@ and https://developer.mozilla.org/en-US/docs/Web/API/LockManager/request (callba
 shared/exclusive compatibility and ifAvailable null result). Installed Workbox template
 `node_modules/workbox-build/build/templates/sw-template.js` confirms SKIP_WAITING invokes
 skipWaiting without an application acknowledgement or cancellation protocol.
+
+Mock verification: both update options checked in Chromium at 390px after the advisory;
+connected state blocks apply, explicit Disconnect enables it, editor state blocks it,
+and neither option has JavaScript errors or horizontal overflow.
