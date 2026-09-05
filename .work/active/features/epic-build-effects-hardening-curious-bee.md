@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-curious-bee
 kind: feature
-stage: drafting
+stage: implementing
 tags: [ui, ble]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-seamless-loops]
@@ -56,9 +56,9 @@ wing poses readable at 2 FPS. No free-running random destination reseeding or en
 
 1. `web/src/board-renderer/types.ts`: extend `SpatialEffectKind` and `SpatialRecipe` with
    `{ readonly kind: 'bumblebee'; readonly hoverFraction: number }`, finite 0–0.8 inclusive.
-   A fraction sets the share of each visit spent hovering. Default0.4; ordinary effect
-   period/intensity/footprint/target/seed fields remain unchanged. Default period120000ms,
-   footprint5, two-color palette. No database or portable-envelope version bump.
+   A fraction sets the share of each visit spent hovering. Default 0.4; ordinary effect
+   period/intensity/footprint/target/seed fields remain unchanged. Default period 120000ms,
+   footprint 5, two-color palette. No database or portable-envelope version bump.
 2. `web/src/light-effects/spatial-frame-v2.ts` (or a narrow `bumblebee-frame.ts` helper if
    existing module size warrants it): `sampleBumblebeePose(group, clock)` yields center,
    current activity and wing pose as pure geometry. Use the current seeded helper; fix
@@ -84,7 +84,7 @@ wing poses readable at 2 FPS. No free-running random destination reseeding or en
 
 ## Acceptance and tests
 
-- Curious flight/hover/dart pattern has a continuous complete120s default circuit,
+- Curious flight/hover/dart pattern has a continuous complete 120s default circuit,
   repeats deterministically for multiple seeds and periods, and changes meaningfully
   with hoverFraction. Test adjacent endpoint poses and actual moving+hovering intervals,
   not merely frame(t)==frame(t+period).
@@ -114,3 +114,16 @@ cannot show the full five-light shape, and must never trigger extra lights. Keep
 mock behavior illustrative, verify actual production projection. Prepared before upstream
 code settles; feature stays drafting until seamless-loops has green integration evidence.
 One feature worker, no child stories needed for this cohesive registry/renderer/UI addition.
+
+## Design readiness (2026-09-05)
+
+Upstream seamless-loops is at review with 484 unit tests and seven browser scenarios,
+lint/typecheck/build green at af31755. Reconciled against the actual v2 dispatcher,
+private project/scaledColor helpers, WeakMap frame/geometry/path preparation and strict
+v1/v2 readers. Add the bee as a v2 case using a narrow pure pose helper; keep shared
+color/projection private unless a real second renderer consumer requires extraction.
+Existing legacy tests enumerate ten presets and must explicitly keep that original
+kind list when the new registry entry appears; never manufacture a version-1 bee to
+satisfy those fixtures. No directional questions remain: curious and editable body/wing
+colors were selected by Andrew. One Luna xhigh owner, standard independent feature review;
+no child stories because this is a cohesive addition to the now-verified shared machinery.
