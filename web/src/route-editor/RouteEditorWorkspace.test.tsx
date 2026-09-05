@@ -143,12 +143,26 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByLabelText('Hover fraction')).toHaveValue(0.4);
     fireEvent.click(screen.getByRole('radio', { name: /Advanced Light/ }));
     fireEvent.change(screen.getByLabelText('red channel'), { target: { value: '7' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Set Body to current color' }));
+    fireEvent.change(screen.getByLabelText('green channel'), { target: { value: '5' } });
     fireEvent.change(screen.getByLabelText('blue channel'), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Set Body to current color' }));
+    fireEvent.change(screen.getByLabelText('red channel'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('green channel'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('blue channel'), { target: { value: '3' } });
     fireEvent.click(screen.getByRole('button', { name: 'Set Wings to current color' }));
     const colors = screen.getAllByRole('button', { name: /Remove color/ }).map((button) => button.getAttribute('aria-label'));
-    expect(colors).toHaveLength(2);
-    expect(new Set(colors).size).toBe(2);
+    expect(colors).toEqual(['Remove color #FFB600', 'Remove color #4924FF']);
+  });
+
+  it('keeps typed bee hover values inside the supported range without crashing preview', () => {
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Curious bumblebee 5 lights/ }));
+    fireEvent.change(screen.getByLabelText('Hover fraction'), { target: { value: '0.9' } });
+    expect(screen.getByLabelText('Hover fraction')).toHaveValue(.8);
+    fireEvent.change(screen.getByLabelText('Hover fraction'), { target: { value: '-1' } });
+    expect(screen.getByLabelText('Hover fraction')).toHaveValue(0);
+    fireEvent.change(screen.getByLabelText('Hover fraction'), { target: { value: '0.35' } });
+    expect(screen.getByLabelText('Hover fraction')).toHaveValue(.35);
   });
 
   it('shows and explicitly adopts the longer seamless loop for a saved v1 effect', () => {

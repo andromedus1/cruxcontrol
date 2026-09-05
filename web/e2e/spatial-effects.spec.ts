@@ -78,12 +78,11 @@ test('adds a curious bumblebee, edits Body and Wings, and reloads its saved reci
       seed: expect.any(Number),
       periodMs: 120_000,
       footprint: 5,
-      palette: expect.arrayContaining([expect.any(Number)]),
+      palette: [244, 71],
     }),
   ]);
   const palette = (saved?.effectGroups as Array<{ palette: number[] }>)[0]?.palette;
-  expect(palette).toHaveLength(2);
-  expect(palette?.[0]).not.toBe(palette?.[1]);
+  expect(palette).toEqual([244, 71]);
 
   await page.getByRole('button', { name: 'Back' }).click();
   await page.reload();
@@ -94,6 +93,10 @@ test('adds a curious bumblebee, edits Body and Wings, and reloads its saved reci
   await expect(page.getByLabel('Hover fraction')).toHaveValue('0.4');
   await expect(page.getByRole('button', { name: 'Set Body to current color' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Set Wings to current color' })).toBeVisible();
+  const [reopened] = await storedDrafts(page);
+  expect((reopened?.effectGroups as Array<{ palette: number[] }>)[0]?.palette).toEqual([244, 71]);
+  await expect(page.getByRole('button', { name: 'Remove color #FFB600' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove color #4924FF' })).toBeVisible();
 });
 
 test('loads a saved original loop and persists explicit seamless adoption', async ({ page }) => {

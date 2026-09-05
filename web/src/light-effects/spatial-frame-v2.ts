@@ -119,8 +119,8 @@ export function sampleBumblebeePose(
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const distance = Math.hypot(dx, dy) || 1;
-  const heading = Object.freeze({ x: dx / distance, y: dy / distance });
-  const perpendicular = { x: -heading.y, y: heading.x };
+  const travelHeading = Object.freeze({ x: dx / distance, y: dy / distance });
+  const perpendicular = { x: -travelHeading.y, y: travelHeading.x };
   const segmentLength = lengths[segment]!;
   const hoverLength = segmentLength * plan.hoverFraction;
   const flightLength = segmentLength - hoverLength;
@@ -134,8 +134,8 @@ export function sampleBumblebeePose(
     const wobble = .012 * envelope * Math.sin(Math.PI * 2 * progress + phase);
     const drift = .006 * envelope * Math.sin(Math.PI * progress + phase * .7);
     center = Object.freeze({
-      x: start.x + perpendicular.x * wobble + heading.x * drift,
-      y: start.y + perpendicular.y * wobble + heading.y * drift,
+      x: start.x + perpendicular.x * wobble + travelHeading.x * drift,
+      y: start.y + perpendicular.y * wobble + travelHeading.y * drift,
     });
     activity = 'hover';
   } else {
@@ -150,6 +150,17 @@ export function sampleBumblebeePose(
     });
     activity = plan.flightWeights[segment]! < .72 ? 'dart' : 'flight';
   }
+  // Arrive facing along the incoming flight, then turn through the shortest
+  // angle while hovering. With little/no hover, finish the turn during departure
+  // so zero-hover tours keep a continuous orientation at every waypoint too.
+  const previous = plan.waypoints[(segment + plan.waypoints.length - 1) % plan.waypoints.length]!;
+  const incomingAngle = Math.atan2(start.y - previous.y, start.x - previous.x);
+  const outgoingAngle = Math.atan2(dy, dx);
+  const angleDelta = Math.atan2(Math.sin(outgoingAngle - incomingAngle), Math.cos(outgoingAngle - incomingAngle));
+  const turnProgress = Math.min(1, offset / (segmentLength * Math.max(.25, plan.hoverFraction)));
+  const turnEase = turnProgress * turnProgress * (3 - 2 * turnProgress);
+  const angle = incomingAngle + angleDelta * turnEase;
+  const heading = Object.freeze({ x: Math.cos(angle), y: Math.sin(angle) });
   // An odd number of held intervals leaves the final sampled pose matching
   // frame zero, so wing orientation joins cleanly with the closed flight.
   const wingPose = Math.floor(fraction(clock.phase) * 11) % 2 === 0 ? 'up' : 'down';
