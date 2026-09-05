@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening
 kind: epic
-stage: drafting
+stage: implementing
 tags: [ui, ble, data, infra]
 parent: null
 depends_on: []
@@ -21,7 +21,7 @@ background effect that flies and hovers around the board. Improve the
 existing application incrementally. No rebuild is justified by the review. His existing
 climbs and playlists are irreplaceable acceptance data: preserve their identities,
 relationships, content, Trash state and saved effect recipes through any migration.
-This epic records the accepted work; feature decomposition and recipe design remain to do.
+The child features below own delivery and inherit the preservation requirements.
 
 ## Delivery priority
 
@@ -134,8 +134,8 @@ rendering framework or replacement storage system solely to add these improvemen
 
 ## Directional alignment — only questions
 
-The interactive pass is in progress; no child decomposition or stage advancement has
-occurred. Andrew is considering an autopilot drain of this work order after alignment.
+Andrew authorized an autopilot drain after selecting the curious bee and accepting
+the recommended next-work direction.
 Limit that drain to this epic, respecting animation-first and backup-second sequencing;
 unrelated active epics are outside the requested work order.
 
@@ -148,13 +148,13 @@ unrelated active epics are outside the requested work order.
 - **Existing effects:** Andrew reaffirmed that the seamless-loop improvements cover
   the existing background presets as well as the new bee.
 
-Pending user choices (recommendations are proposals, not accepted decisions):
+Defaults adopted for the authorized autopilot run:
 
 - **Pacing:** theme-specific sequences, usually 1–3 minutes, with calmer nature and
-  livelier games; alternatives emphasize calm throughout or frequent playful activity.
+  livelier games. Exact periods remain editable.
 - **Saved animation adoption:** preserve saved visual behavior with an explicit upgrade
-  to improved loops; alternative is automatic use of improved loops with saved settings
-  retained. Neither option changes climb holds or playlist memberships.
+  to improved loops. No silent changes to existing saved visual behavior, climb holds
+  or playlist memberships.
 
 Code grounding: spatial poses are held for 500ms; existing persisted periods cap at
 180 seconds. Saved spatial snapshots currently support recipeVersion 1 only. Several
@@ -177,3 +177,40 @@ read-only probe found no additional directional questions beyond the three above
   phone widths: controls work, no JavaScript errors, and no horizontal overflow.
 - Existing themed-loop studies and backup/update UI alignment remain for their design
   passes; the bee comparison is not sign-off on those surfaces.
+
+## Decomposition
+
+Use capability features with sequential implementation ordering. A single global
+rewrite would couple stored-data recovery to animation changes; per-preset features
+would duplicate versioning, palette and frame-cache contracts. Four cohesive features
+keep each review understandable and preserve the user-requested order.
+
+- `epic-build-effects-hardening-seamless-loops` — all existing spatial effects,
+  explicit recipe upgrades, rendering correctness and measured computation reuse;
+  no dependencies.
+- `epic-build-effects-hardening-curious-bee` — editable, persisted curious bee using
+  the verified loop/palette machinery; depends on seamless-loops.
+- `epic-build-effects-hardening-library-backup` — versioned whole-library export and
+  validated non-destructive restore; depends on curious-bee.
+- `epic-build-effects-hardening-safe-updates` — update activation waits for saved edits
+  and stopped playback; depends on library-backup.
+
+### Decomposition risks
+
+Legacy snapshots must not silently change. Keep explicit recipe versions and test
+old readers and exports. All closed-loop state—not just position—must repeat. A
+new palette must be guarded after controller conversion without corrupting saved
+choices. Backup crosses two IndexedDB databases: avoid pretending they have a shared
+atomic transaction; require a recoverable/non-destructive approach with honest failure
+reporting. Waiting service workers must not auto-reload an active editor or board session.
+
+## Autopilot run
+
+Scope: this epic and its descendants only; hardware upgrades and unrelated active/backlog
+work are excluded. Review weight: standard, from `.work/CONVENTIONS.md` (one independent
+pass per feature and aggregate completion). Design runs use the host capability for
+version/persistence contracts; implementation workers use GPT-5.6 Luna at xhigh for
+these multi-module changes per implement-orchestrator. One owner per feature, sequential
+production to respect dependencies; independent review and read-only design preparation
+may overlap. User-facing mockups precede production changes; delegated design resolves
+routine choices using the accepted direction and existing UI patterns.
