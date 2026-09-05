@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-curious-bee
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-seamless-loops]
@@ -156,3 +156,12 @@ Fix the two production blockers and strengthen exact selected-color round trips 
 `epic-build-effects-hardening-curious-bee-review-fixes`. Root owns these isolated files
 while backup proceeds from the already-verified implementation wave. No second review;
 closure is named fix verification plus integrated checks/CI. No rejected findings.
+
+## Fix verification
+
+All accepted findings corrected in 972d04c. Root independently reproduced the input
+crash and four seed orientation failures, then verified the named fixes. Isolated
+committed snapshot passes lint/typecheck/build, 513 unit tests (one existing optional
+private-image test skipped), and all 8 real browser scenarios including exact ordered
+Body/Wings persistence. Standard review needs no second pass. GitHub run 33999011346
+is checking this corrected snapshot before final done transition.
