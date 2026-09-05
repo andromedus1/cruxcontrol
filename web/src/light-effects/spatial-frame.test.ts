@@ -7,7 +7,13 @@ import { renderAnimationFrame } from './frame';
 import { createSpatialPreset, SPATIAL_PRESETS } from './preset-library';
 import { BOARD_ANIMATION_FRAME_MS, renderSpatialGroup } from './spatial-frame';
 
-const preset = (kind: Parameters<typeof createSpatialPreset>[0], seed = 42) => createSpatialPreset(kind, seed);
+// These assertions are the compatibility fixtures for the extracted legacy
+// renderer. New presets are v2 by default; legacy behavior is tested by making
+// the version explicit so the expectations cannot accidentally drift with it.
+const preset = (kind: Parameters<typeof createSpatialPreset>[0], seed = 42) => Object.freeze({
+  ...createSpatialPreset(kind, seed),
+  recipeVersion: 1 as const,
+});
 
 describe('spatial effect rendering', () => {
   it('holds one discrete pose for each measured two-FPS board frame', () => {

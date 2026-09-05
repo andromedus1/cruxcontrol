@@ -45,7 +45,8 @@ export interface SpatialEffectTarget {
 export interface SpatialLightEffectGroup {
   readonly model: 'spatial';
   readonly id: LightEffectGroupId;
-  readonly recipeVersion: 1;
+  /** Version 1 is the historical renderer; version 2 is the explicit seamless-loop upgrade. */
+  readonly recipeVersion: 1 | 2;
   readonly recipe: SpatialRecipe;
   readonly seed: number;
   readonly palette: readonly ApiLevel3Color[];

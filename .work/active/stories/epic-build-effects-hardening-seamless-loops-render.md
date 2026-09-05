@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-seamless-loops-render
 kind: story
-stage: implementing
+stage: done
 tags: [ui, ble]
 parent: epic-build-effects-hardening-seamless-loops
 depends_on: []
@@ -22,3 +22,12 @@ Implement feature Unit 1 and the v2 type boundary; capture exact v1 fixtures, pr
 Parent feature owns exact contracts, implementation units, tests, mockups and risks.
 One feature owner implements these sequential checkpoints. This child closes on green
 verification; independent review happens at feature level.
+
+## Implementation notes
+- Execution capability: inline GPT-5 implementation; the renderer, geometry and preset boundary form one cohesive ownership surface.
+- Review weight: standard (project convention).
+- Files changed: `web/src/light-effects/spatial-frame.ts`, `spatial-frame-v1.ts`, `spatial-frame-v2.ts`, `spatial-geometry.ts`, `spatial-frame.test.ts`, `spatial-frame-v2.test.ts`, `web/src/board-renderer/types.ts`, and `web/src/light-effects/preset-library.ts`.
+- Tests added/removed: v2 loop tests cover all presets, two-cycle joins, graph adjacency, negative elapsed time, intensity zero, cache identity, shape controls and deterministic output; existing assertions now explicitly exercise recipeVersion 1 compatibility fixtures.
+- Simplification: shared normalized geometry and a bounded DFS path replace per-cycle reseeding for v2; the old renderer remains isolated behind the version dispatcher.
+- Discrepancies from design: v2 trajectory helpers keep the public renderer narrow; exact graph placement IDs are carried through Snake/Pac-Man projection so masked nodes are omitted rather than relocated.
+- Adjacent issues parked: none.

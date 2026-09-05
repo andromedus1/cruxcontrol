@@ -32,7 +32,8 @@ function eligible(definition: BoardDefinition, assignments: readonly BoardHoldAs
   });
 }
 
-export function renderSpatialGroup(definition: BoardDefinition, assignments: readonly BoardHoldAssignment[], group: SpatialLightEffectGroup, elapsedMs: number): LightScene {
+/** The original renderer is retained verbatim for recipeVersion 1 snapshots. */
+export function renderSpatialGroupV1(definition: BoardDefinition, assignments: readonly BoardHoldAssignment[], group: SpatialLightEffectGroup, elapsedMs: number): LightScene {
   const candidates = eligible(definition, assignments, group);
   if (candidates.length === 0 || group.palette.length === 0) return Object.freeze([]);
   // API-2 can deliver only two complete scenes per second. Use the same held poses in
@@ -237,4 +238,22 @@ export function renderSpatialGroup(definition: BoardDefinition, assignments: rea
   });
   if (scene.length > group.footprint) throw new RangeError(`Spatial effect ${group.id} exceeded its ${group.footprint}-light reserve`);
   return Object.freeze(scene);
+}
+
+import { renderSpatialGroupV2 } from './spatial-frame-v2';
+
+/**
+ * Version dispatch is the compatibility boundary for authored effect recipes.
+ * Callers continue to use the same renderer API while v1 records retain their
+ * exact historical behavior until the owner explicitly upgrades them.
+ */
+export function renderSpatialGroup(
+  definition: BoardDefinition,
+  assignments: readonly BoardHoldAssignment[],
+  group: SpatialLightEffectGroup,
+  elapsedMs: number,
+): LightScene {
+  return group.recipeVersion === 2
+    ? renderSpatialGroupV2(definition, assignments, group, elapsedMs)
+    : renderSpatialGroupV1(definition, assignments, group, elapsedMs);
 }
