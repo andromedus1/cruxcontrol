@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-safe-updates
 kind: feature
-stage: drafting
+stage: implementing
 tags: [ui, infra]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-library-backup]
@@ -192,3 +192,20 @@ JavaScript errors. In this admission-blocked state the library is hidden and Lat
 unavailable; only explicit Reload to continue admits a workspace. Ordinary waiting
 updates retain Later and leave existing work available. This reconciles the mock with
 the controller-identity contract; it is not production verification.
+
+## Implementation dispatch
+
+Backup is verified at review: 80 unit files / 526 tests, lint/typecheck/build and all
+9 integrated browser scenarios pass. Continue with its Luna xhigh feature owner for
+coherent knowledge of runtime and mutation lifetimes. Standard independent review is
+required, owned by root. Worker owns production coordinator/UI/integration and unit
+contracts. Root owns the separate real service-worker browser fixture and E2E contract;
+this bounded split isolates historical-build/server mechanics from application editing.
+No nested worker fan-out. Foundation docs remain the bounded documentation owner’s scope.
+
+Browser fixture baseline A is pinned to legacy-auto commit
+`7e8c3861f02a4ca95da29b44fd3915e4be2d2318`, with its actual Vite/PWA registration sources.
+B and C build current safe-update source with distinct inert HTML generation markers,
+using separate temporary copies and output roots. All three use real Workbox-generated
+workers on one switchable same-origin HTTP server. CI supplies Git history for the
+pinned legacy source; the fixture does not change production source or mock workers.
