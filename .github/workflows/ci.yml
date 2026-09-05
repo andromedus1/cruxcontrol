@@ -13,6 +13,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # The real PWA update browser fixture builds the immutable legacy
+          # generation from a pinned ancestor, so a shallow clone cannot run it.
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
