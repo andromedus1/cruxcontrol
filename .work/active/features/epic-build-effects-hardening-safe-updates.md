@@ -186,3 +186,9 @@ A tab that loaded old JavaScript just before another tab acquired exclusive acti
 must compare controllers when admitted. Explicit reload-required state avoids both stale
 editing and an unsolicited reload. Acquisition failure with an available lock API is
 retryable blocked admission, not silent uncoordinated fallback. Verify both paths.
+
+Reload-required mock verification: both options tested at 390px with no overflow or
+JavaScript errors. In this admission-blocked state the library is hidden and Later is
+unavailable; only explicit Reload to continue admits a workspace. Ordinary waiting
+updates retain Later and leave existing work available. This reconciles the mock with
+the controller-identity contract; it is not production verification.
