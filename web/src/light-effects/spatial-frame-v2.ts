@@ -1,3 +1,4 @@
+import { samplePongPose } from './spatial-pong';
 import type { BoardHoldAssignment, SpatialLightEffectGroup } from '../board-renderer/types';
 import { packApiLevel3Color, unpackApiLevel3Color } from '../domain/boards/colors';
 import type { BoardDefinition } from '../domain/boards/definition';
@@ -377,25 +378,24 @@ function pathScene(
   const reverse = group.recipe.kind === 'snake' || group.recipe.kind === 'pac-man'
     ? group.recipe.direction === 'reverse'
     : false;
-  const at = (offset: number) => path[positiveModulo((reverse ? path.length - index : index) + offset, path.length)]!;
+  const at = (offset: number) => path[positiveModulo((reverse ? -1 : 1) * (index + offset), path.length)]!;
   const palette = group.palette;
-  const targets: Target[] = [{ placementId: at(0).id, x: at(0).x, y: at(0).y, color: colorAt(definition, group, clock.phase) }];
+  const protagonist = scaledColor(definition, group, palette[0]!);
+  const targets: Target[] = [{ placementId: at(0).id, x: at(0).x, y: at(0).y, color: pacman ? protagonist : colorAt(definition, group, clock.phase) }];
   if (pacman) {
     const beatCount = Math.max(1, Math.round(clock.frameCount / (2 * (recipe.kind === 'pac-man' ? recipe.mouthBeat : 1))));
-    // Cosine starts and ends in the same open state at the discrete cycle
-    // boundary, so the last held frame does not close the mouth just before
-    // frame zero opens it again.
-    if (Math.cos(Math.PI * 2 * Math.max(1, Math.round(clock.frameCount / beatCount)) * clock.phase) >= 0) {
+    // Fit whole chew beats to the loop; all actor colors retain their palette roles.
+    if (Math.cos(Math.PI * 2 * beatCount * clock.phase) >= 0) {
       const mouth = at(1);
-      targets.push({ placementId: mouth.id, x: mouth.x, y: mouth.y, color: colorAt(definition, group, clock.phase, 0.12) });
+      targets.push({ placementId: mouth.id, x: mouth.x, y: mouth.y, color: protagonist });
     }
     const pellets = Math.min(Math.max(0, group.footprint - 3), 3);
     for (let offset = 2; offset < pellets + 2; offset += 1) {
       const pellet = at(offset);
-      targets.push({ placementId: pellet.id, x: pellet.x, y: pellet.y, color: colorAt(definition, group, clock.phase, 0.25 + offset / 16) });
+      targets.push({ placementId: pellet.id, x: pellet.x, y: pellet.y, color: protagonist });
     }
     const ghost = at(-Math.max(1, Math.floor(group.footprint / 2)));
-    targets.push({ placementId: ghost.id, x: ghost.x, y: ghost.y, color: palette[1] === undefined ? colorAt(definition, group, clock.phase, .5) : scaledColor(definition, group, palette[1]!) });
+    targets.push({ placementId: ghost.id, x: ghost.x, y: ghost.y, color: scaledColor(definition, group, palette[1] ?? palette[0]!) });
   } else {
     const length = Math.min(Math.max(1, Math.round(recipe.kind === 'snake' ? recipe.bodyLength : 1)), group.footprint);
     for (let offset = -1; offset > -length; offset -= 1) {
@@ -428,17 +428,12 @@ function ballScene(definition: BoardDefinition, group: SpatialLightEffectGroup, 
 function pongScene(definition: BoardDefinition, group: SpatialLightEffectGroup, points: readonly SpatialPoint[], clock: SpatialLoopClock): LightScene {
   const recipe = group.recipe;
   if (recipe.kind !== 'pong') return Object.freeze([]);
-  const rallies = 2 + Math.max(1, Math.round(group.periodMs / 45_000));
-  const travel = triangle(clock.phase * rallies + hash('pong-x', group.seed));
-  const x = recipe.direction === 'forward' ? .08 + travel * .84 : .92 - travel * .84;
-  const yAt = (phase: number) => .1 + triangle(phase * (rallies + 1) + hash('pong-y', group.seed)) * .8;
-  const y = yAt(clock.phase);
-  const upcomingImpactY = yAt(clock.phase + 1 / Math.max(1, rallies * 2));
-  const paddleY = y * .25 + upcomingImpactY * .75;
+  const pose = samplePongPose(group.seed, group.periodMs, clock.phase, recipe.direction);
   const paddle = Math.min(Math.round(recipe.paddleSize), Math.floor(Math.max(0, group.footprint - 1) / 2));
   const paddleSpacing = .04 + Math.min(20, Math.round(recipe.paddleSize)) * .015;
-  const targets: Target[] = [{ x, y, color: colorAt(definition, group, clock.phase) }];
+  const targets: Target[] = [{ ...pose.ball, color: colorAt(definition, group, clock.phase) }];
   for (let side = 0; side < 2; side += 1) {
+    const paddleY = side === 0 ? pose.leftPaddleY : pose.rightPaddleY;
     for (let index = 0; index < paddle; index += 1) {
       const offset = (index - (paddle - 1) / 2) * paddleSpacing;
       targets.push({ x: side === 0 ? .06 : .94, y: Math.max(.06, Math.min(.94, paddleY + offset)), color: colorAt(definition, group, clock.phase, .5) });
