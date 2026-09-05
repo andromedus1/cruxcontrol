@@ -363,3 +363,11 @@ No extra advisory agent dispatched from this bounded delegated design. Parent ow
 independent review/implementation orchestration; prior only-questions decisions fix
 product direction. Design alternatives are reversible and no new research domain or
 external hardware capability assumption blocks implementation.
+
+## CI verification (2026-09-05)
+
+PR #13 head cc24bbd (verified implementation af31755 plus bee design readiness) passed
+[CI run 33997015955](https://github.com/andromedus1/cruxcontrol/actions/runs/33997015955):
+web lint/typecheck/unit/build/browser and ML stub checks green. Deployment skipped on
+this PR as configured. Independent feature review is running against immutable af31755
+in a separate worktree; CI green alone is not feature approval.
