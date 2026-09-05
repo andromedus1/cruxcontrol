@@ -122,3 +122,41 @@ this epic is not an instruction to implement an unreviewed recipe rewrite immedi
 Retain the current IndexedDB authority and board-control boundaries. Consolidate frame
 preparation and controller-color validation where evidence supports it; avoid a new
 rendering framework or replacement storage system solely to add these improvements.
+
+## Directional alignment — only questions
+
+The interactive pass is in progress; no child decomposition or stage advancement has
+occurred. Andrew is considering an autopilot drain of this work order after alignment.
+Limit that drain to this epic, respecting animation-first and backup-second sequencing;
+unrelated active epics are outside the requested work order.
+
+Pending user choices (recommendations are proposals, not accepted decisions):
+
+- **Pacing:** theme-specific sequences, usually 1–3 minutes, with calmer nature and
+  livelier games; alternatives emphasize calm throughout or frequent playful activity.
+- **Bumblebee character:** a curious lone bee with hovering and occasional darts;
+  alternatives are a mellow bee or a busier bee.
+- **Saved animation adoption:** preserve saved visual behavior with an explicit upgrade
+  to improved loops; alternative is automatic use of improved loops with saved settings
+  retained. Neither option changes climb holds or playlist memberships.
+
+Code grounding: spatial poses are held for 500ms; existing persisted periods cap at
+180 seconds. Saved spatial snapshots currently support recipeVersion 1 only. Several
+renderers reseed geometry by cycle, and Snake/Pac-Man move by frame index, so longer
+period values alone cannot satisfy the continuity requirement. An independent bounded
+read-only probe found no additional directional questions beyond the three above.
+
+## Mockups
+
+- Bumblebee motion comparison:
+  `.mockups/screens/epic-build-effects-hardening-animation/index.html`.
+  Curious, mellow and busy studies use a geometry snapshot of the actual 305 Fullride
+  light positions, five bee lights plus five protected sample route lights, and 2-FPS
+  held poses. Play/pause, frame stepping, scrubbing and a loop-join shortcut support review.
+  Colors are illustrative; this is motion alignment, not verified hardware output.
+- Existing application motion tokens remain in `.mockups/design-system/motion.css`.
+  The study extends background-effect exploration without changing interface animation.
+- Selection is pending. The standalone mock was checked in Chromium at desktop and
+  phone widths: controls work, no JavaScript errors, and no horizontal overflow.
+- Existing themed-loop studies and backup/update UI alignment remain for their design
+  passes; the bee comparison is not sign-off on those surfaces.

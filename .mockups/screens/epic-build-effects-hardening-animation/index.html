@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CruxControl · Bumblebee motion studies</title>
+<link rel="stylesheet" href="../../design-system/tokens.css">
+<link rel="stylesheet" href="../../design-system/components.css">
+<link rel="stylesheet" href="../../design-system/motion.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:var(--color-bg-primary);color:var(--color-text-primary);font-family:var(--font-sans);line-height:1.5}
+header,main{max-width:1250px;margin:auto;padding:24px}header{padding-bottom:0}h1{font-size:clamp(26px,4vw,40px);line-height:1.15;margin:12px 0}h2{margin:0;font-size:21px}p{max-width:80ch}.eyebrow{font:12px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary)}
+.controls{padding:16px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-bg-secondary);display:flex;align-items:center;gap:12px;flex-wrap:wrap}.controls label{display:flex;gap:8px;align-items:center}button,select{font:inherit;min-height:44px;padding:8px 14px;border:1px solid var(--color-border-strong);border-radius:6px;background:var(--color-bg-secondary);color:var(--color-text-primary);cursor:pointer}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--color-text-link);outline-offset:3px}#play{background:var(--color-accent);color:var(--color-bg-primary);font-weight:600}input[type=range]{flex:1;min-width:140px;accent-color:var(--color-accent)}output{font:13px var(--font-mono);min-width:98px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:24px}.study{background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:12px;overflow:hidden}.caption{padding:16px}.caption p{margin:8px 0;color:var(--color-text-secondary);font-size:14px}.board{display:block;width:100%;background:#1a1b22;aspect-ratio:88/120}.state{font:12px var(--font-mono);color:var(--color-text-secondary);min-height:20px}.note{font-size:14px;color:var(--color-text-secondary)}.key{display:flex;gap:20px;flex-wrap:wrap;margin:18px 0}.key span:before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;background:var(--key)}footer{margin-top:22px;border-top:1px solid var(--color-border);padding-top:16px}.join{font-weight:600;color:var(--color-text-link)}@media(max-width:760px){.grid{grid-template-columns:1fr}.study{max-width:440px;width:100%;margin:auto}header,main{padding:18px}.controls{gap:8px}}
+</style>
+</head>
+<body>
+<header><div class="eyebrow">CruxControl · Motion study · Awaiting direction</div><h1>A little life between the holds.</h1><p>One bee, three personalities. Each takes a two-minute journey through the background and returns to its starting hover. Watch a full route, or jump to the join to see it repeat.</p></header>
+<main>
+<div class="controls" aria-label="Motion preview controls">
+<button id="play" type="button">Play</button><button id="step" type="button">Next frame</button><button id="join" type="button">Watch loop join</button>
+<label>Speed <select id="speed"><option value="1">Real time</option><option value="4">4× review</option></select></label>
+<input id="scrub" type="range" min="0" max="119.5" step="0.5" value="0" aria-label="Position in the two-minute loop"><output id="time">0.0 / 120 s</output>
+</div>
+<div class="key note"><span style="--key:#ffda57">Bee body</span><span style="--key:#f5f1db">Wings</span><span style="--key:#7aa2ca">Fixed example climb</span></div>
+<div class="grid">
+<section class="study" data-kind="curious"><div class="caption"><div class="eyebrow">Recommended direction</div><h2>Curious</h2><p>Explore, settle into a gentle hover, then dart toward a new spot.</p><div class="state"></div></div><svg class="board" viewBox="-48 20 96 128" role="img" aria-label="Curious bumblebee moving among board lights"></svg></section>
+<section class="study" data-kind="mellow"><div class="caption"><div class="eyebrow">Quiet company</div><h2>Mellow</h2><p>Longer rests and an easy drift between a few favorite places.</p><div class="state"></div></div><svg class="board" viewBox="-48 20 96 128" role="img" aria-label="Mellow bumblebee moving among board lights"></svg></section>
+<section class="study" data-kind="busy"><div class="caption"><div class="eyebrow">More energy</div><h2>Busy</h2><p>Short hovering pauses and more frequent changes of destination.</p><div class="state"></div></div><svg class="board" viewBox="-48 20 96 128" role="img" aria-label="Busy bumblebee moving among board lights"></svg></section>
+</div>
+<footer><p class="join" id="join-note">The bee arrives back at its starting hover as the loop repeats.</p><p class="note">Design preview using the Fullride’s 305 light positions. Poses change twice per second, with five bee lights and five protected example climb lights. No extra smoothing is added. Colors are illustrative; controller color protection and readability on the physical board still need implementation and dogfooding. Play is opt-in, including when reduced motion is enabled.</p></footer>
+</main>
+<script>
+// Geometry snapshot only, extracted from kilter-fullride-7x10.generated.ts.
+const points = [[-40,28],[-40,36],[-40,44],[-40,52],[-40,60],[-40,68],[-40,76],[-40,84],[-40,92],[-40,100],[-40,108],[-40,116],[-40,124],[-40,132],[-40,140],[-36,136],[-36,128],[-36,120],[-36,112],[-36,104],[-36,96],[-36,88],[-36,80],[-36,72],[-36,64],[-36,56],[-36,48],[-36,40],[-36,32],[-32,28],[-32,36],[-32,44],[-32,52],[-32,60],[-32,68],[-32,76],[-32,84],[-32,92],[-32,100],[-32,108],[-32,116],[-32,124],[-32,132],[-32,140],[-28,136],[-28,128],[-28,120],[-28,112],[-28,104],[-28,96],[-28,88],[-28,80],[-28,72],[-28,64],[-28,56],[-28,48],[-28,40],[-28,32],[-24,28],[-24,36],[-24,44],[-24,52],[-24,60],[-24,68],[-24,76],[-24,84],[-24,92],[-24,100],[-24,108],[-24,116],[-24,124],[-24,132],[-24,140],[-20,136],[-20,128],[-20,120],[-20,112],[-20,104],[-20,96],[-20,88],[-20,80],[-20,72],[-20,64],[-20,56],[-20,48],[-20,40],[-20,32],[-16,28],[-16,36],[-16,44],[-16,52],[-16,60],[-16,68],[-16,76],[-16,84],[-16,92],[-16,100],[-16,108],[-16,116],[-16,124],[-16,132],[-16,140],[-12,136],[-12,128],[-12,120],[-12,112],[-12,104],[-12,96],[-12,88],[-12,80],[-12,72],[-12,64],[-12,56],[-12,48],[-12,40],[-12,32],[-8,28],[-8,36],[-8,44],[-8,52],[-8,60],[-8,68],[-8,76],[-8,84],[-8,92],[-8,100],[-8,108],[-8,116],[-8,124],[-8,132],[-8,140],[-4,136],[-4,128],[-4,120],[-4,112],[-4,104],[-4,96],[-4,88],[-4,80],[-4,72],[-4,64],[-4,56],[-4,48],[-4,40],[-4,32],[0,28],[0,36],[0,44],[0,52],[0,60],[0,68],[0,76],[0,84],[0,92],[0,100],[0,108],[0,116],[0,124],[0,132],[0,140],[4,136],[4,128],[4,120],[4,112],[4,104],[4,96],[4,88],[4,80],[4,72],[4,64],[4,56],[4,48],[4,40],[4,32],[8,28],[8,36],[8,44],[8,52],[8,60],[8,68],[8,76],[8,84],[8,92],[8,100],[8,108],[8,116],[8,124],[8,132],[8,140],[12,136],[12,128],[12,120],[12,112],[12,104],[12,96],[12,88],[12,80],[12,72],[12,64],[12,56],[12,48],[12,40],[12,32],[16,28],[16,36],[16,44],[16,52],[16,60],[16,68],[16,76],[16,84],[16,92],[16,100],[16,108],[16,116],[16,124],[16,132],[16,140],[20,136],[20,128],[20,120],[20,112],[20,104],[20,96],[20,88],[20,80],[20,72],[20,64],[20,56],[20,48],[20,40],[20,32],[24,28],[24,36],[24,44],[24,52],[24,60],[24,68],[24,76],[24,84],[24,92],[24,100],[24,108],[24,116],[24,124],[24,132],[24,140],[28,136],[28,128],[28,120],[28,112],[28,104],[28,96],[28,88],[28,80],[28,72],[28,64],[28,56],[28,48],[28,40],[28,32],[32,28],[32,36],[32,44],[32,52],[32,60],[32,68],[32,76],[32,84],[32,92],[32,100],[32,108],[32,116],[32,124],[32,132],[32,140],[36,136],[36,128],[36,120],[36,112],[36,104],[36,96],[36,88],[36,80],[36,72],[36,64],[36,56],[36,48],[36,40],[36,32],[40,28],[40,36],[40,44],[40,52],[40,60],[40,68],[40,76],[40,84],[40,92],[40,100],[40,108],[40,116],[40,124],[40,132],[40,140]];
+const NS='http://www.w3.org/2000/svg';
+const routeTargets=[[-16,38,'#66aa55'],[16,38,'#66aa55'],[-8,72,'#599dbc'],[16,96,'#599dbc'],[0,132,'#d06dab']];
+const nearest=(target,used)=>points.reduce((best,p,i)=>used.has(i)?best:(!best||Math.hypot(p[0]-target[0],p[1]-target[1])<best.distance?{i,distance:Math.hypot(p[0]-target[0],p[1]-target[1])}:best),null).i;
+const reserved=new Map();for(const [x,y,c] of routeTargets)reserved.set(nearest([x,y],reserved),c);
+const nodes={curious:[[-24,108],[24,116],[28,68],[-24,48],[-28,88],[16,84]],mellow:[[-24,108],[24,100],[16,48],[-24,60]],busy:[[-24,108],[28,120],[-28,68],[24,40],[24,88],[-24,124],[28,60],[-28,44]]};
+const hoverPart={curious:.42,mellow:.68,busy:.22};
+function pose(kind,seconds){
+ const path=nodes[kind],phase=((seconds%120)+120)%120/120*path.length,index=Math.floor(phase),u=phase-index;
+ const from=path[index],to=path[(index+1)%path.length],hold=hoverPart[kind];
+ let x=from[0],y=from[1],state='Hovering';
+ if(u<hold){const h=u/hold,amp=Math.sin(Math.PI*h)**2;x+=Math.sin(h*Math.PI*4)*3.5*amp;y+=Math.sin(h*Math.PI*6)*2.5*amp;}
+ else{const p=(u-hold)/(1-hold),ease=p*p*p*(p*(p*6-15)+10);x+=(to[0]-from[0])*ease;y+=(to[1]-from[1])*ease;state=kind==='busy'?'Darting':kind==='mellow'?'Drifting':index%2?'Exploring':'Short flight';}
+ return{x,y,state,stop:index+1};
+}
+const studies=[...document.querySelectorAll('.study')].map(el=>{
+ const circles=points.map(([x,y],i)=>{const c=document.createElementNS(NS,'circle');c.setAttribute('cx',x);c.setAttribute('cy',168-y);c.setAttribute('r','1.15');el.querySelector('svg').append(c);return c;});
+ return{el,kind:el.dataset.kind,circles};
+});
+let elapsed=0,playing=false,last=null,lastFrame=-1;
+const play=document.querySelector('#play'),scrub=document.querySelector('#scrub');
+function render(){
+ const t=Math.floor(elapsed*2)/2,phase=((t%120)+120)%120;
+ scrub.value=phase;document.querySelector('#time').value=phase.toFixed(1)+' / 120 s';
+ document.querySelector('#join-note').textContent=phase>=117||phase<2?'At the join: flight settles into the starting hover.':'The bee arrives back at its starting hover as the loop repeats.';
+ for(const s of studies){
+  const p=pose(s.kind,phase),lit=new Map(reserved),wing=Math.floor(t*2)%2?7:5;
+  const targets=[[p.x,p.y,'#ffda57'],[p.x-4,p.y,'#d8ad32'],[p.x+4,p.y,'#ffed99'],[p.x,p.y+wing,'#f5f1db'],[p.x,p.y-wing,'#dcd9c4']];
+  for(const [x,y,color]of targets)lit.set(nearest([x,y],lit),color);
+  s.circles.forEach((c,i)=>{const color=lit.get(i);c.setAttribute('fill',color||'#45464e');c.setAttribute('r',color?'2.35':'1.15');});
+  s.el.querySelector('.state').textContent=p.state+' · destination '+p.stop+' of '+nodes[s.kind].length;
+ }
+}
+function setPlaying(value){playing=value;play.textContent=playing?'Pause':'Play';play.setAttribute('aria-pressed',String(playing));last=null;}
+play.addEventListener('click',()=>setPlaying(!playing));
+document.querySelector('#step').addEventListener('click',()=>{setPlaying(false);elapsed=Math.floor(elapsed*2)/2+.5;render();});
+document.querySelector('#join').addEventListener('click',()=>{elapsed=117;render();setPlaying(true);});
+scrub.addEventListener('input',()=>{setPlaying(false);elapsed=Number(scrub.value);render();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)setPlaying(false);});
+function tick(now){if(playing&&last!==null)elapsed+=(now-last)/1000*Number(document.querySelector('#speed').value);last=now;const frame=Math.floor(elapsed*2);if(frame!==lastFrame){render();lastFrame=frame;}requestAnimationFrame(tick);}
+render();requestAnimationFrame(tick);
+</script>
+</body>
+</html>
