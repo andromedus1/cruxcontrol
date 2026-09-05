@@ -223,8 +223,8 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
 - **Web Bluetooth reliability** across OS/browser versions — deterministic transport and
   renderer coverage exercises mapping, light/clear, animation, and the existing API-2
   envelope. The 127-light static and 20-light/2-FPS animation profile remains unchanged
-  and applies only to that configured controller path; physical phone verification and
-  other firmware, browsers, and API levels still require their own acceptance evidence.
+   and applies only to that configured controller path; device-level acceptance for other
+   firmware, browsers, and API levels still requires its own evidence.
 - **Sync API drift / auth.** The Kilter API is undocumented and may change;
   personal data (ascents/bids) is auth-gated.
 - **ML signal quality.** Whether hold-placement features predict consensus grade

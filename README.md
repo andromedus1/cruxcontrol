@@ -101,8 +101,8 @@ separate Python project.
 Automated checks include Vitest tests, strict TypeScript, ESLint, production PWA build
 checks, and Playwright Chromium browser workflows. CI runs the browser workflows against
 the production build and retains traces and screenshots from failures for seven days.
-Automated transport and renderer tests use deterministic fakes for repeatability; physical
-phone acceptance remains future work.
+Automated transport and renderer tests use deterministic fakes for repeatability; device-level
+acceptance remains future work.
 
 ## Deployment
 
