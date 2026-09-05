@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-08-02
+updated: 2026-09-05
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
@@ -45,8 +45,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Connect to the active board through a capability-selected controller adapter.
 - The first adapter controls the Kilter Fullride 7x10 via Web Bluetooth.
 - Light holds for any selected climb through the Nordic UART protocol, selecting API
-  level 2 or 3 from the connected controller identity. The powered Fullride acceptance
-  board currently exercises the measured API-2 path.
+  level 2 or 3 from the connected controller identity. The existing API-2 controller
+  policy is the accepted control profile for the Fullride path.
 - Run explicit, bounded Fullride capacity cases from the editor with exact packet/write
   estimates, stop/timeout recovery, operator observations, and private local JSON trace
   export. No diagnostic runs automatically and no trace is uploaded.
@@ -93,9 +93,19 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Explicit Light Draft and opt-in, default-off Live Preview reuse the board controller.
 - Add editable assignment effects and independent spatial background presets: Ocean Tide,
   Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger,
-  and a fading circled inverted pentagram. Presets default to unused holds, can target
+  and a fading circled inverted pentagram. New presets use version-2, closed themed
+  trajectories with 90–150-second defaults. Version-1 saved recipes remain on their
+  original renderer until the user explicitly upgrades them; an upgrade preserves the
+  authored settings and changes only the recipe version and period to the maximum of
+  the old period and the new preset default. Presets default to unused holds, can target
   the board background or a painted selection, persist complete recipe snapshots, and
   always keep semantic climb roles exact and static.
+- Version-2 spatial rendering prepares geometry per board definition and reuses the
+  latest held frame and prepared paths per effect group. Decorative colors are adjusted
+  after API-2 quantization to avoid exact encoded role colors and encoded black; this is
+  an encoded-byte invariant, not a perceptual color-distinction guarantee. Zero-intensity
+  spatial groups emit dark/empty scenes, and intentionally empty animation frames remain
+  part of playback until an explicit stop, clear, disconnect, or visibility cancellation.
 - Physical animation preflights route/static lights plus every spatial layer's declared
   worst-case reserve before the first write. API-2 playback refuses plans above 20 lights
   with a breakdown; it never thins a saved design. Screen preview and saving remain unrestricted.
@@ -235,16 +245,16 @@ The model mirrors the official Kilter SQLite schema (see
   non-color-only role markers.
 - Deterministic tests cover definition/renderer, climb and playlist
   persistence/concurrency/recovery and screenshot recognition/review/import,
-  API-level-2/3 bytes, the measured API-2 capacity policy, Bluetooth lifecycle,
+  API-level-2/3 bytes, the existing API-2 capacity policy, Bluetooth lifecycle,
   lighting/preview, and the integrated
   create-save-light seams. Playwright Chromium covers autosave/reload/reopen,
   multi-list membership/order, Trash/restore resolution, ephemeral play-through, and
   portable list export/import with fresh identities and preserved content/order, plus
   compact/wide interaction.
-- Powered-board dogfooding through Android Chrome confirms connect/light/clear, API-2
-  complete-scene replacement behavior and measured capacity, and recognizable spatial
-  animation on the Fullride. The saved recipes remain deterministic while successive
-  circuits vary supported game and ambient paths.
+- The existing local draft schema remains version 4 and the portable playlist envelope
+  remains unchanged; embedded effect recipe versions carry this evolution without a
+  storage or playlist migration. Deterministic tests cover v1 compatibility, v2 cycle
+  closure, masks, role protection, color encoding, cache reuse, and empty-frame playback.
 
 ## Constraints & Non-Functional Requirements
 

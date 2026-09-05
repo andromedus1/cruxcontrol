@@ -16,14 +16,16 @@ account or application server required.
 - Import Kilter Fullride screenshots through a local review-and-correction flow, or
   import the supplied set of 16 climbs as ordinary 40° drafts. Screenshot pixels are
   never uploaded or persisted.
-- Light and clear the physical board from Android or desktop Chromium. The measured
-  Android/API-2 profile supports complete static scenes of up to 127 lights and
-  complete animated scenes of up to 20 lights at 2 FPS; unsafe scenes are preserved
-  but refused rather than silently truncated.
+- Light and clear the physical board from Android or desktop Chromium. The existing
+  API-2 profile supports complete static scenes of up to 127 lights and complete
+  animated scenes of up to 20 lights at 2 FPS; unsafe scenes are preserved but refused
+  rather than silently truncated.
 - Save and edit assignment effects and independent background presets, including
   Ocean Tide, Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird
-  Flock, Frogger, and a fading circled inverted pentagram. Semantic route holds remain
-  recognizable and animation capacity is preflighted before board playback.
+  Flock, Frogger, and a fading circled inverted pentagram. New presets use 90–150-second
+  closed themed loops; saved v1 recipes keep their original renderer until explicitly
+  upgraded. Semantic route holds remain recognizable and animation capacity is preflighted
+  before board playback, while intentionally empty frames remain valid animation output.
 
 The installed PWA must remain in the foreground while an animation is playing. Page
 visibility loss, disconnect, clear, or leaving the relevant view stops playback safely.
@@ -82,19 +84,21 @@ separate Python project.
   LED positions, supported angles, and semantic role presets.
 - Independent versioned IndexedDB repositories own local climbs and lists, including
   optimistic revisions, lifecycle recovery, portable list snapshots, and offline use.
-- A pure frame engine drives both screen preview and BLE output. Saved recipe snapshots
-  remain editable and do not change when the built-in preset library evolves.
+- A version-dispatched pure frame engine drives both screen preview and BLE output. It
+  preserves v1 snapshots, uses prepared definition geometry and per-group held-frame/path
+  reuse for v2, and leaves saved recipes editable as the preset library evolves.
 - API-2 and API-3 codecs, Web Bluetooth transport, latest-frame controller arbitration,
-  and the measured capacity policy sit behind typed boundaries.
+  and the existing capacity policy sit behind typed boundaries. V2 decorative colors avoid
+  exact encoded role colors and black after API-2 conversion; this is byte-level protection,
+  not a perceptual distinction guarantee.
 - The installable Workbox app shell is precached and updates automatically. Animation
   remains deliberately foreground-bound because mobile browsers suspend background work.
 
 Automated checks include Vitest tests, strict TypeScript, ESLint, production PWA build
 checks, and Playwright Chromium browser workflows. CI runs the browser workflows against
 the production build and retains traces and screenshots from failures for seven days.
-Physical Android/Fullride dogfooding has verified pairing, hold mapping, lighting, and the API-2
-capacity boundary described above; automated transport tests still use deterministic
-fakes for repeatability.
+Automated transport and renderer tests use deterministic fakes for repeatability; physical
+phone acceptance remains future work.
 
 ## Deployment
 

@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-08-02
+updated: 2026-09-05
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -53,7 +53,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    bounded latest-frame-wins preview. A collapsed, local-only capacity diagnostic uses
    the same queue with bounded cases, optional inter-write pacing, sanitized timing
    traces, hard timeout/disconnect, and explicit clear/reconnect recovery; it does not
-   infer hardware limits from encoder speed. The measured API-2 policy shares that queue:
+   infer hardware limits from encoder speed. The existing API-2 policy shares that queue:
    normal writes use 20 ms pacing, static scenes are bounded to one 127-light packet,
    and the editor's absolute-time animation scheduler sends complete scenes of at most
    20 lights at up to 2 FPS with one frame in flight and stale deadlines coalesced. Since
@@ -79,12 +79,19 @@ feature item bodies in `.work/`, not here. Capabilities are in
    adapters own future source-native encoding and optional publication. Versioned effect
    groups share one two-pass pure frame engine: assignment effects render first, procedural
    spatial layers target definition geometry without fake assignments, and semantic roles
-   are reasserted last. Saved recipe snapshots, dynamic target masks, deterministic footprints,
-   and a conservative reserve plan feed the existing complete-scene BLE scheduler. The
+   are reasserted last. Version 1 dispatch preserves existing saved recipes; the ten
+   version-2 spatial presets use 90–150-second closed themed trajectories, and explicit
+   upgrades preserve authored settings except the version and max(old period, new default).
+   Prepared geometry and bounded per-group held-frame/path reuse avoid repeated spatial work.
+   API-2 decorative colors avoid exact encoded role colors and black after quantization; this
+   protects encoded bytes rather than promising perceptual contrast. Saved recipe snapshots,
+   dynamic target masks, deterministic footprints, and a conservative reserve plan feed the
+   existing complete-scene BLE scheduler. Empty spatial scenes are valid animation frames;
+   only explicit stop/clear/disconnect/visibility cancellation ends playback. The
    snapshot-backed spatial registry contains Ocean Tide, Tie-dye Spiral, Matrix Rain,
    Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger, and a fading circled inverted
-   pentagram. Browser playback is foreground-only: visibility loss, disconnect, clear,
-   or leaving the relevant view cancels scheduling rather than relying on suspended timers.
+   pentagram. Browser playback is foreground-only and leaving the relevant view cancels
+   scheduling rather than relying on suspended timers.
 8. **Screenshot Import** — a local-only Kilter Android Fullride adapter hashes and
    analyzes selected PNGs sequentially, maps detected role rings through the immutable
    board definition, and presents an editable review before using the existing climb
@@ -131,7 +138,7 @@ Editor ──▶ Local climb repository ──▶ native IndexedDB
   │               (versioned + optimistic)       (browser-local authority)
   ├──▶ Renderer ──▶ SVG board surface
   ├──▶ Saved effect snapshots ──▶ two-pass frame engine ──▶ role-protected scene
-  └──▶ Light controller ──▶ measured capacity policy ──▶ controller profile / transport
+  └──▶ Light controller ──▶ existing capacity policy ──▶ controller profile / transport
 
 Kilter screenshot PNG ──▶ transient local analysis ──▶ editable definition-mapped review
                                                         └──▶ deduplicated 40° draft ──▶ Local climb repository
@@ -208,11 +215,11 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
 
 ## Biggest Risks
 
-- **Web Bluetooth reliability** across OS/browser versions — deterministic CI coverage
-  is complemented by powered Fullride 7x10 + Android Chrome dogfooding of mapping,
-  light/clear, animation, and the measured API-2 envelope. The accepted 127-light static
-  and 20-light/2-FPS animation profile applies only to that observed controller path;
-  other firmware, browsers, and API levels still require their own measured profiles.
+- **Web Bluetooth reliability** across OS/browser versions — deterministic transport and
+  renderer coverage exercises mapping, light/clear, animation, and the existing API-2
+  envelope. The 127-light static and 20-light/2-FPS animation profile remains unchanged
+  and applies only to that configured controller path; physical phone verification and
+  other firmware, browsers, and API levels still require their own acceptance evidence.
 - **Sync API drift / auth.** The Kilter API is undocumented and may change;
   personal data (ascents/bids) is auth-gated.
 - **ML signal quality.** Whether hold-placement features predict consensus grade
