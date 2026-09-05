@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-seamless-loops
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: epic-build-effects-hardening
 depends_on: []
@@ -274,6 +274,16 @@ Stories are three resume points, one implementation owner. The type widening can
 introduced with Unit 1 to keep compilation green; adoption behavior remains Unit 3.
 Run feature-level independent review after all child verification; child stories go
 straight to done. No separate review agents for each effect or checkpoint.
+
+## Implementation notes
+
+- Execution capability: GPT-5.6 Luna at xhigh, under the authorized autopilot scope; review weight is standard.
+- Child checkpoints are done. The v1 renderer is physically isolated in `spatial-frame-v1.ts`, the dispatcher preserves the public call, and v2 uses prepared geometry, a bounded closed path cache, and one immutable held-frame memo per group. Root-owned Frogger planning helpers are integrated from commit `1c66bf2`.
+- All ten new presets use the designed 90–150 second v2 defaults. V2 tests cover seeds 0/7/42, default and non-integral custom periods, cycle and join state, exact graph adjacency for every Snake/Pac-Man frame including wrap, masks, controls, direction, intensity zero, role composition, Matrix stream distribution, per-member bird clipping, and the planned Frogger helper's dense traffic/wait/continuity cases. Captured v1 signatures cover all ten themes at the original period boundary frames.
+- Color protection uses the existing API-2 quantizer and exhaustive 256-source-byte tests; it provides exact encoded-role separation and black semantics while leaving saved palettes unchanged. Empty Bird frames use preview writes and remain part of the animation lifecycle until explicit stop/clear/disconnect/visibility cancellation.
+- Local v2 reuse diagnostic from root: Darwin arm64, Node v25.9.0, ten themes at seed 42, 240 new poses plus 960 held subticks per theme over five warmed rounds; mean new-pose work was 59.77 microseconds and held-frame reuse was 0.07 microseconds, with the same immutable scene reference for every held subtick. Earlier 1,000-call local measurements recorded Snake 21.596ms cold/0.000387ms warm, Pac-Man 1.664ms/0.000142ms, and Ocean 0.324ms/0.000135ms. These are local CPU diagnostics only.
+- Verification: `npm test -w @cruxcontrol/web` passed 72 files / 484 tests; `npm run lint -w @cruxcontrol/web`, `npm run typecheck -w @cruxcontrol/web`, and `npm run build -w @cruxcontrol/web` passed; `npm -w web run test:e2e` passed all 7 browser scenarios, including stored v1 explicit adoption, reload, and 150-second timing persistence. Parent also completed a read-only original-vs-current v1 comparison across 1,920 cases (all ten kinds, seeds 0/7/42, four periods, eight boundary/cross-cycle times, and empty/start-role assignments) with exact scene equality.
+- No adjacent production bugs were silently fixed; independent parent review and project CI remain the feature's release gates.
 
 ## Testing
 
