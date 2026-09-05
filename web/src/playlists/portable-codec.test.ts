@@ -110,6 +110,22 @@ describe('portable playlist codec', () => {
     snapshotOf(future).effectGroups = [{ model:'spatial', id:'future', recipeVersion:3, recipe:{kind:'snake',direction:'forward',bodyLength:3}, seed:1, palette:[28], periodMs:150000, intensity:1, footprint:6, target:{scope:'unused',include:[],exclude:[]} }];
     expect(() => decodePortablePlaylist(future)).toThrowError(expect.objectContaining({ path: 'playlist.entries[0].snapshot.effectGroups[0]' }));
   });
+  it('accepts v2 bumblebee snapshots and rejects v1 and invalid hover fractions', () => {
+    const value = clone();
+    snapshotOf(value).effectGroups = [{ model:'spatial', id:'bee-bg', recipeVersion:2, recipe:{kind:'bumblebee',hoverFraction:.4}, seed:17, palette:[252,27], periodMs:120000, intensity:1, footprint:5, target:{scope:'unused',include:[],exclude:[]} }];
+    assignmentsOf(value).forEach((assignment) => delete assignment.effectGroupId);
+    expect(JSON.parse(encodePortablePlaylist(decodePortablePlaylist(value)))).toEqual(value);
+    const v1 = clone();
+    snapshotOf(v1).effectGroups = [{ model:'spatial', id:'bee-v1', recipeVersion:1, recipe:{kind:'bumblebee',hoverFraction:.4}, seed:17, palette:[252,27], periodMs:120000, intensity:1, footprint:5, target:{scope:'unused',include:[],exclude:[]} }];
+    assignmentsOf(v1).forEach((assignment) => delete assignment.effectGroupId);
+    expect(() => decodePortablePlaylist(v1)).toThrowError(expect.objectContaining({ path:'playlist.entries[0].snapshot.effectGroups[0].recipeVersion' }));
+    for (const hoverFraction of [-.01, .81, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const invalid = clone();
+      snapshotOf(invalid).effectGroups = [{ model:'spatial', id:'bee-invalid', recipeVersion:2, recipe:{kind:'bumblebee',hoverFraction}, seed:17, palette:[252,27], periodMs:120000, intensity:1, footprint:5, target:{scope:'unused',include:[],exclude:[]} }];
+      assignmentsOf(invalid).forEach((assignment) => delete assignment.effectGroupId);
+      expect(() => decodePortablePlaylist(invalid)).toThrowError(expect.objectContaining({ path:'playlist.entries[0].snapshot.effectGroups[0].recipe' }));
+    }
+  });
   it.each([
     ['frogger', { kind:'frogger', lanes:4 }],
     ['pentagram', { kind:'pentagram', fadeRate:1 }],

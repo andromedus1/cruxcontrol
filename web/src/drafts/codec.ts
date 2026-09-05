@@ -39,7 +39,7 @@ const EFFECT_KINDS = new Set<LightEffectKind>([
   'alternate',
 ]);
 const SPATIAL_KINDS = new Set<SpatialEffectKind>([
-  'ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock', 'frogger', 'pentagram',
+  'ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock', 'frogger', 'pentagram', 'bumblebee',
 ]);
 
 function validRecipe(raw: Record<string, unknown>): boolean {
@@ -54,6 +54,7 @@ function validRecipe(raw: Record<string, unknown>): boolean {
     case 'bird-flock': return (raw.direction === 'left' || raw.direction === 'right') && typeof raw.quietFraction === 'number' && raw.quietFraction >= 0 && raw.quietFraction < 1;
     case 'frogger': return Number.isInteger(raw.lanes) && (raw.lanes as number) >= 1 && (raw.lanes as number) <= 8;
     case 'pentagram': return typeof raw.fadeRate === 'number' && Number.isFinite(raw.fadeRate) && raw.fadeRate > 0 && raw.fadeRate <= 8;
+    case 'bumblebee': return typeof raw.hoverFraction === 'number' && Number.isFinite(raw.hoverFraction) && raw.hoverFraction >= 0 && raw.hoverFraction <= .8;
     default: return false;
   }
 }
@@ -236,6 +237,9 @@ function decodeEffectGroups(value: unknown, source: unknown, _legacy = false): r
       const recipeRaw = record(raw.recipe, `${path}.recipe`, source);
       const recipeKind = string(recipeRaw.kind, `${path}.recipe.kind`, source) as SpatialEffectKind;
       if (!SPATIAL_KINDS.has(recipeKind)) throw corrupt(`${path}.recipe.kind`, 'unknown spatial recipe', source);
+      if (recipeKind === 'bumblebee' && raw.recipeVersion === 1) {
+        throw corrupt(`${path}.recipeVersion`, 'bumblebee recipes require version 2', source);
+      }
       if (!validRecipe(recipeRaw)) throw corrupt(`${path}.recipe`, 'invalid spatial recipe parameters', source);
       const recipe = Object.freeze({ ...recipeRaw, kind: recipeKind }) as SpatialRecipe;
       const targetRaw = record(raw.target, `${path}.target`, source);

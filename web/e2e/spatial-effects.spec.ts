@@ -46,6 +46,56 @@ async function patchStoredLoop(page: import('@playwright/test').Page) {
   );
 }
 
+test('adds a curious bumblebee, edits Body and Wings, and reloads its saved recipe', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Create climb' }).click();
+  await page.getByLabel('Name').fill('Curious proof');
+  await page.getByRole('button', { name: /^Hold 1, Unselected/ }).focus();
+  await page.keyboard.press('Enter');
+  await page.locator('summary').filter({ hasText: 'Add a preset' }).click();
+  await page.getByRole('button', { name: /Curious bumblebee 5 lights/ }).click();
+  await expect(page.getByLabel('Hover fraction')).toHaveValue('0.4');
+
+  await page.getByRole('radio', { name: /Advanced Light/ }).click();
+  await page.getByLabel('red channel').fill('7');
+  await page.getByLabel('green channel').fill('5');
+  await page.getByLabel('blue channel').fill('0');
+  await page.getByRole('button', { name: 'Set Body to current color' }).click();
+  await page.getByLabel('red channel').fill('2');
+  await page.getByLabel('green channel').fill('1');
+  await page.getByLabel('blue channel').fill('3');
+  await page.getByRole('button', { name: 'Set Wings to current color' }).click();
+  await expect(page.locator('.save-chip')).toHaveText('saved');
+
+  const [saved] = await storedDrafts(page);
+  expect(saved?.assignments).toHaveLength(1);
+  expect(saved?.effectGroups).toEqual([
+    expect.objectContaining({
+      model: 'spatial',
+      recipeVersion: 2,
+      recipe: { kind: 'bumblebee', hoverFraction: .4 },
+      seed: expect.any(Number),
+      periodMs: 120_000,
+      footprint: 5,
+      palette: expect.arrayContaining([expect.any(Number)]),
+    }),
+  ]);
+  const palette = (saved?.effectGroups as Array<{ palette: number[] }>)[0]?.palette;
+  expect(palette).toHaveLength(2);
+  expect(palette?.[0]).not.toBe(palette?.[1]);
+
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.reload();
+  await page.getByRole('button', { name: /Drafts.*1 climb/ }).click();
+  await page.getByRole('button', { name: /Curious proof/ }).click();
+  await page.getByRole('button', { name: 'Edit climb' }).click();
+  await expect(page.getByLabel('Effect group')).toContainText('Curious bumblebee');
+  await expect(page.getByLabel('Hover fraction')).toHaveValue('0.4');
+  await expect(page.getByRole('button', { name: 'Set Body to current color' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Set Wings to current color' })).toBeVisible();
+});
+
 test('loads a saved original loop and persists explicit seamless adoption', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');

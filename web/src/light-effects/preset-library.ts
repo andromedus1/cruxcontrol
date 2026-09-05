@@ -14,6 +14,7 @@ export const SPATIAL_PRESETS: readonly SpatialPreset[] = Object.freeze([
   { kind: 'bird-flock', label: 'Bird flock', footprint: 8, palette: [0xbf, 0x6f], periodMs: 120_000, recipe: { kind: 'bird-flock', direction: 'left', quietFraction: 0.35 } },
   { kind: 'frogger', label: 'Frogger', footprint: 10, palette: [0x1c, 0xc0, 0xa0], periodMs: 120_000, recipe: { kind: 'frogger', lanes: 4 } },
   { kind: 'pentagram', label: 'Fading pentagram', footprint: 20, palette: [0x20, 0xc0], periodMs: 120_000, recipe: { kind: 'pentagram', fadeRate: 1 } },
+  { kind: 'bumblebee', label: 'Curious bumblebee', footprint: 5, palette: [0xfc, 0x1b], periodMs: 120_000, recipe: { kind: 'bumblebee', hoverFraction: 0.4 } },
 ]);
 
 export function createSpatialPreset(kind: SpatialEffectKind, seed = Date.now()): SpatialLightEffectGroup {

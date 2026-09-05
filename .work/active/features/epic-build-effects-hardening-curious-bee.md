@@ -127,3 +127,12 @@ kind list when the new registry entry appears; never manufacture a version-1 bee
 satisfy those fixtures. No directional questions remain: curious and editable body/wing
 colors were selected by Andrew. One Luna xhigh owner, standard independent feature review;
 no child stories because this is a cohesive addition to the now-verified shared machinery.
+
+## Implementation notes
+- Execution capability: Luna xhigh inline feature owner; the registry, pure renderer path, codecs, editor controls, and browser evidence form one cohesive surface.
+- Review weight: standard, from the prepared feature design and caller's independent-review boundary.
+- Files changed: `web/src/board-renderer/types.ts`, `web/src/light-effects/spatial-frame-v2.ts`, `web/src/light-effects/spatial-frame-v1.ts`, `web/src/light-effects/preset-library.ts`, `web/src/drafts/codec.ts`, `web/src/playlists/portable-codec.ts`, `web/src/route-editor/LightEffectsPanel.tsx`, `web/src/route-editor/RouteEditorWorkspace.css`, plus their unit/component tests and `web/e2e/spatial-effects.spec.ts`.
+- Tests added/removed: seeded six-stop pose and activity coverage; strict draft/portable codec cases; real editor Body/Wings controls; production save/reload scenario. Legacy v1 fixtures remain explicitly scoped to their original ten kinds.
+- Simplification: reused the existing v2 clock, geometry, role/mask filtering, encoded-color guard, projection, cache, IndexedDB repository, and generic palette controls; no new runtime or storage layer.
+- Discrepancies from design: none for the bee contract. The shared v2 module was committed separately at `62cdfe4` for root's concurrent Pong review fixes.
+- Adjacent issues parked: none.

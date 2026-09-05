@@ -3,7 +3,7 @@ import type { SpatialLightEffectGroup } from '../board-renderer/types';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10';
 import { createSpatialPreset, SPATIAL_PRESETS } from './preset-library';
 import { renderSpatialGroup, BOARD_ANIMATION_FRAME_MS } from './spatial-frame';
-import { spatialLoopClock } from './spatial-frame-v2';
+import { bumblebeeWaypoints, sampleBumblebeePose, spatialLoopClock } from './spatial-frame-v2';
 import { prepareSpatialGeometry } from './spatial-geometry';
 
 describe('version 2 spatial loops', () => {
@@ -19,6 +19,7 @@ describe('version 2 spatial loops', () => {
       'bird-flock': 120_000,
       frogger: 120_000,
       pentagram: 120_000,
+      bumblebee: 120_000,
     });
   });
 
@@ -122,13 +123,37 @@ describe('version 2 spatial loops', () => {
     expect(renderSpatialGroup(definition, [], birds, birds.periodMs * .99)).toEqual([]);
   });
 
+  it('samples a seeded six-stop bee tour with joined hover, flight, and dart intervals', () => {
+    const bee = createSpatialPreset('bumblebee', 17);
+    const clock = spatialLoopClock(bee.periodMs, 0);
+    const waypoints = bumblebeeWaypoints(bee.seed);
+    expect(waypoints).toHaveLength(6);
+    expect(new Set(waypoints.map(({ x, y }) => `${x}:${y}`)).size).toBe(6);
+    expect(sampleBumblebeePose(bee, clock)).toMatchObject({ center: waypoints[0], activity: 'hover', wingPose: 'up' });
+
+    const samples = Array.from({ length: clock.frameCount }, (_, frame) => sampleBumblebeePose(
+      bee,
+      spatialLoopClock(bee.periodMs, frame * BOARD_ANIMATION_FRAME_MS),
+    ));
+    expect(new Set(samples.map(({ activity }) => activity))).toEqual(new Set(['hover', 'flight', 'dart']));
+    expect(new Set(samples.map(({ wingPose }) => wingPose))).toEqual(new Set(['up', 'down']));
+    expect(samples.some(({ center }, index) => index > 0 && center.x !== samples[index - 1]!.center.x)).toBe(true);
+    expect(sampleBumblebeePose(bee, spatialLoopClock(bee.periodMs, bee.periodMs))).toEqual(samples[0]);
+
+    const lessHover = Object.freeze({ ...bee, recipe: Object.freeze({ kind: 'bumblebee' as const, hoverFraction: 0 }) });
+    const moreHover = Object.freeze({ ...bee, recipe: Object.freeze({ kind: 'bumblebee' as const, hoverFraction: .8 }) });
+    const lessActivities = new Set(Array.from({ length: clock.frameCount }, (_, frame) => sampleBumblebeePose(lessHover, spatialLoopClock(bee.periodMs, frame * BOARD_ANIMATION_FRAME_MS))).map(({ activity }) => activity));
+    const moreActivities = new Set(Array.from({ length: clock.frameCount }, (_, frame) => sampleBumblebeePose(moreHover, spatialLoopClock(bee.periodMs, frame * BOARD_ANIMATION_FRAME_MS))).map(({ activity }) => activity));
+    expect(lessActivities).not.toEqual(moreActivities);
+  });
+
   it('makes each shape control observable within the light reserve', () => {
     for (const preset of SPATIAL_PRESETS) {
       const base = createSpatialPreset(preset.kind, 11);
       const recipe = { ...base.recipe } as Record<string, unknown>;
-      const field = preset.kind === 'ocean-tide' ? 'foam' : preset.kind === 'tie-dye-spiral' ? 'arms' : preset.kind === 'matrix-rain' ? 'columns' : preset.kind === 'snake' ? 'bodyLength' : preset.kind === 'beach-ball' ? 'size' : preset.kind === 'pac-man' ? 'mouthBeat' : preset.kind === 'pong' ? 'paddleSize' : preset.kind === 'bird-flock' ? 'quietFraction' : preset.kind === 'frogger' ? 'lanes' : 'fadeRate';
+      const field = preset.kind === 'ocean-tide' ? 'foam' : preset.kind === 'tie-dye-spiral' ? 'arms' : preset.kind === 'matrix-rain' ? 'columns' : preset.kind === 'snake' ? 'bodyLength' : preset.kind === 'beach-ball' ? 'size' : preset.kind === 'pac-man' ? 'mouthBeat' : preset.kind === 'pong' ? 'paddleSize' : preset.kind === 'bird-flock' ? 'quietFraction' : preset.kind === 'frogger' ? 'lanes' : preset.kind === 'pentagram' ? 'fadeRate' : 'hoverFraction';
       const value = recipe[field];
-      const alternate = typeof value === 'number' ? (field === 'quietFraction' ? Math.min(.9, (value as number) + .25) : field === 'bodyLength' ? 3 : (value as number) + 1) : value;
+      const alternate = typeof value === 'number' ? (field === 'quietFraction' ? Math.min(.9, (value as number) + .25) : field === 'hoverFraction' ? .7 : field === 'bodyLength' ? 3 : (value as number) + 1) : value;
       const changed = Object.freeze({ ...base, recipe: Object.freeze({ ...recipe, [field]: alternate }) }) as typeof base;
       const baseFrames = Array.from({ length: 120 }, (_, frame) => JSON.stringify(renderSpatialGroup(definition, [], base, frame * 500)));
       const changedFrames = Array.from({ length: 120 }, (_, frame) => JSON.stringify(renderSpatialGroup(definition, [], changed, frame * 500)));

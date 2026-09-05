@@ -50,6 +50,7 @@ function validSpatialRecipe(raw: Record<string, unknown>): boolean {
     case 'bird-flock': return ['left','right'].includes(raw.direction as string) && typeof raw.quietFraction==='number' && raw.quietFraction>=0 && raw.quietFraction<1;
     case 'frogger': return Number.isInteger(raw.lanes) && (raw.lanes as number)>=1 && (raw.lanes as number)<=8;
     case 'pentagram': return typeof raw.fadeRate==='number' && Number.isFinite(raw.fadeRate) && raw.fadeRate>0 && raw.fadeRate<=8;
+    case 'bumblebee': return typeof raw.hoverFraction==='number' && Number.isFinite(raw.hoverFraction) && raw.hoverFraction>=0 && raw.hoverFraction<=.8;
     default: return false;
   }
 }
@@ -224,8 +225,9 @@ function decodeEffectGroups(value: unknown, path: string, _legacy: boolean): rea
       if (model !== 'spatial') invalid(`${entryPath}.model`, 'expected assigned or spatial');
       if ((raw.recipeVersion !== 1 && raw.recipeVersion !== 2) || !Number.isSafeInteger(raw.seed) || !Number.isInteger(raw.footprint) || (raw.footprint as number) < 1 || (raw.footprint as number) > 20) invalid(entryPath, 'invalid spatial recipe version, seed, or footprint');
       const recipe = record(raw.recipe, `${entryPath}.recipe`);
-      const spatialKinds = new Set(['ocean-tide','tie-dye-spiral','matrix-rain','snake','beach-ball','pac-man','pong','bird-flock','frogger','pentagram']);
+      const spatialKinds = new Set(['ocean-tide','tie-dye-spiral','matrix-rain','snake','beach-ball','pac-man','pong','bird-flock','frogger','pentagram','bumblebee']);
       if (!spatialKinds.has(recipe.kind as string)) invalid(`${entryPath}.recipe.kind`, 'unknown spatial recipe');
+      if (recipe.kind === 'bumblebee' && raw.recipeVersion === 1) invalid(`${entryPath}.recipeVersion`, 'bumblebee recipes require version 2');
       if (!validSpatialRecipe(recipe)) invalid(`${entryPath}.recipe`, 'invalid spatial recipe parameters');
       const target = record(raw.target, `${entryPath}.target`);
       if (!['unused','background-board','selected'].includes(target.scope as string)) invalid(`${entryPath}.target.scope`, 'unknown target scope');

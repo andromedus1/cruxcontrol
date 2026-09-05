@@ -5,6 +5,7 @@ import { decodeStoredDraft, draftRevision, encodeStoredDraft, localDraftId } fro
 import { DraftCorruptRecordError, DraftSchemaError } from './errors.ts';
 import { draftContent, FIRST_DRAFT_ID } from './test-fixtures.ts';
 import type { LocalClimbDraft } from './types.ts';
+import { createSpatialPreset } from '../light-effects/preset-library.ts';
 
 function draft(overrides: Partial<LocalClimbDraft> = {}): LocalClimbDraft {
   const content = draftContent();
@@ -54,6 +55,19 @@ describe('local draft codec', () => {
     expect(decodeStoredDraft(encodeStoredDraft(source))).toEqual(source);
     const future = { ...encodeStoredDraft(source), effectGroups: [{ ...(encodeStoredDraft(source).effectGroups[0] as Record<string, unknown>), recipeVersion: 3 }] };
     expect(() => decodeStoredDraft(future)).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
+  });
+  it('accepts v2 bumblebee recipes and rejects v1, future, and invalid hover values', () => {
+    const bee = createSpatialPreset('bumblebee', 7);
+    const source = draft({ effectGroups: [bee] });
+    expect(decodeStoredDraft(encodeStoredDraft(source))).toEqual(source);
+    const encoded = encodeStoredDraft(source);
+    const group = encoded.effectGroups[0] as Record<string, unknown>;
+    const recipe = group.recipe as Record<string, unknown>;
+    expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipeVersion: 1 }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
+    expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipeVersion: 3 }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
+    for (const hoverFraction of [-.01, .81, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipe: { ...recipe, hoverFraction } }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipe' }));
+    }
   });
   it.each([
     ['frogger', { kind: 'frogger' as const, lanes: 4 }],

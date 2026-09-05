@@ -137,6 +137,20 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByText(/0 route\/static \+ 5 effects = 5\/20/)).toBeInTheDocument();
   });
 
+  it('edits curious bee Body and Wings through labeled controls and keeps the two palette slots', () => {
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Curious bumblebee 5 lights/ }));
+    expect(screen.getByLabelText('Hover fraction')).toHaveValue(0.4);
+    fireEvent.click(screen.getByRole('radio', { name: /Advanced Light/ }));
+    fireEvent.change(screen.getByLabelText('red channel'), { target: { value: '7' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Set Body to current color' }));
+    fireEvent.change(screen.getByLabelText('blue channel'), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Set Wings to current color' }));
+    const colors = screen.getAllByRole('button', { name: /Remove color/ }).map((button) => button.getAttribute('aria-label'));
+    expect(colors).toHaveLength(2);
+    expect(new Set(colors).size).toBe(2);
+  });
+
   it('shows and explicitly adopts the longer seamless loop for a saved v1 effect', () => {
     const legacy = { ...createSpatialPreset('snake', 4), recipeVersion: 1 as const, periodMs: 5_000 };
     render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={{ ...draft, effectGroups: [legacy] }} repository={repository} onBack={vi.fn()} />);
