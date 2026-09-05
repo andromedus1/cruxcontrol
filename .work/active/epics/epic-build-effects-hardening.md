@@ -75,6 +75,9 @@ encoder and mock API-2 transport, not new physical-board observations.
 
 Andrew explicitly requested that loops start and end in the same place and play
 seamlessly, and that they be longer and more interesting while respecting each theme.
+This applies to all ten existing spatial backgrounds: Ocean Tide, Tie-dye Spiral,
+Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger and Fading Pentagram.
+The bumblebee is an additional preset, not the sole recipient of the loop improvements.
 
 - Each repeating recipe must close its path: position, direction, color, brightness
   and any trail/game state must join without a visible reset. Define frame-boundary
@@ -102,6 +105,12 @@ flight-and-hover sequence must loop seamlessly, including its position, directio
 brightness and any supporting visual state at the join.
 
 Use the existing background-effect selection, preview, saved-recipe and playback paths.
+The bee's palette must be editable and persisted like the other background effects,
+including body and wing colors; the yellow shown in the study is not a fixed requirement.
+Andrew flagged its similarity to foothold color. Validate decorative colors against the
+actual controller-encoded climb-role colors and preview any adjustment without rewriting
+the chosen palette or changing role assignments. Exact byte inequality alone does not
+establish perceptual separation; make foothold comparison part of physical dogfooding.
 Keep route holds legible and unchanged, respect the same light budget and output cadence,
 and make seeded playback repeatable. Motion mockups must establish readable flight and
 hovering before production changes; detailed paths, timing and appearance remain design
@@ -130,12 +139,19 @@ occurred. Andrew is considering an autopilot drain of this work order after alig
 Limit that drain to this epic, respecting animation-first and backup-second sequencing;
 unrelated active epics are outside the requested work order.
 
+## Design decisions
+
+- **Bumblebee character:** Andrew selected the curious variant from the motion study:
+  wandering flights, gentle hovering and occasional darts.
+- **Editable bee palette:** body and wing colors remain user-editable and saved with
+  the effect. Include a foothold comparison in the preview and hardware acceptance.
+- **Existing effects:** Andrew reaffirmed that the seamless-loop improvements cover
+  the existing background presets as well as the new bee.
+
 Pending user choices (recommendations are proposals, not accepted decisions):
 
 - **Pacing:** theme-specific sequences, usually 1–3 minutes, with calmer nature and
   livelier games; alternatives emphasize calm throughout or frequent playful activity.
-- **Bumblebee character:** a curious lone bee with hovering and occasional darts;
-  alternatives are a mellow bee or a busier bee.
 - **Saved animation adoption:** preserve saved visual behavior with an explicit upgrade
   to improved loops; alternative is automatic use of improved loops with saved settings
   retained. Neither option changes climb holds or playlist memberships.
@@ -151,12 +167,13 @@ read-only probe found no additional directional questions beyond the three above
 - Bumblebee motion comparison:
   `.mockups/screens/epic-build-effects-hardening-animation/index.html`.
   Curious, mellow and busy studies use a geometry snapshot of the actual 305 Fullride
-  light positions, five bee lights plus five protected sample route lights, and 2-FPS
+  light positions, five bee lights plus six protected sample route lights, and 2-FPS
   held poses. Play/pause, frame stepping, scrubbing and a loop-join shortcut support review.
   Colors are illustrative; this is motion alignment, not verified hardware output.
 - Existing application motion tokens remain in `.mockups/design-system/motion.css`.
   The study extends background-effect exploration without changing interface animation.
-- Selection is pending. The standalone mock was checked in Chromium at desktop and
+- Curious selected by Andrew; body/wing palette controls and a foot-only example make
+  the color concern reviewable. The standalone mock was checked in Chromium at desktop and
   phone widths: controls work, no JavaScript errors, and no horizontal overflow.
 - Existing themed-loop studies and backup/update UI alignment remain for their design
   passes; the bee comparison is not sign-off on those surfaces.
