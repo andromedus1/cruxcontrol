@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-library-backup
 kind: feature
-stage: implementing
+stage: done
 tags: [ui, data]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-curious-bee]
@@ -456,3 +456,11 @@ four historical record schemas, old Trash, metadata, original/seamless/bee recip
 shared lists, orphan climbs and unavailable references with exact raw storage checks.
 All 565 integrated unit tests and 10 browser scenarios pass; lint/typecheck/build pass.
 Independent pass count remains one; only remote CI closure remains for this feature.
+
+## Review closure
+
+GitHub CI 34001008461 at d1d6239 passes the complete web lint/typecheck/unit/build/
+browser lane and ML smoke lane. The rich recovery scenario passes in CI. Deploy is
+skipped by its existing opt-in gate. All four accepted review findings and both
+codec audit defects are verified; standard review closes after exactly one independent
+pass, with no rereview. Feature done; physical phone recovery timing remains dogfooding.
