@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CruxControl · Small lights, clear motion</title>
+<link rel="stylesheet" href="../../design-system/tokens.css">
+<link rel="stylesheet" href="../../design-system/components.css">
+<link rel="stylesheet" href="../../design-system/motion.css">
+<style>
+  main{max-width:1120px;margin:auto;padding:24px}h1{font-size:clamp(28px,5vw,44px);line-height:1.15;margin:12px 0}
+  .eyebrow{font:12px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-secondary)}
+  .intro{max-width:750px}.layout{display:grid;grid-template-columns:minmax(280px,480px) 1fr;gap:24px;margin:24px 0}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.controls label{display:flex;align-items:center;gap:8px;min-height:44px}
+  .board{background:#111820;border:1px solid #39434b;border-radius:12px;padding:12px}svg{display:block;width:100%;max-height:65vh}
+  select,input,button{font:inherit}select{max-width:100%}input[type=range]{width:100%;min-height:44px}input[type=color]{width:48px;height:44px;padding:2px}
+  .stats{color:#c4d5d7;font:12px/1.7 var(--font-mono);margin:8px}.note{font-size:14px;color:var(--color-text-secondary)}
+  article h2{margin-top:0}article p{margin:12px 0}table{width:100%;border-collapse:collapse;margin-top:20px}td,th{text-align:left;padding:10px 8px;border-bottom:1px solid var(--color-border)}
+  .sources{font-size:13px}output{font-family:var(--font-mono)}@media(max-width:720px){main{padding:16px}.layout{grid-template-columns:1fr}svg{max-height:55vh}}
+</style>
+<main>
+  <p class="eyebrow">CruxControl / Ambient motion study / Dogfood round two</p>
+  <h1>Small lights, clear motion.</h1>
+  <p class="intro">Two new Matrix directions and four possible backgrounds. Each uses ten or fewer effect holds on the actual Fullride layout. Every pose lasts half a second. These are design studies; they do not change your climbs or control your board.</p>
+  <label class="field">Study <select class="select" id="theme">
+    <option value="matrix-two">Matrix · two long trails</option>
+    <option value="matrix-three">Matrix · three staggered trails</option>
+    <option value="fireflies">Fireflies · little conversations</option>
+    <option value="meteor">Shooting stars · a quiet sky</option>
+    <option value="jellyfish">Jellyfish · pulse and drift</option>
+    <option value="embers">Embers · warm updraft</option>
+  </select></label>
+  <div class="layout">
+    <div class="board"><svg viewBox="-47 20 94 128" role="img" aria-label="Fullride holds with background effect and example climb"></svg><p class="stats" id="count"></p></div>
+    <article class="card">
+      <h2 id="title"></h2><p id="description"></p><p class="note" id="tradeoff"></p>
+      <div class="controls"><button class="btn btn-primary" id="play">Play</button><button class="btn btn-secondary" id="step">Next frame</button><button class="btn btn-secondary" id="join">Watch loop join</button></div>
+      <p><output id="time"></output></p><input id="scrub" type="range" min="0" max="119.5" step="0.5" value="0" aria-label="Loop position">
+      <div class="controls"><label>Effect tint <input id="tint" type="color" value="#35db76"></label><label><input id="route" type="checkbox" checked> Show example climb</label><label><input id="reduced" type="checkbox"> Reduced motion</label></div>
+      <p class="note">120-second ambient sequence. Play is opt-in; reduced motion pauses playback and keeps frame stepping available. Climb holds stay fixed and exclude the effect at those positions.</p>
+      <p class="note">Colors and brightness are illustrative. The board's limited color steps and protection of climb-role colors can change the physical result. New effects would retain editable palettes.</p>
+    </article>
+  </div>
+  <table><caption>Design targets — maximum simultaneously reserved effect holds</caption><thead><tr><th>Candidate</th><th>Holds</th><th>Why it fits slow updates</th></tr></thead><tbody>
+    <tr><td>Fireflies</td><td>8</td><td>Individual glows, pauses, and loosely answering pulses.</td></tr>
+    <tr><td>Shooting stars</td><td>6</td><td>A bright head and short fading trail, with dark intervals.</td></tr>
+    <tr><td>Jellyfish</td><td>9</td><td>A small bell contracts; four tentacle lights lag behind.</td></tr>
+    <tr><td>Embers</td><td>10</td><td>Six glowing coals and up to four rising sparks.</td></tr>
+  </tbody></table>
+  <p class="sources">Natural-motion references: <a href="https://home.nps.gov/grsm/learn/nature/firefly-flash-patterns.htm">NPS firefly flash patterns</a> and <a href="https://spaceplace.nasa.gov/asteroid-or-meteor/en/">NASA's meteor explanation</a>. Choreography and hold budgets are CruxControl design proposals.</p>
+</main>
+<script>
+// Coordinates copied from the existing Fullride study, itself based on the generated board definition.
+const coordinates = [[-40,28],[-40,36],[-40,44],[-40,52],[-40,60],[-40,68],[-40,76],[-40,84],[-40,92],[-40,100],[-40,108],[-40,116],[-40,124],[-40,132],[-40,140],[-36,136],[-36,128],[-36,120],[-36,112],[-36,104],[-36,96],[-36,88],[-36,80],[-36,72],[-36,64],[-36,56],[-36,48],[-36,40],[-36,32],[-32,28],[-32,36],[-32,44],[-32,52],[-32,60],[-32,68],[-32,76],[-32,84],[-32,92],[-32,100],[-32,108],[-32,116],[-32,124],[-32,132],[-32,140],[-28,136],[-28,128],[-28,120],[-28,112],[-28,104],[-28,96],[-28,88],[-28,80],[-28,72],[-28,64],[-28,56],[-28,48],[-28,40],[-28,32],[-24,28],[-24,36],[-24,44],[-24,52],[-24,60],[-24,68],[-24,76],[-24,84],[-24,92],[-24,100],[-24,108],[-24,116],[-24,124],[-24,132],[-24,140],[-20,136],[-20,128],[-20,120],[-20,112],[-20,104],[-20,96],[-20,88],[-20,80],[-20,72],[-20,64],[-20,56],[-20,48],[-20,40],[-20,32],[-16,28],[-16,36],[-16,44],[-16,52],[-16,60],[-16,68],[-16,76],[-16,84],[-16,92],[-16,100],[-16,108],[-16,116],[-16,124],[-16,132],[-16,140],[-12,136],[-12,128],[-12,120],[-12,112],[-12,104],[-12,96],[-12,88],[-12,80],[-12,72],[-12,64],[-12,56],[-12,48],[-12,40],[-12,32],[-8,28],[-8,36],[-8,44],[-8,52],[-8,60],[-8,68],[-8,76],[-8,84],[-8,92],[-8,100],[-8,108],[-8,116],[-8,124],[-8,132],[-8,140],[-4,136],[-4,128],[-4,120],[-4,112],[-4,104],[-4,96],[-4,88],[-4,80],[-4,72],[-4,64],[-4,56],[-4,48],[-4,40],[-4,32],[0,28],[0,36],[0,44],[0,52],[0,60],[0,68],[0,76],[0,84],[0,92],[0,100],[0,108],[0,116],[0,124],[0,132],[0,140],[4,136],[4,128],[4,120],[4,112],[4,104],[4,96],[4,88],[4,80],[4,72],[4,64],[4,56],[4,48],[4,40],[4,32],[8,28],[8,36],[8,44],[8,52],[8,60],[8,68],[8,76],[8,84],[8,92],[8,100],[8,108],[8,116],[8,124],[8,132],[8,140],[12,136],[12,128],[12,120],[12,112],[12,104],[12,96],[12,88],[12,80],[12,72],[12,64],[12,56],[12,48],[12,40],[12,32],[16,28],[16,36],[16,44],[16,52],[16,60],[16,68],[16,76],[16,84],[16,92],[16,100],[16,108],[16,116],[16,124],[16,132],[16,140],[20,136],[20,128],[20,120],[20,112],[20,104],[20,96],[20,88],[20,80],[20,72],[20,64],[20,56],[20,48],[20,40],[20,32],[24,28],[24,36],[24,44],[24,52],[24,60],[24,68],[24,76],[24,84],[24,92],[24,100],[24,108],[24,116],[24,124],[24,132],[24,140],[28,136],[28,128],[28,120],[28,112],[28,104],[28,96],[28,88],[28,80],[28,72],[28,64],[28,56],[28,48],[28,40],[28,32],[32,28],[32,36],[32,44],[32,52],[32,60],[32,68],[32,76],[32,84],[32,92],[32,100],[32,108],[32,116],[32,124],[32,132],[32,140],[36,136],[36,128],[36,120],[36,112],[36,104],[36,96],[36,88],[36,80],[36,72],[36,64],[36,56],[36,48],[36,40],[36,32],[40,28],[40,36],[40,44],[40,52],[40,60],[40,68],[40,76],[40,84],[40,92],[40,100],[40,108],[40,116],[40,124],[40,132],[40,140]];
+const points = coordinates.map(([x,y],i) => ({x:(x+40)/80,y:(y-28)/112,i}));
+const tau = Math.PI*2, period = 120, fraction = x => ((x%1)+1)%1;
+const themes = {
+  'matrix-two': {name:'Matrix · two long trails',budget:10,tint:'#35db76',description:'Two falling heads lead five-cell trails. Each head is pale and bright; cells above it decay through green into darkness. New falls begin in different columns after the old trail has left.',tradeoff:'My preferred Matrix direction: spend the lights on readable trails. Literal letters will not be readable on this sparse board.'},
+  'matrix-three': {name:'Matrix · three staggered trails',budget:10,tint:'#35db76',description:'Three streams share ten cells: one four-cell trail and two three-cell trails. Staggered entrances and different descent rates make a busier field of falling code.',tradeoff:'More rain across the wall, but shorter tails. Compare it with the two-stream option at the same ten-hold cost.'},
+  fireflies: {name:'Fireflies · little conversations',budget:8,tint:'#b6e479',description:'Eight tiny lights glow and rest at different times. A loose answering rhythm passes across the board; each insect changes perch during darkness before glowing again.',tradeoff:'Strongest new candidate. Its identity comes from timing, so it needs no detailed silhouette or smooth flight.'},
+  meteor: {name:'Shooting stars · a quiet sky',budget:6,tint:'#89caff',description:'A lone bright head crosses diagonally, followed by five fading cells. Long dark intervals separate streaks with different origins and directions.',tradeoff:'A stylized slow meteor: the trail stays visible long enough to read at two frames per second.'},
+  jellyfish: {name:'Jellyfish · pulse and drift',budget:9,tint:'#c28aee',description:'A five-light bell pulses slowly while four trailing lights sway beneath it. The animal drifts around a small closed path with gentle buoyant rises and falls.',tradeoff:'The most figurative candidate. Route masks may weaken the bell silhouette, so it especially needs a wall test.'},
+  embers: {name:'Embers · warm updraft',budget:10,tint:'#f1a260',description:'Six low coals breathe with staggered warmth. Four individual sparks lift, wander sideways, and fade before returning to the hearth.',tradeoff:'A calm background with most lights near the bottom. A customizable cooler palette could make it feel like enchanted embers.'}
+};
+const route = new Map([20,55,85,120,145,180,220,255,280].map((i,n) => [i,['#56b84d','#35aac0','#35aac0','#35aac0','#ed9848','#35aac0','#35aac0','#35aac0','#d268b0'][n]]));
+const ns='http://www.w3.org/2000/svg', svg=document.querySelector('svg');
+const dots=coordinates.map(([x,y])=>{const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',x);dot.setAttribute('cy',168-y);svg.append(dot);return dot});
+const select=document.querySelector('#theme'),tint=document.querySelector('#tint'),routeToggle=document.querySelector('#route'),reduced=document.querySelector('#reduced');
+let elapsed=0,playing=false,last=null,previousFrame=-1;
+reduced.checked=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function color(hex,level,white=0){const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));return `rgb(${rgb.map(v=>Math.round((v+(255-v)*white)*level)).join(',')})`}
+function pose(kind,t){
+  t=((Math.floor(t*2)%(period*2))+period*2)%(period*2)/2;
+  const targets=[],p=t/period,hex=tint.value;
+  const add=(x,y,brightness=1,white=0)=>{if(x>=0&&x<=1&&y>=0&&y<=1&&brightness>.06)targets.push({x,y,color:color(hex,brightness,white)})};
+  if(kind.startsWith('matrix')){
+    const lengths=kind==='matrix-two'?[5,5]:[4,3,3];
+    lengths.forEach((length,stream)=>{
+      const cycles=6-stream,phase=p*cycles+[.13,.57,.81][stream],fall=Math.floor(phase)%cycles;
+      const column=(stream*7+fall*3)%19+1,x=column/20;
+      const rows=column%2?14:15,step=Math.floor(fraction(phase)*(rows+length+4))-length;
+      for(let tail=0;tail<length;tail++){
+        const row=step-tail;
+        if(row<0||row>=rows)continue;
+        const y=column%2?1-1/28-row/14:1-row/14;
+        // Fixed cells in each column prevent diagonal nearest-neighbor drift.
+        const point=points.find(q=>Math.abs(q.x-x)<1e-8&&Math.abs(q.y-y)<1e-8);
+        if(point){const shimmer=tail===0?1:Math.floor(t*2+row)%5===0?.85:1;targets.push({point, color:color(hex,[1,.78,.52,.3,.15][tail]*shimmer,tail===0?.72:0)})}
+      }
+    });
+  }
+  if(kind==='fireflies')for(let n=0;n<8;n++){
+    const phase=p*8+n*.04,cycle=Math.floor(phase)%8,q=fraction(phase);
+    const brightness=q>.12&&q<.44?Math.sin((q-.12)/.32*Math.PI):0;
+    const x=.1+fraction(n*.381+cycle*.173)*.8,y=.16+fraction(n*.217+cycle*.293)*.72;
+    add(x,y,brightness);
+  }
+  if(kind==='meteor'){
+    const phase=p*8,pass=Math.floor(phase),q=fraction(phase),direction=pass%2?1:-1;
+    if(q>.15&&q<.65){const u=(q-.15)/.5,start=.25+fraction(pass*.27)*.5;
+      for(let tail=0;tail<6;tail++){const h=u-tail*.04;add(start+direction*(h-.2)*.65,1.15-h*1.5,[1,.72,.48,.29,.16,.08][tail],tail===0?.65:0)}
+    }
+  }
+  if(kind==='jellyfish'){
+    const pulse=.5+.5*Math.cos(tau*p*24),x=.5+.22*Math.sin(tau*p),y=.57+.12*Math.cos(tau*p*2),width=.065+.025*pulse;
+    for(let n=0;n<5;n++){const angle=Math.PI*n/4;add(x+Math.cos(angle)*width,y+Math.sin(angle)*.065,.7+.3*pulse)}
+    for(let n=0;n<4;n++){const side=n%2?1:-1,depth=Math.floor(n/2)+1;add(x+side*.045+.015*Math.sin(tau*p*24-depth),y-depth*.07,.55)}
+  }
+  if(kind==='embers'){
+    for(let n=0;n<6;n++)add(.34+n*.065,.08+(n%2)*.065,.45+.4*(.5+.5*Math.sin(tau*(p*(7+n)+n*.23))));
+    for(let n=0;n<4;n++){const q=fraction(p*(5+n)+n*.23);if(q<.85)add(.4+n*.055+.07*Math.sin(q*4+n),.2+q*.58,Math.sin(q/.85*Math.PI)*.85)}
+  }
+  return targets;
+}
+function frame(kind,t,showRoute){
+  const lights=new Map(),reserved=showRoute?route:new Map();
+  for(const target of pose(kind,t)){
+    let point=target.point;
+    if(!point){let distance=Infinity;for(const candidate of points){const d=Math.hypot(candidate.x-target.x,candidate.y-target.y);if(d<distance){distance=d;point=candidate}}}
+    // A route masks a cell; do not relocate it and distort the path or climb.
+    if(point&&!reserved.has(point.i)&&!lights.has(point.i))lights.set(point.i,target.color);
+  }
+  return {lights,reserved};
+}
+function render(){
+  const kind=select.value,theme=themes[kind],t=Math.floor(elapsed*2)/2,{lights,reserved}=frame(kind,t,routeToggle.checked);
+  dots.forEach((dot,i)=>{dot.setAttribute('fill',reserved.get(i)||lights.get(i)||'#35414a');dot.setAttribute('r',reserved.has(i)?'2':lights.has(i)?'1.9':'.75');dot.setAttribute('stroke',reserved.has(i)?'#ffffff':'none');dot.setAttribute('stroke-width','.3')});
+  document.querySelector('#title').textContent=theme.name;document.querySelector('#description').textContent=theme.description;document.querySelector('#tradeoff').textContent=theme.tradeoff;
+  document.querySelector('#time').textContent=`${(fraction(t/period)*period).toFixed(1)} / 120 seconds · 2 FPS`;
+  document.querySelector('#scrub').value=fraction(t/period)*period;
+  document.querySelector('#count').textContent=`${lights.size} effect holds lit / ${theme.budget} reserved · ${reserved.size} climb holds\n${theme.budget+reserved.size}/20 total reserved · 305 physical positions`;
+  window.studyState={kind,time:t,effectLights:lights.size,reserve:theme.budget,routeLights:reserved.size,playing};
+}
+function play(value){playing=value;last=null;document.querySelector('#play').textContent=value?'Pause':'Play';render()}
+document.querySelector('#play').onclick=()=>{if(!reduced.checked)play(!playing)};
+document.querySelector('#step').onclick=()=>{play(false);elapsed=Math.floor(elapsed*2)/2+.5;render()};
+document.querySelector('#join').onclick=()=>{elapsed=117;render();play(!reduced.checked)};
+document.querySelector('#scrub').oninput=e=>{play(false);elapsed=+e.target.value;render()};
+select.onchange=()=>{elapsed=0;tint.value=themes[select.value].tint;render()};tint.oninput=render;routeToggle.onchange=render;
+function reduce(){if(reduced.checked)play(false);document.querySelector('#play').disabled=reduced.checked}
+reduced.onchange=reduce;matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',e=>{reduced.checked=e.matches;reduce()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)play(false)});
+function tick(now){if(playing&&last!==null){elapsed+=(now-last)/1000;const current=Math.floor(elapsed*2);if(current!==previousFrame){render();previousFrame=current}}last=now;requestAnimationFrame(tick)}
+window.study={themes,points,frame,period};reduce();render();requestAnimationFrame(tick);
+</script>
+</html>
