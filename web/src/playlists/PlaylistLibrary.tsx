@@ -97,7 +97,6 @@ export function PlaylistLibrary({
   useEffect(() => {
     setName(selected?.name ?? '');
     setNotes(selected?.notes ?? '');
-    setStatus('');
   }, [selected?.id, selected?.name, selected?.notes]);
   useEffect(() => {
     if (playingId && (!selected || selected.id !== playingId || selected.entries.length === 0)) {
@@ -302,6 +301,7 @@ export function PlaylistLibrary({
                   aria-current={selected?.id === playlist.id ? 'true' : undefined}
                   onClick={() => {
                     setPlayingId(null);
+                    setStatus('');
                     setSelectedId(playlist.id);
                   }}
                 >

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { draftRevision, localDraftId } from '../drafts/codec.ts';
@@ -52,10 +52,13 @@ function renderLibrary(
   options: {
     readonly initialImportFragment?: string;
     readonly history?: PlaylistHistoryAdapter;
+    readonly deferChanged?: boolean;
   } = {},
 ) {
   let stored = [...initial];
   let nextId = 70;
+  let pendingChanged: LocalPlaylist | null = null;
+  let applyPendingChanged = () => undefined;
   const repository: LocalPlaylistRepository = {
     create: vi.fn(async (content) => {
       const created = storedPlaylist(content, 1, `00000000-0000-4000-8000-0000000000${nextId++}`);
@@ -89,7 +92,17 @@ function renderLibrary(
 
   function Harness() {
     const [playlists, setPlaylists] = useState(initial);
-    const refresh = async () => setPlaylists(await repository.list());
+    applyPendingChanged = () => {
+      if (!pendingChanged) return;
+      setPlaylists((values) => [
+        pendingChanged!,
+        ...values.filter((candidate) => candidate.id !== pendingChanged!.id),
+      ]);
+    };
+    const refresh = async () => {
+      const next = await repository.list();
+      if (!options.deferChanged) setPlaylists(next);
+    };
     return (
       <PlaylistLibrary
         playlists={playlists}
@@ -101,10 +114,12 @@ function renderLibrary(
         compatibilityIssue={() => null}
         onChanged={(playlist) => {
           if (playlist)
-            setPlaylists((values) => [
-              playlist,
-              ...values.filter((candidate) => candidate.id !== playlist.id),
-            ]);
+            if (options.deferChanged) pendingChanged = playlist;
+            else
+              setPlaylists((values) => [
+                playlist,
+                ...values.filter((candidate) => candidate.id !== playlist.id),
+              ]);
         }}
         onRefresh={refresh}
         onOpenLocalClimb={vi.fn()}
@@ -115,7 +130,7 @@ function renderLibrary(
   }
 
   render(<Harness />);
-  return { repository, getStored: () => stored };
+  return { repository, getStored: () => stored, applyPendingChanged: () => applyPendingChanged() };
 }
 
 describe('PlaylistLibrary', () => {
@@ -206,6 +221,28 @@ describe('PlaylistLibrary', () => {
     expect(repository.list).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Retry save list' }));
     await waitFor(() => expect(repository.update).toHaveBeenCalledTimes(2));
+  });
+
+  it('preserves Saved across delayed parent propagation and clears it on another selection', async () => {
+    const first = storedPlaylist({ name: 'First list', notes: '', entries: [] });
+    const second = storedPlaylist(
+      { name: 'Second list', notes: '', entries: [] },
+      1,
+      '00000000-0000-4000-8000-000000000063',
+    );
+    const { applyPendingChanged } = renderLibrary([first, second], [], { deferChanged: true });
+
+    await waitFor(() => expect(screen.getByLabelText('List name')).toHaveValue('First list'));
+    fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'Updated notes' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
+
+    act(() => applyPendingChanged());
+    await waitFor(() => expect(screen.getByLabelText('List name')).toHaveValue('First list'));
+    expect(screen.getByRole('status')).toHaveTextContent('Saved');
+
+    fireEvent.click(screen.getByRole('button', { name: /Second list.*0 climbs/ }));
+    expect(screen.getByRole('status')).toHaveTextContent('');
   });
 
   it('disables empty play-through and enters, navigates, switches, and exits without writes', async () => {
