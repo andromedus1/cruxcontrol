@@ -11,7 +11,7 @@ import { KilterScreenshotImportDialog } from '../screenshot-import/KilterScreens
 import { LibraryBackupDialog } from '../library-backup';
 import type { CruxControlRuntime } from './create-runtime';
 import { AppUpdateControl } from '../pwa/AppUpdateControl.tsx';
-import type { AppUpdateService } from '../pwa/update-service.ts';
+import type { AppUpdateService, AppUpdateSnapshot } from '../pwa/update-service.ts';
 import type { BoardLightState } from '../board-control/light-controller.ts';
 import './CruxControlWorkspace.css';
 
@@ -123,6 +123,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const [controllerState, setControllerState] = useState<BoardLightState | null>(() => runtime.controller?.getState() ?? null);
   const operationCount = useRef(0);
   const [pendingOperations, setPendingOperations] = useState(0);
+  const [updateSnapshot, setUpdateSnapshot] = useState<AppUpdateSnapshot | null>(() => updateService?.getSnapshot() ?? null);
 
   useEffect(() => {
     const controller = runtime.controller;
@@ -133,6 +134,14 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
     setControllerState(controller.getState());
     return controller.subscribe(setControllerState);
   }, [runtime.controller]);
+
+  useEffect(() => {
+    if (!updateService) {
+      setUpdateSnapshot(null);
+      return;
+    }
+    return updateService.subscribe(setUpdateSnapshot);
+  }, [updateService]);
 
   const beginOperation = useCallback(() => {
     operationCount.current += 1;
@@ -358,23 +367,29 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
             onDisconnectBoard={() => runtime.controller?.disconnect()}
           />
         )}
-        <RouteEditorWorkspace
-          definition={runtime.installation.definition}
-          draft={active}
-          repository={runtime.drafts}
-          controller={runtime.controller}
-          onBack={() => {
-            setEditing(null);
-            void refresh();
-          }}
-          onDraftIdentityChange={adoptDraftIdentity}
-        />
+        <div inert={updateSnapshot?.status === 'applying' || undefined}>
+          <RouteEditorWorkspace
+            definition={runtime.installation.definition}
+            draft={active}
+            repository={runtime.drafts}
+            controller={runtime.controller}
+            onBack={() => {
+              setEditing(null);
+              void refresh();
+            }}
+            onDraftIdentityChange={adoptDraftIdentity}
+          />
+        </div>
       </>
     );
   }
 
   return (
-    <main className="climb-workspace">
+    <main
+      className="climb-workspace"
+      inert={updateSnapshot?.status === 'applying' || undefined}
+      aria-busy={updateSnapshot?.status === 'applying' || undefined}
+    >
       {updateService && (
         <AppUpdateControl
           service={updateService}
