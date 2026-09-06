@@ -25,9 +25,9 @@ function setup() {
   const registration = new FakeRegistration();
   const current = new FakeWorker();
   const next = new FakeWorker();
-  registration.active = current;
-  registration.waiting = next;
-  container.controller = current;
+  registration.active = current as unknown as ServiceWorker;
+  registration.waiting = next as unknown as ServiceWorker;
+  container.controller = current as unknown as ServiceWorker;
   container.register.mockResolvedValue(registration as unknown as ServiceWorkerRegistration);
   const requests: Array<{
     mode: 'shared' | 'exclusive';
@@ -90,7 +90,7 @@ describe('createAppUpdateService', () => {
     await service.start();
     const applying = service.apply();
     await vi.waitFor(() => expect(next.messages).toEqual([{ type: 'SKIP_WAITING' }]));
-    container.controller = next;
+    container.controller = next as unknown as ServiceWorker;
     container.dispatchEvent(new Event('controllerchange'));
     await applying;
     expect(reload).toHaveBeenCalledTimes(1);

@@ -58,9 +58,9 @@ export interface AppUpdateServiceDependencies {
   readonly activationTimeoutMs?: number;
 }
 
-interface ViteImportMeta extends ImportMeta {
+type ViteImportMeta = ImportMeta & {
   readonly env?: { readonly BASE_URL?: string };
-}
+};
 
 interface Deferred<T> {
   readonly promise: Promise<T>;
@@ -279,7 +279,7 @@ export function createAppUpdateService(
       cleanups.push(() => container.removeEventListener('controllerchange', onExternalControllerChange));
       try {
         const register = dependencies.register ?? ((url: string, options?: RegistrationOptions) => container.register(url, options));
-        const baseUrl = dependencies.baseUrl ?? (import.meta as ViteImportMeta).env?.BASE_URL ?? '/';
+        const baseUrl = dependencies.baseUrl ?? (import.meta as unknown as ViteImportMeta).env?.BASE_URL ?? '/';
         const next = await register(updateUrl(baseUrl, pageLocation), { scope: baseUrl });
         if (disposed) return;
         observeRegistration(next);
