@@ -262,13 +262,13 @@ describe('CruxControlWorkspace', () => {
       metadata: original.metadata,
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /My Climbs.*1 climb/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /My Climbs.*1 climb/ }));
     fireEvent.click(screen.getByRole('button', { name: /Original/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Move to trash' }));
     await waitFor(() => expect(trash).toHaveBeenCalledWith(original.id, draftRevision(2)));
     expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('delete it forever'));
 
-    fireEvent.click(screen.getByRole('button', { name: /Trash.*1 climb/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Trash.*1 climb/ }));
     fireEvent.click(screen.getByRole('button', { name: /Original/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
     await waitFor(() => expect(restore).toHaveBeenCalledWith(original.id, draftRevision(3)));
