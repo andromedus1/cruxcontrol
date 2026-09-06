@@ -53,6 +53,9 @@ async function copyCurrentSource(destination: string): Promise<void> {
     'package-lock.json',
     'web',
     'docs/kilter_fullride_7x10.png',
+    // Production CSS imports the token sheet from the mockup design system;
+    // retain that source dependency while keeping the fixture copy bounded.
+    '.mockups/design-system/tokens.css',
   ]) {
     const source = join(projectRoot, path);
     const target = join(destination, path);
