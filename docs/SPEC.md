@@ -94,12 +94,14 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   overwrites.
 - Explicit Light Draft and opt-in, default-off Live Preview reuse the board controller.
 - Add editable assignment effects and independent spatial background presets: Ocean Tide,
-  Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger,
-  a fading circled inverted pentagram, and Curious Bumblebee. All eleven presets use
+  Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock,
+  a fading circled inverted pentagram, and Curious Bumblebee. All ten available presets use
   version-2, closed themed trajectories with 90–150-second defaults. Bumblebee is v2-only:
   it provides a seeded six-stop, 120-second tour with hover, flight, and dart phases plus
   independently editable Body and Wings palette slots; malformed or version-1 bee recipes
-  are rejected by the strict codecs. Version-1 saved recipes remain on their
+  are rejected by the strict codecs. Frogger is retired from the Add a preset picker;
+  existing version-1 and version-2 Frogger recipes remain editable, playable, and importable.
+  Version-1 saved recipes remain on their
   original renderer until the user explicitly upgrades them; an upgrade preserves the
   authored settings and changes only the recipe version and period to the maximum of
   the old period and the new preset default. Presets default to unused holds, can target

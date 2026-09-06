@@ -1,7 +1,7 @@
 ---
 id: story-background-dogfood-design
 kind: story
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: null
 depends_on: []
@@ -52,3 +52,37 @@ trails. New ideas are design targets, not assertions of shipped behavior.
   bounded documentation worker per update-documentation skill.
 - Review weight: standard from .work/CONVENTIONS.md; standalone bounded inline review.
 - Phone offered for inspection; no phone access necessary for this design deliverable.
+
+## Verification
+
+- All 583 unit tests pass across 82 files with two workers. New mounted editor
+  coverage verifies retired Frogger v1 and v2 remain editable and absent from the
+  creation picker; existing strict draft/playlist codecs and renderer tests pass.
+- ESLint and TypeScript/Vite production build pass. Build output went to /tmp so
+  the phone's existing localhost:4173 preview build was not replaced.
+- Chromium study check: 305 positions; every half-second frame of all six studies
+  with/without nine route holds remains in its declared budget, excludes route
+  holds, and matches the corresponding pose one complete cycle later exactly.
+  Observed maximum effect counts: Matrix 10/10, fireflies 8, meteor 6,
+  jellyfish 9, embers 10. These validate mock geometry, not physical BLE output.
+- Play, frame-step, reduced-motion pause and 390px mobile layout verified; no
+  browser script errors. Desktop screenshot inspected and study opened locally.
+- Documentation updated and cross-checked in SPEC/ARCHITECTURE; generated knowledge
+  index lint has zero errors/warnings. No unrelated findings or data mutations.
+
+## Design recommendations
+
+Prefer Matrix's two five-cell streams over three shorter streams. Production
+design should retain the saved ten-hold reserve and authored palette, assign
+brightness by tail age, and keep drops aligned to physical columns. Actual API-2
+color steps need a wall check; preview shading is illustrative.
+
+New candidates: fireflies (8), shooting stars (6), jellyfish (9), embers (10).
+Fireflies and shooting stars are the strongest first choices. These are proposals
+for Andrew's selection, not additional implementation commitments.
+
+References: NPS firefly flash patterns
+(https://home.nps.gov/grsm/learn/nature/firefly-flash-patterns.htm) informs the
+glow/pause/answer rhythm; NASA meteor explanation
+(https://spaceplace.nasa.gov/asteroid-or-meteor/en/) informs the bright head and
+trailing streak. Timings, budgets, and choreography are original design choices.

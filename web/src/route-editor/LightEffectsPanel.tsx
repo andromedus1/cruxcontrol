@@ -54,7 +54,7 @@ export function LightEffectsPanel({ state, assignments, selectedId, onSelectedId
   };
   return <section className="light-effects" aria-labelledby="effects-heading">
     <div className="light-effects__heading"><div><h2 id="effects-heading">Effects</h2><p>Route colors stay protected. Background presets use the remaining light budget.</p></div></div>
-    <details><summary>Add a preset</summary><div className="preset-grid">{SPATIAL_PRESETS.map((preset) => <button key={preset.kind} type="button" onClick={() => addPreset(preset.kind)}>{preset.label}<small>{preset.footprint} lights</small></button>)}</div></details>
+    <details><summary>Add a preset</summary><div className="preset-grid">{SPATIAL_PRESETS.filter(({ kind }) => kind !== 'frogger').map((preset) => <button key={preset.kind} type="button" onClick={() => addPreset(preset.kind)}>{preset.label}<small>{preset.footprint} lights</small></button>)}</div></details>
     <button type="button" onClick={() => { const id = createGroupId(); dispatch({ type: 'add-effect-group', group: { model: 'assigned', id, kind: 'pulse', palette: Object.freeze([state.advancedColor]), periodMs: 1800, intensity: .75 } }); onSelectedIdChange(id); }}>Add effect</button>
     <p className={plan.worstCaseLights > 20 ? 'capacity-warning' : ''}>Board reserve: {plan.assignmentLights} route/static + {plan.spatialReserves.reduce((sum, item) => sum + item.lights, 0)} effects = {plan.worstCaseLights}/20 lights at 2 FPS</p>
     {selected ? <div className="light-effects__editor">

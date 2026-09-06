@@ -136,6 +136,16 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByText(/0 route\/static \+ 5 effects = 5\/20/)).toBeInTheDocument();
   });
 
+  it.each([1, 2] as const)('keeps saved v%i Frogger editable while retiring it from the preset picker', (recipeVersion) => {
+    const frogger = { ...createSpatialPreset('frogger', 4), recipeVersion };
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={{ ...draft, effectGroups: [frogger] }} repository={repository} onBack={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /Frogger 10 lights/ })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Traffic lanes')).toHaveValue(4);
+    expect(screen.getByLabelText('Effect footprint')).toHaveValue(10);
+    fireEvent.change(screen.getByLabelText('Traffic lanes'), { target: { value: '3' } });
+    expect(screen.getByLabelText('Traffic lanes')).toHaveValue(3);
+  });
+
   it('edits curious bee Body and Wings through labeled controls and keeps the two palette slots', () => {
     render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /Curious bumblebee 5 lights/ }));
