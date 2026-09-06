@@ -41,6 +41,8 @@ export interface AppUpdateService {
   reopen?(): void;
   /** Explicitly retries a reload-required admission. */
   reload?(): void;
+  /** Retries a failed registration or update request. */
+  retry?(): Promise<void>;
   dispose(): void;
 }
 
@@ -352,6 +354,7 @@ export function createAppUpdateService(
           target.postMessage({ type: 'SKIP_WAITING' });
         } catch (cause) {
           reportError(cause, 'Could not ask the waiting update to activate.');
+          for (const cancel of [...activationWaits]) cancel();
           activationOutcome.resolve();
           return;
         }
@@ -380,6 +383,7 @@ export function createAppUpdateService(
           target.postMessage({ type: 'SKIP_WAITING' });
         } catch (cause) {
           reportError(cause, 'Could not ask the waiting update to activate.');
+          for (const cancel of [...activationWaits]) cancel();
           exclusiveRelease = null;
           held.resolve();
           activationOutcome.resolve();
@@ -489,6 +493,20 @@ export function createAppUpdateService(
     },
     reload() {
       (dependencies.reload ?? (() => pageLocation?.reload()))();
+    },
+    retry() {
+      if (waiting) {
+        publish({
+          status: 'waiting',
+          message: snapshot.blockedReason ?? 'Your library is saved. Reload when you are ready.',
+          updateAvailable: true,
+          blockedReason: snapshot.blockedReason,
+          canApply: !snapshot.blockedReason,
+          dismissed: false,
+        });
+        return apply();
+      }
+      return start();
     },
     dispose() {
       if (disposed) return;

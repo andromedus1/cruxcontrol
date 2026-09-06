@@ -61,8 +61,15 @@ export function AppUpdateControl({
                 Update and reload
               </button>
             )}
-            {snapshot.status === 'error' && onRetry && (
-              <button className="button button--secondary" type="button" onClick={onRetry}>
+            {snapshot.status === 'error' && (onRetry || service.retry) && (
+              <button
+                className="button button--secondary"
+                type="button"
+                onClick={() => {
+                  if (onRetry) onRetry();
+                  else void service.retry?.();
+                }}
+              >
                 Retry
               </button>
             )}

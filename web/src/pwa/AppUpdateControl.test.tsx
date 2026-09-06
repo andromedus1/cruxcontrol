@@ -25,6 +25,7 @@ function service(snapshot: AppUpdateSnapshot): AppUpdateService {
       for (const listener of listeners) listener(current);
     }),
     reload: vi.fn(),
+    retry: vi.fn(() => Promise.resolve()),
     dispose: vi.fn(),
   };
 }

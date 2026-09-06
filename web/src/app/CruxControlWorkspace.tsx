@@ -365,6 +365,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
             service={updateService}
             boardConnected={controllerState?.transport.status === 'connected'}
             onDisconnectBoard={() => runtime.controller?.disconnect()}
+            onRetry={() => void updateService.retry?.()}
           />
         )}
         <div inert={updateSnapshot?.status === 'applying' || undefined}>
@@ -395,6 +396,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           service={updateService}
           boardConnected={controllerState?.transport.status === 'connected'}
           onDisconnectBoard={() => runtime.controller?.disconnect()}
+          onRetry={() => void updateService.retry?.()}
         />
       )}
       <nav className="collection-switch" aria-label="Workspace destinations">
