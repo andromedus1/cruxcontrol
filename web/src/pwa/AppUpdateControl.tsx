@@ -48,7 +48,7 @@ export function AppUpdateControl({
           </div>
           <div className="app-update-control__actions">
             {reloadRequired ? (
-              <button className="button button--primary" type="button" onClick={() => service.reload()}>
+              <button className="button button--primary" type="button" onClick={() => service.reload?.()}>
                 Reload to continue
               </button>
             ) : (
@@ -67,7 +67,7 @@ export function AppUpdateControl({
               </button>
             )}
             {!reloadRequired && snapshot.status !== 'applying' && (
-              <button className="button button--secondary" type="button" onClick={() => service.dismiss()}>
+              <button className="button button--secondary" type="button" onClick={() => service.dismiss?.()}>
                 Later
               </button>
             )}
@@ -84,7 +84,7 @@ export function AppUpdateControl({
           </div>
         </>
       ) : (
-        <button className="button button--secondary" type="button" onClick={() => service.reopen()}>
+        <button className="button button--secondary" type="button" onClick={() => service.reopen?.()}>
           Update available
         </button>
       )}

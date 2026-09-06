@@ -36,11 +36,11 @@ export interface AppUpdateService {
   /** Reports workspace work that must settle before activation. */
   setBlocked(reason: string | null): void;
   /** Hides the prominent prompt while retaining the update action. */
-  dismiss(): void;
+  dismiss?(): void;
   /** Reopens a prompt previously dismissed with Later. */
-  reopen(): void;
+  reopen?(): void;
   /** Explicitly retries a reload-required admission. */
-  reload(): void;
+  reload?(): void;
   dispose(): void;
 }
 
