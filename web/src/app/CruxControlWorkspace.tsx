@@ -245,8 +245,8 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
 
   useEffect(() => {
     updateService?.setBlocked(workspaceBlockReason);
-    return () => updateService?.setBlocked(null);
   }, [updateService, workspaceBlockReason]);
+  useEffect(() => () => updateService?.setBlocked(null), [updateService]);
 
   const create = async () => {
     await retryable('create climb', async () => {
