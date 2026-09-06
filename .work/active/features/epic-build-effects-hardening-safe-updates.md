@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-safe-updates
 kind: feature
-stage: implementing
+stage: done
 tags: [ui, infra]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-library-backup]
@@ -272,3 +272,13 @@ Treat the fourth as current-cycle required verification, not a deferred improvem
 Create child `epic-build-effects-hardening-safe-updates-review-fixes`. Same-harness
 fallback remains appropriate after the earlier different-class OAuth failure.
 Standard pass count is one; closure is named-fix verification and green CI, no rereview.
+
+## Review closure
+
+Approve after named-fix verification. Effective weight standard; one fresh-context
+independent pass, all four accepted corrections implemented, no unresolved blockers,
+no important/nit/rejected findings remaining, and no second independent review.
+Child review-fixes records 580 unit tests and all 12 browser scenarios green locally.
+GitHub CI 34003215427 at 48c4514 passes lint, typecheck, unit tests, production build,
+all browser workflows and ML smoke checks. Deployment remains gated off. Commits
+d4d0a3a and 54b098f contain the corrections and native concurrency/startup evidence.
