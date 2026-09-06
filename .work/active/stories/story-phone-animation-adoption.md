@@ -1,7 +1,7 @@
 ---
 id: story-phone-animation-adoption
 kind: story
-stage: implementing
+stage: done
 tags: [data, ble]
 parent: null
 depends_on: [epic-build-effects-hardening]
@@ -66,3 +66,39 @@ Do not mark this operation complete from the dry run. Resume from a fresh backup
 and verified idle app state once the device is available. The software correction
 is verified at ecb3093 with green CI 34004335389; this external device prerequisite
 does not reopen its completed reviews or block the software merge.
+
+## Completed phone adoption and bounded inline review
+
+Device availability returned with CruxControl visible. The software shipped in
+merged PR13 (b26dcd4); main CI 34004896618 passes all checks. The new worker installed
+and subsequently activated after an initial activation wait timed out; no recipe
+writes occurred until the reviewed module index-B5CO5u5U.js was verified running.
+The phone's native screen wake lock was held during maintenance, scoped to those
+page lifetimes. No persistent device power setting was changed.
+
+The fresh library had 17 v1 spatial effects and one already upgraded effect. After
+leaving a saved, disconnected editor through Back, a fresh validated backup was saved.
+The script-free same-origin maintenance page disposed app state. A fresh-state guarded
+transaction upgraded those 17 records using upgradeSpatialPreset. All 27 climb IDs remain present. Assignments, authored colors, light footprints
+and all four playlists exactly match the fresh pre-write snapshot; all 18 spatial
+effects are now v2. One preset had already been replaced before the batch, so the
+earlier exploratory backup is not used to overwrite that newer authored choice. Comparing the complete result against the
+fresh pre-write snapshot allows only the intended version and period changes.
+Already-current effects were left alone. Every other raw field remained unchanged.
+
+Native Chrome online reload, offline reload and return-online reload all open the
+reviewed app at http://localhost:4173/ with an activated controller, no waiting worker,
+and exact persisted library contents. Keep screen awake is present; the temporary
+maintenance wake lock ends on navigation. Physical BLE board dogfooding remains the
+user's next acceptance activity, not a claimed automated result.
+
+Bounded inline standalone-story review: approve. The actual helper dry run, native
+IndexedDB rehearsal (including stale-snapshot abort), fresh before/after backup decode,
+full raw-record comparison and real phone offline reload verify the operational
+contract. No independent story reviewer or new application code was needed. The earlier
+device availability prerequisite is resolved; no blocker remains.
+
+Recovery artifacts are user-local and excluded from Git:
+
+- Before: `/Users/andrewclark/Downloads/cruxcontrol-phone-before-animation-upgrade-20260906T020435079Z.json`
+- After: `/Users/andrewclark/Downloads/cruxcontrol-phone-after-animation-upgrade-20260906T020435249Z.json`
