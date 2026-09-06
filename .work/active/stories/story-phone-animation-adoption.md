@@ -44,3 +44,14 @@ Use the existing pure upgrade helper and IndexedDB schema; no new permanent bulk
 migration feature, storage replacement, or UI is needed for this authorized operation.
 Standalone story receives bounded inline verification/review. This operational
 follow-through depends on the software epic and does not reopen its feature reviews.
+
+## Dry-run evidence
+
+The captured library contains 18 v1 spatial effects across 18 of 27 climbs, using
+Beach Ball, Bird Flock, Snake, Matrix, Pentagram and Pac-Man. Running the actual
+upgradeSpatialPreset helper on an isolated copy preserves every palette and footprint
+exactly; reversing only version and period reproduces the complete original JSON.
+All four playlists are byte-equivalent as objects. Both backup payloads validate.
+An isolated Chromium IndexedDB rehearsal applies all 18 records in one transaction,
+verifies the complete result, rejects a stale snapshot without writes, and rejects an
+unapproved field change before mutation. Phone records remain unchanged at this stage.
