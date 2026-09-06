@@ -135,6 +135,22 @@ describe('portable playlist codec', () => {
     assignmentsOf(value).forEach((assignment) => delete assignment.effectGroupId);
     expect(JSON.parse(encodePortablePlaylist(decodePortablePlaylist(value)))).toEqual(value);
   });
+  it.each(['fireflies', 'shooting-stars', 'jellyfish', 'embers'])('round-trips authored %s and rejects unsupported recipes', (kind) => {
+    const value = clone();
+    const group = { model: 'spatial', id: `${kind}-bg`, recipeVersion: 2, recipe: { kind }, seed: -7,
+      palette: [131, 27], periodMs: 61_000, intensity: .4, footprint: 3,
+      target: { scope: 'selected', include: ['p-3'], exclude: ['p-4'] } };
+    snapshotOf(value).effectGroups = [group];
+    assignmentsOf(value).forEach((assignment) => delete assignment.effectGroupId);
+    expect(JSON.parse(encodePortablePlaylist(decodePortablePlaylist(value)))).toEqual(value);
+    for (const recipeVersion of [1, 3]) {
+      snapshotOf(value).effectGroups = [{ ...group, recipeVersion }];
+      expect(() => decodePortablePlaylist(value)).toThrow(PortablePlaylistValidationError);
+    }
+    snapshotOf(value).effectGroups = [{ ...group, recipe: { kind, inventedShape: 2 } }];
+    expect(() => decodePortablePlaylist(value)).toThrowError(expect.objectContaining({ path: 'playlist.entries[0].snapshot.effectGroups[0].recipe' }));
+  });
+
   it('rejects effect cycle times above the editor ceiling', () => {
     const value = clone();
     effectGroupsOf(value)[0]!.periodMs = 180_001;

@@ -95,8 +95,12 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Explicit Light Draft and opt-in, default-off Live Preview reuse the board controller.
 - Add editable assignment effects and independent spatial background presets: Ocean Tide,
   Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock,
-  a fading circled inverted pentagram, and Curious Bumblebee. All ten available presets use
-  version-2, closed themed trajectories with 90–150-second defaults. Bumblebee is v2-only:
+  a fading circled inverted pentagram, Curious Bumblebee, Fireflies, Shooting Stars,
+  Jellyfish, and Embers. All fourteen available presets use version-2, closed themed
+  trajectories with 90–150-second defaults. Fireflies, Shooting Stars, Jellyfish, and
+  Embers default to 120 seconds and reserve 8, 6, 9, and 10 lights respectively. These
+  four presets are v2-only and use the shared palette, period, intensity, light reserve,
+  and target controls without additional shape settings. Bumblebee is also v2-only:
   it provides a seeded six-stop, 120-second tour with hover, flight, and dart phases plus
   independently editable Body and Wings palette slots; malformed or version-1 bee recipes
   are rejected by the strict codecs. Frogger is retired from the Add a preset picker;
@@ -107,6 +111,13 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   the old period and the new preset default. Presets default to unused holds, can target
   the board background or a painted selection, persist complete recipe snapshots, and
   always keep semantic climb roles exact and static.
+- Matrix Rain v2 uses aligned vertical trails with bright heads, fading tails, and
+  staggered falls separated by dark gaps. Its ten-light default supports up to three
+  simultaneous trails, sharing the reserve as 4/3/3. The Columns setting defines the
+  pool of fall lanes; new Matrix groups default to three columns and 90 seconds.
+  Saved v2 Matrix groups use this renderer without migration or changes to stored
+  palettes, periods, identities, reserves, targets, or other authored settings.
+  Version-1 Matrix rendering remains unchanged.
 - Version-2 spatial rendering prepares geometry per board definition and reuses the
   latest held frame and prepared paths per effect group. Decorative colors are adjusted
   after API-2 quantization to avoid exact encoded role colors and encoded black; this is

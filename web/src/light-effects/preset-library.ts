@@ -6,7 +6,7 @@ export interface SpatialPreset { readonly kind: SpatialEffectKind; readonly labe
 export const SPATIAL_PRESETS: readonly SpatialPreset[] = Object.freeze([
   { kind: 'ocean-tide', label: 'Ocean tide', footprint: 12, palette: [0x16, 0x2b, 0x3e, 0xbf, 0xe8], periodMs: 120_000, recipe: { kind: 'ocean-tide', direction: 'in', foam: 0.25 } },
   { kind: 'tie-dye-spiral', label: 'Tie-dye spiral', footprint: 12, palette: [0xe0, 0xf0, 0x1f, 0x1b, 0x83, 0xc3], periodMs: 120_000, recipe: { kind: 'tie-dye-spiral', direction: 'clockwise', arms: 3 } },
-  { kind: 'matrix-rain', label: 'Matrix rain', footprint: 10, palette: [0x04, 0x0c, 0x1c], periodMs: 90_000, recipe: { kind: 'matrix-rain', direction: 'down', columns: 5 } },
+  { kind: 'matrix-rain', label: 'Matrix rain', footprint: 10, palette: [0x04, 0x0c, 0x1c], periodMs: 90_000, recipe: { kind: 'matrix-rain', direction: 'down', columns: 3 } },
   { kind: 'snake', label: 'Snake', footprint: 7, palette: [0x1c, 0x18], periodMs: 150_000, recipe: { kind: 'snake', direction: 'forward', bodyLength: 7 } },
   { kind: 'beach-ball', label: 'Beach ball', footprint: 4, palette: [0xfc, 0xe3, 0x1f], periodMs: 90_000, recipe: { kind: 'beach-ball', velocityX: 1, velocityY: 0.73, size: 4 } },
   { kind: 'pac-man', label: 'Pac-Man', footprint: 7, palette: [0xfc, 0x83], periodMs: 150_000, recipe: { kind: 'pac-man', direction: 'forward', mouthBeat: 2 } },
@@ -15,6 +15,10 @@ export const SPATIAL_PRESETS: readonly SpatialPreset[] = Object.freeze([
   { kind: 'frogger', label: 'Frogger', footprint: 10, palette: [0x1c, 0xc0, 0xa0], periodMs: 120_000, recipe: { kind: 'frogger', lanes: 4 } },
   { kind: 'pentagram', label: 'Fading pentagram', footprint: 20, palette: [0x20, 0xc0], periodMs: 120_000, recipe: { kind: 'pentagram', fadeRate: 1 } },
   { kind: 'bumblebee', label: 'Curious bumblebee', footprint: 5, palette: [0xfc, 0x1b], periodMs: 120_000, recipe: { kind: 'bumblebee', hoverFraction: 0.4 } },
+  { kind: 'fireflies', label: 'Fireflies', footprint: 8, palette: [0xbc], periodMs: 120_000, recipe: { kind: 'fireflies' } },
+  { kind: 'shooting-stars', label: 'Shooting stars', footprint: 6, palette: [0x97], periodMs: 120_000, recipe: { kind: 'shooting-stars' } },
+  { kind: 'jellyfish', label: 'Jellyfish', footprint: 9, palette: [0xd3], periodMs: 120_000, recipe: { kind: 'jellyfish' } },
+  { kind: 'embers', label: 'Embers', footprint: 10, palette: [0xf5], periodMs: 120_000, recipe: { kind: 'embers' } },
 ]);
 
 export function createSpatialPreset(kind: SpatialEffectKind, seed = Date.now()): SpatialLightEffectGroup {

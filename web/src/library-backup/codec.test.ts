@@ -146,6 +146,17 @@ describe('library backup codec', () => {
     expect(review.unavailableLocalReferences).toBe(1);
   });
 
+  it('exports and restores all new sparse recipes without changing library contents', () => {
+    const source = sourceSnapshot();
+    source.drafts[0] = { ...source.drafts[0]!, effectGroups: (['fireflies', 'shooting-stars', 'jellyfish', 'embers'] as const).map((kind) => ({
+      ...createSpatialPreset(kind, -7),
+      palette: [apiLevel3Color(0x83)], periodMs: 61_000, intensity: .4,
+    })) };
+    const decoded = decodeLibraryBackup(encodeLibraryBackup(source, exportedAt));
+    expect(decoded.drafts).toEqual(source.drafts);
+    expect(decoded.playlists).toEqual(source.playlists);
+  });
+
   it('accepts stored draft schema versions 1 through 4 without mutating old values', () => {
     const current = climb(firstId, 'Historical', { status: 'finished' });
     const value = rawBackup({ drafts: [current], playlists: [] });

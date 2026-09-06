@@ -1,3 +1,4 @@
+import { renderSparseScene } from './spatial-sparse';
 import { samplePongPose } from './spatial-pong';
 import type { BoardHoldAssignment, SpatialLightEffectGroup } from '../board-renderer/types';
 import { packApiLevel3Color, unpackApiLevel3Color } from '../domain/boards/colors';
@@ -503,33 +504,6 @@ function froggerScene(definition: BoardDefinition, group: SpatialLightEffectGrou
   return project(targets, points, group.footprint);
 }
 
-function matrixScene(definition: BoardDefinition, group: SpatialLightEffectGroup, points: readonly SpatialPoint[], clock: SpatialLoopClock): LightScene {
-  const recipe = group.recipe;
-  if (recipe.kind !== 'matrix-rain') return Object.freeze([]);
-  const columns = Math.max(1, Math.min(20, Math.round(recipe.columns)));
-  const fallCount = 3 + Math.max(1, Math.round(columns / 2));
-  const direction = recipe.direction === 'down' ? 1 : -1;
-  const columnXs = [...new Set(points.map((point) => point.x))].sort((a, b) => a - b);
-  const targets: Target[] = [];
-  const streamCount = Math.min(columns, columnXs.length);
-  const maxTail = 4;
-  for (let tail = 0; tail < maxTail && targets.length < group.footprint * 2; tail += 1) {
-    for (let column = 0; column < streamCount && targets.length < group.footprint * 2; column += 1) {
-      const x = columnXs[Math.min(columnXs.length - 1, Math.floor((column + .5) * columnXs.length / streamCount))]!;
-      const offset = hash(`matrix-column-${column}`, group.seed);
-      const head = direction > 0
-        ? 1.16 - fraction(clock.phase * fallCount + offset) * 1.48
-        : -.16 + fraction(clock.phase * fallCount + offset) * 1.48;
-      const y = head + direction * tail * .075;
-      // Heads and tails genuinely leave the board. Omit off-board points so
-      // projection cannot snap a stream to an unrelated edge hold.
-      if (y < 0 || y > 1) continue;
-      targets.push({ x, y, color: colorAt(definition, group, clock.phase, (column + tail) / Math.max(1, columns * 2)) });
-    }
-  }
-  return project(targets, points, group.footprint);
-}
-
 function pentagramScene(definition: BoardDefinition, group: SpatialLightEffectGroup, points: readonly SpatialPoint[], clock: SpatialLoopClock): LightScene {
   const recipe = group.recipe;
   if (recipe.kind !== 'pentagram') return Object.freeze([]);
@@ -627,10 +601,13 @@ export function renderSpatialGroupV2(
       scene = project(targets, points, group.footprint);
       break;
     }
-    case 'matrix-rain': {
-      scene = matrixScene(definition, group, points, clock);
+    case 'matrix-rain':
+    case 'fireflies':
+    case 'shooting-stars':
+    case 'jellyfish':
+    case 'embers':
+      scene = renderSparseScene(definition, group, geometry.points, points, clock);
       break;
-    }
   }
   const frozen = Object.freeze(scene);
   frameCache.set(group, { definition, assignments, frame: clock.frame, scene: frozen, path });

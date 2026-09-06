@@ -18,12 +18,12 @@
   .sources{font-size:13px}output{font-family:var(--font-mono)}@media(max-width:720px){main{padding:16px}.layout{grid-template-columns:1fr}svg{max-height:55vh}}
 </style>
 <main>
-  <p class="eyebrow">CruxControl / Ambient motion study / Dogfood round two</p>
+  <p class="eyebrow">CruxControl / Ambient motion study / Approved: three-trail Matrix and all four new themes</p>
   <h1>Small lights, clear motion.</h1>
   <p class="intro">Two new Matrix directions and four possible backgrounds. Each uses ten or fewer effect holds on the actual Fullride layout. Every pose lasts half a second. These are design studies; they do not change your climbs or control your board.</p>
   <label class="field">Study <select class="select" id="theme">
     <option value="matrix-two">Matrix · two long trails</option>
-    <option value="matrix-three">Matrix · three staggered trails</option>
+    <option value="matrix-three" selected>Matrix · three staggered trails</option>
     <option value="fireflies">Fireflies · little conversations</option>
     <option value="meteor">Shooting stars · a quiet sky</option>
     <option value="jellyfish">Jellyfish · pulse and drift</option>
@@ -54,8 +54,8 @@ const coordinates = [[-40,28],[-40,36],[-40,44],[-40,52],[-40,60],[-40,68],[-40,
 const points = coordinates.map(([x,y],i) => ({x:(x+40)/80,y:(y-28)/112,i}));
 const tau = Math.PI*2, period = 120, fraction = x => ((x%1)+1)%1;
 const themes = {
-  'matrix-two': {name:'Matrix · two long trails',budget:10,tint:'#35db76',description:'Two falling heads lead five-cell trails. Each head is pale and bright; cells above it decay through green into darkness. New falls begin in different columns after the old trail has left.',tradeoff:'My preferred Matrix direction: spend the lights on readable trails. Literal letters will not be readable on this sparse board.'},
-  'matrix-three': {name:'Matrix · three staggered trails',budget:10,tint:'#35db76',description:'Three streams share ten cells: one four-cell trail and two three-cell trails. Staggered entrances and different descent rates make a busier field of falling code.',tradeoff:'More rain across the wall, but shorter tails. Compare it with the two-stream option at the same ten-hold cost.'},
+  'matrix-two': {name:'Matrix · two long trails',budget:10,tint:'#35db76',description:'Two falling heads lead five-cell trails. Each head is pale and bright; cells above it decay through green into darkness. New falls begin in different columns after the old trail has left.',tradeoff:'Retained alternative for comparison. Literal letters will not be readable on this sparse board.'},
+  'matrix-three': {name:'Matrix · three staggered trails',budget:10,tint:'#35db76',description:'Three streams share ten cells: one four-cell trail and two three-cell trails. Staggered entrances and different descent rates make a busier field of falling code.',tradeoff:'Selected by Andrew for implementation. Three readable trails share the same ten-hold cost.'},
   fireflies: {name:'Fireflies · little conversations',budget:8,tint:'#b6e479',description:'Eight tiny lights glow and rest at different times. A loose answering rhythm passes across the board; each insect changes perch during darkness before glowing again.',tradeoff:'Strongest new candidate. Its identity comes from timing, so it needs no detailed silhouette or smooth flight.'},
   meteor: {name:'Shooting stars · a quiet sky',budget:6,tint:'#89caff',description:'A lone bright head crosses diagonally, followed by five fading cells. Long dark intervals separate streaks with different origins and directions.',tradeoff:'A stylized slow meteor: the trail stays visible long enough to read at two frames per second.'},
   jellyfish: {name:'Jellyfish · pulse and drift',budget:9,tint:'#c28aee',description:'A five-light bell pulses slowly while four trailing lights sway beneath it. The animal drifts around a small closed path with gentle buoyant rises and falls.',tradeoff:'The most figurative candidate. Route masks may weaken the bell silhouette, so it especially needs a wall test.'},

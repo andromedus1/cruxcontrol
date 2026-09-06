@@ -154,11 +154,12 @@ describe('v2 thematic joins and movement', () => {
           if (previous.length && current.length) {
             const delta =
               (point(current[0]!).y - point(previous[0]!).y) * (direction === 'down' ? -1 : 1);
-            // Once the head exits, a trailing pixel becomes the visible front.
-            expect(Math.abs(delta)).toBeLessThan(0.13);
+            // Six approved falls can advance two physical rows in a custom 61-second loop.
+            expect(delta).toBeGreaterThanOrEqual(0);
+            expect(delta).toBeLessThan(.15);
           }
         }
-        expect(entries).toBe(4);
+        expect(entries).toBe(6);
       }
     },
   );

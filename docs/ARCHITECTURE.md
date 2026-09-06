@@ -88,7 +88,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    spatial presets default to 90–150-second closed themed trajectories, and explicit
    upgrades preserve authored settings except the version and max(old period, new default).
    Prepared geometry and bounded per-group held-frame/path reuse avoid repeated spatial work.
-   The Add a preset picker offers ten v2 backgrounds, including Curious Bumblebee; the bee uses a
+   The Add a preset picker offers fourteen v2 backgrounds, including Curious Bumblebee; the bee uses a
    seeded six-stop hover/flight/dart tour and independent body/wing palette slots. Stable
    tide/spiral samples carry their target bands through loop joins, reverse paths retain
    actor ordering, and Pong plans each paddle to its own wall contact.
@@ -97,9 +97,17 @@ feature item bodies in `.work/`, not here. Capabilities are in
    dynamic target masks, deterministic footprints, and a conservative reserve plan feed the
    existing complete-scene BLE scheduler. Empty spatial scenes are valid animation frames;
    only explicit stop/clear/disconnect/visibility cancellation ends playback. The
-   snapshot-backed spatial registry contains Ocean Tide, Tie-dye Spiral, Matrix Rain,
-   Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger, and a fading circled inverted
-   pentagram and Curious Bumblebee. Frogger is excluded from the picker; its registry entry,
+   snapshot-backed spatial registry supports fifteen kinds, including the v2-only
+   Fireflies, Shooting Stars, Jellyfish, and Embers. These four recipes carry only
+   their kind; shared group fields own palette, period, intensity, reserve, seed, and
+   targets. Their default reserves are 8/6/9/10 lights and their default periods are
+   120 seconds. Strict draft and portable-playlist codecs reject v1 snapshots of
+   v2-only kinds. The sparse renderer prepares Matrix lanes from full board geometry
+   and masks intended cells without relocating them. Saved columns define its lane
+   pool, with at most three simultaneous trails sharing the ten-light default as
+   4/3/3; new Matrix groups use three columns and a 90-second period. The v2 Matrix
+   renderer changes without migrating saved records or rewriting authored settings;
+   original v1 rendering remains intact. Frogger is excluded from the picker; its registry entry,
    editor controls, codecs, and version-1/version-2 renderers remain available for saved
    recipes and imports. Browser playback is foreground-only; an empty spatial
    scene is a valid animation frame, while direct clear, stop, disconnect, visibility loss,
