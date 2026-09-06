@@ -382,7 +382,7 @@ export function createAppUpdateService(
           }
           exclusiveRelease = held.resolve;
           acquired.resolve(true);
-          if (!registration || registration.waiting !== target || snapshot.blockedReason || !isVisible() || container?.controller !== oldController) {
+          if (!registration || registration.waiting !== target || target.state !== 'installed' || snapshot.blockedReason || !isVisible() || container?.controller !== oldController) {
             controllerChangedBeforePost = container?.controller !== oldController;
             prePostFailure = snapshot.blockedReason ?? 'Finish current work before updating.';
             if (controllerChangedBeforePost) guardController();
