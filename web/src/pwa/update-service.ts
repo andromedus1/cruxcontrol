@@ -125,6 +125,7 @@ export function createAppUpdateService(
   const timeoutMs = dependencies.activationTimeoutMs ?? 15_000;
   const listeners = new Set<AppUpdateListener>();
   const cleanups: Array<() => void> = [];
+  const activationWaits = new Set<() => void>();
 
   let snapshot: AppUpdateSnapshot = INITIAL;
   let registration: ServiceWorkerRegistration | null = null;
@@ -440,7 +441,13 @@ export function createAppUpdateService(
         clearTimeout(timer);
         container?.removeEventListener('controllerchange', onControllerChange);
         targetWorker.removeEventListener('statechange', onTargetState);
+        activationWaits.delete(cancel);
       };
+      const cancel = () => {
+        cleanup();
+        outcomeToResolve.resolve();
+      };
+      activationWaits.add(cancel);
       const onTargetState = () => {
         if (targetWorker.state !== 'redundant') return;
         cleanup();
@@ -487,6 +494,7 @@ export function createAppUpdateService(
       if (disposed) return;
       disposed = true;
       for (const cleanup of cleanups.splice(0)) cleanup();
+      for (const cancel of [...activationWaits]) cancel();
       sharedRelease?.();
       exclusiveRelease?.();
       sharedRelease = null;
