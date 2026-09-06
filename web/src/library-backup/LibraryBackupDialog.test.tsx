@@ -25,7 +25,7 @@ function store(initial: readonly LocalClimbDraft[] = []): LibraryBackupStore {
       drafts.push(...missing);
       return { added: missing.length, unchanged: records.length - missing.length };
     }),
-    restoreMissingPlaylists: vi.fn(async (records) => {
+    restoreMissingPlaylists: vi.fn(async (records: readonly LocalPlaylist[]) => {
       const missing = records.filter((record) => !playlists.some(({ id: current }) => current === record.id));
       playlists.push(...missing);
       return { added: missing.length, unchanged: records.length - missing.length };
@@ -123,7 +123,7 @@ describe('recovery failure and async boundaries', () => {
     fireEvent.click(retry);
     expect(refresh).toHaveBeenCalledTimes(2);
     expect(retry).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Close', exact: true })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeDisabled();
     await act(async () => pending.resolve());
     expect(await screen.findByRole('heading', { name: 'Recovery complete' })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -222,7 +222,7 @@ describe('file selection and safe retry', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Add 1 climbs/ }));
     await waitFor(() => expect(port.restoreMissingDrafts).toHaveBeenCalledOnce());
     expect(screen.getByLabelText('Library backup file')).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Close', exact: true })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeDisabled();
     fireEvent(screen.getByRole('dialog'), new Event('cancel', { bubbles: true, cancelable: true }));
     expect(onClose).not.toHaveBeenCalled();
     await act(async () => pending.resolve({ added: 1, unchanged: 0 }));
