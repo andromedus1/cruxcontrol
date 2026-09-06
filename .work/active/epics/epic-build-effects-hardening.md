@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening
 kind: epic
-stage: implementing
+stage: review
 tags: [ui, ble, data, infra]
 parent: null
 depends_on: []
@@ -234,3 +234,17 @@ observations concern inventory/provenance/verified boundaries. Report is retaine
 `doc-review-report.md`; final backup/update documentation will be checked after its
 implementation batch. Knowledge regeneration at 3a6b32a passed with zero lint warnings
 or errors and indexed only tracked project content.
+
+## Child features reviewed and complete
+
+All four features are done: seamless loops, curious bee, library backup, and safe
+updates. Each received one independent standard pass, accepted corrections and green
+CI. Final production checkpoint 54b098f passes 580 unit tests, lint, typecheck/build,
+and all 12 browser scenarios; GitHub CI 34003215427 at 48c4514 is green. The epic is
+ready for its separate aggregate review of capability, preservation, integration,
+and release interactions. Physical board/phone dogfooding is still pending.
+
+Andrew's later explicit request to upgrade his saved background recipes is tracked
+separately in story-phone-animation-adoption, dependent on completion of this software
+arc. Its read-only copy rehearsal confirms 18 effects with identical palettes and
+footprints; live phone mutation and the dogfooding handoff have not occurred.
