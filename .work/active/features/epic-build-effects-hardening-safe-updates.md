@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-safe-updates
 kind: feature
-stage: review
+stage: implementing
 tags: [ui, infra]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-library-backup]
@@ -260,3 +260,15 @@ review and remote CI closure; no physical phone/board test or deployment is clai
 GitHub CI 34001590650 at 468c4eb passes lint, typecheck, unit tests, production
 build, all browser workflows and ML smoke checks. Deployment is skipped by the
 existing opt-in gate. Independent standard feature review is the remaining gate.
+
+## Independent review and adjudication
+
+One standard fresh-context Sol xhigh review of 468c4eb requests changes. Root confirms
+all four proposals against code/acceptance: registration errors block offline/local
+runtime and development serves no worker; unsaved new-list names are omitted from
+dirty gating; component-local playlist counters lose pending writes across navigation
+and remount; real concurrent apply/new-tab admission scenarios lack integrated evidence.
+Treat the fourth as current-cycle required verification, not a deferred improvement.
+Create child `epic-build-effects-hardening-safe-updates-review-fixes`. Same-harness
+fallback remains appropriate after the earlier different-class OAuth failure.
+Standard pass count is one; closure is named-fix verification and green CI, no rereview.
