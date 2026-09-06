@@ -256,3 +256,7 @@ and all 10 real-browser scenarios (52.1s), including three actual worker generat
 The documentation audit at de09b41 is clean across all five current planning docs.
 Implementation is review-ready. Root owns one independent standard fresh-context
 review and remote CI closure; no physical phone/board test or deployment is claimed.
+
+GitHub CI 34001590650 at 468c4eb passes lint, typecheck, unit tests, production
+build, all browser workflows and ML smoke checks. Deployment is skipped by the
+existing opt-in gate. Independent standard feature review is the remaining gate.
