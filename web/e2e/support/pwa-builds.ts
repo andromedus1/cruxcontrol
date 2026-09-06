@@ -117,9 +117,31 @@ async function buildGeneration(
   markerSource: boolean,
 ): Promise<PwaGenerationBuild> {
   if (markerSource) await addGenerationMarker(sourceRoot, generation);
+  if (generation === 'C') {
+    // Delay the native activation call after Workbox receives SKIP_WAITING.
+    // This simulates a busy worker while the app holds its irreversible-request
+    // lease; worker states, controllers and native lock grants remain real.
+    // Only this temporary build imports the scheduling hook.
+    const configPath = join(sourceRoot, 'web/vite.config.ts');
+    const config = await readFile(configPath, 'utf8');
+    if (!config.includes('workbox: {')) throw new Error('Missing Workbox fixture configuration');
+    await writeFile(
+      configPath,
+      config.replace('workbox: {', "workbox: { importScripts: ['/pwa-activation-gate.js'],"),
+    );
+    const publicRoot = join(sourceRoot, 'web/public');
+    await mkdir(publicRoot, { recursive: true });
+    await writeFile(
+      join(publicRoot, 'pwa-activation-gate.js'),
+      "const nativeSkipWaiting = self.skipWaiting.bind(self); self.skipWaiting = () => fetch('/__pwa_activation_gate__', {cache: 'no-store'}).then(() => nativeSkipWaiting());\n",
+    );
+  }
   try {
     await execFile(npmCommand(), ['run', 'build', '-w', 'web', '--', '--outDir', outputRoot], {
       cwd: sourceRoot,
+      // These are production generations even if an earlier dev-server fixture
+      // changed the Playwright worker's process environment.
+      env: { ...process.env, NODE_ENV: 'production' },
       maxBuffer: 8 * 1024 * 1024,
     });
   } catch (cause) {

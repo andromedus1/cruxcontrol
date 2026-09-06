@@ -116,8 +116,9 @@ export class UpdateAdmissionError extends Error {
 export function createAppUpdateService(
   dependencies: AppUpdateServiceDependencies = {},
 ): AppUpdateService {
-  const container = dependencies.container ??
-    (typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined);
+  const container = dependencies.container === undefined
+    ? (typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined)
+    : dependencies.container;
   const locks = dependencies.locks === undefined
     ? (typeof navigator !== 'undefined' ? navigator.locks : undefined)
     : dependencies.locks;

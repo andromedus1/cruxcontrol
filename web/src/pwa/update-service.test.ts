@@ -111,6 +111,20 @@ function setup() {
 afterEach(() => vi.useRealTimers());
 
 describe('createAppUpdateService', () => {
+  it('honors disabled registration when the browser still exposes service workers', async () => {
+    const { container } = setup();
+    vi.stubGlobal('navigator', { serviceWorker: container });
+    const service = createAppUpdateService({ container: null });
+    try {
+      await service.start();
+      expect(container.register).not.toHaveBeenCalled();
+      expect(service.getSnapshot().status).toBe('unavailable');
+    } finally {
+      service.dispose();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('does not admit the workspace until the shared lock callback is granted', async () => {
     const { container } = setup();
     let resolveLock!: () => void;

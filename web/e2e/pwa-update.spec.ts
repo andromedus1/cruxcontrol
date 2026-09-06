@@ -265,3 +265,179 @@ test('preserves a climb across legacy auto-update, safe waiting, and explicit sa
     await context.close();
   }
 });
+
+// Delay only the invocation of a real native exclusive request. Both requesters
+// must release their shared leases before either races for the exclusive lease;
+// all grant/deny results and callback lifetimes remain browser-owned.
+async function installLockBarrier(page: Page, mode: 'shared' | 'exclusive', atStartup = false) {
+  const install = (mode: 'shared' | 'exclusive') => {
+    if (mode === 'shared' && sessionStorage.getItem('crux-test-admission-used')) return;
+    if (mode === 'shared') sessionStorage.setItem('crux-test-admission-used', '1');
+    let release!: () => void;
+    const ready = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const gate = { requested: false, release };
+    (window as unknown as { cruxLockBarrier: typeof gate }).cruxLockBarrier = gate;
+    const nativeRequest = navigator.locks.request.bind(navigator.locks);
+    Object.defineProperty(navigator.locks, 'request', {
+      value: async (name: string, options: LockOptions, callback: LockGrantedCallback<unknown>) => {
+        if (name === 'cruxcontrol-app' && options.mode === mode) {
+          gate.requested = true;
+          await ready;
+        }
+        return nativeRequest(name, options, callback);
+      },
+    });
+  };
+  if (atStartup) await page.addInitScript(install, mode);
+  else await page.evaluate(install, mode);
+}
+
+test('protects simultaneous update requesters and a new tab during real activation', async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  server.switchGeneration('B');
+  server.holdActivation();
+  try {
+    const first = await context.newPage();
+    await openControlledGeneration(first, 'B');
+    await first.getByRole('button', { name: 'Create climb', exact: true }).click();
+    await first.getByLabel('Name', { exact: true }).fill('Concurrent update climb');
+    await expect(first.locator('.save-chip')).toHaveText('saved');
+    const saved = await waitForDraft(first, 'Concurrent update climb');
+    await first.getByRole('button', { name: 'Back', exact: true }).click();
+
+    const second = await context.newPage();
+    await openControlledGeneration(second, 'B');
+    server.switchGeneration('C');
+    await requestWorkerUpdate(first);
+    const requesters = [first, second];
+    for (const page of requesters) {
+      await expect(
+        updateControl(page).getByRole('button', { name: 'Update and reload', exact: true }),
+      ).toBeEnabled();
+      await installLockBarrier(page, 'exclusive');
+    }
+
+    // Start an old B navigation but hold its first shared request before the
+    // native call. Releasing that scheduling barrier during real activation
+    // makes the new app request actual browser admission behind the exclusive
+    // lease, with its old controller identity already captured.
+    const newcomer = await context.newPage();
+    await installLockBarrier(newcomer, 'shared', true);
+    await newcomer.goto(server.origin + '/');
+    await newcomer.waitForFunction(
+      () =>
+        (window as unknown as { cruxLockBarrier: { requested: boolean } }).cruxLockBarrier
+          .requested,
+    );
+
+    await Promise.all(
+      requesters.map((page) =>
+        updateControl(page).getByRole('button', { name: 'Update and reload', exact: true }).click(),
+      ),
+    );
+    for (const page of requesters) {
+      await page.waitForFunction(
+        () =>
+          (window as unknown as { cruxLockBarrier: { requested: boolean } }).cruxLockBarrier
+            .requested,
+      );
+    }
+    await Promise.all(
+      requesters.map((page) =>
+        page.evaluate(() =>
+          (window as unknown as { cruxLockBarrier: { release(): void } }).cruxLockBarrier.release(),
+        ),
+      ),
+    );
+    await expect.poll(() => server.activationPending).toBe(true);
+
+    // Workbox received the real activation message, and its native skipWaiting
+    // call is held by the fixture scheduling gate. One actual lease is exclusive
+    // and the losing requester has queued its shared reacquisition.
+    await expect
+      .poll(() =>
+        first.evaluate(async () => {
+          const state = await navigator.locks.query();
+          return {
+            exclusive: state.held?.filter(
+              (lock) => lock.name === 'cruxcontrol-app' && lock.mode === 'exclusive',
+            ).length,
+            pending: state.pending?.filter(
+              (lock) => lock.name === 'cruxcontrol-app' && lock.mode === 'shared',
+            ).length,
+          };
+        }),
+      )
+      .toEqual({ exclusive: 1, pending: 1 });
+
+    await newcomer.evaluate(() =>
+      (window as unknown as { cruxLockBarrier: { release(): void } }).cruxLockBarrier.release(),
+    );
+    await expect(newcomer.getByText('Opening your local climbs…', { exact: true })).toBeVisible();
+    await expect(newcomer.getByRole('button', { name: 'Create climb', exact: true })).toHaveCount(
+      0,
+    );
+    await expect
+      .poll(() =>
+        first.evaluate(
+          async () =>
+            (await navigator.locks.query()).pending?.filter(
+              (lock) => lock.name === 'cruxcontrol-app' && lock.mode === 'shared',
+            ).length,
+        ),
+      )
+      .toBe(2);
+
+    server.releaseActivation();
+    const marker = (page: Page) =>
+      page.locator('meta[name="cruxcontrol-build-generation"]').getAttribute('content');
+    await expect
+      .poll(
+        async () =>
+          (await Promise.all(requesters.map(marker))).filter((value) => value === 'C').length,
+        { timeout: 30_000 },
+      )
+      .toBe(1);
+    const winner = (await marker(first)) === 'C' ? first : second;
+    const loser = winner === first ? second : first;
+    for (const page of [loser, newcomer]) {
+      await expect(
+        updateControl(page).getByRole('button', { name: 'Reload to continue', exact: true }),
+      ).toBeVisible();
+      expect(await marker(page)).toBe('B');
+      expect((await waitForDraft(page, 'Concurrent update climb')).id).toBe(saved.id);
+    }
+    // The already-open loser keeps an inert workspace; a never-admitted new
+    // tab has no workspace at all. Inert elements remain queryable by role,
+    // but the browser must refuse focus and interaction.
+    await expect(loser.locator('main.climb-workspace')).toHaveAttribute('inert', '');
+    const blockedCreate = loser.getByRole('button', { name: 'Create climb', exact: true });
+    await blockedCreate.evaluate((element) => (element as HTMLElement).focus());
+    await expect(blockedCreate).not.toBeFocused();
+    await expect(newcomer.getByRole('button', { name: 'Create climb', exact: true })).toHaveCount(
+      0,
+    );
+    expect((await waitForDraft(winner, 'Concurrent update climb')).id).toBe(saved.id);
+
+    // Only an explicit action may admit either old JavaScript tab after its
+    // controller changed; both then reopen the same saved record under C.
+    for (const page of [loser, newcomer]) {
+      await updateControl(page)
+        .getByRole('button', { name: 'Reload to continue', exact: true })
+        .click();
+      await expect(page.locator('meta[name="cruxcontrol-build-generation"]')).toHaveAttribute(
+        'content',
+        'C',
+      );
+      await expect(page.getByRole('heading', { name: 'My Climbs' })).toBeVisible();
+      expect((await waitForDraft(page, 'Concurrent update climb')).id).toBe(saved.id);
+    }
+  } finally {
+    server.releaseActivation();
+    await context.close();
+  }
+});

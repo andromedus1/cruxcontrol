@@ -6,7 +6,6 @@ import { createAppUpdateService, type AppUpdateService } from './update-service.
  * live lease during its development-only mount cycle.
  */
 export function registerServiceWorker(): AppUpdateService {
-  const viteMeta = import.meta as ImportMeta & { readonly env?: { readonly DEV?: boolean } };
-  if (viteMeta.env?.DEV) return createAppUpdateService({ container: null });
+  if (import.meta.env.DEV) return createAppUpdateService({ container: null });
   return createAppUpdateService();
 }

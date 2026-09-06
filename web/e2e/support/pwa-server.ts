@@ -103,6 +103,24 @@ export class PwaGenerationServer {
   #generation: PwaGeneration = 'A';
   #server: ReturnType<typeof createServer> | null = null;
   #port: number | null = null;
+  #activationHeld = false;
+  #activationRequests: ServerResponse[] = [];
+
+  holdActivation(): void {
+    this.#activationHeld = true;
+  }
+
+  get activationPending(): boolean {
+    return this.#activationRequests.length > 0;
+  }
+
+  releaseActivation(): void {
+    this.#activationHeld = false;
+    for (const response of this.#activationRequests.splice(0)) {
+      response.writeHead(204, { 'Cache-Control': 'no-store' });
+      response.end();
+    }
+  }
 
   constructor(builds: PwaGenerationBuilds) {
     this.#builds = builds;
@@ -120,6 +138,14 @@ export class PwaGenerationServer {
   async start(): Promise<void> {
     if (this.#server) throw new Error('PWA generation server already started');
     const server = createServer((request, response) => {
+      if (requestPath(request) === '/__pwa_activation_gate__') {
+        if (this.#activationHeld) this.#activationRequests.push(response);
+        else {
+          response.writeHead(204, { 'Cache-Control': 'no-store' });
+          response.end();
+        }
+        return;
+      }
       void serve(request, response, () => buildRoot(this.#builds, this.#generation));
     });
     await new Promise<void>((resolvePromise, reject) => {
@@ -150,6 +176,7 @@ export class PwaGenerationServer {
   }
 
   async close(): Promise<void> {
+    this.releaseActivation();
     const server = this.#server;
     this.#server = null;
     this.#port = null;

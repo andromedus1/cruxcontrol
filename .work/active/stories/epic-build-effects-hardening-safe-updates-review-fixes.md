@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-safe-updates-review-fixes
 kind: story
-stage: implementing
+stage: done
 tags: [ui, infra, tests]
 parent: epic-build-effects-hardening-safe-updates
 depends_on: []
@@ -42,3 +42,25 @@ A real Vite development-server browser test shows the aliased import.meta read b
 Vite's env substitution and still registers the disabled worker. Read import.meta.env.DEV
 directly using the existing vite/client declarations. The browser must open its local
 workspace without an update-error banner. No storage or production behavior changes.
+
+The browser regression also exposed null-coalescing of the explicit disabled container
+back to navigator.serviceWorker. A failing unit test with the real-browser fallback
+available confirms it; honor explicit null and default only on undefined. The dev
+fixture counts actual /sw.js requests at its HTTP server, as page network events do
+not necessarily own worker-script requests.
+
+## Named-fix verification
+
+All four accepted findings are corrected. Integrated local verification passes:
+82 files / 580 unit tests, lint, typecheck/production build, and all 12 real-browser
+scenarios (55.3s). The added development test observes actual worker-script requests;
+explicit null disables registration even when navigator.serviceWorker exists.
+
+The concurrent-update fixture uses real Workbox workers, native activation, and
+native Web Locks. Scheduling barriers delay lock requests and the test generation's
+skipWaiting call only; grants, contention, controller changes, and reloads remain
+native. Two requesters compete, a new client waits behind the exclusive owner, and
+losing/old clients require explicit reload with identical saved climb identity.
+The development fixture restores NODE_ENV and generation builds explicitly select
+production, preventing cross-test environment leakage. Named corrections are verified;
+remote CI remains the feature closure gate. No second independent review is run.
