@@ -152,6 +152,20 @@ describe('LibraryBackupService', () => {
     expect(store.restoreMissingDrafts).toHaveBeenCalledTimes(2);
   });
 
+  it('makes a full retry a no-op with exact unchanged counts and no duplicate IDs', async () => {
+    const store = memoryStore();
+    const service = new LibraryBackupService(store);
+    const file = backupFor();
+    await expect(service.restore(file)).resolves.toMatchObject({
+      status: 'complete', drafts: { added: 1, unchanged: 0 }, playlists: { added: 1, unchanged: 0 },
+    });
+    await expect(service.restore(file)).resolves.toMatchObject({
+      status: 'complete', drafts: { added: 0, unchanged: 1 }, playlists: { added: 0, unchanged: 1 },
+    });
+    expect(store.value.drafts.map(({ id }) => id)).toEqual([climbId]);
+    expect(store.value.playlists.map(({ id }) => id)).toEqual([playlistIdValue]);
+  });
+
   it('blocks a retry after someone edits a previously recovered record', async () => {
     const store = memoryStore();
     const service = new LibraryBackupService(store);
