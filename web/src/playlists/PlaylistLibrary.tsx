@@ -38,6 +38,8 @@ export interface PlaylistLibraryProps {
   readonly transports?: PlaylistTransportAdapters;
   readonly shareBaseUrl?: URL;
   readonly onSafetyStateChange?: (state: PlaylistSafetyState) => void;
+  readonly onOperationStart?: () => void;
+  readonly onOperationEnd?: () => void;
 }
 
 export interface PlaylistSafetyState {
@@ -71,6 +73,8 @@ export function PlaylistLibrary({
   transports,
   shareBaseUrl,
   onSafetyStateChange,
+  onOperationStart,
+  onOperationEnd,
 }: PlaylistLibraryProps) {
   const playlistsRef = useRef(playlists);
   const [selectedId, setSelectedId] = useState<PlaylistId | null>(playlists[0]?.id ?? null);
@@ -83,7 +87,6 @@ export function PlaylistLibrary({
   const [pendingImportFragment, setPendingImportFragment] = useState(initialImportFragment);
   const [status, setStatus] = useState('');
   const [error, setError] = useState<RetryState | null>(null);
-  const [pendingOperations, setPendingOperations] = useState(0);
   const importButtonRef = useRef<HTMLButtonElement>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   playlistsRef.current = playlists;
@@ -113,7 +116,7 @@ export function PlaylistLibrary({
   }
 
   async function mutate(label: string, action: () => Promise<void>) {
-    setPendingOperations((count) => count + 1);
+    onOperationStart?.();
     setStatus(`${label}…`);
     setError(null);
     try {
@@ -129,7 +132,7 @@ export function PlaylistLibrary({
         run: () => mutate(label, action),
       });
     } finally {
-      setPendingOperations((count) => Math.max(0, count - 1));
+      onOperationEnd?.();
     }
   }
 
@@ -228,12 +231,24 @@ export function PlaylistLibrary({
 
   useEffect(() => {
     onSafetyStateChange?.({
-      dirty: Boolean(selected && (name !== selected.name || notes !== selected.notes)),
+      dirty: Boolean(newName.trim() || (selected && (name !== selected.name || notes !== selected.notes))),
       playing,
       modalOpen: sharing || importing,
-      pendingOperations,
+      pendingOperations: 0,
     });
-  }, [importing, name, notes, onSafetyStateChange, pendingOperations, playing, selected, sharing]);
+  }, [importing, name, newName, notes, onSafetyStateChange, playing, selected, sharing]);
+
+  useEffect(
+    () => () => {
+      onSafetyStateChange?.({
+        dirty: false,
+        playing: false,
+        modalOpen: false,
+        pendingOperations: 0,
+      });
+    },
+    [onSafetyStateChange],
+  );
 
   function closePortableDialog(kind: 'share' | 'import') {
     if (kind === 'share') setSharing(false);
@@ -495,8 +510,8 @@ export function PlaylistLibrary({
             await onRefresh();
           }}
           onRefresh={onRefresh}
-          onOperationStart={() => setPendingOperations((count) => count + 1)}
-          onOperationEnd={() => setPendingOperations((count) => Math.max(0, count - 1))}
+          onOperationStart={onOperationStart}
+          onOperationEnd={onOperationEnd}
           onClose={() => closePortableDialog('import')}
         />
       )}

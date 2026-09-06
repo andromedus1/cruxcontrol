@@ -182,6 +182,28 @@ describe('createAppUpdateService', () => {
     service.dispose();
   });
 
+  it('opens under shared admission when registration fails and retries registration in place', async () => {
+    const { container, registration, locks } = setup();
+    container.register
+      .mockRejectedValueOnce(new Error('Service worker script unavailable.'))
+      .mockResolvedValueOnce(registration as unknown as ServiceWorkerRegistration);
+    const service = createAppUpdateService({
+      container: container as unknown as ServiceWorkerContainer,
+      locks,
+    });
+
+    await expect(service.start()).resolves.toBeUndefined();
+    expect(service.getSnapshot()).toMatchObject({
+      status: 'error',
+      message: 'Service worker script unavailable.',
+      canApply: false,
+    });
+    await service.retry?.();
+    expect(container.register).toHaveBeenCalledTimes(2);
+    expect(service.getSnapshot().status).toBe('waiting');
+    service.dispose();
+  });
+
   it('requires an explicit reload when the controller changes during admission', async () => {
     const { container } = setup();
     let resolveLock!: () => void;
@@ -201,6 +223,7 @@ describe('createAppUpdateService', () => {
     });
     const admission = service.start();
     await vi.waitFor(() => expect(container.register).toHaveBeenCalled());
+    await vi.waitFor(() => expect(locks.request).toHaveBeenCalled());
     container.controller = new FakeWorker() as unknown as ServiceWorker;
     container.dispatchEvent(new Event('controllerchange'));
     expect(service.getSnapshot().status).toBe('reload-required');

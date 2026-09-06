@@ -8,7 +8,7 @@ import type { LocalClimbDraft } from '../drafts/types.ts';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
 import { activeInstallationId, createAppInstallationRegistry } from '../app/installations.ts';
 import { playlistId, playlistRevision } from './codec.ts';
-import { PlaylistLibrary } from './PlaylistLibrary.tsx';
+import { PlaylistLibrary, type PlaylistSafetyState } from './PlaylistLibrary.tsx';
 import type { PlaylistHistoryAdapter } from './portable-history.ts';
 import type { LocalPlaylistRepository } from './repository.ts';
 import type { LocalPlaylist, PlaylistContent } from './types.ts';
@@ -53,6 +53,7 @@ function renderLibrary(
     readonly initialImportFragment?: string;
     readonly history?: PlaylistHistoryAdapter;
     readonly deferChanged?: boolean;
+    readonly onSafetyStateChange?: (state: PlaylistSafetyState) => void;
   } = {},
 ) {
   let stored = [...initial];
@@ -123,6 +124,7 @@ function renderLibrary(
         }}
         onRefresh={refresh}
         onOpenLocalClimb={vi.fn()}
+        onSafetyStateChange={options.onSafetyStateChange}
         initialImportFragment={options.initialImportFragment}
         history={options.history}
       />
@@ -243,6 +245,16 @@ describe('PlaylistLibrary', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Second list.*0 climbs/ }));
     expect(screen.getByRole('status')).toHaveTextContent('');
+  });
+
+  it('reports a nonempty new list draft as dirty', async () => {
+    const safety = vi.fn<(state: PlaylistSafetyState) => void>();
+    renderLibrary([], [], { onSafetyStateChange: safety });
+
+    fireEvent.change(screen.getByLabelText('New list'), { target: { value: 'Warmups' } });
+    await waitFor(() =>
+      expect(safety.mock.calls.some(([state]) => state.dirty)).toBe(true),
+    );
   });
 
   it('disables empty play-through and enters, navigates, switches, and exits without writes', async () => {

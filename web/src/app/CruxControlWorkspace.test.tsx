@@ -307,6 +307,48 @@ describe('CruxControlWorkspace', () => {
     ]);
   });
 
+  it('keeps a direct playlist write blocking updates across navigation and remount', async () => {
+    const stored = playlist('Projects', [{ kind: 'local', id: original.id }]);
+    let resolveUpdate!: (value: LocalPlaylist) => void;
+    const pendingUpdate = new Promise<LocalPlaylist>((resolve) => {
+      resolveUpdate = resolve;
+    });
+    const update = vi.fn<LocalPlaylistRepository['update']>(async () => pendingUpdate);
+    const runtime = runtimeWith(
+      { list: listCollections([original], []) },
+      { list: vi.fn().mockResolvedValue([stored]), update },
+    );
+    const updateService = updateServiceFor({
+      status: 'current',
+      phase: 'current',
+      message: 'CruxControl is up to date.',
+      updateAvailable: false,
+      blockedReason: null,
+      canApply: false,
+      dismissed: false,
+    });
+    const blocked = vi.mocked(updateService.setBlocked);
+
+    render(<CruxControlWorkspace runtime={runtime} updateService={updateService} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Lists.*1 list/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove Original from list' }));
+    await waitFor(() => expect(update).toHaveBeenCalledOnce());
+    await waitFor(() =>
+      expect(blocked).toHaveBeenCalledWith('Wait for the current library change to finish before updating.'),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Drafts.*1 climb/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Lists.*1 list/ }));
+    await waitFor(() =>
+      expect(blocked).toHaveBeenLastCalledWith(
+        'Wait for the current library change to finish before updating.',
+      ),
+    );
+
+    resolveUpdate({ ...stored, entries: [], revision: playlistRevision(2) });
+    await waitFor(() => expect(blocked).toHaveBeenLastCalledWith(null));
+  });
+
   it('leaves playlist rows untouched while Trash and restore change runtime availability', async () => {
     let current = original;
     const listDrafts = vi.fn<LocalDraftRepository['list']>(async (options) => {

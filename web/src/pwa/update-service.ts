@@ -138,6 +138,9 @@ export function createAppUpdateService(
   let sharedRequest: Promise<unknown> | null = null;
   let exclusiveRelease: (() => void) | null = null;
   let capturedController: ServiceWorker | null = null;
+  let registrationError: unknown = null;
+  let registrationAttempt: Promise<void> | null = null;
+  let admitted = false;
   let disposed = false;
 
   const isVisible = () =>
@@ -278,9 +281,26 @@ export function createAppUpdateService(
     return false;
   };
 
+  const registerWorker = async (): Promise<boolean> => {
+    if (!container || typeof container.register !== 'function') return false;
+    const register = dependencies.register ?? ((url: string, options?: RegistrationOptions) => container.register(url, options));
+    const baseUrl = dependencies.baseUrl ?? (import.meta as unknown as ViteImportMeta).env?.BASE_URL ?? '/';
+    try {
+      const next = await register(updateUrl(baseUrl, pageLocation), { scope: baseUrl });
+      if (disposed) return false;
+      observeRegistration(next);
+      registrationError = null;
+      return true;
+    } catch (cause) {
+      registrationError = cause;
+      return false;
+    }
+  };
+
   const start = (): Promise<void> => {
     if (startPromise) return startPromise;
     if (disposed) return Promise.reject(new UpdateAdmissionError('Update service is disposed.'));
+    if (snapshot.status === 'reload-required') return Promise.reject(new UpdateAdmissionError(snapshot.message));
     startPromise = (async () => {
       if (!container || typeof container.register !== 'function') {
         publish({ ...INITIAL, status: 'unavailable', message: 'Service workers are unavailable in this browser.' });
@@ -294,16 +314,14 @@ export function createAppUpdateService(
       container.addEventListener('controllerchange', onExternalControllerChange);
       cleanups.push(() => container.removeEventListener('controllerchange', onExternalControllerChange));
       try {
-        const register = dependencies.register ?? ((url: string, options?: RegistrationOptions) => container.register(url, options));
-        const baseUrl = dependencies.baseUrl ?? (import.meta as unknown as ViteImportMeta).env?.BASE_URL ?? '/';
-        const next = await register(updateUrl(baseUrl, pageLocation), { scope: baseUrl });
-        if (disposed) return;
-        observeRegistration(next);
+        const registered = await registerWorker();
         await acquireShared();
         if (!guardController()) {
           await releaseSharedAndWait();
           throw new UpdateAdmissionError(snapshot.message);
         }
+        admitted = true;
+        if (!registered) reportError(registrationError, 'Could not register CruxControl updates. Retry to continue.');
       } catch (cause) {
         if (cause instanceof UpdateAdmissionError && snapshot.status === 'reload-required') throw cause;
         reportError(cause, 'Could not register CruxControl updates. Retry to continue.');
@@ -315,6 +333,21 @@ export function createAppUpdateService(
       if (!disposed) startPromise = null;
     });
     return startPromise;
+  };
+
+  const retryRegistration = (): Promise<void> => {
+    if (snapshot.status === 'reload-required') return Promise.reject(new UpdateAdmissionError(snapshot.message));
+    if (registrationAttempt) return registrationAttempt;
+    registrationAttempt = (async () => {
+      const registered = await registerWorker();
+      if (!guardController()) return;
+      if (!registered) {
+        reportError(registrationError, 'Could not register CruxControl updates. Retry to continue.');
+      }
+    })().finally(() => {
+      registrationAttempt = null;
+    });
+    return registrationAttempt;
   };
 
   const reacquireAfterExclusiveFailure = async (message: string) => {
@@ -559,6 +592,7 @@ export function createAppUpdateService(
         });
         return apply();
       }
+      if (registrationError && admitted) return retryRegistration();
       return start();
     },
     dispose() {

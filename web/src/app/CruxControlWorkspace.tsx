@@ -514,6 +514,8 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           }}
           onRefresh={refresh}
           onSafetyStateChange={setPlaylistSafety}
+          onOperationStart={beginOperation}
+          onOperationEnd={endOperation}
           onOpenLocalClimb={(id) => {
             const draft = drafts.find((candidate) => candidate.id === id);
             if (!draft || draft.trashedAt !== undefined) return;
