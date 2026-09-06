@@ -229,3 +229,9 @@ pinned legacy source; the fixture does not change production source or mock work
   complete open lifetime, which covers its busy/export/restore/refresh continuations
   without coupling this write set to the backup owner’s active correction.
 - Adjacent issues parked: none.
+
+CI run 34000728468 passed lint, typecheck, unit tests, build and nine browser
+scenarios. The new PWA fixture hit the beforeAll hook's 30-second default while
+compiling three production generations on CI. Set the setup hook's budget explicitly
+to 180 seconds; this changes fixture build allowance, not activation assertions or
+application behavior. Re-run CI after the final coordinator checkpoint.

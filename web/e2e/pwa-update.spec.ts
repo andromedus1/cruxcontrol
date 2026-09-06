@@ -103,6 +103,9 @@ function updateControl(page: Page) {
 }
 
 test.beforeAll(async () => {
+  // This hook compiles three production generations; CI needs a build budget
+  // independent of the ordinary per-test hook default.
+  test.setTimeout(180_000);
   builds = await buildPwaGenerations();
   server = new PwaGenerationServer(builds);
   await server.start();
