@@ -37,6 +37,8 @@ export interface AppUpdateService {
   setBlocked(reason: string | null): void;
   /** Hides the prominent prompt while retaining the update action. */
   dismiss(): void;
+  /** Reopens a prompt previously dismissed with Later. */
+  reopen(): void;
   /** Explicitly retries a reload-required admission. */
   reload(): void;
   dispose(): void;
@@ -462,6 +464,9 @@ export function createAppUpdateService(
     },
     dismiss() {
       if (snapshot.status === 'waiting') publish({ ...snapshot, dismissed: true });
+    },
+    reopen() {
+      if (snapshot.status === 'waiting') publish({ ...snapshot, dismissed: false });
     },
     reload() {
       (dependencies.reload ?? (() => pageLocation?.reload()))();

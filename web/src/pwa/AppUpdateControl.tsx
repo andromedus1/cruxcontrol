@@ -84,7 +84,7 @@ export function AppUpdateControl({
           </div>
         </>
       ) : (
-        <button className="button button--secondary" type="button" onClick={() => service.dismiss()}>
+        <button className="button button--secondary" type="button" onClick={() => service.reopen()}>
           Update available
         </button>
       )}

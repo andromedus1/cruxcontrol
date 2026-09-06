@@ -20,6 +20,10 @@ function service(snapshot: AppUpdateSnapshot): AppUpdateService {
       current = { ...current, dismissed: true };
       for (const listener of listeners) listener(current);
     }),
+    reopen: vi.fn(() => {
+      current = { ...current, dismissed: false };
+      for (const listener of listeners) listener(current);
+    }),
     reload: vi.fn(),
     dispose: vi.fn(),
   };
@@ -52,5 +56,7 @@ describe('AppUpdateControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Later' }));
     expect(updateService.dismiss).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button', { name: 'Update available' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Update available' }));
+    expect(updateService.reopen).toHaveBeenCalledTimes(1);
   });
 });
