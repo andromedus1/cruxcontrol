@@ -209,3 +209,23 @@ B and C build current safe-update source with distinct inert HTML generation mar
 using separate temporary copies and output roots. All three use real Workbox-generated
 workers on one switchable same-origin HTTP server. CI supplies Git history for the
 pinned legacy source; the fixture does not change production source or mock workers.
+
+## Implementation notes
+
+- Execution capability: Luna xhigh, selected for service-worker admission, cross-tab
+  locking, and persistence safety.
+- Review weight: standard, with the independent feature pass owned by the host agent;
+  implementation stops at the feature review boundary.
+- Files changed: `web/src/pwa/update-service.ts`, native `register-sw.ts`,
+  `AppUpdateControl.tsx` and CSS, `main.tsx`, `App.tsx`,
+  `CruxControlWorkspace.tsx`, playlist/import/membership and screenshot dialog
+  operation reporters, and `web/vite.config.ts`.
+- Tests added: coordinator lifecycle and activation tests plus update-control tests;
+  playlist, workspace, screenshot-import, full unit, lint, typecheck, and production
+  build checks run with bounded unit concurrency.
+- Simplification: removed the virtual PWA registration helper and its unmanaged
+  reload listener; generated Workbox output remains the service-worker source.
+- Discrepancies from design: the backup dialog stays conservatively blocked for its
+  complete open lifetime, which covers its busy/export/restore/refresh continuations
+  without coupling this write set to the backup owner’s active correction.
+- Adjacent issues parked: none.
