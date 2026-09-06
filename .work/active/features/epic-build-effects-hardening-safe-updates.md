@@ -235,3 +235,13 @@ scenarios. The new PWA fixture hit the beforeAll hook's 30-second default while
 compiling three production generations on CI. Set the setup hook's budget explicitly
 to 180 seconds; this changes fixture build allowance, not activation assertions or
 application behavior. Re-run CI after the final coordinator checkpoint.
+
+Coordinator safety checkpoint (2026-09-05): unsupported Web Locks leave the worker
+waiting and instruct the user to close all CruxControl tabs/windows before reopening;
+no immediate activation message is sent. Blockers arriving while the shared lease is
+released remain in the `applying` phase until shared admission is reacquired, including
+exclusive contention and redundant/post-message failure recovery. The final exclusive
+check also requires the captured worker to remain installed, and `reload-required`
+remains sticky across later worker-install events. The update banner is outside the
+inert editor/library surface so explicit reload is still available. Checkpoint commits
+are `a86edd0` and `db1e7f0`; focused coordinator/workspace verification is 13 + 12 tests.
