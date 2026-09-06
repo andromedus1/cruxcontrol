@@ -304,6 +304,16 @@ export function createAppUpdateService(
   };
 
   const reacquireAfterExclusiveFailure = async (message: string) => {
+    // Tell the requester why it is protected before waiting for the shared
+    // lease. The lease cannot be reacquired until the competing tab closes.
+    publish({
+      status: 'waiting',
+      message,
+      updateAvailable: true,
+      blockedReason: snapshot.blockedReason,
+      canApply: false,
+      dismissed: false,
+    });
     await acquireShared();
     if (!guardController()) return;
     publish({
@@ -336,6 +346,7 @@ export function createAppUpdateService(
           activationOutcome.resolve();
           return;
         }
+        const activation = waitForActivation(target, oldController, false, activationOutcome);
         try {
           target.postMessage({ type: 'SKIP_WAITING' });
         } catch (cause) {
@@ -343,7 +354,7 @@ export function createAppUpdateService(
           activationOutcome.resolve();
           return;
         }
-        await waitForActivation(target, oldController, false, activationOutcome);
+        await activation;
         return;
       }
 
@@ -363,6 +374,7 @@ export function createAppUpdateService(
           activationOutcome.resolve();
           return;
         }
+        const activation = waitForActivation(target, oldController, true, activationOutcome);
         try {
           target.postMessage({ type: 'SKIP_WAITING' });
         } catch (cause) {
@@ -372,7 +384,7 @@ export function createAppUpdateService(
           activationOutcome.resolve();
           return;
         }
-        await waitForActivation(target, oldController, true, activationOutcome);
+        await activation;
         if (snapshot.status === 'waiting') {
           exclusiveRelease = null;
           held.resolve();
