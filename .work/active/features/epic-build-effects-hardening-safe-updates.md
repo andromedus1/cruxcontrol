@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-safe-updates
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, infra]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-library-backup]
@@ -245,3 +245,14 @@ check also requires the captured worker to remain installed, and `reload-require
 remains sticky across later worker-install events. The update banner is outside the
 inert editor/library surface so explicit reload is still available. Checkpoint commits
 are `a86edd0` and `db1e7f0`; focused coordinator/workspace verification is 13 + 12 tests.
+
+## Integrated verification and review readiness
+
+Final verified implementation checkpoint dcda24c includes protected admission recovery,
+late blocker checks, installed-target verification, sticky reload-required state,
+no-lock natural waiting, and a deterministic playlist confirmation-race correction.
+Full local verification: 82 files / 576 unit tests, lint, typecheck/production build,
+and all 10 real-browser scenarios (52.1s), including three actual worker generations.
+The documentation audit at de09b41 is clean across all five current planning docs.
+Implementation is review-ready. Root owns one independent standard fresh-context
+review and remote CI closure; no physical phone/board test or deployment is claimed.
