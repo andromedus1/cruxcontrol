@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-safe-updates
 kind: feature
-stage: implementing
+stage: done
 tags: [ui, infra]
 parent: epic-build-effects-hardening
 depends_on: [epic-build-effects-hardening-library-backup]
@@ -294,3 +294,16 @@ Preserve the error text through blocker changes and label the error banner accur
 verify through mounted workspace composition. Existing independent feature/epic/final
 pass counts remain one each. Close through named-fix verification and green CI, with
 no repeated independent review. Phone mutation remains deferred until correction closes.
+
+## Final named-fix closure
+
+The final completion review's sole accepted finding is fixed in ecb3093. The real
+coordinator composed with mounted App preserves the registration error while Lists
+adds/clears a dirty blocker; retry succeeds without recreating runtime. Error and
+reload-required headings are truthful. Red reproduction and focused verification
+are recorded in the registration-message child. Full local verification passes
+82 files / 581 unit tests, lint, typecheck/production build and all 12 browser
+scenarios (56.8s). GitHub CI 34004335389 at ecb3093 passes all checks. No unresolved
+blockers or other findings remain. Effective standard review closes by named-fix
+verification; feature, epic and final completion pass counts each remain one.
+The software scope is complete. Physical phone adoption remains a separate operation.

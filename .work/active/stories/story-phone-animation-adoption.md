@@ -55,3 +55,14 @@ All four playlists are byte-equivalent as objects. Both backup payloads validate
 An isolated Chromium IndexedDB rehearsal applies all 18 records in one transaction,
 verifies the complete result, rejects a stale snapshot without writes, and rejects an
 unapproved field change before mutation. Phone records remain unchanged at this stage.
+
+## Device availability boundary
+
+The phone entered Dozing and Chrome USB debugging stopped responding reliably;
+waking the screen briefly restored the endpoint but exposed no CruxControl target.
+Andrew has been asked to unlock the phone, open CruxControl and leave it visible.
+No live library mutation, worker activation or navigation has been performed.
+Do not mark this operation complete from the dry run. Resume from a fresh backup
+and verified idle app state once the device is available. The software correction
+is verified at ecb3093 with green CI 34004335389; this external device prerequisite
+does not reopen its completed reviews or block the software merge.
