@@ -566,7 +566,11 @@ export function createAppUpdateService(
         return;
       }
       if (snapshot.status === 'reload-required') return;
-      if (snapshot.status === 'waiting' || snapshot.status === 'error') {
+      if (snapshot.status === 'error') {
+        publish({ ...snapshot, blockedReason, canApply: false });
+        return;
+      }
+      if (snapshot.status === 'waiting') {
         publish({ ...snapshot, blockedReason, canApply: snapshot.status === 'waiting' && !blockedReason, message: blockedReason ?? 'Your library is saved. Reload when you are ready.' });
       } else {
         snapshot = Object.freeze({ ...snapshot, blockedReason });

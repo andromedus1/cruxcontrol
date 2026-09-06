@@ -43,7 +43,13 @@ export function AppUpdateControl({
       {showBanner ? (
         <>
           <div>
-            <p className="eyebrow">CruxControl update available</p>
+            <p className="eyebrow">
+              {snapshot.status === 'error'
+                ? 'CruxControl update error'
+                : reloadRequired
+                  ? 'CruxControl update requires reload'
+                  : 'CruxControl update available'}
+            </p>
             <p role={snapshot.status === 'error' ? 'alert' : undefined}>{snapshot.message}</p>
           </div>
           <div className="app-update-control__actions">
