@@ -19,6 +19,7 @@ decisions:
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
   - "Whole-library backup uses a bounded local JSON file and missing-only, identity-preserving restore with conflict blocking and one transaction per IndexedDB store; the two stores are never treated as one atomic snapshot."
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
+  - "PWA updates use an app-owned prompt-mode Workbox registration, shared Web Locks admission, and explicit safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes."
   - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
 ---
 
@@ -135,7 +136,20 @@ feature item bodies in `.work/`, not here. Capabilities are in
    partial outcome for retry; no compensating deletion is used. Bounds are 25 MiB UTF-8,
    10,000 climbs, 1,000 playlists, and 100,000 references. The workflow operates on
    saved contents in the existing origin and does not rewrite schemas or upload data.
-12. **Future: ML Pipeline** — offline (Python): feature extraction from the catalog →
+12. **PWA Update Admission** — the app owns the native service-worker registration and
+   observes waiting/installing workers from the Workbox-generated prompt-mode output.
+   `skipWaiting` and `clientsClaim` remain false and registration injection is disabled so
+   no unmanaged helper can reload another tab. Each admitted tab holds a shared Web Lock;
+   explicit apply releases it and requests the same lock exclusively with `ifAvailable`.
+   Apply is gated by editor, modal/import/backup, pending mutation, dirty-list,
+   play-through, visibility, and BLE session/operation state. A competing tab leaves the
+   requester protected until it can reacquire shared admission. Unsupported Web Locks
+   retain the waiting worker and direct the user to close and reopen. Controller identity
+   is captured across admission; a changed controller blocks the workspace and requires an
+   explicit reload. After activation is posted, timeout keeps editing disabled and the
+   exclusive lease held until reload or close; only the requesting tab reloads when its
+   captured worker controls it.
+13. **Future: ML Pipeline** — offline (Python): feature extraction from the catalog →
     training dataset → grade-prediction model. Exports a model for in-browser
     inference (ONNX Runtime Web / WASM); feeds prediction + recommendation features back
     into the app.
@@ -174,6 +188,9 @@ Lists ──▶ Local playlist repository ──▶ separate native IndexedDB
 
 Library workspace ──▶ backup service ──▶ bounded local JSON file
   └──◀ imported file ──▶ full review/conflict gate ──▶ per-store missing-only restore
+
+App runtime ──▶ update coordinator ──▶ prompt-mode Workbox registration
+  └──▶ shared admission lock ──▶ workspace safety gates ──▶ exclusive apply ──▶ requester reload
 ```
 
 Local climb reads and writes are fully offline. Installed catalog reads are likewise
@@ -201,6 +218,13 @@ browsing, editing, and logging remain testable without hardware or network.
   revisions, and recipes. Export stability checks are bounded because the stores cannot
   share one transaction. Restore validates before writes, preserves IDs, and treats a
   playlist failure after a committed climb batch as a reportable partial result for retry.
+- **Safe update admission.** A waiting worker never activates or reloads a tab on arrival.
+  The coordinator protects the lifetime of editing, dialogs, imports, backups, repository
+  mutations, list play-through, and BLE sessions/operations, then uses shared Web Locks
+  for normal tabs and an exclusive `ifAvailable` lease for explicit apply. Admission and
+  controller identity are checked at the version boundary; activation timeout remains
+  protected until the user reloads or closes the tab. Browsers without Web Locks use the
+  natural waiting lifecycle with close-and-reopen recovery.
 - **Generated over hand-written.** Catalog data, feature tables, and the model
   come from pipelines, not manual curation.
 - **Offline-first.** Every read works without network; sync is a background
@@ -228,7 +252,8 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | React 19 + Vite 6 (TypeScript)              | Client-only SPA framework + build tooling                                                                                                                                                                      |
 | `wa-sqlite` (`AccessHandlePoolVFS`)         | In-browser SQLite catalog read path in a Web Worker; catalog IndexedDB fallback is deferred                                                                                                                    |
 | Native IndexedDB                            | Independent versioned, atomic, browser-local authorities for climbs (Draft/Finished/Trash lifecycle) and playlist aggregates                                                                                   |
-| `vite-plugin-pwa` (Workbox)                 | Service worker + manifest — offline shell, installability                                                                                                                                                      |
+| `vite-plugin-pwa` (Workbox)                 | Service worker + manifest — offline shell and installability; prompt-mode waiting worker consumed by the app-owned update coordinator                                                                        |
+| Web Locks API                               | Shared per-tab admission and exclusive, `ifAvailable` update apply coordination                                                                                                                               |
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |
 | BoardLib (Python)                           | Bootstrap the SQLite catalog; sync-protocol reference                                                                                                                                                          |

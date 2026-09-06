@@ -18,6 +18,12 @@ account or application server required.
   timestamps, and animation recipes. Recovery adds missing IDs, skips identical records,
   and pauses on conflicts without overwriting current data. A playlist-store failure after
   a committed climb batch is reported as partial and can be retried with the retained file.
+- Installed PWA updates wait for an explicit **Update and reload** action. The app keeps
+  the workspace available while a new worker waits, but blocks applying it while an editor,
+  list task, import/backup flow, pending library write, play-through, or board session is
+  active. **Later** dismisses the banner while retaining an update entry; tabs coordinate
+  through a shared browser lock, and browsers without Web Locks use close-and-reopen
+  recovery instructions.
 - Import Kilter Fullride screenshots through a local review-and-correction flow, or
   import the supplied set of 16 climbs as ordinary 40° drafts. Screenshot pixels are
   never uploaded or persisted.
@@ -106,12 +112,16 @@ separate Python project.
   and the existing capacity policy sit behind typed boundaries. V2 decorative colors avoid
   exact encoded role colors and black after API-2 conversion; this is byte-level protection,
   not a perceptual distinction guarantee.
-- The installable Workbox app shell is precached and updates automatically. Animation
-  remains deliberately foreground-bound because mobile browsers suspend background work.
+- The installable Workbox app shell is precached. An app-owned update coordinator keeps new
+  workers waiting, admits one tab for explicit activation, and reloads only the requesting
+  tab after its worker takes control. Animation remains deliberately foreground-bound
+  because mobile browsers suspend background work.
 
 Automated checks include Vitest tests, strict TypeScript, ESLint, production PWA build
-checks, and Playwright Chromium browser workflows. CI runs the browser workflows against
-the production build and retains traces and screenshots from failures for seven days.
+checks, and Playwright Chromium browser workflows. A real three-generation Workbox fixture
+checks that a climb survives legacy generation A's natural waiting transition to generation
+B and generation B's explicit safe apply to generation C. CI runs the browser workflows
+against the production build and retains traces and screenshots from failures for seven days.
 Automated transport and renderer tests use deterministic fakes for repeatability; device-level
 acceptance remains future work.
 

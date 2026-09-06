@@ -21,6 +21,7 @@ decisions:
   - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
   - "Whole-library backup is a bounded local file of saved records; restore is missing-only, identity-preserving, conflict-blocking, and transactional per IndexedDB store."
+  - "PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs, and workspace, mutation, play-through, and BLE session gates protect local work before activation."
 ---
 
 # CruxControl — Specification
@@ -262,6 +263,21 @@ The model mirrors the official Kilter SQLite schema (see
   retained file. The workflow uses the existing browser-local databases and origin for
   saved contents only; it does not rewrite schemas or upload to a cloud/account service.
   Trash remains until explicit Delete forever.
+- The installable PWA precaches the app shell with Workbox and owns registration through an
+  update coordinator configured for prompt-mode workers (`skipWaiting: false`,
+  `clientsClaim: false`, and no injected registration helper). A waiting worker never
+  reloads the app automatically. The persistent update surface offers Update and reload,
+  Later, and status; Later hides the prominent prompt while retaining an accessible update
+  entry. Explicit apply is admitted only when the editor and all list/import/backup/modal
+  work are settled, no local mutation is pending, no list is dirty or playing through, and
+  the board is not selecting, connecting, connected, disconnecting, or performing an
+  operation. The app holds a shared Web Lock for each tab and uses an exclusive
+  `ifAvailable` request for apply, so another tab blocks with a close-other-tabs message.
+  If Web Locks are unavailable, the worker remains waiting and the user is told to close
+  and reopen. A controller change while a tab is being admitted, or activation that does
+  not complete after posting, leaves the workspace blocked with an explicit reload/close
+  recovery action. Only the requesting tab reloads after its captured worker becomes the
+  controller.
 - The editor is responsive at Android-phone and desktop Chromium widths, autosaves edits,
   retains explicit lighting actions, and exposes named keyboard-operable controls and
   non-color-only role markers.
@@ -272,7 +288,9 @@ The model mirrors the official Kilter SQLite schema (see
   create-save-light seams. Playwright Chromium covers autosave/reload/reopen,
   multi-list membership/order, Trash/restore resolution, ephemeral play-through, and
   portable list export/import with fresh identities and preserved content/order, plus
-  compact/wide interaction.
+  compact/wide interaction. A real three-generation Workbox browser fixture verifies the
+  same-origin A→B→C transition, including natural waiting with legacy A, explicit safe
+  apply from B, and climb identity/content persistence across both updates.
 - The existing local draft schema remains version 4 and the portable playlist envelope
   remains unchanged; embedded effect recipe versions carry this evolution without a
   storage or playlist migration. Deterministic tests cover v1 compatibility, v2 cycle
