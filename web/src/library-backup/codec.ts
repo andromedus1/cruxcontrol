@@ -89,22 +89,35 @@ function duplicateIds(records: readonly { readonly id: string }[], path: string)
   });
 }
 
-function storedDraft(record: unknown, index: number): StoredDraftV4 {
+function encodeBackupDraft(record: LocalClimbDraft, index: number): StoredDraftV4 {
   try {
-    // Decoding normalizes supported v1-v4 source records; the backup always emits v4.
-    const source = object(record, `drafts[${index}]`);
-    const stored = 'updatedOrder' in source ? source : encodeStoredDraft(record as LocalClimbDraft);
-    return encodeStoredDraft(decodeStoredDraft(stored));
+    return encodeStoredDraft(decodeStoredDraft(encodeStoredDraft(record)));
   } catch (cause) {
     fail(cause instanceof DraftSchemaError ? 'unsupported-version' : 'invalid-payload', `drafts[${index}]`, cause instanceof Error ? cause.message : 'invalid climb record', cause);
   }
 }
 
-function storedPlaylist(record: unknown, index: number): StoredPlaylistV1 {
+function decodeBackupDraft(record: unknown, index: number): StoredDraftV4 {
+  try {
+    const source = object(record, `drafts[${index}]`);
+    return encodeStoredDraft(decodeStoredDraft(source));
+  } catch (cause) {
+    fail(cause instanceof DraftSchemaError ? 'unsupported-version' : 'invalid-payload', `drafts[${index}]`, cause instanceof Error ? cause.message : 'invalid climb record', cause);
+  }
+}
+
+function encodeBackupPlaylist(record: LocalPlaylist, index: number): StoredPlaylistV1 {
+  try {
+    return encodeStoredPlaylist(decodeStoredPlaylist(encodeStoredPlaylist(record)));
+  } catch (cause) {
+    fail(cause instanceof PlaylistSchemaError ? 'unsupported-version' : 'invalid-payload', `playlists[${index}]`, cause instanceof Error ? cause.message : 'invalid playlist record', cause);
+  }
+}
+
+function decodeBackupPlaylist(record: unknown, index: number): StoredPlaylistV1 {
   try {
     const source = object(record, `playlists[${index}]`);
-    const stored = 'updatedOrder' in source ? source : encodeStoredPlaylist(record as LocalPlaylist);
-    return encodeStoredPlaylist(decodeStoredPlaylist(stored));
+    return encodeStoredPlaylist(decodeStoredPlaylist(source));
   } catch (cause) {
     fail(cause instanceof PlaylistSchemaError ? 'unsupported-version' : 'invalid-payload', `playlists[${index}]`, cause instanceof Error ? cause.message : 'invalid playlist record', cause);
   }
@@ -134,8 +147,11 @@ export function canonicalSnapshot(snapshot: LibrarySnapshot): string {
 
 export function encodeLibraryBackup(snapshot: LibrarySnapshot, exportedAt: Date): string {
   if (!(exportedAt instanceof Date) || !Number.isFinite(exportedAt.valueOf())) fail('invalid-payload', 'exportedAt', 'expected a valid date');
-  const drafts = snapshot.drafts.map((draft, index) => storedDraft(draft, index));
-  const playlists = snapshot.playlists.map((playlist, index) => storedPlaylist(playlist, index));
+  if (!Array.isArray(snapshot.drafts)) fail('invalid-payload', 'drafts', 'expected an array');
+  if (!Array.isArray(snapshot.playlists)) fail('invalid-payload', 'playlists', 'expected an array');
+  checkBounds(snapshot.drafts, snapshot.playlists);
+  const drafts = snapshot.drafts.map((draft, index) => encodeBackupDraft(draft, index));
+  const playlists = snapshot.playlists.map((playlist, index) => encodeBackupPlaylist(playlist, index));
   duplicateIds(drafts, 'drafts');
   duplicateIds(playlists, 'playlists');
   checkBounds(drafts, playlists);
@@ -168,8 +184,8 @@ export function decodeLibraryBackup(text: string): DecodedLibraryBackup {
   if (!Array.isArray(raw.drafts)) fail('invalid-payload', 'drafts', 'expected an array');
   if (!Array.isArray(raw.playlists)) fail('invalid-payload', 'playlists', 'expected an array');
   checkBounds(raw.drafts, raw.playlists);
-  const drafts = raw.drafts.map((record, index) => storedDraft(record, index));
-  const playlists = raw.playlists.map((record, index) => storedPlaylist(record, index));
+  const drafts = raw.drafts.map((record, index) => decodeBackupDraft(record, index));
+  const playlists = raw.playlists.map((record, index) => decodeBackupPlaylist(record, index));
   duplicateIds(drafts, 'drafts');
   duplicateIds(playlists, 'playlists');
   return Object.freeze({

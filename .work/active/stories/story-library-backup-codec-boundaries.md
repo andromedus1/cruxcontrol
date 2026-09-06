@@ -1,7 +1,7 @@
 ---
 id: story-library-backup-codec-boundaries
 kind: story
-stage: implementing
+stage: done
 tags: [data]
 parent: epic-build-effects-hardening-library-backup
 depends_on: []
@@ -69,3 +69,7 @@ canonical comparison, recipe handling, or storage behavior.
 - Simplification: none; existing validation and codec paths are retained.
 - Discrepancies from design: none.
 - Adjacent issues parked: none; the two audit items were absorbed into this story.
+- Verification: `npm test -- --maxWorkers=2 src/library-backup/codec.test.ts
+  src/library-backup/indexeddb-store.test.ts src/library-backup/service.test.ts`
+  (31 tests passed), `npm run typecheck`, `npm run lint -- --no-warn-ignored`,
+  and `npm run build` all passed.

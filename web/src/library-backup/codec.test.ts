@@ -200,6 +200,7 @@ describe('library backup codec', () => {
     const laterInvalid = structuredClone(rawDrafts(value)[0]!);
     const laterValid = structuredClone(rawDrafts(value)[0]!);
     laterValid.id = secondId;
+    laterValid.updatedOrder = [laterValid.updatedAt, secondId];
     laterInvalid.effectGroups = 'corrupt';
     expect(() => decodeLibraryBackup(JSON.stringify({ ...value, drafts: [laterValid, laterInvalid] }))).toThrow(/drafts\[1\]/);
   });
