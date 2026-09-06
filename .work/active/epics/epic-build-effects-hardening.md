@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening
 kind: epic
-stage: review
+stage: done
 tags: [ui, ble, data, infra]
 parent: null
 depends_on: []
@@ -248,3 +248,23 @@ Andrew's later explicit request to upgrade his saved background recipes is track
 separately in story-phone-animation-adoption, dependent on completion of this software
 arc. Its read-only copy rehearsal confirms 18 effects with identical palettes and
 footprints; live phone mutation and the dogfooding handoff have not occurred.
+
+## Aggregate epic review
+
+Approve: one standard balanced fresh-context Sol xhigh pass over 27498a2..70abe48.
+No blockers, important findings, nits or rejected proposals. The receiver confirms
+all four reviewed features satisfy the aggregate capability, preservation, cross-
+feature update/backup, foundation and release contracts. No new fixes or rereview
+are needed. Same-harness fallback is labeled accurately after unavailable other-
+class OAuth. Full local and remote CI evidence remains green; physical board
+acceptance and the separate authorized phone adoption operation remain later work.
+
+## Connected-phone computation evidence
+
+Read-only evaluation of the current renderer on the connected Pixel 8 / Chrome152,
+with the CruxControl document hidden, uses all 11 themes, seed42, 240 new poses and
+960 held ticks per theme, one warmup and five measured rounds. Median round-average
+new pose is 1.682ms versus 7.03 microseconds per held tick; every held tick reuses
+the same immutable scene reference. This measures isolated rendering computation,
+not visible UI smoothness, BLE delivery, or a larger light budget. No library records
+or board state were changed by the diagnostic.
