@@ -1,7 +1,7 @@
 ---
 id: epic-build-effects-hardening-library-backup-review-fixes
 kind: story
-stage: implementing
+stage: done
 tags: [ui, data, tests]
 parent: epic-build-effects-hardening-library-backup
 depends_on: []
@@ -53,3 +53,13 @@ remain unchanged. A fresh 390px context restores exact canonical records, surviv
 returns focus to the launcher, repeats as a no-op and preserves a conflicting local edit.
 The focused real-browser scenario passes (4.7s); scoped lint and production build pass.
 Persistence codec fixes discovered by the expanded unit suite have their own audit child.
+
+## Verification closure
+
+All named review fixes are verified. Persistence contract suite: 31 tests; dialog:
+14 tests. Confirmed future-schema dispatch and early-export-bound bugs were parked,
+scoped, fixed and verified in child `story-library-backup-codec-boundaries` (9963b9a).
+Full integrated unit suite passes: 82 files / 565 tests with two workers. Production
+build, lint and typecheck pass; browser suite passes all 10 scenarios, including real
+three-generation updates and rich recovery. Child closes directly; parent awaits CI
+closure of its already-completed one standard independent review.
