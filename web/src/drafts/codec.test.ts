@@ -63,8 +63,8 @@ describe('local draft codec', () => {
     const encoded = encodeStoredDraft(source);
     const group = encoded.effectGroups[0] as Record<string, unknown>;
     const recipe = group.recipe as Record<string, unknown>;
-    expect(() => encodeStoredDraft({ ...source, effectGroups: [{ ...bee, recipeVersion: 1 as const }] })).toThrow('Bumblebee recipes require version 2');
-    expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipeVersion: 1 }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
+    expect(() => encodeStoredDraft({ ...source, effectGroups: [{ ...bee, recipeVersion: 1 as const }] })).toThrow('bumblebee recipes require version 2');
+    expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipeVersion: 1 as const }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
     expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipeVersion: 3 }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
     for (const hoverFraction of [-.01, .81, Number.NaN, Number.POSITIVE_INFINITY]) {
       expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipe: { ...recipe, hoverFraction } }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipe' }));
@@ -82,6 +82,31 @@ describe('local draft codec', () => {
     const source = draft({ effectGroups: [spatial] });
     expect(decodeStoredDraft(encodeStoredDraft(source))).toEqual(source);
   });
+  it.each(['fireflies', 'shooting-stars', 'jellyfish', 'embers'] as const)('preserves authored %s snapshots and rejects invalid versions or shape fields', (kind) => {
+    const points = kilterFullride7x10Definition.placements;
+    const group = { ...createSpatialPreset(kind, -7), palette: [apiLevel3Color(0x83), apiLevel3Color(0x1b)],
+      periodMs: 61_000, intensity: .4, footprint: 3,
+      target: { scope: 'selected' as const, include: [points[0]!.id], exclude: [points[1]!.id] } };
+    const source = draft({ effectGroups: [group] });
+    const encoded = encodeStoredDraft(source);
+    expect(decodeStoredDraft(encoded)).toEqual(source);
+    for (const recipeVersion of [1, 3]) {
+      expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipeVersion }] }))
+        .toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
+    }
+    expect(() => encodeStoredDraft({ ...source, effectGroups: [{ ...group, recipeVersion: 1 as const }] })).toThrow('require version 2');
+    expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipe: { kind, inventedShape: 2 } }] }))
+      .toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipe' }));
+  });
+
+  it('does not rewrite saved v2 Matrix palette, lane count, timing, masks or identity', () => {
+    const group = { ...createSpatialPreset('matrix-rain', 42), periodMs: 37_000, palette: [apiLevel3Color(0x04), apiLevel3Color(0x83)],
+      recipe: { kind: 'matrix-rain' as const, direction: 'up' as const, columns: 5 }, intensity: .6, footprint: 8,
+      target: { scope: 'selected' as const, include: [kilterFullride7x10Definition.placements[0]!.id], exclude: [] } };
+    const source = draft({ effectGroups: [group] });
+    expect(decodeStoredDraft(encodeStoredDraft(source))).toEqual(source);
+  });
+
   it('migrates valid v1 records to active v4 drafts without changing their climb content', () => {
     const current = draft({
       name: 'Old wave',

@@ -9,7 +9,7 @@ import type { RouteEditorAction, RouteEditorState } from './types';
 const EFFECT_LABELS: Readonly<Record<LightEffectKind, string>> = { pulse: 'Pulse', 'color-cycle': 'Color cycle', wave: 'Wave', twinkle: 'Twinkle', alternate: 'Alternating pulse' };
 const groupLabel = (group: RouteEditorState['content']['effectGroups'][number]) => group.model === 'spatial' ? SPATIAL_PRESETS.find(({ kind }) => kind === group.recipe.kind)?.label ?? group.recipe.kind : EFFECT_LABELS[group.kind];
 const createGroupId = (): LightEffectGroupId => lightEffectGroupId(`effect-${crypto.randomUUID()}`);
-const shapeField = (kind: SpatialEffectKind) => ({'ocean-tide':'foam','tie-dye-spiral':'arms','matrix-rain':'columns',snake:'bodyLength','beach-ball':'size','pac-man':'mouthBeat',pong:'paddleSize','bird-flock':'quietFraction',frogger:'lanes',pentagram:'fadeRate',bumblebee:'hoverFraction'} as const)[kind];
+const shapeField = (kind: SpatialEffectKind) => ({'ocean-tide':'foam','tie-dye-spiral':'arms','matrix-rain':'columns',snake:'bodyLength','beach-ball':'size','pac-man':'mouthBeat',pong:'paddleSize','bird-flock':'quietFraction',frogger:'lanes',pentagram:'fadeRate',bumblebee:'hoverFraction'} as Partial<Record<SpatialEffectKind, string>>)[kind];
 const shapeValue = (recipe: import('../board-renderer/types').SpatialRecipe) => { switch(recipe.kind) { case 'ocean-tide': return recipe.foam; case 'tie-dye-spiral': return recipe.arms; case 'matrix-rain': return recipe.columns; case 'snake': return recipe.bodyLength; case 'beach-ball': return recipe.size; case 'pac-man': return recipe.mouthBeat; case 'pong': return recipe.paddleSize; case 'bird-flock': return recipe.quietFraction; case 'frogger': return recipe.lanes; case 'pentagram': return recipe.fadeRate; case 'bumblebee': return recipe.hoverFraction; } };
 const shapeLimits = (kind: SpatialEffectKind) => kind === 'ocean-tide' || kind === 'bird-flock'
   ? { min: 0, max: kind === 'bird-flock' ? .95 : 1, step: .05 }
@@ -30,7 +30,7 @@ const shapeLabel = (kind: SpatialEffectKind) => ({
   frogger: 'Traffic lanes',
   pentagram: 'Fade rate',
   bumblebee: 'Hover fraction',
-} as const)[kind];
+} as Partial<Record<SpatialEffectKind, string>>)[kind];
 
 export function LightEffectsPanel({ state, assignments, selectedId, onSelectedIdChange, dispatch }: { readonly state: RouteEditorState; readonly assignments: readonly BoardHoldAssignment[]; readonly selectedId: LightEffectGroupId | null; readonly onSelectedIdChange: (id: LightEffectGroupId | null) => void; readonly dispatch: Dispatch<RouteEditorAction> }) {
   const selected = state.content.effectGroups.find(({ id }) => id === selectedId) ?? null;
@@ -63,12 +63,12 @@ export function LightEffectsPanel({ state, assignments, selectedId, onSelectedId
         <label>Target<select aria-label="Effect target" value={selected.target.scope} onChange={(event) => update({ target: Object.freeze({ ...selected.target, scope: event.target.value }) })}><option value="unused">Unused holds</option><option value="background-board">Whole background</option><option value="selected">Selected holds</option></select></label>
         <label>Light reserve<input aria-label="Effect footprint" type="number" min="1" max="20" value={selected.footprint} onChange={(event) => update({ footprint: Math.max(1,Math.min(20,Number(event.target.value))) })}/><output>{selected.footprint}</output></label>
         {'direction' in selected.recipe && <label>Direction<select aria-label="Effect direction" value={selected.recipe.direction} onChange={(event) => update({recipe:Object.freeze({...selected.recipe,direction:event.target.value})})}>{selected.recipe.kind==='ocean-tide' ? <><option value="in">In</option><option value="out">Out</option></> : selected.recipe.kind==='tie-dye-spiral' ? <><option value="clockwise">Clockwise</option><option value="counterclockwise">Counterclockwise</option></> : selected.recipe.kind==='matrix-rain' ? <><option value="down">Down</option><option value="up">Up</option></> : selected.recipe.kind==='bird-flock' ? <><option value="left">Left</option><option value="right">Right</option></> : <><option value="forward">Forward</option><option value="reverse">Reverse</option></>}</select></label>}
-        <label>{shapeLabel(selected.recipe.kind)}<input aria-label={selected.recipe.kind === 'bumblebee' ? 'Hover fraction' : 'Effect shape'} type="number" {...shapeLimits(selected.recipe.kind)} value={shapeValue(selected.recipe)} onChange={(event) => {
+        {shapeField(selected.recipe.kind) && <label>{shapeLabel(selected.recipe.kind)}<input aria-label={selected.recipe.kind === 'bumblebee' ? 'Hover fraction' : 'Effect shape'} type="number" {...shapeLimits(selected.recipe.kind)} value={shapeValue(selected.recipe)} onChange={(event) => {
           const value = Number(event.currentTarget.value);
           if (!Number.isFinite(value)) return;
           const { min, max } = shapeLimits(selected.recipe.kind);
-          update({ recipe: Object.freeze({ ...selected.recipe, [shapeField(selected.recipe.kind)]: Math.max(min, Math.min(max, value)) }) });
-        }}/></label>
+          update({ recipe: Object.freeze({ ...selected.recipe, [shapeField(selected.recipe.kind)!]: Math.max(min, Math.min(max, value)) }) });
+        }}/></label>}
         {selected.recipe.kind === 'bumblebee' && <div className="light-effects__bee-palette" aria-label="Bumblebee Body and Wings colors">
           <p>Body <span style={{ background: apiLevel3ColorHex(selected.palette[0] ?? 0) }} aria-hidden="true" /> <button type="button" onClick={() => setBumblebeeColor(0)}>Set Body to current color</button></p>
           <p>Wings <span style={{ background: apiLevel3ColorHex(selected.palette[1] ?? selected.palette[0] ?? 0) }} aria-hidden="true" /> <button type="button" onClick={() => setBumblebeeColor(1)}>Set Wings to current color</button></p>

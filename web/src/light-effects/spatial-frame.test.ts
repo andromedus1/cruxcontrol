@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { BoardHoldAssignment, SpatialLightEffectGroup } from '../board-renderer/types';
+import { requiresSpatialRecipeV2, type BoardHoldAssignment, type SpatialLightEffectGroup } from '../board-renderer/types';
 import { apiLevel3Color, unpackApiLevel3Color } from '../domain/boards/colors';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10';
 import { spatialCapacityPlan } from './capacity-plan';
@@ -57,7 +57,9 @@ describe('spatial effect rendering', () => {
   it('retains captured v1 fixtures for every legacy theme', () => {
     for (const kind of LEGACY_SPATIAL_KINDS) {
       const periodMs = legacyPeriods[kind];
-      const group = { ...createSpatialPreset(kind, 42), recipeVersion: 1 as const, periodMs };
+      const base = createSpatialPreset(kind, 42);
+      const recipe = kind === 'matrix-rain' ? { kind: 'matrix-rain' as const, direction: 'down' as const, columns: 5 } : base.recipe;
+      const group = { ...base, recipe, recipeVersion: 1 as const, periodMs };
       const frames = [0, BOARD_ANIMATION_FRAME_MS, periodMs / 2];
       expect(frames.map((elapsedMs) => legacyFixtureDigest(renderSpatialGroup(definition, [], group, elapsedMs)))).toEqual(legacyFixtures[kind]);
     }
@@ -80,7 +82,7 @@ describe('spatial effect rendering', () => {
     }
   });
 
-  it.each(SPATIAL_PRESETS.filter(({ kind }) => kind !== 'bumblebee').map(({ kind, footprint }) => [kind, footprint] as const))('%s is deterministic, unique, role-color-safe, and within its %i-light reserve', (kind, footprint) => {
+  it.each(SPATIAL_PRESETS.filter(({ kind }) => !requiresSpatialRecipeV2(kind)).map(({ kind, footprint }) => [kind, footprint] as const))('%s is deterministic, unique, role-color-safe, and within its %i-light reserve', (kind, footprint) => {
     const group = preset(kind);
     const reserved = new Set(Object.values(definition.rolePresets).map(({ lightColor }) => lightColor));
     for (let elapsedMs = 0; elapsedMs <= group.periodMs; elapsedMs += group.periodMs / 40) {

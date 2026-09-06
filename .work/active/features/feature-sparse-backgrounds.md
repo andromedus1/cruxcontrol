@@ -1,7 +1,7 @@
 ---
 id: feature-sparse-backgrounds
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: null
 depends_on: [story-background-dogfood-design]
@@ -112,3 +112,66 @@ parent coordinates approved-design fidelity, phone backup/update readiness,
 documentation and independent review. No child stories: tightly coupled renderer,
 recipe and codec changes fit one integration stride. Standard review weight from
 project conventions, one independent pass after integrated verification.
+
+
+## Implementation notes
+
+- Execution capability: one feature-owning worker using the implement skill; direct
+  reads resolved the existing integration seams without exploratory delegation.
+- Review weight: standard, from project conventions. Parent owns the single
+  independent pass, browser workflow verification, CI and PR delivery; this worker
+  stops at review as requested.
+- Added four kind-only v2 recipe variants and presets (Fireflies 8, Shooting stars 6,
+  Jellyfish 9, Embers 10), all with 120-second defaults and the existing generic
+  palette, intensity, timing, target and reserve editor. Frogger remains absent
+  from creation; saved Frogger and other historical recipes remain supported.
+- Replaced only v2 Matrix choreography, with three staggered trails at the default
+  ten-hold reserve. Saved column counts define a disjoint lane pool; physical
+  columns are prepared before masks, and falling actors leave before reentry.
+  New Matrix creation uses three columns. Every saved group field stays untouched.
+- `spatial-sparse.ts` owns the focused five-theme geometry and color treatment.
+  Projection uses complete geometry, then omits masked/duplicate cells without
+  relocating actors. The existing held-frame cache, semantic-role protection,
+  scheduler and twenty-light admission remain authoritative.
+- Physical color adaptations: Matrix normalizes each authored palette hue before
+  applying age-based decay, because old dark greens otherwise vanish in later tail
+  cells. Pale heads remain brighter after API-2 quantization. Shooting-star decay
+  uses visible RGB332 steps (`1/.8/.6/.45/.32/.26`); the mock's final `.08` level
+  packed to black, making a sixth cell permanently unavailable. The authored
+  palette remains unchanged in storage. These are board-fidelity adaptations,
+  not new theme settings.
+- Strict draft and portable snapshot codecs accept the four new v2 kinds and
+  reject v1/future versions and invented shape fields. Whole-library backup
+  round trips all new recipes through these existing boundaries. No database
+  version, migration, dependency or transport changes.
+- Tests added: full-cycle reserve and encoded role-color checks over 57,750 held
+  poses (five themes, three seeds, default/custom periods, reserves 1..11);
+  intended-cell masks and composed climb colors; editable palette/intensity and
+  held-frame reuse; actual Matrix 4/3/3 tails and encoded contrast; firefly perch
+  changes during darkness; meteor descent, alternating passes, quiet gaps and a
+  six-cell peak; compact jellyfish bell/tentacles and nearby seam poses; stable
+  low coals, sparking embers and their seam. Strict draft/portable/backup tests
+  preserve authored snapshots. An actual editor-to-IndexedDB integration test
+  creates all four effects, edits palettes/timing/intensity, autosaves, closes the
+  database and reopens exact saved values in the editor.
+- Simplification: removed the superseded v2 Matrix renderer. Legacy golden fixture
+  inputs explicitly retain their historical five-column recipe; fixture digests
+  are unchanged. Legacy-only and shape-control test matrices now select the kinds
+  they actually cover. Revised Matrix trajectory expectations use its approved
+  six falls; the three-stream assertion inspects the full cycle.
+- Adjacent issues parked: none. Initial failures were the expected old Matrix
+  choreography/enum fixtures; their motion and compatibility guarantees remain
+  asserted against the approved design.
+
+## Verification
+
+- Final local unit suite: **614 tests / 84 files passed**, with `--maxWorkers=2`.
+- Lint passed. TypeScript and production build passed. Build output is isolated at
+  `/tmp/cruxcontrol-sparse-build`; the running phone preview's `web/dist` is untouched.
+- Focused production visual checks by parent confirmed aligned three-stream Matrix,
+  compact jellyfish and embers; parent completes final visual and browser checks
+  against the final artifact before delivery.
+- Parent's fresh read-only phone backup contains **27 climbs / 4 playlists** and no
+  currently saved Matrix/Frogger. No phone records were modified by this feature.
+  Backup records remain private outside Git. Parent verifies software activation
+  preserves the current library rather than replaying an older dogfood snapshot.

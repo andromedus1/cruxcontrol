@@ -22,7 +22,8 @@ export interface AssignedLightEffectGroup {
 
 export type SpatialEffectKind =
   | 'ocean-tide' | 'tie-dye-spiral' | 'matrix-rain' | 'snake'
-  | 'beach-ball' | 'pac-man' | 'pong' | 'bird-flock' | 'frogger' | 'pentagram' | 'bumblebee';
+  | 'beach-ball' | 'pac-man' | 'pong' | 'bird-flock' | 'frogger' | 'pentagram' | 'bumblebee'
+  | 'fireflies' | 'shooting-stars' | 'jellyfish' | 'embers';
 
 export type SpatialRecipe =
   | { readonly kind: 'ocean-tide'; readonly direction: 'in' | 'out'; readonly foam: number }
@@ -35,7 +36,16 @@ export type SpatialRecipe =
   | { readonly kind: 'bird-flock'; readonly direction: 'left' | 'right'; readonly quietFraction: number }
   | { readonly kind: 'frogger'; readonly lanes: number }
   | { readonly kind: 'pentagram'; readonly fadeRate: number }
-  | { readonly kind: 'bumblebee'; readonly hoverFraction: number };
+  | { readonly kind: 'bumblebee'; readonly hoverFraction: number }
+  | { readonly kind: 'fireflies' }
+  | { readonly kind: 'shooting-stars' }
+  | { readonly kind: 'jellyfish' }
+  | { readonly kind: 'embers' };
+
+export function requiresSpatialRecipeV2(kind: SpatialEffectKind): kind is 'bumblebee' | 'fireflies' | 'shooting-stars' | 'jellyfish' | 'embers' {
+  return kind === 'bumblebee' || kind === 'fireflies' || kind === 'shooting-stars'
+    || kind === 'jellyfish' || kind === 'embers';
+}
 
 export interface SpatialEffectTarget {
   readonly scope: 'unused' | 'background-board' | 'selected';

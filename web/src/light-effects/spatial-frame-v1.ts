@@ -34,10 +34,9 @@ function eligible(definition: BoardDefinition, assignments: readonly BoardHoldAs
 
 /** The original renderer retained for recipeVersion 1 snapshots. */
 export function renderSpatialGroupV1(definition: BoardDefinition, assignments: readonly BoardHoldAssignment[], group: SpatialLightEffectGroup, elapsedMs: number): LightScene {
-  // Bumblebee is authored exclusively against the v2 pose engine. Keeping an
-  // explicit empty v1 branch prevents a future v1 fallback from inventing a
-  // legacy bee recipe or changing old fixture behavior.
-  if (group.recipe.kind === 'bumblebee') return Object.freeze([]);
+  // New themes have no historical v1 rendering. Codecs reject such snapshots.
+  if (group.recipe.kind === 'bumblebee' || group.recipe.kind === 'fireflies'
+    || group.recipe.kind === 'shooting-stars' || group.recipe.kind === 'jellyfish' || group.recipe.kind === 'embers') return Object.freeze([]);
   const candidates = eligible(definition, assignments, group);
   if (candidates.length === 0 || group.palette.length === 0) return Object.freeze([]);
   const boardElapsedMs = Math.floor(elapsedMs / BOARD_ANIMATION_FRAME_MS) * BOARD_ANIMATION_FRAME_MS;

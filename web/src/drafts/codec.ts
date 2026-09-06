@@ -2,6 +2,7 @@ import {
   LIGHT_EFFECT_PERIOD_MAX_MS,
   LIGHT_EFFECT_PERIOD_MIN_MS,
   lightEffectGroupId,
+  requiresSpatialRecipeV2,
   type BoardHoldAssignment,
   type BoardHoldAppearance,
   type LightEffectGroup,
@@ -39,7 +40,7 @@ const EFFECT_KINDS = new Set<LightEffectKind>([
   'alternate',
 ]);
 const SPATIAL_KINDS = new Set<SpatialEffectKind>([
-  'ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock', 'frogger', 'pentagram', 'bumblebee',
+  'ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock', 'frogger', 'pentagram', 'bumblebee', 'fireflies', 'shooting-stars', 'jellyfish', 'embers',
 ]);
 
 function validRecipe(raw: Record<string, unknown>): boolean {
@@ -55,6 +56,7 @@ function validRecipe(raw: Record<string, unknown>): boolean {
     case 'frogger': return Number.isInteger(raw.lanes) && (raw.lanes as number) >= 1 && (raw.lanes as number) <= 8;
     case 'pentagram': return typeof raw.fadeRate === 'number' && Number.isFinite(raw.fadeRate) && raw.fadeRate > 0 && raw.fadeRate <= 8;
     case 'bumblebee': return typeof raw.hoverFraction === 'number' && Number.isFinite(raw.hoverFraction) && raw.hoverFraction >= 0 && raw.hoverFraction <= .8;
+    case 'fireflies': case 'shooting-stars': case 'jellyfish': case 'embers': return Object.keys(raw).length === 1;
     default: return false;
   }
 }
@@ -237,8 +239,8 @@ function decodeEffectGroups(value: unknown, source: unknown, _legacy = false): r
       const recipeRaw = record(raw.recipe, `${path}.recipe`, source);
       const recipeKind = string(recipeRaw.kind, `${path}.recipe.kind`, source) as SpatialEffectKind;
       if (!SPATIAL_KINDS.has(recipeKind)) throw corrupt(`${path}.recipe.kind`, 'unknown spatial recipe', source);
-      if (recipeKind === 'bumblebee' && raw.recipeVersion === 1) {
-        throw corrupt(`${path}.recipeVersion`, 'bumblebee recipes require version 2', source);
+      if (requiresSpatialRecipeV2(recipeKind) && raw.recipeVersion === 1) {
+        throw corrupt(`${path}.recipeVersion`, `${recipeKind} recipes require version 2`, source);
       }
       if (!validRecipe(recipeRaw)) throw corrupt(`${path}.recipe`, 'invalid spatial recipe parameters', source);
       const recipe = Object.freeze({ ...recipeRaw, kind: recipeKind }) as SpatialRecipe;
@@ -282,7 +284,7 @@ export function encodeStoredDraft(draft: LocalClimbDraft): StoredDraftV4 {
     })),
     effectGroups: draft.effectGroups.map((group) => group.model === 'spatial'
       ? (() => {
-        if (group.recipe.kind === 'bumblebee' && group.recipeVersion !== 2) throw new TypeError('Bumblebee recipes require version 2');
+        if (requiresSpatialRecipeV2(group.recipe.kind) && group.recipeVersion !== 2) throw new TypeError(`${group.recipe.kind} recipes require version 2`);
         if (group.recipe.kind === 'bumblebee' && !validRecipe(group.recipe as unknown as Record<string, unknown>)) throw new TypeError('Bumblebee hover fraction must be finite and between 0 and 0.8');
         return { model: 'spatial', id: group.id, recipeVersion: group.recipeVersion, recipe: { ...group.recipe }, seed: group.seed, palette: [...group.palette], periodMs: group.periodMs, intensity: group.intensity, footprint: group.footprint, target: { scope: group.target.scope, include: [...group.target.include], exclude: [...group.target.exclude] } };
       })()

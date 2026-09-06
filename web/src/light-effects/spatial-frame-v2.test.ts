@@ -20,6 +20,10 @@ describe('version 2 spatial loops', () => {
       frogger: 120_000,
       pentagram: 120_000,
       bumblebee: 120_000,
+      fireflies: 120_000,
+      'shooting-stars': 120_000,
+      jellyfish: 120_000,
+      embers: 120_000,
     });
   });
 
@@ -106,7 +110,7 @@ describe('version 2 spatial loops', () => {
     expect(pongX.filter((x) => x > .85).length).toBe(1);
     const matrix = createSpatialPreset('matrix-rain', 5);
     const matrixCounts: number[] = [];
-    for (const frame of [0, 17, 41, 83]) {
+    for (let frame = 0; frame < matrix.periodMs / BOARD_ANIMATION_FRAME_MS; frame += 1) {
       const scene = renderSpatialGroup(definition, [], matrix, frame * BOARD_ANIMATION_FRAME_MS);
       matrixCounts.push(new Set(scene.map(({ placementId }) => positions.get(placementId)!.x)).size);
     }
@@ -151,7 +155,7 @@ describe('version 2 spatial loops', () => {
   });
 
   it('makes each shape control observable within the light reserve', () => {
-    for (const preset of SPATIAL_PRESETS) {
+    for (const preset of SPATIAL_PRESETS.filter(({ recipe }) => Object.keys(recipe).length > 1)) {
       const base = createSpatialPreset(preset.kind, 11);
       const recipe = { ...base.recipe } as Record<string, unknown>;
       const field = preset.kind === 'ocean-tide' ? 'foam' : preset.kind === 'tie-dye-spiral' ? 'arms' : preset.kind === 'matrix-rain' ? 'columns' : preset.kind === 'snake' ? 'bodyLength' : preset.kind === 'beach-ball' ? 'size' : preset.kind === 'pac-man' ? 'mouthBeat' : preset.kind === 'pong' ? 'paddleSize' : preset.kind === 'bird-flock' ? 'quietFraction' : preset.kind === 'frogger' ? 'lanes' : preset.kind === 'pentagram' ? 'fadeRate' : 'hoverFraction';
