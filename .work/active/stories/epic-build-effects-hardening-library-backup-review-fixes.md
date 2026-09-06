@@ -42,3 +42,14 @@ without repeating restoration. Partial retry performs a fresh review and recogni
 already-added climbs. Fourteen focused dialog tests pass, including conflicts, exact
 counts, failed-refresh retry, unmounted export, stale files, size-before-read and busy
 controls. Native focus return will be verified in the richer browser scenario.
+
+## Browser preservation evidence
+
+Expanded the actual download/restore scenario with four historical schema generations,
+an unlisted climb from another installation, two old Trash entries, shared playlist
+membership, ordered missing local/provider references, metadata, original/seamless/bee
+recipes and exact palette bytes. Export normalizes the file while source IndexedDB rows
+remain unchanged. A fresh 390px context restores exact canonical records, survives reload,
+returns focus to the launcher, repeats as a no-op and preserves a conflicting local edit.
+The focused real-browser scenario passes (4.7s); scoped lint and production build pass.
+Persistence codec fixes discovered by the expanded unit suite have their own audit child.
