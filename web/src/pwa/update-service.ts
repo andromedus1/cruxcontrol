@@ -146,6 +146,7 @@ export function createAppUpdateService(
       (typeof document !== 'undefined' ? document.visibilityState : 'visible')) === 'visible';
 
   const publish = (next: Omit<AppUpdateSnapshot, 'phase'>) => {
+    if (disposed) return;
     snapshot = Object.freeze({ ...next, phase: next.status });
     for (const listener of [...listeners]) listener(snapshot);
   };
