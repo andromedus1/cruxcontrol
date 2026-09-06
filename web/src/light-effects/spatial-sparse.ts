@@ -49,12 +49,12 @@ function rainTargets(group: SpatialLightEffectGroup, points: readonly SpatialPoi
   const offset = seedFraction(group.seed);
   for (let stream = 0; stream < count; stream += 1) {
     const length = Math.floor(group.footprint / count) + (stream < group.footprint % count ? 1 : 0);
-    const cycles = 6 - stream;
-    const phase = clock.phase * cycles + [.13, .57, .81][stream]! + offset;
-    const fall = Math.floor(phase) % cycles;
     // Each stream owns a disjoint part of the authored lane pool. A new lane
     // is selected only after the complete trail has left and a dark gap passes.
     const pool = lanes.filter((_, index) => index % count === stream);
+    const cycles = Math.max(6 - stream, pool.length);
+    const phase = clock.phase * cycles + [.13, .57, .81][stream]! + offset;
+    const fall = Math.floor(phase) % cycles;
     const lane = pool[(fall + Math.floor(offset * pool.length)) % pool.length]!;
     const step = Math.floor(fraction(phase) * (lane.length + length * 2 + 4)) - length;
     for (let tail = 0; tail < length; tail += 1) {

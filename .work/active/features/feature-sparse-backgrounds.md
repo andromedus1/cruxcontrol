@@ -165,7 +165,7 @@ project conventions, one independent pass after integrated verification.
 
 ## Verification
 
-- Final local unit suite: **614 tests / 84 files passed**, with `--maxWorkers=2`.
+- Final local unit suite: **633 tests / 84 files passed**, with `--maxWorkers=2`.
 - Lint passed. TypeScript and production build passed. Build output is isolated at
   `/tmp/cruxcontrol-sparse-build`; the running phone preview's `web/dist` is untouched.
 - Focused production visual checks by parent confirmed aligned three-stream Matrix,
@@ -175,3 +175,33 @@ project conventions, one independent pass after integrated verification.
   currently saved Matrix/Frogger. No phone records were modified by this feature.
   Backup records remain private outside Git. Parent verifies software activation
   preserves the current library rather than replaying an older dogfood snapshot.
+
+
+## Accepted review finding: Matrix lane coverage
+
+The single standard independent review found that fixed 6/5/4 fall counts can
+leave authored lanes unreachable when a stream owns more lanes than falls (for
+example a saved twenty-column recipe partitions into 7/7/6 lanes). Accepted as
+a compatibility blocker: all selected physical lanes must be reachable in the
+closed sequence. This named correction remains within the feature review
+boundary; no additional independent review is requested.
+
+The regression reproduced the failure before the fix: columns=20, seed=0,
+reserve=1, period=61,000 visited six physical lanes instead of twenty. Each
+stream now uses `max(original fall count, owned lane count)`, so every pool
+member is reachable while the default 6/5/4 cadence and authored fields remain
+unchanged. This is the only production correction from the review.
+
+The replacement lane test checks every column count 1..20, reserves 1/2/6/10,
+seeds 0/7/-42 and periods 61/90/180 seconds: 720 complete rendered cycles and
+158,880 held poses. Every cycle reaches exactly the authored lane count, stays
+within its reserve and three simultaneous columns, repeats at its period, and
+leaves the serialized recipe unchanged. Existing single-stream direction and
+dark entry/exit tests and default 4/3/3 trajectory/color tests still pass.
+
+After correction: 70 focused animation tests passed, then all 633 unit tests
+in 84 files passed with two workers; lint and TypeScript/production build passed.
+The clean isolated build has twelve precache entries and main bundle
+`index-B0caGl0V.js`. Parent closes the single standard review after these verified
+fixes; no second independent review was run. Phone records and preview remain
+untouched by this worker.

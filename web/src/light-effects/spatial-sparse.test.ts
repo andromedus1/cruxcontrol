@@ -81,18 +81,21 @@ describe('three-trail Matrix', () => {
     }
   });
 
-  it('honors saved lane pools while limiting simultaneous streams and keeping each reset dark', () => {
-    for (const columns of [1, 3, 5, 20]) {
-      const group = { ...createSpatialPreset('matrix-rain', 7), recipe: { kind: 'matrix-rain' as const, direction: 'down' as const, columns } };
+  it.each(Array.from({ length: 20 }, (_, index) => index + 1))('reaches every one of %i authored lanes across full cycles and reduced reserves', (columns) => {
+    for (const seed of [0, 7, -42]) for (const footprint of [1, 2, 6, 10]) for (const periodMs of [61_000, 90_000, 180_000]) {
+      const group = { ...createSpatialPreset('matrix-rain', seed), footprint, periodMs,
+        recipe: { kind: 'matrix-rain' as const, direction: 'down' as const, columns } };
       const before = JSON.stringify(group);
       const frames = framesOf(group);
       const visited = new Set<number>();
       for (const scene of frames) {
         const xs = new Set(scene.map((light) => point(light).x));
         expect(xs.size).toBeLessThanOrEqual(Math.min(columns, 3));
+        expect(scene.length).toBeLessThanOrEqual(footprint);
         for (const x of xs) visited.add(x);
       }
-      expect(visited.size).toBeGreaterThanOrEqual(Math.min(columns, 5));
+      expect(visited.size, `columns=${columns}, seed=${seed}, reserve=${footprint}, period=${periodMs}`).toBe(columns);
+      expect(sceneAt(group, frames.length)).toEqual(frames[0]);
       expect(JSON.stringify(group)).toBe(before);
     }
   });
