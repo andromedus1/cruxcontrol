@@ -1,7 +1,7 @@
 ---
 id: story-background-dogfood-design
 kind: story
-stage: review
+stage: done
 tags: [ui, ble]
 parent: null
 depends_on: []
@@ -86,3 +86,18 @@ References: NPS firefly flash patterns
 glow/pause/answer rhythm; NASA meteor explanation
 (https://spaceplace.nasa.gov/asteroid-or-meteor/en/) informs the bright head and
 trailing streak. Timings, budgets, and choreography are original design choices.
+
+## Review (2026-09-05)
+
+**Verdict:** Approve. Bounded inline standalone-story review; standard weight,
+one pass, no independent reviewer. Core correctness, compatibility, accessibility,
+test value, and documentation lenses checked against the committed diff.
+
+**Blockers / important / nits:** None.
+
+Retirement only changes creation availability. No persistence, codec, renderer,
+palette, or phone changes. Registry retention serves shipped/importable recipes.
+Mock period and footprint checks inspect raw generated frames without truncation;
+route masks remove overlapping cells rather than relocating them. Production
+Matrix and new candidate implementation remain outside this design deliverable.
+Local checks are green; PR CI must pass before merge.
