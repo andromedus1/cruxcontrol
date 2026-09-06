@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-08-02
+updated: 2026-09-05
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
@@ -20,6 +20,8 @@ decisions:
   - "Android/desktop Chromium provide Web Bluetooth control; iOS direct control is a later native-bridge capability."
   - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
+  - "Whole-library backup is a bounded local file of saved records; restore is missing-only, identity-preserving, conflict-blocking, and transactional per IndexedDB store."
+  - "PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs, and workspace, mutation, play-through, and BLE session gates protect local work before activation."
 ---
 
 # CruxControl — Specification
@@ -45,8 +47,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Connect to the active board through a capability-selected controller adapter.
 - The first adapter controls the Kilter Fullride 7x10 via Web Bluetooth.
 - Light holds for any selected climb through the Nordic UART protocol, selecting API
-  level 2 or 3 from the connected controller identity. The powered Fullride acceptance
-  board currently exercises the measured API-2 path.
+  level 2 or 3 from the connected controller identity. The existing API-2 controller
+  policy is the accepted control profile for the Fullride path.
 - Run explicit, bounded Fullride capacity cases from the editor with exact packet/write
   estimates, stop/timeout recovery, operator observations, and private local JSON trace
   export. No diagnostic runs automatically and no trace is uploaded.
@@ -93,9 +95,26 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Explicit Light Draft and opt-in, default-off Live Preview reuse the board controller.
 - Add editable assignment effects and independent spatial background presets: Ocean Tide,
   Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger,
-  and a fading circled inverted pentagram. Presets default to unused holds, can target
+  a fading circled inverted pentagram, and Curious Bumblebee. All eleven presets use
+  version-2, closed themed trajectories with 90–150-second defaults. Bumblebee is v2-only:
+  it provides a seeded six-stop, 120-second tour with hover, flight, and dart phases plus
+  independently editable Body and Wings palette slots; malformed or version-1 bee recipes
+  are rejected by the strict codecs. Version-1 saved recipes remain on their
+  original renderer until the user explicitly upgrades them; an upgrade preserves the
+  authored settings and changes only the recipe version and period to the maximum of
+  the old period and the new preset default. Presets default to unused holds, can target
   the board background or a painted selection, persist complete recipe snapshots, and
   always keep semantic climb roles exact and static.
+- Version-2 spatial rendering prepares geometry per board definition and reuses the
+  latest held frame and prepared paths per effect group. Decorative colors are adjusted
+  after API-2 quantization to avoid exact encoded role colors and encoded black; this is
+  an encoded-byte invariant, not a perceptual color-distinction guarantee. Zero-intensity
+  spatial groups emit dark/empty scenes, and intentionally empty animation frames remain
+  part of playback until an explicit stop, clear, disconnect, or visibility cancellation.
+  Stable tide and spiral target samples carry color bands and geometry through loop joins;
+  actor ordering remains coherent in reverse paths, and Pong plans each paddle to its own
+  wall contact. A direct clear explicitly cancels playback, while an empty animated frame
+  is sent as preview and does not cancel the animation.
 - Physical animation preflights route/static lights plus every spatial layer's declared
   worst-case reserve before the first write. API-2 playback refuses plans above 20 lights
   with a breakdown; it never thins a saved design. Screen preview and saving remain unrestricted.
@@ -212,8 +231,8 @@ The model mirrors the official Kilter SQLite schema (see
   or replacement with redistributable imagery.
 - Locally authored climbs are authoritative in a dedicated native IndexedDB database,
   survive reload/reopen, move between Draft and Finished without content validation,
-  and remain recoverable from Trash for 30 days. Definition/layout/angle/placement
-  incompatibility is surfaced while retaining the stored record unchanged. Drafts remain
+  and remain in Trash until the user explicitly chooses Delete forever. Definition/layout/
+  angle/placement incompatibility is surfaced while retaining the stored record unchanged. Drafts remain
   in their dedicated workspace rather than appearing in the finished My Climbs library.
 - The Drafts workspace can import selected Kilter Android Fullride PNGs sequentially,
   review and correct each detected climb, and save confirmed results as ordinary 40°
@@ -230,21 +249,53 @@ The model mirrors the official Kilter SQLite schema (see
   bounded fragment links and lossless files. Import previews compatibility before any
   write, creates fresh identities, and compensates created climb copies if list
   creation fails.
+- Whole-library backup and restore are available from the library workspace for saved
+  contents only. A version-1 local JSON file includes every climb across installations,
+  including orphan records and Trash, plus every playlist, ordered shared membership,
+  stable ID, revision, lifecycle timestamp, metadata, and saved effect recipe. Its limits
+  are 25 MiB UTF-8, 10,000 climbs, 1,000 playlists, and 100,000 playlist references.
+  Export performs a bounded stability check across the independent stores and asks users
+  to finish edits in other tabs; it is not a cross-database atomic snapshot. Restore
+  reviews the complete file first, adds missing IDs, skips canonically identical IDs, and
+  blocks any differing ID without overwriting or allocating replacement IDs. Each store
+  commits in its own transaction and aborts that store on error; a playlist failure can
+  therefore follow a committed climb batch and is reported for honest retry with the
+  retained file. The workflow uses the existing browser-local databases and origin for
+  saved contents only; it does not rewrite schemas or upload to a cloud/account service.
+  Trash remains until explicit Delete forever.
+- The installable PWA precaches the app shell with Workbox and owns registration through an
+  update coordinator configured for prompt-mode workers (`skipWaiting: false`,
+  `clientsClaim: false`, and no injected registration helper). A waiting worker never
+  reloads the app automatically. The persistent update surface offers Update and reload,
+  Later, and status; Later hides the prominent prompt while retaining an accessible update
+  entry. Explicit apply is admitted only when the editor and all list/import/backup/modal
+  work are settled, no local mutation is pending, no list is dirty or playing through, and
+  the board is not selecting, connecting, connected, disconnecting, or performing an
+  operation. The app holds a shared Web Lock for each tab and uses an exclusive
+  `ifAvailable` request for apply, so another tab blocks with a close-other-tabs message.
+  If Web Locks are unavailable, the worker remains waiting and the user is told to close
+  and reopen. A controller change while a tab is being admitted, or activation that does
+  not complete after posting, leaves the workspace blocked with an explicit reload/close
+  recovery action. Only the requesting tab reloads after its captured worker becomes the
+  controller.
 - The editor is responsive at Android-phone and desktop Chromium widths, autosaves edits,
   retains explicit lighting actions, and exposes named keyboard-operable controls and
   non-color-only role markers.
 - Deterministic tests cover definition/renderer, climb and playlist
   persistence/concurrency/recovery and screenshot recognition/review/import,
-  API-level-2/3 bytes, the measured API-2 capacity policy, Bluetooth lifecycle,
+  API-level-2/3 bytes, the existing API-2 capacity policy, Bluetooth lifecycle,
   lighting/preview, and the integrated
   create-save-light seams. Playwright Chromium covers autosave/reload/reopen,
   multi-list membership/order, Trash/restore resolution, ephemeral play-through, and
   portable list export/import with fresh identities and preserved content/order, plus
-  compact/wide interaction.
-- Powered-board dogfooding through Android Chrome confirms connect/light/clear, API-2
-  complete-scene replacement behavior and measured capacity, and recognizable spatial
-  animation on the Fullride. The saved recipes remain deterministic while successive
-  circuits vary supported game and ambient paths.
+  compact/wide interaction. A real three-generation Workbox browser fixture verifies the
+  same-origin A→B→C transition, including natural waiting with legacy A, explicit safe
+  apply from B, and climb identity/content persistence across both updates.
+- The existing local draft schema remains version 4 and the portable playlist envelope
+  remains unchanged; embedded effect recipe versions carry this evolution without a
+  storage or playlist migration. Deterministic tests cover v1 compatibility, v2 cycle
+  closure, masks, role protection, color encoding, cache reuse, empty-frame playback,
+  Bumblebee Body/Wings editing, reverse actor ordering, and Pong contacts.
 
 ## Constraints & Non-Functional Requirements
 

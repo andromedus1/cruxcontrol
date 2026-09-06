@@ -28,6 +28,8 @@ export interface KilterScreenshotImportDialogProps {
   readonly repository: LocalDraftRepository;
   readonly onImported: (result: ScreenshotImportResult) => Promise<void>;
   readonly onClose: () => void;
+  readonly onOperationStart?: () => void;
+  readonly onOperationEnd?: () => void;
   readonly analyzeFile?: typeof analyzeKilterScreenshotFile;
   readonly importCandidates?: typeof importScreenshotCandidates;
   readonly loadSuppliedCandidates?: typeof createSuppliedFullrideCandidates;
@@ -67,6 +69,8 @@ export function KilterScreenshotImportDialog({
   repository,
   onImported,
   onClose,
+  onOperationStart,
+  onOperationEnd,
   analyzeFile = analyzeKilterScreenshotFile,
   importCandidates = importScreenshotCandidates,
   loadSuppliedCandidates = createSuppliedFullrideCandidates,
@@ -109,6 +113,7 @@ export function KilterScreenshotImportDialog({
   }
 
   async function chooseFiles(files: readonly File[]): Promise<void> {
+    onOperationStart?.();
     const generation = ++analysisGeneration.current;
     setItems([]);
     setIndex(0);
@@ -131,6 +136,8 @@ export function KilterScreenshotImportDialog({
       setStatus('');
       setError(message(cause));
       setPhase('choose');
+    } finally {
+      onOperationEnd?.();
     }
   }
 
@@ -164,6 +171,7 @@ export function KilterScreenshotImportDialog({
 
   async function confirm(): Promise<void> {
     if (phase !== 'review') return;
+    onOperationStart?.();
     const confirmed: ConfirmedScreenshotCandidate[] = items.map((item) => ({
       sourceName: item.candidate.sourceName,
       name: item.name,
@@ -189,6 +197,8 @@ export function KilterScreenshotImportDialog({
       setError(message(cause));
       setStatus('');
       setPhase('review');
+    } finally {
+      onOperationEnd?.();
     }
   }
 

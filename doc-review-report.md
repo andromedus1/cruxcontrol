@@ -1,25 +1,32 @@
 # Doc Review Report
 
 **Project:** CruxControl
+**Audited snapshot:** `de09b418a7fbf4c0e0f4085b5b9b93ba1a13ff72` (`de09b41`)
+**Date:** 2026-09-05
+**Documents reviewed:** 5 (5 system, 0 module)
+**Passes run:** 1 system-level pass; no module pass (no module planning docs discovered)
+**Issues found:** Critical 0 · High 0 · Medium 0 · Low 0 · Info 0
 
-**Date:** 2026-08-02
+## Scope and method
 
-**Review mode:** System-only fresh re-audit
+The review used the research-pipeline `doc-review` workflow and its build-process
+reference. The current planning corpus was taken from `docs/knowledge-index.yaml`:
+`docs/VISION.md`, `docs/PRINCIPLES.md`, `docs/SPEC.md`, `docs/ARCHITECTURE.md`,
+and `docs/DEPLOY.md`. The 17 research entries informed provenance and blocking-brief
+checks; they were not re-audited as planning documents. The one historical entry,
+`docs/architecture/history/north-star.md`, was excluded as superseded.
 
-**Documents reviewed:** README, five foundation/planning documents, DEPLOY, AGENTS,
-generated three-layer knowledge index, research provenance, implementation evidence,
-and the current `.work/` substrate
+Module discovery found no `modules/` directory, no non-historical module north-star
+entry, and no module architecture set under `docs/`. The excluded untracked paths
+`.peeragent/`, `docs/kilter_docs/`, and `docs/set_boulders/` were not treated as
+planning corpus.
 
-**Passes run:** 1 system-level pass; no module planning document sets were discovered
-
-**Issues found:** Critical 0 · High 0 · Medium 0 · Low 0 · Info 3
-
-## Verdict
-
-**PASS — documentation exit gate satisfied.** The prior four Medium and four Low
-findings are resolved. The current foundation bundle, generated indexes, research
-provenance, deployment runbook, implementation evidence, and work substrate agree. No
-Critical, High, Medium, or Low documentation issue remains.
+The audit checked document ownership and cross-document consistency, frontmatter,
+referenced paths, indexed blocking metadata, and the current code contracts behind
+the recently documented animation, library recovery, and PWA update decisions. It
+did not run unit, build, browser, or physical-board tests; those are outside this
+bounded documentation pass. This report does not establish deployed status or
+physical hardware acceptance.
 
 ## Pass 1: System-Level
 
@@ -39,136 +46,102 @@ None.
 
 None.
 
-### Info (3)
+### Info (0)
 
-#### I1. All prior findings are resolved
+None.
 
-The regenerated indexes now describe API-2/API-3 controller selection, animation
-safety, and exact current substrate counts. SPEC identifies nine capability areas and
-names API-2/API-3 evidence. VISION marks catalog adapters as future. The flashy-effects
-feature records the accumulated physical dogfood evidence and correctly remains at
-`implementing` only until its independent feature review. Brief provenance, future
-module labels, and sharing-status language are also reconciled.
+## Frontmatter and index integrity
 
-#### I2. Corpus structure and references are clean
+All 5 current planning documents have non-empty `description`, `type`, `kind`, and
+`updated` fields. The project index consistently records them as `kind: planning`
+and the index reports 5 planning, 17 research, and 1 historical document. The
+index’s generated counts and paths match the discovered tracked corpus at the
+audited snapshot.
 
-Dynamic discovery found no module north-star or architecture bundle, so no module pass
-was expected. The historical north-star is correctly represented as superseded. Every
-relative Markdown link in README, VISION, SPEC, ARCHITECTURE, PRINCIPLES, and DEPLOY
-resolves. All five planning documents have complete project-schema-v2 frontmatter. All
-seven `blocks_phase` relationships point to an existing brief and existing work item.
+All planning-document links resolve, including the references to `SPEC.md`,
+`ARCHITECTURE.md`, `VISION.md`, the two local briefs, the Cloudflare research brief,
+and the superseded history document. No broken cross-reference was found.
 
-#### I3. Current verification evidence is reproducible
+## Clean areas
 
-The fresh audit reproduced 68 passing test files and 443 passing tests, plus successful
-typecheck, lint, and production build. Current source directly supports the documented
-305 placements, 30-day Trash retention, 16-climb supplied migration, portable lists,
-API-2 127-static/20-animated-light profile, controller-selected API-2/API-3 codecs, ten
-spatial presets, reserved semantic roles, and visibility-loss cancellation.
+- The intent split is coherent: VISION owns the product direction and non-goals;
+  PRINCIPLES owns durable decision rules; SPEC owns capabilities and domain
+  contracts; ARCHITECTURE owns boundaries, flows, dependencies, and risks; DEPLOY
+  owns the operational runbook.
+- The Fullride first-slice scope, provider/controller/board separation, local-first
+  storage, source provenance, and Chromium Web Bluetooth constraint are stated
+  consistently across the current planning docs.
+- The animation compatibility boundary is documented accurately. `renderSpatialGroup`
+  dispatches saved recipe version 1 to the v1 renderer and version 2 to the v2
+  renderer (`web/src/light-effects/spatial-frame.ts:7-20`); the preset registry
+  creates v2 presets and explicit upgrades preserve authored identity/settings
+  (`web/src/light-effects/preset-library.ts:6-37`). The v2 bee has six seeded
+  waypoints and closed final-flight behavior (`web/src/light-effects/spatial-frame-v2.ts:58-168`).
+  The documented empty-frame, foreground-only, and capacity behavior is represented
+  by the editor lighting lifecycle (`web/src/route-editor/use-editor-lighting.ts:148-155,183-259,311-317`).
+- Whole-library backup claims match the implementation: the format and limits are
+  explicit (`web/src/library-backup/codec.ts:15-22`), review compares canonical
+  same-ID records and reports conflicts without replacement IDs
+  (`web/src/library-backup/codec.ts:202-233`), and restore commits each IndexedDB
+  store independently while adding only absent records and aborting on conflict
+  (`web/src/library-backup/service.ts:81-103`; `web/src/library-backup/indexeddb-store.ts:80-179`).
+  Trash is retained until the explicit permanent-delete command
+  (`web/src/drafts/indexeddb-repository.ts:225-334`; `web/src/app/CruxControlWorkspace.tsx:283-308`).
+- Prompt-mode PWA claims match the configuration and coordinator. Workbox keeps
+  `skipWaiting` and `clientsClaim` false and registration injection disabled
+  (`web/vite.config.ts:9-16,45-52`); startup registers and admits once at module
+  scope (`web/src/main.tsx:6-9`). The coordinator checks visibility, blockers,
+  waiting-worker identity, controller identity, and an exclusive `ifAvailable`
+  lock before posting activation, then retains protection on delayed activation
+  (`web/src/pwa/update-service.ts:344-452`). Workspace state supplies editor,
+  import/backup, mutation, list, play-through, and board-operation blockers
+  (`web/src/app/CruxControlWorkspace.tsx:224-250`).
+- DEPLOY matches the repository workflow and Wrangler configuration: the workflow
+  uses the documented CI lane, `needs: [web]`, main-push and `ENABLE_DEPLOY` gates,
+  and the documented Cloudflare secrets (`.github/workflows/ci.yml:8-21,77-90`;
+  `web/wrangler.jsonc`).
 
-## Prior Finding Resolution
+## Blocking briefs status
 
-| Prior finding | Resolution verified |
-|---|---|
-| M1 — generated indexes stale | All three layers regenerated at `2026-08-03T03:57:30Z`; protocol, principle, and substrate data now match source |
-| M2 — SPEC capability count | Frontmatter now says nine areas, matching sections 0–8 |
-| M3 — catalog behavior stated as current | VISION now explicitly describes future catalog adapters and capabilities |
-| M4 — stale flashy-effects checkpoint | Feature notes now contain completed implementation/acceptance and physical dogfood evidence; standard review remains accurately pending |
-| L1 — missing brief provenance | Both briefs now declare truthful `research_method: migrated` provenance |
-| L2 — future modules unlabeled | Architecture labels Logbook & Sessions and ML Pipeline as future |
-| L3 — API-2 evidence omitted | SPEC now states API-level-2/3 bytes and measured API-2 capacity policy |
-| L4 — sharing status blurred | SPEC separates current playlist fragment/file sharing from future climb/provider URLs |
+There is no current roadmap planning document with phase tables or `DONE`/`NEXT`
+output claims, so there are no roadmap blocking-brief lines to verify and no DONE
+phase verification table to produce. The seven `blocks_phase` entries carried by
+the index all resolve to files on disk:
 
-## Clean Areas
+| Brief | Indexed consumer | Exists on disk? | Status |
+| --- | --- | --- | --- |
+| `.research/briefs/cloudflare-deploy/parent.md` | `epic-foundation-ci-deploy` | Yes | Written |
+| `.research/briefs/kilter-grade-prediction/parent.md` | `epic-grade-prediction` | Yes | Written |
+| `docs/briefs/board-control-web-bluetooth.md` | `epic-board-control` | Yes | Written |
+| `docs/briefs/board-rendering-and-filtering.md` | `epic-climb-browser` | Yes | Written |
+| `docs/briefs/catalog-sync-api.md` | `epic-catalog-sync` | Yes | Written |
+| `docs/briefs/foundation-pwa-sqlite.md` | `epic-foundation` | Yes | Written |
+| `docs/briefs/recommendations-and-training.md` | `epic-recommendations` | Yes | Written |
 
-- Ownership is crisp: VISION owns rationale and audience, SPEC capability contracts,
-  ARCHITECTURE boundaries and data flow, PRINCIPLES durable rules, DEPLOY the operator
-  runbook, README the current user/developer entry point, and `.work/` delivery state.
-- Implemented and future status is consistent for local Fullride control, catalog sync,
-  logbook/session support, recommendations, grade prediction, and multi-board expansion.
-- README, SPEC, ARCHITECTURE, PRINCIPLES, code, and physical work evidence agree on the
-  API-2 policy: 127 static lights, complete animated scenes of at most 20 lights at 2
-  FPS, no sparse deltas, and no mutation or truncation of unsafe saved designs.
-- The ten documented presets match the registry: Ocean Tide, Tie-dye Spiral, Matrix
-  Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger, and the fading circled
-  inverted pentagram.
-- Foreground animation, reserved-role override, and whole-board/background-effect
-  boundaries align across the editor, detail UI, docs, tests, and work evidence.
-- Screenshot import boundaries align: selected PNGs are processed locally and released;
-  supplied migration facts are checksum-linked without source pixels; confirmed records
-  are ordinary 40-degree drafts; active and Trash duplicates are skipped.
-- Draft/Finished/30-day Trash lifecycle and flexible multi-list membership, ordering,
-  resolution, play-through, and portable sharing align across docs, source, unit tests,
-  and recorded Playwright evidence.
-- Private-source boundaries are consistent: the calibrated raster is local/private,
-  schematic rendering is the distributable fallback, and untracked Kilter documents and
-  screenshots remain outside application assets.
-- DEPLOY matches `.github/workflows/ci.yml` and `web/wrangler.jsonc`: the `web` lane gates
-  main-push deployment, `ENABLE_DEPLOY` is opt-in, credentials are GitHub secrets, and
-  the Worker uses SPA fallback.
+## Provenance summary
 
-## Blocking Briefs Status
+The 16 indexed research brief/report artifacts with a `research_method` field are
+grouped as follows. The separate `research-analysis` landscape entry is excluded
+from this brief/report aggregation, per the workflow.
 
-The project has no active roadmap document with “Blocking briefs” lines. The knowledge
-index declares seven `blocks_phase` relationships; every brief and target item exists.
-
-| Brief | Blocks item | Status |
-|---|---|---|
-| `.research/briefs/cloudflare-deploy/parent.md` | `epic-foundation-ci-deploy` | Written; target done |
-| `.research/briefs/kilter-grade-prediction/parent.md` | `epic-grade-prediction` | Written; target drafting |
-| `docs/briefs/board-control-web-bluetooth.md` | `epic-board-control` | Written; target done |
-| `docs/briefs/board-rendering-and-filtering.md` | `epic-climb-browser` | Written; target done |
-| `docs/briefs/catalog-sync-api.md` | `epic-catalog-sync` | Written; target drafting |
-| `docs/briefs/foundation-pwa-sqlite.md` | `epic-foundation` | Written; target implementing |
-| `docs/briefs/recommendations-and-training.md` | `epic-recommendations` | Written; target drafting |
-
-No missing NEXT-item blocking brief was found.
-
-## DONE Output Verification
-
-There is no phase roadmap; `.work/` owns delivery status. Implemented system claims were
-checked against current source paths and verification output.
-
-| Done scope | Expected output sampled | Evidence |
-|---|---|---|
-| Board control | API-2/API-3 codecs, Web Bluetooth transport, controller, capacity policy | Files exist; codec/controller/capacity tests pass |
-| Climb browser | Fullride definition, private raster resolver, schematic fallback, local viewer | Files exist; renderer/viewer tests pass |
-| Route creation | IndexedDB drafts, editor/autosave, lifecycle, screenshot import | Files exist; repository/editor/import tests pass; current work evidence records Playwright green |
-| Playlists | IndexedDB lists, reorder/resolution, play-through, portable import/export | Files exist; playlist unit/component tests pass; current work evidence records Playwright green |
-| PWA/deploy foundation | Workbox manifest/build verifier, icons, CI, Worker config | Files exist; fresh production build and PWA generation pass |
-
-No done scope with a missing declared output or declared test file was found.
-
-## Provenance Summary
-
-Provenance is aggregated across indexed `brief` and `program-report` documents.
-
-| `research_method` | Documents | Latest updated |
-|---|---:|---|
-| `/research-program` | 0 | — |
+| Research method | Briefs/reports | Latest updated |
+| --- | ---: | --- |
 | `/deep-research` | 8 | 2026-06-14 |
-| `/research` | 1 | 2026-06-14 |
 | `/brief` | 5 | 2026-06-14 |
-| `hand-written` | 0 | — |
+| `/research` | 1 | 2026-06-14 |
 | `migrated` | 2 | 2026-08-02 |
-| missing | 0 | — |
 
-The corpus's highest-fidelity recorded method is `/deep-research`. Four `/brief`
-documents last updated 2026-06-13 predate the latest deep-research material and remain
-informational refresh candidates: board control/Web Bluetooth, board rendering and
-filtering, catalog sync API, and recommendations/training. No provenance gap exists.
+The highest-fidelity method present is `/deep-research`. Four lower-tier `/brief`
+artifacts predate the latest `/deep-research` artifact and are informational refresh
+candidates under the workflow’s recency rule: `board-control-web-bluetooth`,
+`board-rendering-and-filtering`, `catalog-sync-api`, and
+`recommendations-and-training`. This is provenance information, not a documentation
+finding; no refresh was commissioned in this bounded audit.
 
-## Audit Provenance
+## Current limits
 
-- Read the installed `research-pipeline:doc-review` instructions and retained
-  build-process methodology before auditing.
-- Independently re-read README, all planning/foundation docs, DEPLOY, applicable
-  AGENTS/rules, generated indexes, research provenance, current work-view state,
-  representative implementation contracts, workflow configuration, and prior report.
-- Verified links, frontmatter, indexed references, implementation outputs, and all eight
-  prior fixes directly rather than inheriting the earlier verdict.
-- Fresh commands passed: `npm test --workspace web -- --run` (68 files, 443 tests),
-  `npm run --workspace web typecheck`, `npm run --workspace web lint`, and
-  `npm run --workspace web build` (122 modules; PWA service worker generated).
-- No planning document, generated index, application source, or private/untracked Kilter
-  source directory was changed. This report is the only file modified by this audit.
+The review verifies source/document alignment at the named Git snapshot and checks
+that implementation contracts and referenced paths exist. It does not claim that a
+real board has been exercised, that the PWA has been deployed, that Cloudflare
+credentials or branch protection are configured, or that future catalog, logbook,
+ML, recommendation, native iOS, or additional-board functionality is implemented.

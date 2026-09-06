@@ -17,6 +17,8 @@ export interface PlaylistMembershipDialogProps {
   readonly repository: LocalPlaylistRepository;
   readonly onChanged: (playlist: LocalPlaylist) => void;
   readonly onRefresh: () => Promise<void>;
+  readonly onOperationStart?: () => void;
+  readonly onOperationEnd?: () => void;
   readonly onClose: () => void;
 }
 
@@ -32,6 +34,8 @@ export function PlaylistMembershipDialog({
   repository,
   onChanged,
   onRefresh,
+  onOperationStart,
+  onOperationEnd,
   onClose,
 }: PlaylistMembershipDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -56,6 +60,7 @@ export function PlaylistMembershipDialog({
   }
 
   async function changeMembership(id: LocalPlaylist['id'], target: boolean) {
+    onOperationStart?.();
     const key = String(id);
     setMembership((state) => ({
       ...state,
@@ -91,6 +96,8 @@ export function PlaylistMembershipDialog({
           message: cause instanceof Error ? cause.message : 'Could not update this list.',
         },
       }));
+    } finally {
+      onOperationEnd?.();
     }
   }
 
@@ -103,6 +110,7 @@ export function PlaylistMembershipDialog({
     }
     setCreateState('Creating…');
     setCreateFailed(false);
+    onOperationStart?.();
     try {
       const created = await repository.create({ name, notes: '', entries: [reference] });
       onChanged(created);
@@ -114,6 +122,8 @@ export function PlaylistMembershipDialog({
       await refreshTruth();
       setCreateState(cause instanceof Error ? cause.message : 'Could not create the list.');
       setCreateFailed(true);
+    } finally {
+      onOperationEnd?.();
     }
   }
 

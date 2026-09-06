@@ -100,7 +100,6 @@ function repositories() {
     trash: vi.fn(),
     restore: vi.fn(),
     deletePermanently: vi.fn(async () => undefined),
-    purgeExpiredTrash: vi.fn(),
   };
   const playlists: LocalPlaylistRepository = {
     create: vi.fn(async (content) => {

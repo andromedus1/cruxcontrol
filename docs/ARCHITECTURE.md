@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-08-02
+updated: 2026-09-05
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -17,7 +17,9 @@ decisions:
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
+  - "Whole-library backup uses a bounded local JSON file and missing-only, identity-preserving restore with conflict blocking and one transaction per IndexedDB store; the two stores are never treated as one atomic snapshot."
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
+  - "PWA updates use an app-owned prompt-mode Workbox registration, shared Web Locks admission, and explicit safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes."
   - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
 ---
 
@@ -42,7 +44,10 @@ feature item bodies in `.work/`, not here. Capabilities are in
    fallback is deferred. Small locally authored climb and playlist aggregates use
    independent native IndexedDB repositories with versioned codecs and atomic
    optimistic updates; climb storage additionally owns explicit lifecycle commands.
-   catalog bootstrap remains a separate incomplete boundary.
+   Library backup reads both stores through their codecs and restores saved records with
+   stable IDs in separate per-store transactions; it is a bounded local file workflow,
+   not a schema migration or cloud service. Catalog bootstrap remains a separate
+   incomplete boundary.
 3. **Catalog Providers** — source-specific import/sync adapters. Kilter is first;
    later Aurora-family and MoonBoard providers are separately researched. Network,
    auth, reconciliation, and policy metadata remain outside domain and UI code.
@@ -53,7 +58,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    bounded latest-frame-wins preview. A collapsed, local-only capacity diagnostic uses
    the same queue with bounded cases, optional inter-write pacing, sanitized timing
    traces, hard timeout/disconnect, and explicit clear/reconnect recovery; it does not
-   infer hardware limits from encoder speed. The measured API-2 policy shares that queue:
+   infer hardware limits from encoder speed. The existing API-2 policy shares that queue:
    normal writes use 20 ms pacing, static scenes are bounded to one 127-light packet,
    and the editor's absolute-time animation scheduler sends complete scenes of at most
    20 lights at up to 2 FPS with one frame in flight and stale deadlines coalesced. Since
@@ -79,11 +84,23 @@ feature item bodies in `.work/`, not here. Capabilities are in
    adapters own future source-native encoding and optional publication. Versioned effect
    groups share one two-pass pure frame engine: assignment effects render first, procedural
    spatial layers target definition geometry without fake assignments, and semantic roles
-   are reasserted last. Saved recipe snapshots, dynamic target masks, deterministic footprints,
-   and a conservative reserve plan feed the existing complete-scene BLE scheduler. The
+   are reasserted last. Version 1 dispatch preserves existing saved recipes; version-2
+   spatial presets default to 90–150-second closed themed trajectories, and explicit
+   upgrades preserve authored settings except the version and max(old period, new default).
+   Prepared geometry and bounded per-group held-frame/path reuse avoid repeated spatial work.
+   The ten established backgrounds plus Curious Bumblebee are v2 presets; the bee uses a
+   seeded six-stop hover/flight/dart tour and independent body/wing palette slots. Stable
+   tide/spiral samples carry their target bands through loop joins, reverse paths retain
+   actor ordering, and Pong plans each paddle to its own wall contact.
+   API-2 decorative colors avoid exact encoded role colors and black after quantization; this
+   protects encoded bytes rather than promising perceptual contrast. Saved recipe snapshots,
+   dynamic target masks, deterministic footprints, and a conservative reserve plan feed the
+   existing complete-scene BLE scheduler. Empty spatial scenes are valid animation frames;
+   only explicit stop/clear/disconnect/visibility cancellation ends playback. The
    snapshot-backed spatial registry contains Ocean Tide, Tie-dye Spiral, Matrix Rain,
    Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger, and a fading circled inverted
-   pentagram. Browser playback is foreground-only: visibility loss, disconnect, clear,
+   pentagram and Curious Bumblebee. Browser playback is foreground-only; an empty spatial
+   scene is a valid animation frame, while direct clear, stop, disconnect, visibility loss,
    or leaving the relevant view cancels scheduling rather than relying on suspended timers.
 8. **Screenshot Import** — a local-only Kilter Android Fullride adapter hashes and
    analyzes selected PNGs sequentially, maps detected role rings through the immutable
@@ -107,7 +124,32 @@ feature item bodies in `.work/`, not here. Capabilities are in
    compatibility preview, then creates fresh climbs in order and the fresh playlist
    last, with reverse-order compensation for partial failure. A CruxControl-local
    construct (no Kilter counterpart).
-11. **Future: ML Pipeline** — offline (Python): feature extraction from the catalog →
+11. **Library Backup & Recovery** — the library workspace exports a versioned, bounded
+   local JSON file containing all saved climb rows across installations (including orphan
+   and Trash rows) and all playlist rows with ordered shared references, IDs, revisions,
+   timestamps, metadata, and effect recipes. Export reads both independent stores twice
+   with a bounded stability check and asks users to finish other-tab edits; it cannot
+   provide a cross-database atomic snapshot. Restore validates the whole file, then adds
+   missing IDs, skips identical records, and blocks differing IDs without overwrite or
+   replacement IDs. Draft and playlist stores commit independently in their own
+   transactions, so a playlist failure after a committed climb batch is reported as a
+   partial outcome for retry; no compensating deletion is used. Bounds are 25 MiB UTF-8,
+   10,000 climbs, 1,000 playlists, and 100,000 references. The workflow operates on
+   saved contents in the existing origin and does not rewrite schemas or upload data.
+12. **PWA Update Admission** — the app owns the native service-worker registration and
+   observes waiting/installing workers from the Workbox-generated prompt-mode output.
+   `skipWaiting` and `clientsClaim` remain false and registration injection is disabled so
+   no unmanaged helper can reload another tab. Each admitted tab holds a shared Web Lock;
+   explicit apply releases it and requests the same lock exclusively with `ifAvailable`.
+   Apply is gated by editor, modal/import/backup, pending mutation, dirty-list,
+   play-through, visibility, and BLE session/operation state. A competing tab leaves the
+   requester protected until it can reacquire shared admission. Unsupported Web Locks
+   retain the waiting worker and direct the user to close and reopen. Controller identity
+   is captured across admission; a changed controller blocks the workspace and requires an
+   explicit reload. After activation is posted, timeout keeps editing disabled and the
+   exclusive lease held until reload or close; only the requesting tab reloads when its
+   captured worker controls it.
+13. **Future: ML Pipeline** — offline (Python): feature extraction from the catalog →
     training dataset → grade-prediction model. Exports a model for in-browser
     inference (ONNX Runtime Web / WASM); feeds prediction + recommendation features back
     into the app.
@@ -131,7 +173,7 @@ Editor ──▶ Local climb repository ──▶ native IndexedDB
   │               (versioned + optimistic)       (browser-local authority)
   ├──▶ Renderer ──▶ SVG board surface
   ├──▶ Saved effect snapshots ──▶ two-pass frame engine ──▶ role-protected scene
-  └──▶ Light controller ──▶ measured capacity policy ──▶ controller profile / transport
+  └──▶ Light controller ──▶ existing capacity policy ──▶ controller profile / transport
 
 Kilter screenshot PNG ──▶ transient local analysis ──▶ editable definition-mapped review
                                                         └──▶ deduplicated 40° draft ──▶ Local climb repository
@@ -143,6 +185,12 @@ Lists ──▶ Local playlist repository ──▶ separate native IndexedDB
   ├──▶ portable snapshot envelope ──▶ fragment URL / JSON file
   └──◀ preview + compatibility gate ── imported envelope
                  └──▶ fresh climb copies, then fresh playlist (compensated on failure)
+
+Library workspace ──▶ backup service ──▶ bounded local JSON file
+  └──◀ imported file ──▶ full review/conflict gate ──▶ per-store missing-only restore
+
+App runtime ──▶ update coordinator ──▶ prompt-mode Workbox registration
+  └──▶ shared admission lock ──▶ workspace safety gates ──▶ exclusive apply ──▶ requester reload
 ```
 
 Local climb reads and writes are fully offline. Installed catalog reads are likewise
@@ -165,6 +213,18 @@ browsing, editing, and logging remain testable without hardware or network.
   the native IndexedDB climb store is authoritative for locally authored climbs; the
   independent native IndexedDB playlist store is authoritative for list metadata and
   ordered references. The future logbook store owns personal activity.
+- **Local backup semantics.** Backup captures saved records from the existing climb and
+  playlist stores, including Trash, orphan rows, other installations, shared references,
+  revisions, and recipes. Export stability checks are bounded because the stores cannot
+  share one transaction. Restore validates before writes, preserves IDs, and treats a
+  playlist failure after a committed climb batch as a reportable partial result for retry.
+- **Safe update admission.** A waiting worker never activates or reloads a tab on arrival.
+  The coordinator protects the lifetime of editing, dialogs, imports, backups, repository
+  mutations, list play-through, and BLE sessions/operations, then uses shared Web Locks
+  for normal tabs and an exclusive `ifAvailable` lease for explicit apply. Admission and
+  controller identity are checked at the version boundary; activation timeout remains
+  protected until the user reloads or closes the tab. Browsers without Web Locks use the
+  natural waiting lifecycle with close-and-reopen recovery.
 - **Generated over hand-written.** Catalog data, feature tables, and the model
   come from pipelines, not manual curation.
 - **Offline-first.** Every read works without network; sync is a background
@@ -192,7 +252,8 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | React 19 + Vite 6 (TypeScript)              | Client-only SPA framework + build tooling                                                                                                                                                                      |
 | `wa-sqlite` (`AccessHandlePoolVFS`)         | In-browser SQLite catalog read path in a Web Worker; catalog IndexedDB fallback is deferred                                                                                                                    |
 | Native IndexedDB                            | Independent versioned, atomic, browser-local authorities for climbs (Draft/Finished/Trash lifecycle) and playlist aggregates                                                                                   |
-| `vite-plugin-pwa` (Workbox)                 | Service worker + manifest — offline shell, installability                                                                                                                                                      |
+| `vite-plugin-pwa` (Workbox)                 | Service worker + manifest — offline shell and installability; prompt-mode waiting worker consumed by the app-owned update coordinator                                                                        |
+| Web Locks API                               | Shared per-tab admission and exclusive, `ifAvailable` update apply coordination                                                                                                                               |
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |
 | BoardLib (Python)                           | Bootstrap the SQLite catalog; sync-protocol reference                                                                                                                                                          |
@@ -208,11 +269,11 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
 
 ## Biggest Risks
 
-- **Web Bluetooth reliability** across OS/browser versions — deterministic CI coverage
-  is complemented by powered Fullride 7x10 + Android Chrome dogfooding of mapping,
-  light/clear, animation, and the measured API-2 envelope. The accepted 127-light static
-  and 20-light/2-FPS animation profile applies only to that observed controller path;
-  other firmware, browsers, and API levels still require their own measured profiles.
+- **Web Bluetooth reliability** across OS/browser versions — deterministic transport and
+  renderer coverage exercises mapping, light/clear, animation, and the existing API-2
+  envelope. The 127-light static and 20-light/2-FPS animation profile remains unchanged
+   and applies only to that configured controller path; device-level acceptance for other
+   firmware, browsers, and API levels still requires its own evidence.
 - **Sync API drift / auth.** The Kilter API is undocumented and may change;
   personal data (ascents/bids) is auth-gated.
 - **ML signal quality.** Whether hold-placement features predict consensus grade

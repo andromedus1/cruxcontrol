@@ -39,7 +39,7 @@ const EFFECT_KINDS = new Set<LightEffectKind>([
   'alternate',
 ]);
 const SPATIAL_KINDS = new Set<SpatialEffectKind>([
-  'ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock', 'frogger', 'pentagram',
+  'ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock', 'frogger', 'pentagram', 'bumblebee',
 ]);
 
 function validRecipe(raw: Record<string, unknown>): boolean {
@@ -54,6 +54,7 @@ function validRecipe(raw: Record<string, unknown>): boolean {
     case 'bird-flock': return (raw.direction === 'left' || raw.direction === 'right') && typeof raw.quietFraction === 'number' && raw.quietFraction >= 0 && raw.quietFraction < 1;
     case 'frogger': return Number.isInteger(raw.lanes) && (raw.lanes as number) >= 1 && (raw.lanes as number) <= 8;
     case 'pentagram': return typeof raw.fadeRate === 'number' && Number.isFinite(raw.fadeRate) && raw.fadeRate > 0 && raw.fadeRate <= 8;
+    case 'bumblebee': return typeof raw.hoverFraction === 'number' && Number.isFinite(raw.hoverFraction) && raw.hoverFraction >= 0 && raw.hoverFraction <= .8;
     default: return false;
   }
 }
@@ -178,7 +179,7 @@ function decodeAssignments(
   );
 }
 
-function decodeEffectGroups(value: unknown, source: unknown, legacy = false): readonly LightEffectGroup[] {
+function decodeEffectGroups(value: unknown, source: unknown, _legacy = false): readonly LightEffectGroup[] {
   if (!Array.isArray(value)) throw corrupt('effectGroups', 'expected an array', source);
   const seen = new Set<string>();
   return Object.freeze(
@@ -188,7 +189,7 @@ function decodeEffectGroups(value: unknown, source: unknown, legacy = false): re
       const id = branded(lightEffectGroupId, raw.id, `${path}.id`, source);
       if (seen.has(id)) throw corrupt(`${path}.id`, 'duplicate effect group ID', source);
       seen.add(id);
-      const model = legacy || raw.model === undefined ? 'assigned' : string(raw.model, `${path}.model`, source);
+      const model = raw.model === undefined ? 'assigned' : string(raw.model, `${path}.model`, source);
       if (!Array.isArray(raw.palette) || raw.palette.length < 1 || raw.palette.length > 8) {
         throw corrupt(`${path}.palette`, 'expected 1 to 8 packed colors', source);
       }
@@ -228,7 +229,7 @@ function decodeEffectGroups(value: unknown, source: unknown, legacy = false): re
         return Object.freeze({ model, id, kind, palette, periodMs: raw.periodMs, intensity: raw.intensity });
       }
       if (model !== 'spatial') throw corrupt(`${path}.model`, 'expected assigned or spatial', source);
-      if (raw.recipeVersion !== 1) throw corrupt(`${path}.recipeVersion`, 'expected recipe version 1', source);
+      if (raw.recipeVersion !== 1 && raw.recipeVersion !== 2) throw corrupt(`${path}.recipeVersion`, 'expected recipe version 1 or 2', source);
       if (!Number.isSafeInteger(raw.seed)) throw corrupt(`${path}.seed`, 'expected a safe integer', source);
       if (!Number.isInteger(raw.footprint) || (raw.footprint as number) < 1 || (raw.footprint as number) > 20) {
         throw corrupt(`${path}.footprint`, 'expected an integer from 1 to 20', source);
@@ -236,6 +237,9 @@ function decodeEffectGroups(value: unknown, source: unknown, legacy = false): re
       const recipeRaw = record(raw.recipe, `${path}.recipe`, source);
       const recipeKind = string(recipeRaw.kind, `${path}.recipe.kind`, source) as SpatialEffectKind;
       if (!SPATIAL_KINDS.has(recipeKind)) throw corrupt(`${path}.recipe.kind`, 'unknown spatial recipe', source);
+      if (recipeKind === 'bumblebee' && raw.recipeVersion === 1) {
+        throw corrupt(`${path}.recipeVersion`, 'bumblebee recipes require version 2', source);
+      }
       if (!validRecipe(recipeRaw)) throw corrupt(`${path}.recipe`, 'invalid spatial recipe parameters', source);
       const recipe = Object.freeze({ ...recipeRaw, kind: recipeKind }) as SpatialRecipe;
       const targetRaw = record(raw.target, `${path}.target`, source);
@@ -251,7 +255,7 @@ function decodeEffectGroups(value: unknown, source: unknown, legacy = false): re
       const include = decodePlacementList(targetRaw.include, 'include');
       const exclude = decodePlacementList(targetRaw.exclude, 'exclude');
       if (include.some((placementId) => exclude.includes(placementId))) throw corrupt(`${path}.target`, 'include and exclude overlap', source);
-      return Object.freeze({ model, id, recipeVersion: 1, recipe, seed: raw.seed as number, palette, periodMs: raw.periodMs, intensity: raw.intensity, footprint: raw.footprint as number, target: Object.freeze({ scope: targetRaw.scope as 'unused' | 'background-board' | 'selected', include, exclude }) });
+      return Object.freeze({ model, id, recipeVersion: raw.recipeVersion as 1 | 2, recipe, seed: raw.seed as number, palette, periodMs: raw.periodMs, intensity: raw.intensity, footprint: raw.footprint as number, target: Object.freeze({ scope: targetRaw.scope as 'unused' | 'background-board' | 'selected', include, exclude }) });
     }),
   );
 }
@@ -277,7 +281,11 @@ export function encodeStoredDraft(draft: LocalClimbDraft): StoredDraftV4 {
       ...(effectGroupId === undefined ? {} : { effectGroupId }),
     })),
     effectGroups: draft.effectGroups.map((group) => group.model === 'spatial'
-      ? { model: 'spatial', id: group.id, recipeVersion: group.recipeVersion, recipe: { ...group.recipe }, seed: group.seed, palette: [...group.palette], periodMs: group.periodMs, intensity: group.intensity, footprint: group.footprint, target: { scope: group.target.scope, include: [...group.target.include], exclude: [...group.target.exclude] } }
+      ? (() => {
+        if (group.recipe.kind === 'bumblebee' && group.recipeVersion !== 2) throw new TypeError('Bumblebee recipes require version 2');
+        if (group.recipe.kind === 'bumblebee' && !validRecipe(group.recipe as unknown as Record<string, unknown>)) throw new TypeError('Bumblebee hover fraction must be finite and between 0 and 0.8');
+        return { model: 'spatial', id: group.id, recipeVersion: group.recipeVersion, recipe: { ...group.recipe }, seed: group.seed, palette: [...group.palette], periodMs: group.periodMs, intensity: group.intensity, footprint: group.footprint, target: { scope: group.target.scope, include: [...group.target.include], exclude: [...group.target.exclude] } };
+      })()
       : { model: 'assigned', id: group.id, kind: group.kind, palette: [...group.palette], periodMs: group.periodMs, intensity: group.intensity }),
     metadata: { ...draft.metadata },
     createdAt: draft.createdAt,

@@ -41,7 +41,6 @@ function repository(update: LocalDraftRepository['update']): LocalDraftRepositor
     trash: vi.fn(),
     restore: vi.fn(),
     deletePermanently: vi.fn(),
-    purgeExpiredTrash: vi.fn(),
   };
 }
 

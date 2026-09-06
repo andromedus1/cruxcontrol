@@ -14,6 +14,7 @@ import type { LocalPlaylist } from '../playlists/types';
 import type { CruxControlRuntime } from './create-runtime';
 import { CruxControlWorkspace } from './CruxControlWorkspace';
 import { activeInstallationId, createAppInstallationRegistry } from './installations';
+import type { AppUpdateService, AppUpdateSnapshot } from '../pwa/update-service.ts';
 
 const original: LocalClimbDraft = {
   ...draftContent({ name: 'Original', installationId: activeInstallationId }),
@@ -66,7 +67,6 @@ function runtimeWith(
       trash: vi.fn(),
       restore: vi.fn(),
       deletePermanently: vi.fn(),
-      purgeExpiredTrash: vi.fn().mockResolvedValue(0),
       ...overrides,
     },
     playlists: {
@@ -95,7 +95,48 @@ function playlist(name: string, entries: LocalPlaylist['entries'] = []): LocalPl
   };
 }
 
+function updateServiceFor(snapshot: AppUpdateSnapshot): AppUpdateService {
+  const current = snapshot;
+  const listeners = new Set<(next: AppUpdateSnapshot) => void>();
+  return {
+    getSnapshot: () => current,
+    subscribe(listener) {
+      listeners.add(listener);
+      listener(current);
+      return () => listeners.delete(listener);
+    },
+    start: vi.fn(() => Promise.resolve()),
+    apply: vi.fn(() => Promise.resolve()),
+    setBlocked: vi.fn(),
+    reload: vi.fn(),
+    dispose: vi.fn(),
+  };
+}
+
 describe('CruxControlWorkspace', () => {
+  it('keeps editing inert until an explicit reload resolves a controller mismatch', async () => {
+    const runtime = runtimeWith();
+    const updateService = updateServiceFor({
+      status: 'reload-required',
+      phase: 'reload-required',
+      message: 'The update finished while this tab was opening. Reload to continue with the new version.',
+      updateAvailable: true,
+      blockedReason: null,
+      canApply: false,
+      dismissed: false,
+    });
+    render(<CruxControlWorkspace runtime={runtime} updateService={updateService} />);
+
+    await screen.findByRole('heading', { name: 'My Climbs' });
+    const workspace = document.querySelector('main.climb-workspace');
+    expect(workspace).not.toBeNull();
+    expect(workspace).toHaveAttribute('inert');
+    expect(workspace).toHaveAttribute('aria-busy', 'true');
+    const banner = screen.getByRole('complementary', { name: 'Application update' });
+    expect(banner.closest('main')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Reload to continue' })).toBeInTheDocument();
+  });
+
   it('opens a write-free Kilter screenshot chooser from the climb workspace', async () => {
     const runtime = runtimeWith();
     render(<CruxControlWorkspace runtime={runtime} />);
@@ -225,7 +266,7 @@ describe('CruxControlWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: /Original/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Move to trash' }));
     await waitFor(() => expect(trash).toHaveBeenCalledWith(original.id, draftRevision(2)));
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('restore it for 30 days'));
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('delete it forever'));
 
     fireEvent.click(screen.getByRole('button', { name: /Trash.*1 climb/ }));
     fireEvent.click(screen.getByRole('button', { name: /Original/ }));
@@ -264,6 +305,48 @@ describe('CruxControlWorkspace', () => {
       [{ kind: 'local', id: original.id }],
       [{ kind: 'local', id: original.id }],
     ]);
+  });
+
+  it('keeps a direct playlist write blocking updates across navigation and remount', async () => {
+    const stored = playlist('Projects', [{ kind: 'local', id: original.id }]);
+    let resolveUpdate!: (value: LocalPlaylist) => void;
+    const pendingUpdate = new Promise<LocalPlaylist>((resolve) => {
+      resolveUpdate = resolve;
+    });
+    const update = vi.fn<LocalPlaylistRepository['update']>(async () => pendingUpdate);
+    const runtime = runtimeWith(
+      { list: listCollections([original], []) },
+      { list: vi.fn().mockResolvedValue([stored]), update },
+    );
+    const updateService = updateServiceFor({
+      status: 'current',
+      phase: 'current',
+      message: 'CruxControl is up to date.',
+      updateAvailable: false,
+      blockedReason: null,
+      canApply: false,
+      dismissed: false,
+    });
+    const blocked = vi.mocked(updateService.setBlocked);
+
+    render(<CruxControlWorkspace runtime={runtime} updateService={updateService} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Lists.*1 list/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove Original from list' }));
+    await waitFor(() => expect(update).toHaveBeenCalledOnce());
+    await waitFor(() =>
+      expect(blocked).toHaveBeenCalledWith('Wait for the current library change to finish before updating.'),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Drafts.*1 climb/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Lists.*1 list/ }));
+    await waitFor(() =>
+      expect(blocked).toHaveBeenLastCalledWith(
+        'Wait for the current library change to finish before updating.',
+      ),
+    );
+
+    resolveUpdate({ ...stored, entries: [], revision: playlistRevision(2) });
+    await waitFor(() => expect(blocked).toHaveBeenLastCalledWith(null));
   });
 
   it('leaves playlist rows untouched while Trash and restore change runtime availability', async () => {
@@ -375,30 +458,16 @@ describe('CruxControlWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Delete Stale trash forever' })).toBeInTheDocument();
   });
 
-  it('reports cleanup failures without hiding successfully loaded climbs', async () => {
-    const finished = persisted(
-      original.id,
-      1,
-      draftContent({ name: 'Visible', status: 'finished' }),
-    );
-    const purgeExpiredTrash = vi
-      .fn<LocalDraftRepository['purgeExpiredTrash']>()
-      .mockRejectedValueOnce(new Error('Cleanup is temporarily unavailable.'))
-      .mockResolvedValueOnce(0);
-    const runtime = runtimeWith({
-      list: listCollections([finished], []),
-      purgeExpiredTrash,
-    });
-
+  it('keeps old Trash rows under explicit Delete forever control during refresh', async () => {
+    const trashed = {
+      ...persisted(original.id, 1, draftContent({ name: 'Old Trash' })),
+      trashedAt: '2026-07-01T00:00:00.000Z',
+    };
+    const runtime = runtimeWith({ list: listCollections([], [trashed]) });
     render(<CruxControlWorkspace runtime={runtime} />);
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Cleanup is temporarily unavailable.',
-    );
-    expect(screen.getByRole('button', { name: /Visible/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Retry refreshing climbs' }));
-    await waitFor(() => expect(purgeExpiredTrash).toHaveBeenCalledTimes(2));
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: /Trash.*1 climb/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Old Trash/ }));
+    expect(screen.getByRole('button', { name: 'Delete forever' })).toBeInTheDocument();
   });
 
   it('adopts Save-a-copy identity so later saves target the copy', async () => {

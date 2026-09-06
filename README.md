@@ -10,20 +10,35 @@ account or application server required.
 - Create unrestricted climbs on a recognizable 305-hold board, use the four Kilter
   roles or any of the controller's 256 packed colors, and autosave locally.
 - Move climbs between **Draft**, **Finished**, and recoverable **Trash** without losing
-  their identity or contents.
+  their identity or contents. Trash remains until you explicitly choose **Delete forever**.
 - Organize climbs into multiple named lists, reorder them, play through them on the
   board, and share complete lists by bounded URL or JSON file.
+- Download and restore a bounded whole-library JSON backup containing saved climbs,
+  Trash, orphan climbs, all installations, playlists, shared memberships, IDs, revisions,
+  timestamps, and animation recipes. Recovery adds missing IDs, skips identical records,
+  and pauses on conflicts without overwriting current data. A playlist-store failure after
+  a committed climb batch is reported as partial and can be retried with the retained file.
+- Installed PWA updates wait for an explicit **Update and reload** action. The app keeps
+  the workspace available while a new worker waits, but blocks applying it while an editor,
+  list task, import/backup flow, pending library write, play-through, or board session is
+  active. **Later** dismisses the banner while retaining an update entry; tabs coordinate
+  through a shared browser lock, and browsers without Web Locks use close-and-reopen
+  recovery instructions.
 - Import Kilter Fullride screenshots through a local review-and-correction flow, or
   import the supplied set of 16 climbs as ordinary 40° drafts. Screenshot pixels are
   never uploaded or persisted.
-- Light and clear the physical board from Android or desktop Chromium. The measured
-  Android/API-2 profile supports complete static scenes of up to 127 lights and
-  complete animated scenes of up to 20 lights at 2 FPS; unsafe scenes are preserved
-  but refused rather than silently truncated.
+- Light and clear the physical board from Android or desktop Chromium. The existing
+  API-2 profile supports complete static scenes of up to 127 lights and complete
+  animated scenes of up to 20 lights at 2 FPS; unsafe scenes are preserved but refused
+  rather than silently truncated.
 - Save and edit assignment effects and independent background presets, including
   Ocean Tide, Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird
-  Flock, Frogger, and a fading circled inverted pentagram. Semantic route holds remain
-  recognizable and animation capacity is preflighted before board playback.
+  Flock, Frogger, a fading circled inverted pentagram, and Curious Bumblebee. Version-2
+  presets default to 90–150-second closed themed loops; Bumblebee adds wandering
+  hover, flight, and dart phases with independently editable Body and Wings colors.
+  Saved v1 recipes keep their original renderer until explicitly upgraded. Semantic route
+  holds remain recognizable and animation capacity is preflighted before board playback,
+  while intentionally empty frames remain valid animation output.
 
 The installed PWA must remain in the foreground while an animation is playing. Page
 visibility loss, disconnect, clear, or leaving the relevant view stops playback safely.
@@ -81,20 +96,34 @@ separate Python project.
 - One immutable Fullride definition owns all 305 placement identities, coordinates,
   LED positions, supported angles, and semantic role presets.
 - Independent versioned IndexedDB repositories own local climbs and lists, including
-  optimistic revisions, lifecycle recovery, portable list snapshots, and offline use.
-- A pure frame engine drives both screen preview and BLE output. Saved recipe snapshots
-  remain editable and do not change when the built-in preset library evolves.
+  optimistic revisions, lifecycle recovery, portable list snapshots, whole-library backup,
+  and offline use.
+- Library backup uses a 25 MiB file limit with limits of 10,000 climbs, 1,000 playlists,
+  and 100,000 playlist references. Export checks for changes across the two stores and
+  asks you to finish edits in other tabs; the check is bounded and does not form one
+  cross-database atomic snapshot. It uses the existing browser-local origin and saved
+  records only; no schema rewrite, cloud upload, or account is involved.
+- A version-dispatched pure frame engine drives both screen preview and BLE output. It
+  preserves v1 snapshots, uses prepared definition geometry and per-group held-frame/path
+  reuse for v2, and leaves saved recipes editable as the preset library evolves. Stable
+  target samples carry tide bands and spiral geometry through loop joins; actor ordering
+  and Pong paddle contacts remain coherent when direction reverses.
 - API-2 and API-3 codecs, Web Bluetooth transport, latest-frame controller arbitration,
-  and the measured capacity policy sit behind typed boundaries.
-- The installable Workbox app shell is precached and updates automatically. Animation
-  remains deliberately foreground-bound because mobile browsers suspend background work.
+  and the existing capacity policy sit behind typed boundaries. V2 decorative colors avoid
+  exact encoded role colors and black after API-2 conversion; this is byte-level protection,
+  not a perceptual distinction guarantee.
+- The installable Workbox app shell is precached. An app-owned update coordinator keeps new
+  workers waiting, admits one tab for explicit activation, and reloads only the requesting
+  tab after its worker takes control. Animation remains deliberately foreground-bound
+  because mobile browsers suspend background work.
 
 Automated checks include Vitest tests, strict TypeScript, ESLint, production PWA build
-checks, and Playwright Chromium browser workflows. CI runs the browser workflows against
-the production build and retains traces and screenshots from failures for seven days.
-Physical Android/Fullride dogfooding has verified pairing, hold mapping, lighting, and the API-2
-capacity boundary described above; automated transport tests still use deterministic
-fakes for repeatability.
+checks, and Playwright Chromium browser workflows. A real three-generation Workbox fixture
+checks that a climb survives legacy generation A's natural waiting transition to generation
+B and generation B's explicit safe apply to generation C. CI runs the browser workflows
+against the production build and retains traces and screenshots from failures for seven days.
+Automated transport and renderer tests use deterministic fakes for repeatability; device-level
+acceptance remains future work.
 
 ## Deployment
 

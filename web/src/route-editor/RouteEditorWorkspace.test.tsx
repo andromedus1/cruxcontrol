@@ -7,6 +7,7 @@ import { draftContent } from '../drafts/test-fixtures';
 import type { LocalDraftRepository } from '../drafts/repository';
 import type { LocalClimbDraft } from '../drafts/types';
 import { RouteEditorWorkspace } from './RouteEditorWorkspace';
+import { createSpatialPreset } from '../light-effects/preset-library';
 
 const draft: LocalClimbDraft = {
   ...draftContent(),
@@ -25,7 +26,6 @@ const repository: LocalDraftRepository = {
   trash: vi.fn(),
   restore: vi.fn(),
   deletePermanently: vi.fn(),
-  purgeExpiredTrash: vi.fn(),
 };
 
 describe('RouteEditorWorkspace', () => {
@@ -124,7 +124,7 @@ describe('RouteEditorWorkspace', () => {
     render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()}/>);
     fireEvent.click(screen.getByRole('button', { name: /Snake 7 lights/ }));
     expect(screen.getByLabelText('Effect target')).toHaveValue('unused');
-    expect(screen.getByLabelText('Effect cycle time')).toHaveValue('120000');
+    expect(screen.getByLabelText('Effect cycle time')).toHaveValue('150000');
     expect(screen.getByLabelText('Effect cycle time')).toHaveAttribute('max', '180000');
     expect(screen.getByText(/0 route\/static \+ 7 effects = 7\/20/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Effect target'), { target:{ value:'selected' } });
@@ -134,6 +134,45 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByText('0 lit')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Effect footprint'), { target:{ value:'5' } });
     expect(screen.getByText(/0 route\/static \+ 5 effects = 5\/20/)).toBeInTheDocument();
+  });
+
+  it('edits curious bee Body and Wings through labeled controls and keeps the two palette slots', () => {
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Curious bumblebee 5 lights/ }));
+    expect(screen.getByLabelText('Hover fraction')).toHaveValue(0.4);
+    fireEvent.click(screen.getByRole('radio', { name: /Advanced Light/ }));
+    fireEvent.change(screen.getByLabelText('red channel'), { target: { value: '7' } });
+    fireEvent.change(screen.getByLabelText('green channel'), { target: { value: '5' } });
+    fireEvent.change(screen.getByLabelText('blue channel'), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Set Body to current color' }));
+    fireEvent.change(screen.getByLabelText('red channel'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('green channel'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('blue channel'), { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Set Wings to current color' }));
+    const colors = screen.getAllByRole('button', { name: /Remove color/ }).map((button) => button.getAttribute('aria-label'));
+    expect(colors).toEqual(['Remove color #FFB600', 'Remove color #4924FF']);
+  });
+
+  it('keeps typed bee hover values inside the supported range without crashing preview', () => {
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Curious bumblebee 5 lights/ }));
+    fireEvent.change(screen.getByLabelText('Hover fraction'), { target: { value: '0.9' } });
+    expect(screen.getByLabelText('Hover fraction')).toHaveValue(.8);
+    fireEvent.change(screen.getByLabelText('Hover fraction'), { target: { value: '-1' } });
+    expect(screen.getByLabelText('Hover fraction')).toHaveValue(0);
+    fireEvent.change(screen.getByLabelText('Hover fraction'), { target: { value: '0.35' } });
+    expect(screen.getByLabelText('Hover fraction')).toHaveValue(.35);
+  });
+
+  it('shows and explicitly adopts the longer seamless loop for a saved v1 effect', () => {
+    const legacy = { ...createSpatialPreset('snake', 4), recipeVersion: 1 as const, periodMs: 5_000 };
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={{ ...draft, effectGroups: [legacy] }} repository={repository} onBack={vi.fn()} />);
+    expect(screen.getByText('Original loop')).toBeInTheDocument();
+    expect(screen.getByText(/Uses a 150-second loop/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Use seamless loop' }));
+    expect(screen.getByText('Seamless loop')).toBeInTheDocument();
+    expect(screen.getByLabelText('Effect cycle time')).toHaveValue('150000');
+    expect(document.querySelector('.save-chip')).toHaveTextContent('dirty');
   });
 
   it('starts fitted and supports controls and pinch zoom in the editor', () => {

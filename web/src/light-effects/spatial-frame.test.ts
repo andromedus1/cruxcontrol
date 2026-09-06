@@ -7,9 +7,62 @@ import { renderAnimationFrame } from './frame';
 import { createSpatialPreset, SPATIAL_PRESETS } from './preset-library';
 import { BOARD_ANIMATION_FRAME_MS, renderSpatialGroup } from './spatial-frame';
 
-const preset = (kind: Parameters<typeof createSpatialPreset>[0], seed = 42) => createSpatialPreset(kind, seed);
+// These assertions are the compatibility fixtures for the extracted legacy
+// renderer. New presets are v2 by default; legacy behavior is tested by making
+// the version explicit so the expectations cannot accidentally drift with it.
+const preset = (kind: Parameters<typeof createSpatialPreset>[0], seed = 42) => Object.freeze({
+  ...createSpatialPreset(kind, seed),
+  recipeVersion: 1 as const,
+});
+
+const LEGACY_SPATIAL_KINDS = ['ocean-tide', 'tie-dye-spiral', 'matrix-rain', 'snake', 'beach-ball', 'pac-man', 'pong', 'bird-flock', 'frogger', 'pentagram'] as const;
+
+const legacyPeriods: Readonly<Record<typeof LEGACY_SPATIAL_KINDS[number], number>> = {
+  'ocean-tide': 30_000,
+  'tie-dye-spiral': 45_000,
+  'matrix-rain': 30_000,
+  snake: 120_000,
+  'beach-ball': 30_000,
+  'pac-man': 120_000,
+  pong: 30_000,
+  'bird-flock': 45_000,
+  frogger: 45_000,
+  pentagram: 30_000,
+};
+
+const legacyFixtureDigest = (value: unknown) => {
+  let hash = 2_166_136_261;
+  for (const character of JSON.stringify(value)) hash = Math.imul(hash ^ character.codePointAt(0)!, 16_777_619);
+  return hash >>> 0;
+};
+
+// Captured from the pre-v2 renderer before extraction (commit 35f3e9a^). These
+// compact signatures cover every legacy kind at the start, first held frame,
+// and midpoint of its original period, so changing v1 cannot hide in renamed
+// compatibility tests.
+const legacyFixtures: Readonly<Record<typeof LEGACY_SPATIAL_KINDS[number], readonly number[]>> = {
+  'ocean-tide': [4_224_458_149, 325_333_317, 4_155_721_315],
+  'tie-dye-spiral': [4_084_709_788, 197_703_641, 3_508_339_920],
+  'matrix-rain': [1_812_823_694, 1_971_461_301, 54_920_232],
+  snake: [239_246_827, 1_088_580_957, 4_002_854_225],
+  'beach-ball': [885_908_544, 3_155_516_174, 2_777_638_559],
+  'pac-man': [1_371_413_797, 2_388_967_391, 833_336_901],
+  pong: [1_746_601_821, 2_646_287_541, 578_187_231],
+  'bird-flock': [1_947_613_349, 1_947_613_349, 3_218_963_428],
+  frogger: [832_166_139, 2_412_491_029, 4_282_969_948],
+  pentagram: [2_839_950_041, 2_839_950_041, 2_378_991_699],
+};
 
 describe('spatial effect rendering', () => {
+  it('retains captured v1 fixtures for every legacy theme', () => {
+    for (const kind of LEGACY_SPATIAL_KINDS) {
+      const periodMs = legacyPeriods[kind];
+      const group = { ...createSpatialPreset(kind, 42), recipeVersion: 1 as const, periodMs };
+      const frames = [0, BOARD_ANIMATION_FRAME_MS, periodMs / 2];
+      expect(frames.map((elapsedMs) => legacyFixtureDigest(renderSpatialGroup(definition, [], group, elapsedMs)))).toEqual(legacyFixtures[kind]);
+    }
+  });
+
   it('holds one discrete pose for each measured two-FPS board frame', () => {
     const snake = preset('snake');
     const first = renderSpatialGroup(definition, [], snake, 0);
@@ -27,7 +80,7 @@ describe('spatial effect rendering', () => {
     }
   });
 
-  it.each(SPATIAL_PRESETS.map(({ kind, footprint }) => [kind, footprint] as const))('%s is deterministic, unique, role-color-safe, and within its %i-light reserve', (kind, footprint) => {
+  it.each(SPATIAL_PRESETS.filter(({ kind }) => kind !== 'bumblebee').map(({ kind, footprint }) => [kind, footprint] as const))('%s is deterministic, unique, role-color-safe, and within its %i-light reserve', (kind, footprint) => {
     const group = preset(kind);
     const reserved = new Set(Object.values(definition.rolePresets).map(({ lightColor }) => lightColor));
     for (let elapsedMs = 0; elapsedMs <= group.periodMs; elapsedMs += group.periodMs / 40) {
@@ -50,6 +103,23 @@ describe('spatial effect rendering', () => {
     const background: SpatialLightEffectGroup = { ...selected, target:{...selected.target,scope:'background-board'} };
     const frame = renderAnimationFrame({ definition, assignments, effectGroups:[background], elapsedMs:0 });
     expect(frame.find(({placementId})=>placementId===rolePlacement!.id)?.color).toBe(definition.rolePresets.start.lightColor);
+  });
+
+  it('renders bee body and wings through masks, capacity, and one-color fallback', () => {
+    const bee = createSpatialPreset('bumblebee', 29);
+    const [rolePlacement, customPlacement] = definition.placements;
+    const assignments: BoardHoldAssignment[] = [
+      { placementId: rolePlacement!.id, appearance: { kind: 'role', role: 'foot-only' } },
+      { placementId: customPlacement!.id, appearance: { kind: 'custom', color: apiLevel3Color(3) } },
+    ];
+    const scene = renderSpatialGroup(definition, assignments, bee, bee.periodMs * .41);
+    expect(scene.length).toBeLessThanOrEqual(bee.footprint);
+    expect(scene.map(({ placementId }) => placementId)).not.toContain(rolePlacement!.id);
+    const oneColor = Object.freeze({ ...bee, palette: Object.freeze([bee.palette[0]!]) });
+    const fallback = renderSpatialGroup(definition, assignments, oneColor, bee.periodMs * .41);
+    expect(fallback.every(({ color }) => color === fallback[0]?.color)).toBe(true);
+    const oneLight = Object.freeze({ ...bee, footprint: 1 as const });
+    expect(renderSpatialGroup(definition, assignments, oneLight, bee.periodMs * .41)).toHaveLength(1);
   });
 
   it('uses later spatial groups above earlier groups and conservatively sums reserves', () => {

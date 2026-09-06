@@ -26,6 +26,8 @@ export interface PlaylistImportDialogProps {
   readonly readFileText?: (file: File) => Promise<string>;
   readonly onImported: (result: PlaylistImportResult) => Promise<void>;
   readonly onRefresh: () => Promise<void>;
+  readonly onOperationStart?: () => void;
+  readonly onOperationEnd?: () => void;
   readonly onClose: () => void;
 }
 
@@ -56,6 +58,8 @@ export function PlaylistImportDialog({
   readFileText = browserReadFileText,
   onImported,
   onRefresh,
+  onOperationStart,
+  onOperationEnd,
   onClose,
 }: PlaylistImportDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -113,11 +117,13 @@ export function PlaylistImportDialog({
     setPlan(null);
     setSourceLabel(file.name);
     setStatus({ kind: 'progress', message: 'Reading playlist file…' });
+    onOperationStart?.();
     if (file.size > MAX_PORTABLE_PLAYLIST_BYTES) {
       setStatus({
         kind: 'error',
         message: `Playlist files must not exceed ${MAX_PORTABLE_PLAYLIST_BYTES} bytes.`,
       });
+      onOperationEnd?.();
       return;
     }
     try {
@@ -129,12 +135,15 @@ export function PlaylistImportDialog({
     } catch (error) {
       setPlan(null);
       setStatus({ kind: 'error', message: message(error) });
+    } finally {
+      onOperationEnd?.();
     }
   }
 
   async function confirmImport(): Promise<void> {
     if (!plan || importRunning.current || importCompleted.current) return;
     importRunning.current = true;
+    onOperationStart?.();
     setPhase('importing');
     setStatus({ kind: 'progress', message: 'Creating climb copies and list…' });
     let result: PlaylistImportResult;
@@ -149,6 +158,7 @@ export function PlaylistImportDialog({
       setPhase('preview');
       setStatus({ kind: 'error', message: message(error) });
       importRunning.current = false;
+      onOperationEnd?.();
       return;
     }
 
@@ -167,6 +177,7 @@ export function PlaylistImportDialog({
       });
     } finally {
       importRunning.current = false;
+      onOperationEnd?.();
     }
   }
 

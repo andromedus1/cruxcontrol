@@ -170,7 +170,7 @@ describe('IndexedDbLocalDraftRepository', () => {
     expect(await context.repository.get(trashed.id)).toEqual(trashed);
   });
 
-  it('purges Trash at the inclusive 30-day boundary and preserves every other row', async () => {
+  it('retains old Trash rows and preserves every other row until explicit deletion', async () => {
     const ids = [
       FIRST_DRAFT_ID,
       SECOND_DRAFT_ID,
@@ -199,8 +199,7 @@ describe('IndexedDbLocalDraftRepository', () => {
     });
 
     now = '2026-09-01T12:00:00.000Z';
-    await expect(context.repository.purgeExpiredTrash()).resolves.toBe(1);
-    expect(await context.repository.get(expiredTrash.id)).toBeNull();
+    expect(await context.repository.get(expiredTrash.id)).toEqual(expiredTrash);
     expect(await context.repository.get(newerTrash.id)).toEqual(newerTrash);
     expect(await context.repository.get(active.id)).toEqual(active);
     expect(await readRaw(database, corrupt.id)).toMatchObject({ angle: 'bad' });
@@ -371,7 +370,6 @@ describe('IndexedDbLocalDraftRepository', () => {
     await expect(closed.deletePermanently(id, revision)).rejects.toMatchObject({
       code: 'unavailable',
     });
-    await expect(closed.purgeExpiredTrash()).rejects.toMatchObject({ code: 'unavailable' });
   });
 
   it('waits for transaction abort before classifying quota failures', async () => {

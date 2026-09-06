@@ -1,0 +1,50 @@
+.app-update-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+}
+
+.app-update-control--applying {
+  border-color: var(--color-info);
+}
+
+.app-update-control p {
+  margin: 0;
+}
+
+.app-update-control .eyebrow {
+  margin-bottom: var(--space-1);
+}
+
+.app-update-control__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.app-update-control__status {
+  flex-basis: 100%;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 640px) {
+  .app-update-control {
+    align-items: stretch;
+    flex-direction: column;
+    padding-inline: var(--space-2);
+  }
+
+  .app-update-control__actions {
+    justify-content: stretch;
+  }
+
+  .app-update-control__actions .button {
+    flex: 1 1 auto;
+  }
+}

@@ -3,25 +3,46 @@ import { LIGHT_EFFECT_PERIOD_MAX_MS, lightEffectGroupId, type BoardHoldAssignmen
 import { apiLevel3ColorHex } from '../domain/boards/colors';
 import type { ApiLevel3Color } from '../domain/boards/types';
 import { spatialCapacityPlan } from '../light-effects/capacity-plan';
-import { createSpatialPreset, SPATIAL_PRESETS } from '../light-effects/preset-library';
+import { createSpatialPreset, SPATIAL_PRESETS, upgradeSpatialPreset } from '../light-effects/preset-library';
 import type { RouteEditorAction, RouteEditorState } from './types';
 
 const EFFECT_LABELS: Readonly<Record<LightEffectKind, string>> = { pulse: 'Pulse', 'color-cycle': 'Color cycle', wave: 'Wave', twinkle: 'Twinkle', alternate: 'Alternating pulse' };
 const groupLabel = (group: RouteEditorState['content']['effectGroups'][number]) => group.model === 'spatial' ? SPATIAL_PRESETS.find(({ kind }) => kind === group.recipe.kind)?.label ?? group.recipe.kind : EFFECT_LABELS[group.kind];
 const createGroupId = (): LightEffectGroupId => lightEffectGroupId(`effect-${crypto.randomUUID()}`);
-const shapeField = (kind: SpatialEffectKind) => ({'ocean-tide':'foam','tie-dye-spiral':'arms','matrix-rain':'columns',snake:'bodyLength','beach-ball':'size','pac-man':'mouthBeat',pong:'paddleSize','bird-flock':'quietFraction',frogger:'lanes',pentagram:'fadeRate'} as const)[kind];
-const shapeValue = (recipe: import('../board-renderer/types').SpatialRecipe) => { switch(recipe.kind) { case 'ocean-tide': return recipe.foam; case 'tie-dye-spiral': return recipe.arms; case 'matrix-rain': return recipe.columns; case 'snake': return recipe.bodyLength; case 'beach-ball': return recipe.size; case 'pac-man': return recipe.mouthBeat; case 'pong': return recipe.paddleSize; case 'bird-flock': return recipe.quietFraction; case 'frogger': return recipe.lanes; case 'pentagram': return recipe.fadeRate; } };
+const shapeField = (kind: SpatialEffectKind) => ({'ocean-tide':'foam','tie-dye-spiral':'arms','matrix-rain':'columns',snake:'bodyLength','beach-ball':'size','pac-man':'mouthBeat',pong:'paddleSize','bird-flock':'quietFraction',frogger:'lanes',pentagram:'fadeRate',bumblebee:'hoverFraction'} as const)[kind];
+const shapeValue = (recipe: import('../board-renderer/types').SpatialRecipe) => { switch(recipe.kind) { case 'ocean-tide': return recipe.foam; case 'tie-dye-spiral': return recipe.arms; case 'matrix-rain': return recipe.columns; case 'snake': return recipe.bodyLength; case 'beach-ball': return recipe.size; case 'pac-man': return recipe.mouthBeat; case 'pong': return recipe.paddleSize; case 'bird-flock': return recipe.quietFraction; case 'frogger': return recipe.lanes; case 'pentagram': return recipe.fadeRate; case 'bumblebee': return recipe.hoverFraction; } };
 const shapeLimits = (kind: SpatialEffectKind) => kind === 'ocean-tide' || kind === 'bird-flock'
   ? { min: 0, max: kind === 'bird-flock' ? .95 : 1, step: .05 }
+  : kind === 'bumblebee' ? { min: 0, max: .8, step: .05 }
   : kind === 'tie-dye-spiral' ? { min: 2, max: 4, step: 1 }
     : kind === 'frogger' ? { min: 1, max: 8, step: 1 }
       : kind === 'pentagram' ? { min: .25, max: 8, step: .25 }
         : { min: 1, max: 20, step: 1 };
+const shapeLabel = (kind: SpatialEffectKind) => ({
+  'ocean-tide': 'Foam',
+  'tie-dye-spiral': 'Arms',
+  'matrix-rain': 'Columns',
+  snake: 'Body length',
+  'beach-ball': 'Ball size',
+  'pac-man': 'Mouth beats',
+  pong: 'Paddle size',
+  'bird-flock': 'Quiet fraction',
+  frogger: 'Traffic lanes',
+  pentagram: 'Fade rate',
+  bumblebee: 'Hover fraction',
+} as const)[kind];
 
 export function LightEffectsPanel({ state, assignments, selectedId, onSelectedIdChange, dispatch }: { readonly state: RouteEditorState; readonly assignments: readonly BoardHoldAssignment[]; readonly selectedId: LightEffectGroupId | null; readonly onSelectedIdChange: (id: LightEffectGroupId | null) => void; readonly dispatch: Dispatch<RouteEditorAction> }) {
   const selected = state.content.effectGroups.find(({ id }) => id === selectedId) ?? null;
   const update = (changes: Readonly<Record<string, unknown>>) => { if (selected) dispatch({ type: 'update-effect-group', id: selected.id, changes }); };
   const addColor = (color: ApiLevel3Color) => { if (selected && !selected.palette.includes(color) && selected.palette.length < 8) update({ palette: Object.freeze([...selected.palette, color]) }); };
+  const setBumblebeeColor = (index: 0 | 1) => {
+    if (selected?.model !== 'spatial' || selected.recipe.kind !== 'bumblebee') return;
+    const palette = [...selected.palette];
+    while (palette.length < 2) palette.push(palette[0] ?? state.advancedColor);
+    palette[index] = state.advancedColor;
+    update({ palette: Object.freeze(palette) });
+  };
   const plan = spatialCapacityPlan(assignments, state.content.effectGroups);
   const addPreset = (kind: SpatialEffectKind) => { const group = createSpatialPreset(kind); dispatch({ type: 'add-effect-group', group }); onSelectedIdChange(group.id); };
   const move = (offset: number) => {
@@ -42,7 +63,25 @@ export function LightEffectsPanel({ state, assignments, selectedId, onSelectedId
         <label>Target<select aria-label="Effect target" value={selected.target.scope} onChange={(event) => update({ target: Object.freeze({ ...selected.target, scope: event.target.value }) })}><option value="unused">Unused holds</option><option value="background-board">Whole background</option><option value="selected">Selected holds</option></select></label>
         <label>Light reserve<input aria-label="Effect footprint" type="number" min="1" max="20" value={selected.footprint} onChange={(event) => update({ footprint: Math.max(1,Math.min(20,Number(event.target.value))) })}/><output>{selected.footprint}</output></label>
         {'direction' in selected.recipe && <label>Direction<select aria-label="Effect direction" value={selected.recipe.direction} onChange={(event) => update({recipe:Object.freeze({...selected.recipe,direction:event.target.value})})}>{selected.recipe.kind==='ocean-tide' ? <><option value="in">In</option><option value="out">Out</option></> : selected.recipe.kind==='tie-dye-spiral' ? <><option value="clockwise">Clockwise</option><option value="counterclockwise">Counterclockwise</option></> : selected.recipe.kind==='matrix-rain' ? <><option value="down">Down</option><option value="up">Up</option></> : selected.recipe.kind==='bird-flock' ? <><option value="left">Left</option><option value="right">Right</option></> : <><option value="forward">Forward</option><option value="reverse">Reverse</option></>}</select></label>}
-        <label>Shape<input aria-label="Effect shape" type="number" {...shapeLimits(selected.recipe.kind)} value={shapeValue(selected.recipe)} onChange={(event) => update({recipe:Object.freeze({...selected.recipe,[shapeField(selected.recipe.kind)]:Number(event.target.value)})})}/></label>
+        <label>{shapeLabel(selected.recipe.kind)}<input aria-label={selected.recipe.kind === 'bumblebee' ? 'Hover fraction' : 'Effect shape'} type="number" {...shapeLimits(selected.recipe.kind)} value={shapeValue(selected.recipe)} onChange={(event) => {
+          const value = Number(event.currentTarget.value);
+          if (!Number.isFinite(value)) return;
+          const { min, max } = shapeLimits(selected.recipe.kind);
+          update({ recipe: Object.freeze({ ...selected.recipe, [shapeField(selected.recipe.kind)]: Math.max(min, Math.min(max, value)) }) });
+        }}/></label>
+        {selected.recipe.kind === 'bumblebee' && <div className="light-effects__bee-palette" aria-label="Bumblebee Body and Wings colors">
+          <p>Body <span style={{ background: apiLevel3ColorHex(selected.palette[0] ?? 0) }} aria-hidden="true" /> <button type="button" onClick={() => setBumblebeeColor(0)}>Set Body to current color</button></p>
+          <p>Wings <span style={{ background: apiLevel3ColorHex(selected.palette[1] ?? selected.palette[0] ?? 0) }} aria-hidden="true" /> <button type="button" onClick={() => setBumblebeeColor(1)}>Set Wings to current color</button></p>
+          <small>Current advanced color: {apiLevel3ColorHex(state.advancedColor).toUpperCase()}</small>
+        </div>}
+        <div className="light-effects__loop-status" aria-live="polite">
+          <p>{selected.recipeVersion === 1 ? 'Original loop' : 'Seamless loop'}</p>
+          {selected.recipeVersion === 1 && <>
+            <p>Uses a {(Math.max(selected.periodMs, SPATIAL_PRESETS.find(({ kind }) => kind === selected.recipe.kind)?.periodMs ?? selected.periodMs) / 1000).toFixed(0)}-second loop; keeps your colors, shape, targets and light reserve.</p>
+            <button type="button" onClick={() => { const upgraded = upgradeSpatialPreset(selected); dispatch({ type: 'update-effect-group', id: selected.id, changes: { recipeVersion: upgraded.recipeVersion, periodMs: upgraded.periodMs } }); }}>Use seamless loop</button>
+          </>}
+          {selected.recipeVersion === 2 && <p>Background colors may shift slightly to keep climb colors distinct on the board. Your saved palette stays unchanged.</p>}
+        </div>
         <p>Selected targets: {selected.target.include.length}; exclusions: {selected.target.exclude.length}. Route roles are always protected.</p>
         <div className="effect-tools"><button type="button" aria-checked={state.tool.kind === 'spatial-include'} onClick={() => dispatch({ type:'set-tool', tool:{ kind:'spatial-include', effectGroupId:selected.id }})}>Paint targets</button><button type="button" aria-checked={state.tool.kind === 'spatial-exclude'} onClick={() => dispatch({ type:'set-tool', tool:{ kind:'spatial-exclude', effectGroupId:selected.id }})}>Paint exclusions</button></div>
       </>}

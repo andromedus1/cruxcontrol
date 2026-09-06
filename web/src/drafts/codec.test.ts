@@ -5,6 +5,7 @@ import { decodeStoredDraft, draftRevision, encodeStoredDraft, localDraftId } fro
 import { DraftCorruptRecordError, DraftSchemaError } from './errors.ts';
 import { draftContent, FIRST_DRAFT_ID } from './test-fixtures.ts';
 import type { LocalClimbDraft } from './types.ts';
+import { createSpatialPreset } from '../light-effects/preset-library.ts';
 
 function draft(overrides: Partial<LocalClimbDraft> = {}): LocalClimbDraft {
   const content = draftContent();
@@ -35,6 +36,39 @@ describe('local draft codec', () => {
     expect(decodeStoredDraft(encodeStoredDraft(source))).toEqual({ ...source, schemaVersion: 4 });
     const dangling = encodeStoredDraft({ ...source, assignments: [{ placementId, appearance: { kind: 'custom', color: apiLevel3Color(1) }, effectGroupId: spatial.id }] });
     expect(() => decodeStoredDraft(dangling)).toThrowError(expect.objectContaining({ path: 'assignments[0].effectGroupId' }));
+  });
+  it('round-trips an explicitly upgraded v2 spatial recipe without changing authored data', () => {
+    const source = draft({
+      effectGroups: [{
+        model: 'spatial' as const,
+        id: lightEffectGroupId('v2-background'),
+        recipeVersion: 2 as const,
+        recipe: { kind: 'snake' as const, direction: 'reverse' as const, bodyLength: 3 },
+        seed: -7,
+        palette: [apiLevel3Color(181), apiLevel3Color(28)],
+        periodMs: 150_000,
+        intensity: .4,
+        footprint: 6,
+        target: { scope: 'background-board' as const, include: [], exclude: [] },
+      }],
+    });
+    expect(decodeStoredDraft(encodeStoredDraft(source))).toEqual(source);
+    const future = { ...encodeStoredDraft(source), effectGroups: [{ ...(encodeStoredDraft(source).effectGroups[0] as Record<string, unknown>), recipeVersion: 3 }] };
+    expect(() => decodeStoredDraft(future)).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
+  });
+  it('accepts v2 bumblebee recipes and rejects v1, future, and invalid hover values', () => {
+    const bee = createSpatialPreset('bumblebee', 7);
+    const source = draft({ effectGroups: [bee] });
+    expect(decodeStoredDraft(encodeStoredDraft(source))).toEqual(source);
+    const encoded = encodeStoredDraft(source);
+    const group = encoded.effectGroups[0] as Record<string, unknown>;
+    const recipe = group.recipe as Record<string, unknown>;
+    expect(() => encodeStoredDraft({ ...source, effectGroups: [{ ...bee, recipeVersion: 1 as const }] })).toThrow('Bumblebee recipes require version 2');
+    expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipeVersion: 1 }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
+    expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipeVersion: 3 }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipeVersion' }));
+    for (const hoverFraction of [-.01, .81, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => decodeStoredDraft({ ...encoded, effectGroups: [{ ...group, recipe: { ...recipe, hoverFraction } }] })).toThrowError(expect.objectContaining({ path: 'effectGroups[0].recipe' }));
+    }
   });
   it.each([
     ['frogger', { kind: 'frogger' as const, lanes: 4 }],

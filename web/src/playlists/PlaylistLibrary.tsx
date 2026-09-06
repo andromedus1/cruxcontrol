@@ -37,6 +37,16 @@ export interface PlaylistLibraryProps {
   readonly history?: PlaylistHistoryAdapter;
   readonly transports?: PlaylistTransportAdapters;
   readonly shareBaseUrl?: URL;
+  readonly onSafetyStateChange?: (state: PlaylistSafetyState) => void;
+  readonly onOperationStart?: () => void;
+  readonly onOperationEnd?: () => void;
+}
+
+export interface PlaylistSafetyState {
+  readonly dirty: boolean;
+  readonly playing: boolean;
+  readonly modalOpen: boolean;
+  readonly pendingOperations: number;
 }
 
 function entryLabel(entry: ResolvedPlaylistEntry): string {
@@ -62,6 +72,9 @@ export function PlaylistLibrary({
   history,
   transports,
   shareBaseUrl,
+  onSafetyStateChange,
+  onOperationStart,
+  onOperationEnd,
 }: PlaylistLibraryProps) {
   const playlistsRef = useRef(playlists);
   const [selectedId, setSelectedId] = useState<PlaylistId | null>(playlists[0]?.id ?? null);
@@ -87,7 +100,6 @@ export function PlaylistLibrary({
   useEffect(() => {
     setName(selected?.name ?? '');
     setNotes(selected?.notes ?? '');
-    setStatus('');
   }, [selected?.id, selected?.name, selected?.notes]);
   useEffect(() => {
     if (playingId && (!selected || selected.id !== playingId || selected.entries.length === 0)) {
@@ -104,6 +116,7 @@ export function PlaylistLibrary({
   }
 
   async function mutate(label: string, action: () => Promise<void>) {
+    onOperationStart?.();
     setStatus(`${label}…`);
     setError(null);
     try {
@@ -118,6 +131,8 @@ export function PlaylistLibrary({
         label: `Retry ${label.toLowerCase()}`,
         run: () => mutate(label, action),
       });
+    } finally {
+      onOperationEnd?.();
     }
   }
 
@@ -214,6 +229,27 @@ export function PlaylistLibrary({
   };
   const playing = Boolean(selected && selected.id === playingId && resolved.length > 0);
 
+  useEffect(() => {
+    onSafetyStateChange?.({
+      dirty: Boolean(newName.trim() || (selected && (name !== selected.name || notes !== selected.notes))),
+      playing,
+      modalOpen: sharing || importing,
+      pendingOperations: 0,
+    });
+  }, [importing, name, newName, notes, onSafetyStateChange, playing, selected, sharing]);
+
+  useEffect(
+    () => () => {
+      onSafetyStateChange?.({
+        dirty: false,
+        playing: false,
+        modalOpen: false,
+        pendingOperations: 0,
+      });
+    },
+    [onSafetyStateChange],
+  );
+
   function closePortableDialog(kind: 'share' | 'import') {
     if (kind === 'share') setSharing(false);
     else {
@@ -280,6 +316,7 @@ export function PlaylistLibrary({
                   aria-current={selected?.id === playlist.id ? 'true' : undefined}
                   onClick={() => {
                     setPlayingId(null);
+                    setStatus('');
                     setSelectedId(playlist.id);
                   }}
                 >
@@ -473,6 +510,8 @@ export function PlaylistLibrary({
             await onRefresh();
           }}
           onRefresh={onRefresh}
+          onOperationStart={onOperationStart}
+          onOperationEnd={onOperationEnd}
           onClose={() => closePortableDialog('import')}
         />
       )}

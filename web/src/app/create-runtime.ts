@@ -10,12 +10,14 @@ import {
   openPlaylistDatabase,
   type LocalPlaylistRepository,
 } from '../playlists';
+import { IndexedDbLibraryBackupStore, LibraryBackupService } from '../library-backup';
 import { activeInstallationId, createAppInstallationRegistry } from './installations';
 
 export interface CruxControlRuntime {
   readonly installation: ConfiguredBoardInstallation;
   readonly drafts: LocalDraftRepository;
   readonly playlists: LocalPlaylistRepository;
+  readonly backup?: LibraryBackupService;
   readonly controller: BoardLightController | null;
   close(): void;
 }
@@ -36,6 +38,9 @@ export async function createCruxControlRuntime(
     playlistDatabase = await (dependencies.openPlaylists ?? openPlaylistDatabase)();
     const drafts = new IndexedDbLocalDraftRepository(draftDatabase);
     const playlists = new IndexedDbLocalPlaylistRepository(playlistDatabase);
+    const backup = new LibraryBackupService(
+      new IndexedDbLibraryBackupStore(draftDatabase, playlistDatabase),
+    );
     const installation = (
       dependencies.getInstallation ??
       (() => createAppInstallationRegistry().require(activeInstallationId))
@@ -44,6 +49,7 @@ export async function createCruxControlRuntime(
       installation,
       drafts,
       playlists,
+      backup,
       controller: installation.createController(),
       close: () => {
         playlistDatabase?.close();

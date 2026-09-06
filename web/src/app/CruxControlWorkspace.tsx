@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LocalClimbViewer } from '../climb-browser/LocalClimbViewer';
 import type { ClimbViewKey } from '../climb-browser/types';
 import { toClimbViewRecord } from '../drafts/to-climb-view-record';
@@ -8,7 +8,11 @@ import { PlaylistMembershipDialog } from '../playlists/PlaylistMembershipDialog'
 import type { LocalPlaylist } from '../playlists/types';
 import { RouteEditorWorkspace } from '../route-editor/RouteEditorWorkspace';
 import { KilterScreenshotImportDialog } from '../screenshot-import/KilterScreenshotImportDialog';
+import { LibraryBackupDialog } from '../library-backup';
 import type { CruxControlRuntime } from './create-runtime';
+import { AppUpdateControl } from '../pwa/AppUpdateControl.tsx';
+import type { AppUpdateService, AppUpdateSnapshot } from '../pwa/update-service.ts';
+import type { BoardLightState } from '../board-control/light-controller.ts';
 import './CruxControlWorkspace.css';
 
 export type LocalClimbCollection = 'finished' | 'drafts' | 'trash';
@@ -31,7 +35,7 @@ const collectionCopy: Record<
   trash: {
     label: 'Trash',
     emptyTitle: 'Trash is empty',
-    emptyDescription: 'Deleted climbs stay recoverable here for 30 days.',
+    emptyDescription: 'Climbs stay in Trash until you delete them forever.',
   },
 };
 
@@ -82,7 +86,26 @@ interface RetryAction {
   readonly run: () => void;
 }
 
-export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxControlRuntime }) {
+export interface PlaylistSafetyState {
+  readonly dirty: boolean;
+  readonly playing: boolean;
+  readonly modalOpen: boolean;
+  readonly pendingOperations: number;
+}
+
+const CLEAR_PLAYLIST_SAFETY: PlaylistSafetyState = Object.freeze({
+  dirty: false,
+  playing: false,
+  modalOpen: false,
+  pendingOperations: 0,
+});
+
+export interface CruxControlWorkspaceProps {
+  readonly runtime: CruxControlRuntime;
+  readonly updateService?: AppUpdateService;
+}
+
+export function CruxControlWorkspace({ runtime, updateService }: CruxControlWorkspaceProps) {
   const [drafts, setDrafts] = useState<readonly LocalClimbDraft[]>([]);
   const [playlists, setPlaylists] = useState<readonly LocalPlaylist[]>([]);
   const [collection, setCollection] = useState<WorkspaceDestination>(() =>
@@ -92,17 +115,45 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
   const [selectedKey, setSelectedKey] = useState<ClimbViewKey | null>(null);
   const [membershipDraft, setMembershipDraft] = useState<LocalClimbDraft | null>(null);
   const [importingScreenshots, setImportingScreenshots] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
+  const backupButtonRef = useRef<HTMLButtonElement>(null);
   const [error, setError] = useState('');
   const [retryAction, setRetryAction] = useState<RetryAction | null>(null);
+  const [playlistSafety, setPlaylistSafety] = useState<PlaylistSafetyState>(CLEAR_PLAYLIST_SAFETY);
+  const [controllerState, setControllerState] = useState<BoardLightState | null>(() => runtime.controller?.getState() ?? null);
+  const operationCount = useRef(0);
+  const [pendingOperations, setPendingOperations] = useState(0);
+  const [updateSnapshot, setUpdateSnapshot] = useState<AppUpdateSnapshot | null>(() => updateService?.getSnapshot() ?? null);
+  const updateBlocksWorkspace = updateSnapshot?.status === 'applying' || updateSnapshot?.status === 'reload-required';
 
-  const refresh = useCallback(async () => {
-    let cleanupError = '';
-    try {
-      await runtime.drafts.purgeExpiredTrash();
-    } catch (cause) {
-      cleanupError =
-        cause instanceof Error ? cause.message : 'Could not remove expired Trash climbs.';
+  useEffect(() => {
+    const controller = runtime.controller;
+    if (!controller) {
+      setControllerState(null);
+      return;
     }
+    setControllerState(controller.getState());
+    return controller.subscribe(setControllerState);
+  }, [runtime.controller]);
+
+  useEffect(() => {
+    if (!updateService) {
+      setUpdateSnapshot(null);
+      return;
+    }
+    return updateService.subscribe(setUpdateSnapshot);
+  }, [updateService]);
+
+  const beginOperation = useCallback(() => {
+    operationCount.current += 1;
+    setPendingOperations(operationCount.current);
+  }, []);
+  const endOperation = useCallback(() => {
+    operationCount.current = Math.max(0, operationCount.current - 1);
+    setPendingOperations(operationCount.current);
+  }, []);
+
+  const refresh = useCallback(async (throwOnError = false) => {
     try {
       const [active, trash, storedPlaylists] = await Promise.all([
         runtime.drafts.list({ collection: 'active' }),
@@ -111,13 +162,12 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
       ]);
       setDrafts(Object.freeze([...active, ...trash]));
       setPlaylists(storedPlaylists);
-      setError(cleanupError);
-      setRetryAction(
-        cleanupError ? { label: 'Retry refreshing climbs', run: () => void refresh() } : null,
-      );
+      setError('');
+      setRetryAction(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load the local workspace.');
       setRetryAction({ label: 'Retry refreshing climbs', run: () => void refresh() });
+      if (throwOnError) throw cause;
     }
   }, [runtime]);
 
@@ -146,6 +196,7 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
   }, []);
 
   async function retryable(label: string, action: () => Promise<void>) {
+    beginOperation();
     try {
       await action();
       setError('');
@@ -157,8 +208,46 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
         label: `Retry ${label.toLowerCase()}`,
         run: () => void retryable(label, action),
       });
+    } finally {
+      endOperation();
     }
   }
+
+  const boardBlockReason = (() => {
+    const transport = controllerState?.transport.status;
+    if (transport === 'selecting' || transport === 'connecting') {
+      return 'Finish connecting to the board before updating.';
+    }
+    if (transport === 'connected' || transport === 'disconnecting') {
+      return 'Disconnect the board when your session is finished before updating.';
+    }
+    if (controllerState && controllerState.operation !== 'idle') {
+      return 'Finish the board operation before updating.';
+    }
+    return null;
+  })();
+  const workspaceBlockReason = editing
+    ? 'Finish saving your climb and return to the library before updating.'
+    : backingUp
+      ? 'Wait for your backup or restore to finish before updating.'
+      : importingScreenshots
+        ? 'Finish importing screenshots before updating.'
+        : membershipDraft
+          ? 'Finish updating list memberships before updating.'
+          : pendingOperations > 0 || playlistSafety.pendingOperations > 0
+            ? 'Wait for the current library change to finish before updating.'
+            : playlistSafety.dirty
+              ? 'Save your list changes before updating.'
+              : playlistSafety.playing
+                ? 'Finish the list play-through before updating.'
+                : playlistSafety.modalOpen
+                  ? 'Finish the open list task before updating.'
+                  : boardBlockReason;
+
+  useEffect(() => {
+    updateService?.setBlocked(workspaceBlockReason);
+  }, [updateService, workspaceBlockReason]);
+  useEffect(() => () => updateService?.setBlocked(null), [updateService]);
 
   const create = async () => {
     await retryable('create climb', async () => {
@@ -192,7 +281,7 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
   }
 
   function moveToTrash(draft: LocalClimbDraft) {
-    if (!window.confirm(`Move “${climbName(draft)}” to Trash? You can restore it for 30 days.`)) {
+    if (!window.confirm(`Move “${climbName(draft)}” to Trash? You can restore it until you delete it forever.`)) {
       return Promise.resolve();
     }
     return retryable('move to Trash', async () => {
@@ -271,22 +360,47 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
 
   if (active) {
     return (
-      <RouteEditorWorkspace
-        definition={runtime.installation.definition}
-        draft={active}
-        repository={runtime.drafts}
-        controller={runtime.controller}
-        onBack={() => {
-          setEditing(null);
-          void refresh();
-        }}
-        onDraftIdentityChange={adoptDraftIdentity}
-      />
+      <>
+        {updateService && (
+          <AppUpdateControl
+            service={updateService}
+            boardConnected={controllerState?.transport.status === 'connected'}
+            onDisconnectBoard={() => runtime.controller?.disconnect()}
+            onRetry={() => void updateService.retry?.()}
+          />
+        )}
+        <div inert={updateBlocksWorkspace || undefined}>
+          <RouteEditorWorkspace
+            definition={runtime.installation.definition}
+            draft={active}
+            repository={runtime.drafts}
+            controller={runtime.controller}
+            onBack={() => {
+              setEditing(null);
+              void refresh();
+            }}
+            onDraftIdentityChange={adoptDraftIdentity}
+          />
+        </div>
+      </>
     );
   }
 
   return (
-    <main className="climb-workspace">
+    <>
+      {updateService && (
+        <AppUpdateControl
+          service={updateService}
+          boardConnected={controllerState?.transport.status === 'connected'}
+          onDisconnectBoard={() => runtime.controller?.disconnect()}
+          onRetry={() => void updateService.retry?.()}
+        />
+      )}
+      <main
+        className="climb-workspace"
+        inert={updateBlocksWorkspace || undefined}
+        aria-busy={updateBlocksWorkspace || undefined}
+      >
       <nav className="collection-switch" aria-label="Workspace destinations">
         {destinations.map((value) => (
           <button
@@ -317,6 +431,13 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
           </button>
         ))}
       </nav>
+      {runtime.backup && (
+        <div className="workspace-library-actions">
+          <button ref={backupButtonRef} className="button button--secondary" type="button" onClick={() => setBackingUp(true)}>
+            Back up &amp; restore
+          </button>
+        </div>
+      )}
       {error && (
         <div className="workspace-error" role="alert">
           <p>{error}</p>
@@ -392,6 +513,9 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
             else void refreshPlaylists();
           }}
           onRefresh={refresh}
+          onSafetyStateChange={setPlaylistSafety}
+          onOperationStart={beginOperation}
+          onOperationEnd={endOperation}
           onOpenLocalClimb={(id) => {
             const draft = drafts.find((candidate) => candidate.id === id);
             if (!draft || draft.trashedAt !== undefined) return;
@@ -466,6 +590,8 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
           onChanged={replacePlaylist}
           onRefresh={refreshPlaylists}
           onClose={() => setMembershipDraft(null)}
+          onOperationStart={beginOperation}
+          onOperationEnd={endOperation}
         />
       )}
       {importingScreenshots && (
@@ -476,9 +602,22 @@ export function CruxControlWorkspace({ runtime }: { readonly runtime: CruxContro
             await refresh();
             setCollection('drafts');
           }}
+          onOperationStart={beginOperation}
+          onOperationEnd={endOperation}
           onClose={() => setImportingScreenshots(false)}
         />
       )}
-    </main>
+      {backingUp && runtime.backup && (
+        <LibraryBackupDialog
+          service={runtime.backup}
+          onClose={() => {
+            setBackingUp(false);
+            queueMicrotask(() => backupButtonRef.current?.focus());
+          }}
+          onRestored={() => refresh(true)}
+        />
+      )}
+      </main>
+    </>
   );
 }

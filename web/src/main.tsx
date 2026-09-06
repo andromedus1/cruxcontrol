@@ -3,7 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
 import { registerServiceWorker } from './pwa/register-sw.ts';
 
-registerServiceWorker();
+// Start once at module scope. React StrictMode intentionally mounts effects
+// twice in development; a lock lease must not be released by that lifecycle.
+const updateService = registerServiceWorker();
+const startupAdmission = updateService.start();
 
 const rootEl = document.getElementById('root');
 if (!rootEl) {
@@ -12,6 +15,6 @@ if (!rootEl) {
 
 createRoot(rootEl).render(
   <StrictMode>
-    <App />
+    <App updateService={updateService} startupAdmission={startupAdmission} />
   </StrictMode>,
 );

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { draftRevision, localDraftId } from '../drafts/codec.ts';
@@ -8,7 +8,7 @@ import type { LocalClimbDraft } from '../drafts/types.ts';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
 import { activeInstallationId, createAppInstallationRegistry } from '../app/installations.ts';
 import { playlistId, playlistRevision } from './codec.ts';
-import { PlaylistLibrary } from './PlaylistLibrary.tsx';
+import { PlaylistLibrary, type PlaylistSafetyState } from './PlaylistLibrary.tsx';
 import type { PlaylistHistoryAdapter } from './portable-history.ts';
 import type { LocalPlaylistRepository } from './repository.ts';
 import type { LocalPlaylist, PlaylistContent } from './types.ts';
@@ -52,10 +52,14 @@ function renderLibrary(
   options: {
     readonly initialImportFragment?: string;
     readonly history?: PlaylistHistoryAdapter;
+    readonly deferChanged?: boolean;
+    readonly onSafetyStateChange?: (state: PlaylistSafetyState) => void;
   } = {},
 ) {
   let stored = [...initial];
   let nextId = 70;
+  let pendingChanged: LocalPlaylist | null = null;
+  let applyPendingChanged = () => undefined;
   const repository: LocalPlaylistRepository = {
     create: vi.fn(async (content) => {
       const created = storedPlaylist(content, 1, `00000000-0000-4000-8000-0000000000${nextId++}`);
@@ -85,12 +89,21 @@ function renderLibrary(
     trash: vi.fn(),
     restore: vi.fn(),
     deletePermanently: vi.fn(),
-    purgeExpiredTrash: vi.fn(),
   };
 
   function Harness() {
     const [playlists, setPlaylists] = useState(initial);
-    const refresh = async () => setPlaylists(await repository.list());
+    applyPendingChanged = () => {
+      if (!pendingChanged) return;
+      setPlaylists((values) => [
+        pendingChanged!,
+        ...values.filter((candidate) => candidate.id !== pendingChanged!.id),
+      ]);
+    };
+    const refresh = async () => {
+      const next = await repository.list();
+      if (!options.deferChanged) setPlaylists(next);
+    };
     return (
       <PlaylistLibrary
         playlists={playlists}
@@ -102,13 +115,16 @@ function renderLibrary(
         compatibilityIssue={() => null}
         onChanged={(playlist) => {
           if (playlist)
-            setPlaylists((values) => [
-              playlist,
-              ...values.filter((candidate) => candidate.id !== playlist.id),
-            ]);
+            if (options.deferChanged) pendingChanged = playlist;
+            else
+              setPlaylists((values) => [
+                playlist,
+                ...values.filter((candidate) => candidate.id !== playlist.id),
+              ]);
         }}
         onRefresh={refresh}
         onOpenLocalClimb={vi.fn()}
+        onSafetyStateChange={options.onSafetyStateChange}
         initialImportFragment={options.initialImportFragment}
         history={options.history}
       />
@@ -116,7 +132,7 @@ function renderLibrary(
   }
 
   render(<Harness />);
-  return { repository, getStored: () => stored };
+  return { repository, getStored: () => stored, applyPendingChanged: () => applyPendingChanged() };
 }
 
 describe('PlaylistLibrary', () => {
@@ -128,6 +144,9 @@ describe('PlaylistLibrary', () => {
       await screen.findByRole('button', { name: /Weekend projects.*0 climbs/ }),
     ).toBeInTheDocument();
 
+    // The selector renders before the selected record hydrates the edit form.
+    // Wait for that form state before simulating the next user interaction.
+    await waitFor(() => expect(screen.getByLabelText('List name')).toHaveValue('Weekend projects'));
     fireEvent.change(screen.getByLabelText('List name'), {
       target: { value: 'Saturday projects' },
     });
@@ -140,6 +159,7 @@ describe('PlaylistLibrary', () => {
       expect.objectContaining({ name: 'Saturday projects', notes: 'Warm up first.' }),
     );
 
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     fireEvent.click(screen.getByRole('button', { name: 'Delete list' }));
     await waitFor(() => expect(repository.delete).toHaveBeenCalledOnce());
@@ -203,6 +223,38 @@ describe('PlaylistLibrary', () => {
     expect(repository.list).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Retry save list' }));
     await waitFor(() => expect(repository.update).toHaveBeenCalledTimes(2));
+  });
+
+  it('preserves Saved across delayed parent propagation and clears it on another selection', async () => {
+    const first = storedPlaylist({ name: 'First list', notes: '', entries: [] });
+    const second = storedPlaylist(
+      { name: 'Second list', notes: '', entries: [] },
+      1,
+      '00000000-0000-4000-8000-000000000063',
+    );
+    const { applyPendingChanged } = renderLibrary([first, second], [], { deferChanged: true });
+
+    await waitFor(() => expect(screen.getByLabelText('List name')).toHaveValue('First list'));
+    fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'Updated notes' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
+
+    act(() => applyPendingChanged());
+    await waitFor(() => expect(screen.getByLabelText('List name')).toHaveValue('First list'));
+    expect(screen.getByRole('status')).toHaveTextContent('Saved');
+
+    fireEvent.click(screen.getByRole('button', { name: /Second list.*0 climbs/ }));
+    expect(screen.getByRole('status')).toHaveTextContent('');
+  });
+
+  it('reports a nonempty new list draft as dirty', async () => {
+    const safety = vi.fn<(state: PlaylistSafetyState) => void>();
+    renderLibrary([], [], { onSafetyStateChange: safety });
+
+    fireEvent.change(screen.getByLabelText('New list'), { target: { value: 'Warmups' } });
+    await waitFor(() =>
+      expect(safety.mock.calls.some(([state]) => state.dirty)).toBe(true),
+    );
   });
 
   it('disables empty play-through and enters, navigates, switches, and exits without writes', async () => {

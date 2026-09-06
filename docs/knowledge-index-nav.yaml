@@ -3,7 +3,7 @@
 # Provides corpus situational awareness only. Read knowledge-index.yaml for full index.
 
 schema_version: 3
-generated_at: 2026-08-03T03:57:30Z
+generated_at: 2026-09-06T01:44:01Z
 generated_from: frontmatter
 total_docs: 23
 
@@ -17,28 +17,28 @@ substrate_summary:
   active:
     epic: 8
     feature: 24
-    story: 35
+    story: 36
     release: 0
   backlog: 20
   releases: {}
-  archive: 0
+  archive: 17
 
 # Top 15 most-recently-updated docs (planning + research only).
 recent:
   - path: docs/ARCHITECTURE.md
     title: "CruxControl — Architecture"
     kind: planning
-    updated: 2026-08-02
+    updated: 2026-09-05
+  - path: docs/SPEC.md
+    title: "CruxControl — Specification"
+    kind: planning
+    updated: 2026-09-05
   - path: docs/DEPLOY.md
     title: "Deploy"
     kind: planning
     updated: 2026-08-02
   - path: docs/PRINCIPLES.md
     title: "CruxControl — Principles"
-    kind: planning
-    updated: 2026-08-02
-  - path: docs/SPEC.md
-    title: "CruxControl — Specification"
     kind: planning
     updated: 2026-08-02
   - path: docs/VISION.md

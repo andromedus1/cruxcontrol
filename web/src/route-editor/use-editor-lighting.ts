@@ -58,8 +58,6 @@ export function useEditorLighting({
   assignmentsRef.current = assignments;
   effectGroupsRef.current = effectGroups;
 
-  useEffect(() => controller?.subscribe(setControllerState), [controller]);
-
   const cancelAnimation = useCallback(() => {
     animationSequence.current += 1;
     recentBatchMs.current = [];
@@ -70,6 +68,13 @@ export function useEditorLighting({
       setEffectiveAnimationFps(null);
     }
   }, []);
+
+  useEffect(() => controller?.subscribe((state) => {
+    // Observe the operation synchronously: React may batch clearing and idle
+    // notifications into one render. Empty animation previews use previewing.
+    if (state.operation === 'clearing') cancelAnimation();
+    setControllerState(state);
+  }), [cancelAnimation, controller]);
 
   useEffect(() => {
     mounted.current = true;
@@ -139,14 +144,6 @@ export function useEditorLighting({
     if (controllerState.transport.status === 'connected') return;
     cancelAnimation();
   }, [cancelAnimation, controllerState.transport.status]);
-
-  useEffect(() => {
-    if (controllerState.operation === 'clearing') cancelAnimation();
-  }, [cancelAnimation, controllerState.operation]);
-
-  useEffect(() => {
-    if (animationRunning && controllerState.lastAppliedScene?.length === 0) cancelAnimation();
-  }, [animationRunning, cancelAnimation, controllerState.lastAppliedScene]);
 
   useEffect(() => {
     const onVisibilityChange = () => {
@@ -311,7 +308,11 @@ export function useEditorLighting({
           return;
         }
       }
-      if (scene.length === 0) await controller.clear();
+      // An empty spatial pose is a valid held animation frame (for example a
+      // bird quiet interval). Send it through preview so the controller's
+      // clearing operation cannot be mistaken for an explicit stop.
+      if (scene.length === 0 && !animated) await controller.clear();
+      else if (scene.length === 0 && animated) await previewScene(scene);
       else await controller.light(scene);
       if (animated) startAnimation(startedAt);
     } catch (error) {
@@ -320,7 +321,7 @@ export function useEditorLighting({
       busyRef.current = false;
       if (mounted.current) setExplicitStatus('idle');
     }
-  }, [cancelAnimation, controller, definition, startAnimation, staticScene]);
+  }, [cancelAnimation, controller, definition, previewScene, startAnimation, staticScene]);
 
   const stopAnimation = useCallback(async () => {
     cancelAnimation();
