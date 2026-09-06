@@ -151,6 +151,7 @@ export function createAppUpdateService(
   };
 
   const setWaiting = (worker: ServiceWorker) => {
+    const isNewWorker = waiting !== worker;
     waiting = worker;
     publish({
       status: 'waiting',
@@ -158,7 +159,7 @@ export function createAppUpdateService(
       updateAvailable: true,
       blockedReason: snapshot.blockedReason,
       canApply: !snapshot.blockedReason,
-      dismissed: snapshot.dismissed,
+      dismissed: isNewWorker ? false : snapshot.dismissed,
     });
   };
 
