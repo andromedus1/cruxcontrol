@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-09-05T23:28:02Z'
+generated_at: '2026-09-06T00:25:45Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -28,9 +28,14 @@ documents:
       owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs.
     - Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports
       preview before creating fresh local records and compensate partial failures.
+    - Whole-library backup uses a bounded local JSON file and missing-only, identity-preserving restore
+      with conflict blocking and one transaction per IndexedDB store; the two stores are never treated
+      as one atomic snapshot.
     - Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped
       holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active
       climbs and Trash.
+    - PWA updates use an app-owned prompt-mode Workbox registration, shared Web Locks admission, and explicit
+      safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes.
     - Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and
       runs browser inference through ONNX Runtime Web.
   docs/DEPLOY.md:
@@ -80,6 +85,10 @@ documents:
     - Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary
       40-degree drafts without persisting or uploading source images; exact duplicates, including Trash,
       are skipped.
+    - Whole-library backup is a bounded local file of saved records; restore is missing-only, identity-preserving,
+      conflict-blocking, and transactional per IndexedDB store.
+    - PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs,
+      and workspace, mutation, play-through, and BLE session gates protect local work before activation.
   docs/VISION.md:
     summary: 'CruxControl is a Kilter-first, eventually universal climbing-board app. Its first complete
       vertical slice controls a home Fullride 7x10, while its domain, catalog, and controller boundaries
