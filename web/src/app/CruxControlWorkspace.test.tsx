@@ -14,6 +14,7 @@ import type { LocalPlaylist } from '../playlists/types';
 import type { CruxControlRuntime } from './create-runtime';
 import { CruxControlWorkspace } from './CruxControlWorkspace';
 import { activeInstallationId, createAppInstallationRegistry } from './installations';
+import type { AppUpdateService, AppUpdateSnapshot } from '../pwa/update-service.ts';
 
 const original: LocalClimbDraft = {
   ...draftContent({ name: 'Original', installationId: activeInstallationId }),
@@ -94,7 +95,48 @@ function playlist(name: string, entries: LocalPlaylist['entries'] = []): LocalPl
   };
 }
 
+function updateServiceFor(snapshot: AppUpdateSnapshot): AppUpdateService {
+  const current = snapshot;
+  const listeners = new Set<(next: AppUpdateSnapshot) => void>();
+  return {
+    getSnapshot: () => current,
+    subscribe(listener) {
+      listeners.add(listener);
+      listener(current);
+      return () => listeners.delete(listener);
+    },
+    start: vi.fn(() => Promise.resolve()),
+    apply: vi.fn(() => Promise.resolve()),
+    setBlocked: vi.fn(),
+    reload: vi.fn(),
+    dispose: vi.fn(),
+  };
+}
+
 describe('CruxControlWorkspace', () => {
+  it('keeps editing inert until an explicit reload resolves a controller mismatch', async () => {
+    const runtime = runtimeWith();
+    const updateService = updateServiceFor({
+      status: 'reload-required',
+      phase: 'reload-required',
+      message: 'The update finished while this tab was opening. Reload to continue with the new version.',
+      updateAvailable: true,
+      blockedReason: null,
+      canApply: false,
+      dismissed: false,
+    });
+    render(<CruxControlWorkspace runtime={runtime} updateService={updateService} />);
+
+    await screen.findByRole('heading', { name: 'My Climbs' });
+    const workspace = document.querySelector('main.climb-workspace');
+    expect(workspace).not.toBeNull();
+    expect(workspace).toHaveAttribute('inert');
+    expect(workspace).toHaveAttribute('aria-busy', 'true');
+    const banner = screen.getByRole('complementary', { name: 'Application update' });
+    expect(banner.closest('main')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Reload to continue' })).toBeInTheDocument();
+  });
+
   it('opens a write-free Kilter screenshot chooser from the climb workspace', async () => {
     const runtime = runtimeWith();
     render(<CruxControlWorkspace runtime={runtime} />);

@@ -124,6 +124,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const operationCount = useRef(0);
   const [pendingOperations, setPendingOperations] = useState(0);
   const [updateSnapshot, setUpdateSnapshot] = useState<AppUpdateSnapshot | null>(() => updateService?.getSnapshot() ?? null);
+  const updateBlocksWorkspace = updateSnapshot?.status === 'applying' || updateSnapshot?.status === 'reload-required';
 
   useEffect(() => {
     const controller = runtime.controller;
@@ -368,7 +369,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
             onRetry={() => void updateService.retry?.()}
           />
         )}
-        <div inert={updateSnapshot?.status === 'applying' || undefined}>
+        <div inert={updateBlocksWorkspace || undefined}>
           <RouteEditorWorkspace
             definition={runtime.installation.definition}
             draft={active}
@@ -386,11 +387,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   }
 
   return (
-    <main
-      className="climb-workspace"
-      inert={updateSnapshot?.status === 'applying' || undefined}
-      aria-busy={updateSnapshot?.status === 'applying' || undefined}
-    >
+    <>
       {updateService && (
         <AppUpdateControl
           service={updateService}
@@ -399,6 +396,11 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           onRetry={() => void updateService.retry?.()}
         />
       )}
+      <main
+        className="climb-workspace"
+        inert={updateBlocksWorkspace || undefined}
+        aria-busy={updateBlocksWorkspace || undefined}
+      >
       <nav className="collection-switch" aria-label="Workspace destinations">
         {destinations.map((value) => (
           <button
@@ -613,6 +615,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           onRestored={() => refresh(true)}
         />
       )}
-    </main>
+      </main>
+    </>
   );
 }

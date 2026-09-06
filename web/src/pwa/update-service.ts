@@ -154,6 +154,15 @@ export function createAppUpdateService(
   const setWaiting = (worker: ServiceWorker) => {
     const isNewWorker = waiting !== worker;
     waiting = worker;
+    if (snapshot.status === 'applying' || snapshot.status === 'reload-required') {
+      publish({
+        ...snapshot,
+        updateAvailable: true,
+        canApply: false,
+        dismissed: isNewWorker ? false : snapshot.dismissed,
+      });
+      return;
+    }
     publish({
       status: 'waiting',
       message: snapshot.blockedReason ?? 'Your library is saved. Reload when you are ready.',
@@ -279,7 +288,7 @@ export function createAppUpdateService(
       }
       capturedController = container.controller;
       const onExternalControllerChange = () => {
-        if (snapshot.status === 'applying') return;
+        if (snapshot.status === 'applying' && waiting && container.controller === waiting) return;
         guardController();
       };
       container.addEventListener('controllerchange', onExternalControllerChange);
@@ -309,10 +318,11 @@ export function createAppUpdateService(
   };
 
   const reacquireAfterExclusiveFailure = async (message: string) => {
-    // Tell the requester why it is protected before waiting for the shared
-    // lease. The lease cannot be reacquired until the competing tab closes.
+    // Keep the workspace protected while the shared lease is reacquired. The
+    // lease cannot be reacquired until the competing tab closes, and a
+    // transient `waiting` phase would make the editor look safe to use.
     publish({
-      status: 'waiting',
+      status: 'applying',
       message,
       updateAvailable: true,
       blockedReason: snapshot.blockedReason,
@@ -333,8 +343,13 @@ export function createAppUpdateService(
 
   const apply = (): Promise<void> => {
     if (applyPromise) return applyPromise;
+    let activationFailed = false;
     applyPromise = (async () => {
       const activationOutcome = deferred<void>();
+      let prePostFailure: string | null = null;
+      let controllerChangedBeforePost = false;
+      let postMessageFailed = false;
+      let postMessageError: unknown = null;
       const target = waiting;
       const oldController = container?.controller ?? null;
       if (!target || snapshot.status !== 'waiting') return;
@@ -346,61 +361,69 @@ export function createAppUpdateService(
       publish({ ...snapshot, status: 'applying', message: 'Installing update…', canApply: false, dismissed: false });
       await releaseSharedAndWait();
       if (!locks) {
-        if (registration?.waiting !== target) {
-          publish({ ...snapshot, status: 'waiting', message: 'The update is no longer waiting. Try again.', canApply: false });
-          activationOutcome.resolve();
-          return;
-        }
-        const activation = waitForActivation(target, oldController, false, activationOutcome);
-        try {
-          target.postMessage({ type: 'SKIP_WAITING' });
-        } catch (cause) {
-          reportError(cause, 'Could not ask the waiting update to activate.');
-          for (const cancel of [...activationWaits]) cancel();
-          activationOutcome.resolve();
-          return;
-        }
-        await activation;
+        publish({
+          ...snapshot,
+          status: 'waiting',
+          message: 'Close all CruxControl tabs and windows, then reopen CruxControl to finish updating.',
+          canApply: false,
+          dismissed: false,
+        });
         return;
       }
 
       const acquired = deferred<boolean>();
       const held = deferred<void>();
-      const request = locks.request(lockName, { mode: 'exclusive', ifAvailable: true }, async (lock) => {
-        if (!lock) {
-          acquired.resolve(false);
-          return;
-        }
-        exclusiveRelease = held.resolve;
-        acquired.resolve(true);
-        if (!registration || registration.waiting !== target || snapshot.blockedReason || !isVisible() || container?.controller !== oldController) {
-          publish({ ...snapshot, status: 'waiting', message: snapshot.blockedReason ?? 'Finish current work before updating.', canApply: !snapshot.blockedReason });
-          exclusiveRelease = null;
-          held.resolve();
-          activationOutcome.resolve();
-          return;
-        }
-        const activation = waitForActivation(target, oldController, true, activationOutcome);
-        try {
-          target.postMessage({ type: 'SKIP_WAITING' });
-        } catch (cause) {
-          reportError(cause, 'Could not ask the waiting update to activate.');
-          for (const cancel of [...activationWaits]) cancel();
-          exclusiveRelease = null;
-          held.resolve();
-          activationOutcome.resolve();
-          return;
-        }
-        await activation;
-        if (snapshot.status === 'waiting') {
-          exclusiveRelease = null;
-          held.resolve();
-        } else {
-          await held.promise;
-        }
-      });
+      let request: Promise<unknown>;
+      try {
+        request = locks.request(lockName, { mode: 'exclusive', ifAvailable: true }, async (lock) => {
+          if (!lock) {
+            acquired.resolve(false);
+            return;
+          }
+          exclusiveRelease = held.resolve;
+          acquired.resolve(true);
+          if (!registration || registration.waiting !== target || snapshot.blockedReason || !isVisible() || container?.controller !== oldController) {
+            controllerChangedBeforePost = container?.controller !== oldController;
+            prePostFailure = snapshot.blockedReason ?? 'Finish current work before updating.';
+            if (controllerChangedBeforePost) guardController();
+            exclusiveRelease = null;
+            held.resolve();
+            activationOutcome.resolve();
+            return;
+          }
+          const activation = waitForActivation(target, oldController, true, activationOutcome);
+          try {
+            target.postMessage({ type: 'SKIP_WAITING' });
+          } catch (cause) {
+            prePostFailure = 'Could not ask the waiting update to activate.';
+            postMessageFailed = true;
+            postMessageError = cause;
+            for (const cancel of [...activationWaits]) cancel();
+            exclusiveRelease = null;
+            held.resolve();
+            activationOutcome.resolve();
+            return;
+          }
+          await activation;
+          if (snapshot.status === 'waiting' || activationFailed) {
+            exclusiveRelease = null;
+            held.resolve();
+          } else {
+            await held.promise;
+          }
+        });
+      } catch (cause) {
+        await acquireShared();
+        throw cause;
+      }
       request.catch((cause: unknown) => acquired.reject(cause));
-      const hasLock = await acquired.promise;
+      let hasLock: boolean;
+      try {
+        hasLock = await acquired.promise;
+      } catch (cause) {
+        await acquireShared();
+        throw cause;
+      }
       if (!hasLock) {
         await request.catch(() => undefined);
         await reacquireAfterExclusiveFailure('Close your other CruxControl tabs, then try updating again.');
@@ -409,7 +432,22 @@ export function createAppUpdateService(
       // Activation timeout deliberately resolves apply while its callback keeps
       // the exclusive lease. This protects the old editor until reload or tab close.
       await activationOutcome.promise;
-      if (snapshot.status === 'waiting') {
+      if (prePostFailure || activationFailed) {
+        await acquireShared();
+        if (controllerChangedBeforePost || !guardController()) return;
+        if (postMessageFailed) {
+          reportError(postMessageError, prePostFailure ?? 'Could not ask the waiting update to activate.');
+          return;
+        }
+        publish({
+          status: 'waiting',
+          message: prePostFailure ?? 'The update could not activate. Try updating again.',
+          updateAvailable: true,
+          blockedReason: snapshot.blockedReason,
+          canApply: !snapshot.blockedReason,
+          dismissed: snapshot.dismissed,
+        });
+      } else if (snapshot.status === 'waiting') {
         await acquireShared();
       }
     })();
@@ -437,7 +475,8 @@ export function createAppUpdateService(
       const timer = setTimeout(() => {
         cleanup();
         if (targetWorker.state === 'redundant' && container?.controller === old) {
-          publish({ ...snapshot, status: 'waiting', message: 'The update could not activate. Try updating again.', canApply: !snapshot.blockedReason });
+          activationFailed = true;
+          publish({ ...snapshot, status: 'applying', message: 'The update could not activate. Try updating again.', canApply: false });
         } else {
           publish({ ...snapshot, status: 'reload-required', message: 'Update activation is taking longer than expected. Reload or close this tab to finish safely.', canApply: false, dismissed: false });
         }
@@ -458,7 +497,10 @@ export function createAppUpdateService(
         if (targetWorker.state !== 'redundant') return;
         cleanup();
         if (container?.controller === old) {
-          publish({ ...snapshot, status: 'waiting', message: 'The update could not activate. Try updating again.', canApply: !snapshot.blockedReason });
+          activationFailed = true;
+          publish({ ...snapshot, status: 'applying', message: 'The update could not activate. Try updating again.', canApply: false });
+        } else {
+          guardController();
         }
         outcomeToResolve.resolve();
       };
@@ -480,7 +522,16 @@ export function createAppUpdateService(
     apply,
     setBlocked(reason) {
       const blockedReason = reason || null;
-      if (snapshot.status === 'applying' || snapshot.status === 'reload-required') return;
+      if (snapshot.status === 'applying') {
+        publish({
+          ...snapshot,
+          blockedReason,
+          canApply: false,
+          message: blockedReason ?? snapshot.message,
+        });
+        return;
+      }
+      if (snapshot.status === 'reload-required') return;
       if (snapshot.status === 'waiting' || snapshot.status === 'error') {
         publish({ ...snapshot, blockedReason, canApply: snapshot.status === 'waiting' && !blockedReason, message: blockedReason ?? 'Your library is saved. Reload when you are ready.' });
       } else {
