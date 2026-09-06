@@ -34,3 +34,11 @@ unit regressions. Root: real browser fixture and integrated verification. One
 standard independent review completed; this child closes directly on green named-fix
 evidence, without another independent review. Existing storage and recipe contracts
 remain; no new UI structure requires another mock.
+
+## Development fixture reconciliation
+
+Absorb parked `idea-vite-dev-flag-alias` into this same accepted startup correction.
+A real Vite development-server browser test shows the aliased import.meta read bypasses
+Vite's env substitution and still registers the disabled worker. Read import.meta.env.DEV
+directly using the existing vite/client declarations. The browser must open its local
+workspace without an update-error banner. No storage or production behavior changes.
