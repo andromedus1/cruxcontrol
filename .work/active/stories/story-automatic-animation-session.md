@@ -67,3 +67,12 @@ project's small-UI-change exception.
   retained empty animation frame and teardown/visibility/clear cancellation tests.
 - README, SPEC, and ARCHITECTURE were updated. Independent focused documentation
   review found no issues; all 15 local links and generated index lint passed.
+
+## Review (2026-09-12)
+
+**Verdict**: Approve; CI completion pending before terminal transition.
+
+**Blockers**: none.
+
+**Notes**: Bounded inline standalone-story review, standard weight; no independent
+code-review lane required. Reviewed foreground relighting through the existing guard/queue/capacity path, hidden-page cancellation, explicit pairing, stale-write sequence guards, diagnostics admission, and error-only recovery UI. Removed unused stop code and obsolete tests. Current scene data and storage are unchanged.

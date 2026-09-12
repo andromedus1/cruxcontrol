@@ -65,3 +65,12 @@ admission, preserve authored data, and compare all records after updating.
   control; complete saved raw records matched its freshly validated backup.
 - Only operational instructions and shell argument forwarding changed; the app
   does not gain automatic backups from these instructions.
+
+## Review (2026-09-12)
+
+**Verdict**: Approve; CI completion pending before terminal transition.
+
+**Blockers**: none.
+
+**Notes**: Bounded inline standalone-story review, standard weight; no independent
+code-review lane required. Reviewed the direct npm workspace invocation against its real HTTP smoke test. Verified standing preservation instructions match existing IndexedDB stores, backup codecs, and safe update admission. No data-clearing, origin-switching, profile-resetting, or library-writing operation is introduced.

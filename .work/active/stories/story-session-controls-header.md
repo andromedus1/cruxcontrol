@@ -68,3 +68,12 @@ existing controls and patterns. The user's requested grouping pins the layout.
 - A manual probe initially expected Playwright role queries to exclude controls
   behind the native modal. That test assumption was wrong; the corrected probe
   checks the actual modal button's actionability and desktop deduplication.
+
+## Review (2026-09-12)
+
+**Verdict**: Approve; CI completion pending before terminal transition.
+
+**Blockers**: none.
+
+**Notes**: Bounded inline standalone-story review, standard weight; no independent
+code-review lane required. Reviewed component ownership, native-modal access, responsive wrapping, wake-lock lifetime, and update-inert behavior. Existing screen-awake browser coverage proves state survives workspace navigation. Removed only nested connection rows whose production owner is the shared workspace.
