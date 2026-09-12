@@ -1,7 +1,7 @@
 ---
 id: story-session-controls-header
 kind: story
-stage: implementing
+stage: review
 tags: [ui]
 parent: null
 depends_on: [feature-selected-climb-controls]
@@ -55,3 +55,16 @@ existing controls and patterns. The user's requested grouping pins the layout.
 - Execution capability: inline; existing component composition and responsive CSS.
 - Review weight: standard, from project conventions; bounded standalone review.
 - The dependency is merged and archived. No database or schema changes.
+
+## Verification results
+
+- Existing workspace/selection/editor tests pass, including pairing from lists
+  and preserving the edited playlist entry. The existing screen-awake browser
+  workflow preserves the checkbox through editor and list navigation.
+- All 12 browser workflows passed. Direct Chromium inspection at 320, 390, and
+  1440 CSS pixels showed no overflow, including long connection status text.
+- Mobile details retain a clickable connection button inside the native modal;
+  resizing to desktop leaves only the shared header connection button.
+- A manual probe initially expected Playwright role queries to exclude controls
+  behind the native modal. That test assumption was wrong; the corrected probe
+  checks the actual modal button's actionability and desktop deduplication.

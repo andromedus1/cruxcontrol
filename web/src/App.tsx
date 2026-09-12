@@ -6,7 +6,6 @@ import type { BoardDefinition } from './domain/boards/definition';
 import { kilterFullride7x10Definition } from './domain/boards/definitions/kilter-fullride-7x10';
 import { CruxControlWorkspace } from './app/CruxControlWorkspace';
 import { createCruxControlRuntime, type CruxControlRuntime } from './app/create-runtime';
-import { ScreenAwakeControl } from './pwa/ScreenAwakeControl';
 import type { AppUpdateService } from './pwa/update-service.ts';
 import { AppUpdateControl } from './pwa/AppUpdateControl.tsx';
 
@@ -111,10 +110,5 @@ export function App({
         Opening your local climbs…
       </main>
     );
-  return (
-    <>
-      <ScreenAwakeControl />
-      <CruxControlWorkspace runtime={runtime} updateService={updateService} />
-    </>
-  );
+  return <CruxControlWorkspace runtime={runtime} updateService={updateService} />;
 }

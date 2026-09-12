@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BoardLightController } from '../board-control/light-controller';
 import type { BoardDefinition } from '../domain/boards/definition';
 import { ClimbDetail } from './ClimbDetail';
-import { BoardControlBar } from './BoardControlBar';
 import type { ClimbViewKey, ClimbViewRecord } from './types';
 import './LocalClimbViewer.css';
 
@@ -61,6 +60,7 @@ export function LocalClimbViewer({
   );
   const dialogRef = useRef<HTMLDialogElement>(null);
   const dialogMode = useRef<'closed' | 'modeless' | 'modal'>('closed');
+  const [desktopDetails, setDesktopDetails] = useState(() => window.matchMedia('(min-width: 900px)').matches);
   const rowRefs = useRef(new Map<ClimbViewKey, HTMLButtonElement>());
   const returnFocusKey = useRef<ClimbViewKey | null>(null);
 
@@ -69,6 +69,7 @@ export function LocalClimbViewer({
     if (!dialog) return;
     const media = window.matchMedia('(min-width: 900px)');
     const sync = () => {
+      setDesktopDetails(media.matches);
       if (!selected) {
         if (dialog.open) dialog.close();
         dialogMode.current = 'closed';
@@ -98,7 +99,6 @@ export function LocalClimbViewer({
   return (
     <div className="local-climb-viewer">
       <aside className="climb-list-pane" aria-label={heading}>
-        {!selected && <BoardControlBar controller={controller} />}
         <header className="workspace-header">
           <div>
             <p className="eyebrow">Fullride 7×10</p>
@@ -185,6 +185,7 @@ export function LocalClimbViewer({
                 definition={definition}
                 climb={selected}
                 controller={controller}
+                showBoardControls={!desktopDetails}
                 onEdit={onEditClimb ? () => onEditClimb(selected.key) : undefined}
                 onManageLists={onManageLists ? () => onManageLists(selected.key) : undefined}
                 primaryAction={

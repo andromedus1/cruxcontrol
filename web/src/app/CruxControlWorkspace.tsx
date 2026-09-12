@@ -13,6 +13,8 @@ import type { CruxControlRuntime } from './create-runtime';
 import { AppUpdateControl } from '../pwa/AppUpdateControl.tsx';
 import type { AppUpdateService, AppUpdateSnapshot } from '../pwa/update-service.ts';
 import type { BoardLightState } from '../board-control/light-controller.ts';
+import { BoardControlBar } from '../climb-browser/BoardControlBar';
+import { ScreenAwakeControl } from '../pwa/ScreenAwakeControl';
 import './CruxControlWorkspace.css';
 
 export type LocalClimbCollection = 'finished' | 'drafts' | 'trash';
@@ -359,9 +361,17 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
     [replaceDraft],
   );
 
+  const sessionControls = (
+    <header className="workspace-session-controls" inert={updateBlocksWorkspace || undefined}>
+      <ScreenAwakeControl />
+      <BoardControlBar controller={runtime.controller} />
+    </header>
+  );
+
   if (active) {
     return (
       <>
+        {sessionControls}
         {updateService && (
           <AppUpdateControl
             service={updateService}
@@ -389,6 +399,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
 
   return (
     <>
+      {sessionControls}
       {updateService && (
         <AppUpdateControl
           service={updateService}

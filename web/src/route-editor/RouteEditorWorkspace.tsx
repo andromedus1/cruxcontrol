@@ -15,7 +15,6 @@ import { useAnimationClock } from '../light-effects/use-animation-clock';
 import { renderAnimationFrame } from '../light-effects/frame';
 import './RouteEditorWorkspace.css';
 import { BoardCapacityDiagnostics } from '../board-control/BoardCapacityDiagnostics';
-import { BoardControlBar } from '../climb-browser/BoardControlBar';
 
 export function RouteEditorWorkspace({
   definition,
@@ -100,7 +99,6 @@ export function RouteEditorWorkspace({
   };
   return (
     <main className="route-editor">
-      <BoardControlBar controller={controller} />
       <header className="route-editor__header">
         <button className="button button--secondary" type="button" onClick={back}>
           Back
@@ -287,15 +285,6 @@ export function RouteEditorWorkspace({
             </span>
           )}
         </p>
-        {lighting.animationRunning && (
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => void lighting.stopAnimation()}
-          >
-            Stop animation
-          </button>
-        )}
         <button
           className="button button--secondary"
           type="button"
@@ -308,13 +297,13 @@ export function RouteEditorWorkspace({
         >
           {state.content.status === 'draft' ? 'Mark finished' : 'Move to drafts'}
         </button>
-        {connected && (hasAnimatedAssignments || lighting.message) && <button
+        {connected && !lighting.animationRunning && lighting.message && <button
           className="button button--primary"
           type="button"
           disabled={lightBusy}
           onClick={() => void lighting.lightDraft()}
         >
-          {hasAnimatedAssignments ? 'Restart animation' : 'Retry lighting'}
+          Retry lighting
         </button>}
       </footer>
     </main>

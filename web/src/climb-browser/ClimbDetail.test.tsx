@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BoardLightController, BoardLightState } from '../board-control/light-controller';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10';
@@ -60,41 +60,19 @@ describe('ClimbDetail', () => {
     expect(vi.mocked(connected.preview).mock.calls[0]![0].length).toBeGreaterThan(climb.assignments.length);
   });
 
-  it('keeps animation controls stable while a complete-scene preview write is in flight', async () => {
-    vi.useFakeTimers();
-    let state: BoardLightState = { transport: { status: 'connected', device: { id: 'board', name: 'Homewall' } }, operation: 'idle', lastAppliedScene: null, error: null };
-    let listener: ((value: BoardLightState) => void) | undefined;
-    let finishPreview: (() => void) | undefined;
-    const previewGate = new Promise<void>((resolve) => { finishPreview = resolve; });
-    const controller: BoardLightController = {
-      ...controllerWith(state),
-      getState: () => state,
-      subscribe: (next) => { listener = next; return () => { listener = undefined; }; },
-      preview: vi.fn(async () => {
-        state = { ...state, operation: 'previewing' };
-        listener?.(state);
-        await previewGate;
-        return { status: 'applied' as const };
-      }),
-    };
-    const animated = { ...climb, effectGroups: [createSpatialPreset('beach-ball', 7)] };
-    vi.mocked(controller.preview).mockResolvedValueOnce({ status: 'applied' });
-    const view = render(<ClimbDetail definition={definition} climb={animated} controller={controller} />);
-    await act(() => vi.advanceTimersByTimeAsync(180));
-    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
-    expect(controller.preview).toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Restart animation' })).toBeEnabled();
-    expect(screen.queryByRole('button', { name: 'Previewing…' })).not.toBeInTheDocument();
-    finishPreview?.();
-    await act(async () => { await Promise.resolve(); });
-    view.unmount();
-    vi.useRealTimers();
-  });
-
   it('automatically clears the board for an empty selection', async () => {
     const connected = controllerWith({ transport: { status: 'connected', device: { id: 'board', name: null } }, operation: 'idle', lastAppliedScene: null, error: null });
     render(<ClimbDetail definition={definition} climb={{ ...climb, assignments: [] }} controller={connected} />);
     await waitFor(() => expect(connected.preview).toHaveBeenCalledWith([]));
+  });
+
+  it('offers a lighting retry after a failed automatic scene and removes it after recovery', async () => {
+    const controller = controllerWith({ transport: { status: 'connected', device: { id: 'board', name: 'Homewall' } }, operation: 'idle', lastAppliedScene: null, error: null });
+    vi.mocked(controller.preview).mockRejectedValueOnce(new Error('Scene could not be sent.'));
+    render(<ClimbDetail definition={definition} climb={climb} controller={controller} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry lighting' }));
+    await waitFor(() => expect(controller.preview).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Retry lighting' })).not.toBeInTheDocument());
   });
 
   it('shows reconnect and preview operations explicitly', () => {

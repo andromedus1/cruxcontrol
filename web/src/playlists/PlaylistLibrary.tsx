@@ -5,7 +5,6 @@ import type { LocalClimbDraft, LocalDraftId } from '../drafts/types.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
 import type { ConfiguredBoardInstallation } from '../installations/contracts.ts';
 import { playlistReferenceKey } from './codec.ts';
-import { BoardControlBar } from '../climb-browser/BoardControlBar.tsx';
 import { PlaylistImportDialog } from './PlaylistImportDialog.tsx';
 import { PlaylistPlayThrough } from './PlaylistPlayThrough.tsx';
 import { PlaylistShareDialog } from './PlaylistShareDialog.tsx';
@@ -342,7 +341,6 @@ export function PlaylistLibrary({
         )}
       </aside>
       <div className="playlist-editor">
-        {!playing && <BoardControlBar controller={controller} />}
         {error && (
           <div className="playlist-error" role="alert">
             <p>{error.message}</p>
