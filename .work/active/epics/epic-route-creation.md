@@ -1,17 +1,29 @@
 ---
 id: epic-route-creation
 kind: epic
-stage: done
+stage: implementing
 tags: [ui]
 parent: null
 depends_on: [epic-climb-browser, epic-board-control]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-08-02
+updated: 2026-09-12
 ---
 
 # Route Creation: Local Draft Editor + Lighting
+
+## Current delivery state
+
+The original local-editor scope passed review, as recorded below. The expanded
+epic remains open because [the effects feature](../features/epic-route-creation-flashy-light-effect-demos.md)
+still needs its standard independent review. The 2026-09-12 backlog cleanup
+corrected the aggregate stage without claiming that review had run.
+
+The early opt-in Live Preview and explicit Light Draft decisions below are
+superseded by [automatic selected-climb lighting](../../archive/feature-selected-climb-controls.md)
+and the [shared session controls](../../archive/story-session-controls-header.md).
+Use `docs/SPEC.md` for current user-visible behavior.
 
 ## Mockups
 
