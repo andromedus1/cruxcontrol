@@ -70,6 +70,13 @@ update; he does not need to repeat it.
 - Verify saved records and playlist ordering against the fresh backup after updating.
   Keep backups, personal library contents, and device identifiers out of Git.
 
+## Roadmap priorities
+
+Before choosing new work, read the [saved next-milestone priorities](.work/backlog/roadmap-next-milestones.md).
+That capture links the owning work items and records the questions to resolve when
+scoping the shared library. Query `work-view` for current delivery state; readiness
+expresses dependencies, not product priority.
+
 <!-- ux-ui-design:installed -->
 ## UI/UX Design Convention
 

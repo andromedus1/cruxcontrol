@@ -1,20 +1,19 @@
 ---
 id: idea-party-mode
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-09-12
 tags: [ui, ble]
 ---
 
-# Full-color party mode
+# Microphone-responsive lighting effects
 
-Support the Fullride controller's full color range with animated lighting scenes
-across the physical holds. Ideas include:
+Add an optional audio-responsive mode that uses the controlling phone or laptop's
+microphone to drive the existing lighting visualizer.
 
-- A moving, color-changing tie-dye spiral.
-- Blue, purple, and teal patterns that move like water waves flowing in and out.
-- Additional visualizers that animate different full-color patterns across the board.
-- An optional audio-responsive mode that uses the controlling phone or laptop's
-  microphone to drive the visualizer.
+The spiral, ocean tide, and other full-color background scenes already exist in
+[the effects feature](../active/features/epic-route-creation-flashy-light-effect-demos.md).
+The remaining idea is microphone responsiveness, not a separate general-purpose
+party-mode runtime.
 
-Keep this as an easter egg/extension so it does not delay the first local
-create-save-light milestone.
+Keep this as optional polish behind the reliable wall-session loop and shared
+climb library, as reaffirmed in the 2026-09-12 roadmap review.

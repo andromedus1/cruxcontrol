@@ -8,7 +8,7 @@ depends_on: [epic-route-creation-animated-light-designs, epic-route-creation-kil
 release_binding: null
 gate_origin: null
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-09-12
 ---
 
 # Flashy Light-Effect Demonstrations
@@ -316,6 +316,15 @@ visibility/disconnect/unmount retain existing cancellation semantics.
 - Verification: the current 68-file / 443-test suite, TypeScript typecheck, ESLint, Vite/PWA production build, and Playwright phone suite are green.
 - Powered-board observations: Android Chrome dogfooding confirmed effects start and remain capacity-safe; Beach Ball, Pong, and Matrix read successfully; Bird Flock and Pac-Man are recognizable; cadence/path-variance fixes followed observed repetition; and the circled inverted pentagram was refined through multiple physical-board bounces.
 - Closure status: implementation and acceptance evidence are complete. The feature remains `implementing` until its required standard independent feature review runs; no physical-dogfood blocker remains.
+
+## Backlog consolidation (2026-09-12)
+
+Andrew approved retiring the [game-effect preset idea](../../archive/idea-board-game-effect-presets.md)
+and [protected-background idea](../../archive/idea-protected-whole-board-effects.md)
+because their core capabilities are delivered here. The optional Pong score/serve
+beat and a stronger perceptual color-distance guarantee were retired with those
+ideas; neither is claimed as implemented or added to this feature's acceptance.
+The required standard independent feature review remains outstanding.
 
 ## Other agent review
 
