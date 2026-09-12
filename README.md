@@ -30,8 +30,9 @@ account or application server required.
   never uploaded or persisted.
 - Connect the physical board from Android or desktop Chromium, then selected climbs,
   saved effects, and hold/effect edits light automatically. Connect/Reconnect remains
-  an explicit action; retry, restart, stop, and clear controls remain available. The existing
-  API-2 profile supports complete static scenes of up to 127 lights and complete
+  an explicit action in the persistent workspace header beside **Keep screen awake**.
+  **Retry lighting** appears when lighting is blocked or fails and animation is not running.
+  The existing API-2 profile supports complete static scenes of up to 127 lights and complete
   animated scenes of up to 20 lights at 2 FPS; unsafe scenes are preserved but refused
   rather than silently truncated.
 - Save and edit assignment effects and independent background presets, including
@@ -45,13 +46,17 @@ account or application server required.
 
 The installed PWA must remain in the foreground while an animation is playing. Page
 visibility loss, disconnect, clear, or leaving the relevant view stops playback safely.
-The app-wide **Keep screen awake** toggle prevents automatic screen timeout while the
-app is visible on supported browsers. It starts off for each app session and requests
-screen wakefulness again when you return to the app if still enabled. The device can
+Returning to the foreground automatically lights the selected scene again when the
+board is still connected and the normal capacity checks permit playback.
+The persistent header groups board connection and the app-wide **Keep screen awake**
+toggle above the library navigation and editor. A mobile climb-details dialog also
+keeps connection controls accessible inside the dialog. **Keep screen awake** prevents
+automatic screen timeout while the app is visible on supported browsers.
+It starts off for each app session and requests screen wakefulness again when you
+return to the app if still enabled. The device can
 deny or release the request; the control shows its status and offers **Retry screen
-awake**. Keeping the screen on uses more battery. This does not restart playback stopped
-by hiding the app or allow animation in the background or after manually locking the
-screen.
+awake**. Keeping the screen on uses more battery. Animation does not run in the
+background or while the screen is manually locked.
 
 The calibrated Fullride hold photograph is private, user-supplied source material for
 local use. Public distribution requires permission or replacement artwork; the

@@ -76,8 +76,11 @@ feature item bodies in `.work/`, not here. Capabilities are in
    always come from the generated definition; pixels never become domain geometry.
 6. **Climb Browser** — the implemented source-neutral My Climbs/Drafts/Trash
    list/detail surface drives the renderer and controller for browser-local climbs.
-   The shared `BoardControlBar` owns explicit Connect/Reconnect actions across browser,
-   editor, and playlist views. Climb detail and editing share automatic scene lighting
+   `CruxControlWorkspace` groups `BoardControlBar` and `ScreenAwakeControl` in a
+   persistent header above navigation and editing. The connection bar owns explicit
+   Connect/Reconnect actions. Mobile climb detail retains a connection row within its
+   modal; desktop detail and playlist play-through use the workspace header without a
+   duplicate row. Climb detail and editing share automatic scene lighting
    through `useEditorLighting`; view changes never request a Bluetooth chooser.
    Fast community-catalog filtering and shareable provider URLs remain downstream of
    catalog bootstrap.
@@ -88,8 +91,9 @@ feature item bodies in `.work/`, not here. Capabilities are in
    queue; a connected transition also schedules the current scene. Scene-content keys
    prevent metadata edits or repository refreshes from restarting unchanged scenes.
    Effects preflight capacity before their initial queued frame and start scheduling
-   only after that frame is applied. Retry/restart/stop remain explicit controls;
-   automatic lighting never initiates connection. Provider adapters own future
+   only after that frame is applied. Retry lighting is shown only for blocked or failed
+   lighting while animation is not running. Automatic lighting never initiates
+   connection. Provider adapters own future
    source-native encoding and optional publication. Versioned effect
    groups share one two-pass pure frame engine: assignment effects render first, procedural
    spatial layers target definition geometry without fake assignments, and semantic roles
@@ -104,9 +108,8 @@ feature item bodies in `.work/`, not here. Capabilities are in
    API-2 decorative colors avoid exact encoded role colors and black after quantization; this
    protects encoded bytes rather than promising perceptual contrast. Saved recipe snapshots,
    dynamic target masks, deterministic footprints, and a conservative reserve plan feed the
-   existing complete-scene BLE scheduler. Empty spatial scenes are valid animation frames;
-   only explicit stop/clear/disconnect/visibility cancellation ends playback. The
-   snapshot-backed spatial registry supports fifteen kinds, including the v2-only
+   existing complete-scene BLE scheduler. Empty spatial scenes are valid animation frames.
+   The snapshot-backed spatial registry supports fifteen kinds, including the v2-only
    Fireflies, Shooting Stars, Jellyfish, and Embers. These four recipes carry only
    their kind; shared group fields own palette, period, intensity, reserve, seed, and
    targets. Their default reserves are 8/6/9/10 lights and their default periods are
@@ -118,9 +121,11 @@ feature item bodies in `.work/`, not here. Capabilities are in
    renderer changes without migrating saved records or rewriting authored settings;
    original v1 rendering remains intact. Frogger is excluded from the picker; its registry entry,
    editor controls, codecs, and version-1/version-2 renderers remain available for saved
-   recipes and imports. Browser playback is foreground-only; an empty spatial
-   scene is a valid animation frame, while direct clear, stop, disconnect, visibility loss,
-   or leaving the relevant view cancels scheduling rather than relying on suspended timers.
+   recipes and imports. Browser playback is foreground-only. Direct clear, disconnect,
+   visibility loss, leaving the relevant view, and capacity diagnostics cancel scheduling.
+   On return to foreground visibility, the hook reapplies the selected scene through
+   the same guarded `lightDraft` path, retaining connection, capacity, and applied-frame
+   checks before animation resumes. Hidden pages never schedule background animation.
 8. **Screenshot Import** — a local-only Kilter Android Fullride adapter hashes and
    analyzes selected PNGs sequentially, maps detected role rings through the immutable
    board definition, and presents an editable review before using the existing climb
@@ -136,7 +141,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    unavailable Trash, missing, or incompatible-board entries without cross-database
    writes. Play-through keeps position ephemeral and delegates preview and automatic
    lighting to the shared climb-detail/controller boundary. Management and unavailable
-   play-through views retain the shared explicit connection control. Available local
+   play-through views retain connection access through the workspace header. Available local
    entries expose Edit through the existing route editor; the workspace retains the
    source playlist ID and optional entry key in memory so Back resumes that list or
    play-through entry without changing persisted membership or navigation schemas.

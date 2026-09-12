@@ -127,14 +127,6 @@ export function useEditorLighting({
     cancelAnimation();
   }, [cancelAnimation, controllerState.transport.status]);
 
-  useEffect(() => {
-    const onVisibilityChange = () => {
-      if (document.hidden) cancelAnimation();
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-  }, [cancelAnimation]);
-
   const startAnimation = useCallback(
     (startedAt: number) => {
       if (!controller || !mounted.current || document.hidden) return;
@@ -274,6 +266,15 @@ export function useEditorLighting({
     }
   }, [cancelAnimation, controller, definition, previewScene, startAnimation, staticScene]);
 
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden) cancelAnimation();
+      else void lightDraft();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [cancelAnimation, lightDraft]);
+
   // Repository refreshes recreate arrays; only actual scene changes should send
   // lights or restart playback. Metadata edits and status notifications do not.
   const sceneKey = JSON.stringify([assignments, effectGroups]);
@@ -287,37 +288,6 @@ export function useEditorLighting({
     }
     return cancelAnimation;
   }, [cancelAnimation, controllerState.transport.status, lightDraft, previewDelayMs, sceneKey]);
-
-  const stopAnimation = useCallback(async () => {
-    cancelAnimation();
-    if (!controller || controller.getState().transport.status !== 'connected') return;
-    try {
-      setExplicitStatus('lighting');
-      const scene = staticScene();
-      const transport = controller.getState().transport;
-      const profile = measuredCapacityProfile(
-        apiLevelForAuroraDeviceName(
-          transport.status === 'connected' ? transport.device.name : null,
-        ),
-      );
-      if (profile) {
-        const assessment = assessStaticScene(profile, scene.length);
-        if (!assessment.accepted) {
-          setMessage(assessment.warning ?? 'This scene is outside the measured board capacity.');
-          return;
-        }
-      }
-      if (scene.length === 0) await controller.clear();
-      else await controller.light(scene);
-      if (mounted.current) setMessage(null);
-    } catch (error) {
-      if (mounted.current) {
-        setMessage(error instanceof Error ? error.message : 'Could not stop the animation.');
-      }
-    } finally {
-      if (mounted.current) setExplicitStatus('idle');
-    }
-  }, [cancelAnimation, controller, staticScene]);
 
   const status =
     explicitStatus !== 'idle'
@@ -340,6 +310,5 @@ export function useEditorLighting({
             effectiveAnimationFps,
           }),
     lightDraft,
-    stopAnimation,
   };
 }

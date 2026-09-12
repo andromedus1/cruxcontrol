@@ -12,6 +12,7 @@ export interface ClimbDetailProps {
   readonly definition: BoardDefinition;
   readonly climb: ClimbViewRecord;
   readonly controller?: BoardLightController | null;
+  readonly showBoardControls?: boolean;
   readonly headingLevel?: 1 | 2;
   readonly onEdit?: () => void;
   readonly onManageLists?: () => void;
@@ -25,6 +26,7 @@ export function ClimbDetail({
   definition,
   climb,
   controller,
+  showBoardControls = true,
   headingLevel = 2,
   onEdit,
   onManageLists,
@@ -53,7 +55,6 @@ export function ClimbDetail({
     [climb.assignments, definition, effectGroups, previewElapsedMs],
   );
   const hasCustom = climb.assignments.some(({ appearance }) => appearance.kind === 'custom');
-  const actionLabel = animated ? 'Restart animation' : 'Retry lighting';
   let operationStatus = '';
   if (lighting.animationRunning) {
     operationStatus = 'Animation running. Keep CruxControl in the foreground.';
@@ -75,7 +76,7 @@ export function ClimbDetail({
 
   return (
     <article className="climb-detail" aria-labelledby={boardHeadingId}>
-      <BoardControlBar controller={controller} />
+      {showBoardControls && <BoardControlBar controller={controller} />}
       <header className="climb-detail__header">
         <div>
           <p className="eyebrow">{climb.origin === 'local-draft' ? 'Local climb' : 'Climb'}</p>
@@ -157,14 +158,9 @@ export function ClimbDetail({
             {destructiveAction.label}
           </button>
         )}
-        {lighting.animationRunning && (
-          <button className="button button--secondary" type="button" onClick={() => void lighting.stopAnimation()}>
-            Stop animation
-          </button>
-        )}
-        {connected && (animated || lighting.message || state.error) && (
+        {connected && !lighting.animationRunning && (lighting.message || state.error) && (
           <button className="button button--primary" type="button" disabled={!ready} onClick={light}>
-            {actionLabel}
+            Retry lighting
           </button>
         )}
       </div>

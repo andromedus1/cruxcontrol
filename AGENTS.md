@@ -50,6 +50,26 @@ Do not print or persist the token, or change the global active account. For HTTP
 operations, use `gh auth git-credential` as a command-scoped credential helper so Git
 uses the same account. Keep application and infrastructure changes on pull requests.
 
+## Phone updates and library preservation
+
+Preserving Andrew's climbs and playlists is a standing requirement for every app
+update; he does not need to repeat it.
+
+- Identify the phone's existing app origin and browser profile before updating.
+  Keep the same scheme, hostname, and port; `localhost` and `127.0.0.1`, or different
+  ports, do not share browser storage. The established USB preview origin is
+  `http://localhost:4173/`; verify the actual phone state rather than assuming it.
+- Before agent-operated phone maintenance, save and validate a fresh whole-library
+  backup outside Git, including drafts, finished climbs, Trash, playlists, ordered
+  memberships, and effect recipes. The app does not make these backups automatically.
+- Let saves finish and use the app's normal update admission flow. Do not bypass
+  editing, pending-write, other-tab, or connected-board safeguards to force a reload.
+- Routine update authorization does not authorize changing authored library data.
+  Never clear site data, delete/recreate user databases, or uninstall/reset the browser
+  or PWA as an update shortcut.
+- Verify saved records and playlist ordering against the fresh backup after updating.
+  Keep backups, personal library contents, and device identifiers out of Git.
+
 <!-- ux-ui-design:installed -->
 ## UI/UX Design Convention
 

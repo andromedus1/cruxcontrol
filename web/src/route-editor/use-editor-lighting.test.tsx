@@ -267,7 +267,7 @@ describe('useEditorLighting', () => {
     expect(slow).toHaveBeenCalledOnce();
   });
 
-  it('keeps an intentionally empty bird frame alive until an explicit stop', async () => {
+  it('keeps an intentionally empty bird frame alive', async () => {
     vi.useFakeTimers();
     const transport = new MockBoardByteTransport({ devices: [{ id: 'api2', name: 'Kilter Board' }] });
     const controller = createFullrideLightController({ definition: kilterFullride7x10Definition, transport });
@@ -285,50 +285,9 @@ describe('useEditorLighting', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
     expect(transport.operations.filter(({ type }) => type === 'write').length).toBeGreaterThan(firstWriteCount);
     expect(result.current.animationRunning).toBe(true);
-    await act(async () => { await result.current.stopAnimation(); });
-    const stoppedWriteCount = transport.operations.filter(({ type }) => type === 'write').length;
-    await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
-    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(stoppedWriteCount);
   });
 
-  it('stops and settles the static base scene, then schedules no later frames', async () => {
-    vi.useFakeTimers();
-    const transport = new MockBoardByteTransport({ devices: [{ id: 'api2', name: 'Kilter Board' }] });
-    const controller = createFullrideLightController({
-      definition: kilterFullride7x10Definition,
-      transport,
-    });
-    await controller.requestAndConnect();
-    const { result } = renderHook(() =>
-      useEditorLighting({
-        definition: kilterFullride7x10Definition,
-        assignments: animatedAssignments,
-        effectGroups,
-        controller,
-      }),
-    );
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(180);
-    });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(100);
-    });
-    await act(async () => {
-      expect(result.current.animationRunning).toBe(true);
-      await result.current.stopAnimation();
-    });
-    expect(result.current.animationRunning).toBe(false);
-    expect(controller.getState().lastAppliedScene).toEqual([
-      { placementId: animatedAssignments[0]!.placementId, color: apiLevel3Color(3) },
-    ]);
-    const writes = transport.operations.filter(({ type }) => type === 'write').length;
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
-    });
-    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(writes);
-  });
-
-  it('cancels active animation on visibility loss, disconnect, direct clear, and unmount', async () => {
+  it('resumes on foreground return and cancels on hiding, disconnect, clear, and unmount', async () => {
     vi.useFakeTimers();
     const transport = new MockBoardByteTransport({ devices: [{ id: 'api2', name: 'Kilter Board' }] });
     const controller = createFullrideLightController({
@@ -351,10 +310,13 @@ describe('useEditorLighting', () => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true });
     act(() => document.dispatchEvent(new Event('visibilitychange')));
     expect(view.result.current.animationRunning).toBe(false);
+    const hiddenWrites = transport.operations.filter(({ type }) => type === 'write').length;
+    await act(async () => { await vi.advanceTimersByTimeAsync(2_000); });
+    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(hiddenWrites);
     Object.defineProperty(document, 'hidden', { configurable: true, value: false });
 
     await act(async () => {
-      await view.result.current.lightDraft();
+      document.dispatchEvent(new Event('visibilitychange'));
     });
     expect(view.result.current.animationRunning).toBe(true);
     act(() => transport.simulateRemoteDisconnect());

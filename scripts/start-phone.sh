@@ -36,7 +36,7 @@ if [[ -f "${preview_pid}" ]] && kill -0 "$(<"${preview_pid}")" 2>/dev/null; then
 fi
 
 echo "Starting CruxControl preview server..."
-nohup npm run preview -- --host 127.0.0.1 --port "${preview_port}" \
+nohup npm -w web run preview -- --host 127.0.0.1 --port "${preview_port}" \
   >"${preview_log}" 2>&1 &
 echo "$!" >"${preview_pid}"
 

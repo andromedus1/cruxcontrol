@@ -111,7 +111,6 @@ describe('PlaylistPlayThrough', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByText('2 of 4')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'First climb' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Connect' })).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'Light this climb' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { BoardLightController } from '../board-control/light-controller.ts';
 import { ClimbDetail } from '../climb-browser/ClimbDetail.tsx';
-import { BoardControlBar } from '../climb-browser/BoardControlBar.tsx';
 import type { LocalDraftId } from '../drafts/types.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
 import type { ResolvedPlaylistEntry } from './resolve.ts';
@@ -105,7 +104,6 @@ export function PlaylistPlayThrough({
           Exit play-through
         </button>
       </header>
-      {!available && <BoardControlBar controller={controller} />}
       {current ? (
         <>
           <nav className="playlist-play-through__navigation" aria-label="Playlist navigation">
@@ -135,6 +133,7 @@ export function PlaylistPlayThrough({
                 definition={definition}
                 climb={current.climb}
                 controller={controller}
+                showBoardControls={false}
                 headingLevel={2}
                 onEdit={current.reference.kind === 'local' && onEditLocalClimb
                   ? () => {

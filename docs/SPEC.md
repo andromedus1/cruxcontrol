@@ -45,8 +45,10 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 ### 1. Board Control (BLE)
 
 - Connect to the active board through a capability-selected controller adapter.
-  Connect/Reconnect remains an explicit action in the shared board control bar,
-  available in climb browsing, editing, and list views. Selecting or editing a climb
+  Connect/Reconnect remains an explicit action beside Keep screen awake in the
+  persistent workspace header above library navigation and the editor. A mobile
+  climb-details modal retains its own accessible connection row; desktop detail and
+  playlist play-through use the workspace header. Selecting or editing a climb
   never opens the Bluetooth chooser automatically.
 - The first adapter controls the Kilter Fullride 7x10 via Web Bluetooth.
 - Automatically light the selected climb when a board is connected, including on
@@ -100,8 +102,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   and retryable; conflicts offer reload-stored or save-a-copy recovery without silent
   overwrites.
 - Connected boards follow hold and effect edits automatically after a short debounce.
-  Metadata edits and autosave refreshes do not restart unchanged scenes. Retry lighting,
-  Restart animation, and Stop animation remain explicit recovery/playback controls.
+  Metadata edits and autosave refreshes do not restart unchanged scenes. Retry lighting
+  is available only when lighting is blocked or fails and animation is not running.
 - Add editable assignment effects and independent spatial background presets: Ocean Tide,
   Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock,
   a fading circled inverted pentagram, Curious Bumblebee, Fireflies, Shooting Stars,
@@ -132,7 +134,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   after API-2 quantization to avoid exact encoded role colors and encoded black; this is
   an encoded-byte invariant, not a perceptual color-distinction guarantee. Zero-intensity
   spatial groups emit dark/empty scenes, and intentionally empty animation frames remain
-  part of playback until an explicit stop, clear, disconnect, or visibility cancellation.
+  part of playback until clear, disconnect, visibility loss, or leaving the relevant
+  view cancels scheduling. Capacity diagnostics retain their cancellation behavior.
   Stable tide and spiral target samples carry color bands and geometry through loop joins;
   actor ordering remains coherent in reverse paths, and Pong plans each paddle to its own
   wall contact. A direct clear explicitly cancels playback, while an empty animated frame
@@ -141,6 +144,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   worst-case reserve before the first write. API-2 playback refuses plans above 20 lights
   with a breakdown; it never thins a saved design. Screen preview and saving remain unrestricted.
   Browser animation playback is foreground-only and stops when the page becomes hidden.
+  Returning to the foreground automatically reapplies the selected scene and resumes
+  its effects through the same connected-board and capacity checks. Hidden pages never
+  schedule background animation.
 - Import Kilter Android Fullride screenshots through an on-device detection and review
   flow. Users can correct detected holds and roles before confirmation; confirmed
   climbs enter the existing local lifecycle as ordinary drafts at 40°.
@@ -306,9 +312,9 @@ The model mirrors the official Kilter SQLite schema (see
   recovery action. Only the requesting tab reloads after its captured worker becomes the
   controller.
 - The editor is responsive at Android-phone and desktop Chromium widths, autosaves edits,
-  automatically updates a connected board, retains explicit connection and playback
-  recovery controls, and exposes named keyboard-operable controls and
-  non-color-only role markers.
+  automatically updates a connected board, keeps the session controls in the workspace
+  header, offers Retry lighting for blocked or failed playback, and exposes named
+  keyboard-operable controls and non-color-only role markers.
 - Deterministic tests cover definition/renderer, climb and playlist
   persistence/concurrency/recovery and screenshot recognition/review/import,
   API-level-2/3 bytes, the existing API-2 capacity policy, Bluetooth lifecycle,
