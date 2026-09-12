@@ -117,3 +117,31 @@ one independent feature review after integrated verification.
 - Physical Bluetooth hardware awaits the user's dogfooding session.
 - PR CI and standard independent review are pending. Claude peer authentication
   expired; review uses the allowed same-harness fresh-context fallback.
+
+## Review findings and fixes
+
+Standard same-harness fresh-context review (GPT-5.6 Sol) found two material issues
+and one stale message. All are accepted and handled in this feature:
+
+- A cancelled animation tick could pollute the next animation's timing samples.
+  Timing history now updates only inside the live generation guard. The new delayed
+  tick → animated scene change regression was confirmed red against the pre-fix code.
+- Automatic playback could write between capacity diagnostic frames. The controller
+  now publishes a `diagnosing` operation for the full case lifetime, cancels lighting
+  owner timers synchronously, supersedes preview requests, and rejects explicit
+  writes during that lifetime. A real-controller test covers animation cancellation,
+  edits during the case, rejected writes, and the final clear with no later relight.
+- The diagnostic panel now names Connect, disables Start during board operations,
+  and reports a rejected start instead of leaving an unhandled promise.
+- CI exposed a browser-platform assumption in the mobile assertion: Web Bluetooth
+  availability differs between local macOS and Linux Chromium. The responsive test
+  now asserts the named board connection status; pairing behavior remains covered
+  through the real-controller/workspace tests.
+
+Closure requires fix verification and green CI, with no second independent pass
+under the project's standard review weight.
+
+Fix verification: 638 tests across 84 files, all 12 production browser workflows,
+lint, TypeScript, and production build pass. Both material findings are resolved;
+the same-climb slow-frame test was confirmed failing before its fix. Final PR CI
+remains the completion gate.

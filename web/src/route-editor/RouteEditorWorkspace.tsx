@@ -75,7 +75,7 @@ export function RouteEditorWorkspace({
   const back = () => {
     if (!risky || window.confirm('Leave with changes that may not be saved?')) onBack();
   };
-  const lightBusy = lighting.status === 'lighting';
+  const lightBusy = lighting.status === 'lighting' || lighting.controllerState.operation === 'diagnosing';
   const unsupported = !controller || lighting.controllerState.transport.status === 'unsupported';
   const connected = lighting.controllerState.transport.status === 'connected';
   const activatePlacement = (placementId: BoardPlacementId) => {

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { apiLevelForAuroraDeviceName, type AuroraApiLevel } from './api-level-2-codec';
 import { encodedSceneCost } from './capacity-model';
 import type { BoardLightController, CapacityCase, CapacityCaseResult } from './light-controller';
+import { useBoardLightState } from '../climb-browser/use-board-light-state';
 
 // Include both Aurora packet boundaries and nearby search points so physical testing can
 // distinguish controller message assembly from an aggregate LED/load ceiling.
@@ -16,7 +17,7 @@ export function BoardCapacityDiagnostics({
   readonly controller: BoardLightController | null | undefined;
   readonly maxLights: number;
 }) {
-  const state = controller?.getState();
+  const state = useBoardLightState(controller);
   const connected = state?.transport.status === 'connected';
   const apiLevel: AuroraApiLevel = apiLevelForAuroraDeviceName(
     connected ? state.transport.device.name : null,
@@ -25,6 +26,7 @@ export function BoardCapacityDiagnostics({
   const [requestedFps, setRequestedFps] = useState<CapacityCase['requestedFps']>(0);
   const [interChunkDelayMs, setInterChunkDelayMs] = useState<CapacityCase['interChunkDelayMs']>(20);
   const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CapacityCaseResult | null>(null);
   const [observation, setObservation] = useState<'correct' | 'unexpected' | null>(null);
   const cost = useMemo(() => encodedSceneCost(apiLevel, lightCount), [apiLevel, lightCount]);
@@ -32,6 +34,7 @@ export function BoardCapacityDiagnostics({
   const start = async () => {
     if (!controller?.runCapacityCase) return;
     setRunning(true);
+    setError(null);
     setResult(null);
     setObservation(null);
     try {
@@ -44,6 +47,8 @@ export function BoardCapacityDiagnostics({
           interChunkDelayMs,
         }),
       );
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Could not start the board capacity test.');
     } finally {
       setRunning(false);
     }
@@ -129,7 +134,7 @@ export function BoardCapacityDiagnostics({
       <div className="board-capacity__actions">
         <button
           type="button"
-          disabled={!connected || running || !controller?.runCapacityCase}
+          disabled={!connected || running || state.operation !== 'idle' || !controller?.runCapacityCase}
           onClick={() => void start()}
         >
           Start case
@@ -152,7 +157,8 @@ export function BoardCapacityDiagnostics({
           Clear board
         </button>
       </div>
-      {!connected && <p>Connect the board with “Connect &amp; light” before starting.</p>}
+      {!connected && <p>Use Connect above to pair the board before starting.</p>}
+      {error && <p role="alert">{error}</p>}
       {result && (
         <div className="board-capacity__result">
           <p role="status">

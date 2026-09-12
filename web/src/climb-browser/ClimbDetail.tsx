@@ -63,6 +63,8 @@ export function ClimbDetail({
     operationStatus = 'Clearing the board…';
   } else if (state.operation === 'previewing') {
     operationStatus = 'Lighting this climb…';
+  } else if (state.operation === 'diagnosing') {
+    operationStatus = 'Board capacity test running.';
   }
   const boardHeadingId = `board-${String(climb.key).replace(/[^a-z0-9_-]/gi, '-')}`;
 

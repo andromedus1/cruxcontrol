@@ -75,7 +75,7 @@ export function useEditorLighting({
   useEffect(() => controller?.subscribe((state) => {
     // Observe the operation synchronously: React may batch clearing and idle
     // notifications into one render. Empty animation previews use previewing.
-    if (state.operation === 'clearing') cancelAnimation();
+    if (state.operation === 'clearing' || state.operation === 'diagnosing') cancelAnimation();
     setControllerState(state);
   }), [cancelAnimation, controller]);
 
@@ -190,11 +190,11 @@ export function useEditorLighting({
           }
           return;
         }
-        recentBatchMs.current = [
-          ...recentBatchMs.current.slice(-8),
-          performance.now() - batchStartedAt,
-        ];
         if (mounted.current && animationSequence.current === sequence) {
+          recentBatchMs.current = [
+            ...recentBatchMs.current.slice(-8),
+            performance.now() - batchStartedAt,
+          ];
           schedule = chooseAnimationSchedule(profile, frame.length, recentBatchMs.current);
           if (schedule.warning) setMessage(schedule.warning);
           if (schedule.fps === 0) {
@@ -217,7 +217,8 @@ export function useEditorLighting({
   );
 
   const lightDraft = useCallback(async () => {
-    if (!controller || controller.getState().transport.status !== 'connected' || document.hidden) return;
+    if (!controller || controller.getState().transport.status !== 'connected' ||
+      controller.getState().operation === 'diagnosing' || document.hidden) return;
     cancelAnimation();
     const sequence = previewSequence.current;
     try {

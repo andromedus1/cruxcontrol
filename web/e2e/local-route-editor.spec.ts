@@ -115,7 +115,7 @@ test('keeps the complete editor and persistent actions usable on a phone viewpor
   await page.getByRole('button', { name: 'Create climb' }).click();
   await expect(page.locator('.board-renderer__viewport')).toHaveAttribute('data-scale', '1');
   await expect(page.getByRole('button', { name: 'Mark finished' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Connect', exact: true })).toBeVisible();
+  await expect(page.getByRole('status', { name: 'Board connection' })).toBeVisible();
   await expect(page.getByText('Live Preview', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: /^Hold 1, Unselected/ }).focus();
   await page.keyboard.press('Enter');

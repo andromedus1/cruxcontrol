@@ -129,6 +129,61 @@ describe('useEditorLighting', () => {
     expect(result.current.message).toMatch(/128 lights.*14 writes.*still saved.*not sent/i);
   });
 
+  it('starts the latest animation without timing samples from a cancelled slow frame', async () => {
+    vi.useFakeTimers();
+    const transport = new MockBoardByteTransport({ devices: [{ id: 'api2', name: 'Kilter Board' }] });
+    const controller = createFullrideLightController({ definition: kilterFullride7x10Definition, transport });
+    await controller.requestAndConnect();
+    let groups = effectGroups;
+    const view = renderHook(() => useEditorLighting({
+      definition: kilterFullride7x10Definition, assignments: animatedAssignments, effectGroups: groups, controller,
+    }));
+    await act(() => vi.advanceTimersByTimeAsync(180));
+    let release!: () => void;
+    vi.spyOn(transport, 'writeBatch').mockImplementationOnce(() => new Promise<void>((resolve) => { release = resolve; }));
+    await act(() => vi.advanceTimersByTimeAsync(500));
+    groups = effectGroups.map((group) => ({ ...group, periodMs: 2000 }));
+    view.rerender();
+    await act(() => vi.advanceTimersByTimeAsync(1500));
+    await act(async () => { release(); });
+    expect(view.result.current.animationRunning).toBe(true);
+    expect(view.result.current.message).toBeNull();
+    const writes = transport.operations.filter(({ type }) => type === 'write').length;
+    await act(() => vi.advanceTimersByTimeAsync(500));
+    expect(transport.operations.filter(({ type }) => type === 'write').length).toBeGreaterThan(writes);
+  });
+
+  it('reserves the complete capacity-test lifetime and cancels automatic lighting', async () => {
+    vi.useFakeTimers();
+    const transport = new MockBoardByteTransport({ devices: [{ id: 'api2', name: 'Kilter Board' }] });
+    const controller = createFullrideLightController({ definition: kilterFullride7x10Definition, transport });
+    await controller.requestAndConnect();
+    let assignments = animatedAssignments;
+    const view = renderHook(() => useEditorLighting({
+      definition: kilterFullride7x10Definition, assignments, effectGroups, controller,
+    }));
+    await act(() => vi.advanceTimersByTimeAsync(180));
+    expect(view.result.current.animationRunning).toBe(true);
+    transport.resetOperations();
+    let run!: ReturnType<NonNullable<typeof controller.runCapacityCase>>;
+    act(() => {
+      run = controller.runCapacityCase!({ apiLevel: 2, lightCount: 1, requestedFps: 1, durationMs: 1000, interChunkDelayMs: 0 });
+    });
+    expect(controller.getState().operation).toBe('diagnosing');
+    expect(view.result.current.animationRunning).toBe(false);
+    await expect(controller.preview([])).resolves.toEqual({ status: 'superseded' });
+    await expect(controller.light([])).rejects.toThrow(/capacity test/);
+    await expect(controller.clear()).rejects.toThrow(/capacity test/);
+    assignments = [];
+    view.rerender();
+    await act(() => vi.advanceTimersByTimeAsync(1200));
+    await expect(run).resolves.toMatchObject({ status: 'completed' });
+    expect(controller.getState().operation).toBe('idle');
+    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(3);
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(3);
+  });
+
   it('refuses API2 animation above 20 total lights before the first board write', async () => {
     const assignments = kilterFullride7x10Definition.placements.slice(0, 21).map((placement) => ({
       placementId: placement.id,
