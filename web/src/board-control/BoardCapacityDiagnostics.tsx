@@ -25,7 +25,7 @@ export function BoardCapacityDiagnostics({
   const [lightCount, setLightCount] = useState(Math.min(20, maxLights));
   const [requestedFps, setRequestedFps] = useState<CapacityCase['requestedFps']>(0);
   const [interChunkDelayMs, setInterChunkDelayMs] = useState<CapacityCase['interChunkDelayMs']>(20);
-  const [running, setRunning] = useState(false);
+  const running = state.operation === 'diagnosing';
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CapacityCaseResult | null>(null);
   const [observation, setObservation] = useState<'correct' | 'unexpected' | null>(null);
@@ -33,7 +33,6 @@ export function BoardCapacityDiagnostics({
 
   const start = async () => {
     if (!controller?.runCapacityCase) return;
-    setRunning(true);
     setError(null);
     setResult(null);
     setObservation(null);
@@ -49,8 +48,6 @@ export function BoardCapacityDiagnostics({
       );
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Could not start the board capacity test.');
-    } finally {
-      setRunning(false);
     }
   };
 
