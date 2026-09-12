@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-09-05
+updated: 2026-09-12
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
@@ -45,8 +45,15 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 ### 1. Board Control (BLE)
 
 - Connect to the active board through a capability-selected controller adapter.
+  Connect/Reconnect remains an explicit action in the shared board control bar,
+  available in climb browsing, editing, and list views. Selecting or editing a climb
+  never opens the Bluetooth chooser automatically.
 - The first adapter controls the Kilter Fullride 7x10 via Web Bluetooth.
-- Light holds for any selected climb through the Nordic UART protocol, selecting API
+- Automatically light the selected climb when a board is connected, including on
+  connection and as the user changes climbs or edits the visible scene. Coalesce rapid
+  scene changes through the controller's latest-frame-wins queue; saved effects start
+  automatically within the existing capacity and foreground limits.
+  Light holds through the Nordic UART protocol, selecting API
   level 2 or 3 from the connected controller identity. The existing API-2 controller
   policy is the accepted control profile for the Fullride path.
 - Run explicit, bounded Fullride capacity cases from the editor with exact packet/write
@@ -92,7 +99,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Autosave coalesces edits behind optimistic revisions. Storage failures remain dirty
   and retryable; conflicts offer reload-stored or save-a-copy recovery without silent
   overwrites.
-- Explicit Light Draft and opt-in, default-off Live Preview reuse the board controller.
+- Connected boards follow hold and effect edits automatically after a short debounce.
+  Metadata edits and autosave refreshes do not restart unchanged scenes. Retry lighting,
+  Restart animation, and Stop animation remain explicit recovery/playback controls.
 - Add editable assignment effects and independent spatial background presets: Ocean Tide,
   Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock,
   a fading circled inverted pentagram, Curious Bumblebee, Fireflies, Shooting Stars,
@@ -196,8 +205,12 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   copies in exact order, never overwrites existing records, and retains unresolved
   provider references with an explicit warning.
 - **Play-through on the board:** when connected, step through the playlist
-  climb-by-climb, lighting each in turn. Without a board connection the playlist
-  is still fully usable for browsing/sharing.
+  climb-by-climb, automatically lighting each available climb and its saved effects.
+  Without a board connection the playlist is still fully usable for browsing/sharing.
+- Edit available local climbs from list management or play-through. Back returns to
+  the same list and, for play-through, the same entry. This navigation context is
+  ephemeral; edits use the climb's existing identity and preserve list memberships.
+  Unavailable entries retain connection access while remaining unavailable to edit.
 - Distinct from auto-generated circuits (Capability 7, algorithmic) and from
   session tracking (Capability 4, logging attempts).
 
@@ -257,7 +270,8 @@ The model mirrors the official Kilter SQLite schema (see
   Their ordered references survive reload, allow one climb in multiple lists, and
   resolve Trash or missing climbs without rewriting membership rows. Exact-order
   play-through keeps navigation position ephemeral, remains browsable while
-  disconnected, and lights only through the existing explicit controller action.
+  disconnected, and automatically lights the current available climb after an explicit
+  board connection. Editing a list member returns to the same list or play-through entry.
   Portable sharing uses a versioned local-snapshot/provider-reference envelope with
   bounded fragment links and lossless files. Import previews compatibility before any
   write, creates fresh identities, and compensates created climb copies if list
@@ -292,7 +306,8 @@ The model mirrors the official Kilter SQLite schema (see
   recovery action. Only the requesting tab reloads after its captured worker becomes the
   controller.
 - The editor is responsive at Android-phone and desktop Chromium widths, autosaves edits,
-  retains explicit lighting actions, and exposes named keyboard-operable controls and
+  automatically updates a connected board, retains explicit connection and playback
+  recovery controls, and exposes named keyboard-operable controls and
   non-color-only role markers.
 - Deterministic tests cover definition/renderer, climb and playlist
   persistence/concurrency/recovery and screenshot recognition/review/import,

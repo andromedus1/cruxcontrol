@@ -6,7 +6,7 @@
 #   2 = enforce (missing v2 fields are errors)
 # Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-09-06T04:18:54Z
+generated_at: 2026-09-12T18:40:23Z
 generated_from: frontmatter
 total_docs: 23
 
@@ -17,7 +17,7 @@ documents:
     title: CruxControl — Architecture
     type: planning
     kind: planning
-    updated: 2026-09-05
+    updated: 2026-09-12
     consumer_hint: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 
   - path: docs/DEPLOY.md
@@ -38,7 +38,7 @@ documents:
     title: CruxControl — Specification
     type: planning
     kind: planning
-    updated: 2026-09-05
+    updated: 2026-09-12
     consumer_hint: CruxControl capabilities, domain model, constraints, and non-functional requirements
 
   - path: docs/VISION.md
