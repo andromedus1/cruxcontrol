@@ -15,6 +15,12 @@ make their own playlists, and create climbs.
 The update mechanism is undecided. The first audience (an invited circle or all
 CruxControl users) and their phone platforms still need clarification.
 
+Andrew approved this as the next major addition in the
+[saved milestone priorities](roadmap-next-milestones.md). Aim for explicit climb
+submission, library updates independent of app releases, and personal drafts and
+playlists that remain under each person's control. Scope and architecture are
+deferred until the audience questions are answered in a later session.
+
 This is distinct from importing manufacturers' existing community libraries.
 Andrew also reaffirmed interest in supporting Kilter, MoonBoard, Tension, and
 other boards, with regularly updated community catalogs, as a farther-out idea.
