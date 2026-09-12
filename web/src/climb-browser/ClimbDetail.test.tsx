@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BoardLightController, BoardLightState } from '../board-control/light-controller';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10';
@@ -32,7 +32,7 @@ describe('ClimbDetail', () => {
     for (const label of ['Start · Green', 'Middle · Blue', 'Finish · Red/Pink', 'Foot-only · Gold/Yellow', 'Custom colors']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
-    expect(screen.getByRole('button', { name: 'Light this climb' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Light this climb' })).not.toBeInTheDocument();
   });
 
   it('keeps connection explicit and lights exactly one projected scene', async () => {
@@ -45,9 +45,8 @@ describe('ClimbDetail', () => {
 
     const connected = controllerWith({ transport: { status: 'connected', device: { id: 'board', name: 'Homewall' } }, operation: 'idle', lastAppliedScene: null, error: null });
     render(<ClimbDetail definition={definition} climb={climb} controller={connected} />);
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Light this climb' })); });
-    expect(connected.light).toHaveBeenCalledOnce();
-    expect(connected.light).toHaveBeenCalledWith([
+    await waitFor(() => expect(connected.preview).toHaveBeenCalledOnce());
+    expect(connected.preview).toHaveBeenCalledWith([
       { placementId: definition.placements[0].id, color: definition.rolePresets.start.lightColor },
       { placementId: definition.placements[1].id, color: 255 },
     ]);
@@ -57,9 +56,8 @@ describe('ClimbDetail', () => {
     const connected = controllerWith({ transport: { status: 'connected', device: { id: 'board', name: 'Homewall' } }, operation: 'idle', lastAppliedScene: null, error: null });
     const animated = { ...climb, effectGroups: [createSpatialPreset('beach-ball', 7)] };
     render(<ClimbDetail definition={definition} climb={animated} controller={connected} />);
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Light this climb' })); });
-    expect(connected.light).toHaveBeenCalledOnce();
-    expect(vi.mocked(connected.light).mock.calls[0]![0].length).toBeGreaterThan(climb.assignments.length);
+    await waitFor(() => expect(connected.preview).toHaveBeenCalledOnce());
+    expect(vi.mocked(connected.preview).mock.calls[0]![0].length).toBeGreaterThan(climb.assignments.length);
   });
 
   it('keeps animation controls stable while a complete-scene preview write is in flight', async () => {
@@ -80,8 +78,9 @@ describe('ClimbDetail', () => {
       }),
     };
     const animated = { ...climb, effectGroups: [createSpatialPreset('beach-ball', 7)] };
+    vi.mocked(controller.preview).mockResolvedValueOnce({ status: 'applied' });
     const view = render(<ClimbDetail definition={definition} climb={animated} controller={controller} />);
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Light this climb' })); });
+    await act(() => vi.advanceTimersByTimeAsync(180));
     await act(async () => { await vi.advanceTimersByTimeAsync(500); });
     expect(controller.preview).toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Restart animation' })).toBeEnabled();
@@ -92,11 +91,10 @@ describe('ClimbDetail', () => {
     vi.useRealTimers();
   });
 
-  it('labels an empty scene as a clear-board operation', async () => {
+  it('automatically clears the board for an empty selection', async () => {
     const connected = controllerWith({ transport: { status: 'connected', device: { id: 'board', name: null } }, operation: 'idle', lastAppliedScene: null, error: null });
     render(<ClimbDetail definition={definition} climb={{ ...climb, assignments: [] }} controller={connected} />);
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Clear board' })); });
-    expect(connected.clear).toHaveBeenCalledOnce();
+    await waitFor(() => expect(connected.preview).toHaveBeenCalledWith([]));
   });
 
   it('shows reconnect and preview operations explicitly', () => {
@@ -122,7 +120,6 @@ describe('ClimbDetail', () => {
       error: null,
     });
     render(<ClimbDetail definition={definition} climb={climb} controller={previewing} />);
-    expect(screen.getByRole('button', { name: 'Previewing…' })).toBeDisabled();
-    expect(screen.getByText('Previewing board changes…')).toBeInTheDocument();
+    expect(screen.getByText('Lighting this climb…')).toBeInTheDocument();
   });
 });

@@ -12,7 +12,8 @@ account or application server required.
 - Move climbs between **Draft**, **Finished**, and recoverable **Trash** without losing
   their identity or contents. Trash remains until you explicitly choose **Delete forever**.
 - Organize climbs into multiple named lists, reorder them, play through them on the
-  board, and share complete lists by bounded URL or JSON file.
+  board, and share complete lists by bounded URL or JSON file. Edit a local climb from
+  a list and return to the same list or play-through entry.
 - Download and restore a bounded whole-library JSON backup containing saved climbs,
   Trash, orphan climbs, all installations, playlists, shared memberships, IDs, revisions,
   timestamps, and animation recipes. Recovery adds missing IDs, skips identical records,
@@ -27,7 +28,9 @@ account or application server required.
 - Import Kilter Fullride screenshots through a local review-and-correction flow, or
   import the supplied set of 16 climbs as ordinary 40° drafts. Screenshot pixels are
   never uploaded or persisted.
-- Light and clear the physical board from Android or desktop Chromium. The existing
+- Connect the physical board from Android or desktop Chromium, then selected climbs,
+  saved effects, and hold/effect edits light automatically. Connect/Reconnect remains
+  an explicit action; retry, restart, stop, and clear controls remain available. The existing
   API-2 profile supports complete static scenes of up to 127 lights and complete
   animated scenes of up to 20 lights at 2 FPS; unsafe scenes are preserved but refused
   rather than silently truncated.

@@ -19,7 +19,7 @@ import {
   type CapacityTraceSummary,
 } from './capacity-trace.ts';
 
-export type LightOperation = 'idle' | 'lighting' | 'clearing' | 'previewing';
+export type LightOperation = 'idle' | 'lighting' | 'clearing' | 'previewing' | 'diagnosing';
 
 export type PreviewResult = { readonly status: 'applied' } | { readonly status: 'superseded' };
 
@@ -213,6 +213,7 @@ export function createFullrideLightController(
     operation: ExplicitTask['operation'],
     resolved: ResolvedScene,
   ): Promise<void> => {
+    if (diagnosticAbort) return Promise.reject(new Error('Wait for the board capacity test to finish.'));
     if (pendingPreview) {
       pendingPreview.resolve(SUPERSEDED);
       pendingPreview = null;
@@ -269,6 +270,7 @@ export function createFullrideLightController(
       return enqueueExplicit('clearing', resolveScene([]));
     },
     preview(scene) {
+      if (diagnosticAbort) return Promise.resolve(SUPERSEDED);
       const resolved = resolveScene(scene);
       if (pendingPreview) pendingPreview.resolve(SUPERSEDED);
       return new Promise<PreviewResult>((resolve, reject) => {
@@ -294,6 +296,9 @@ export function createFullrideLightController(
       }
       const abort = new AbortController();
       diagnosticAbort = abort;
+      // Reserve the transport for the entire case, including inter-frame waits.
+      // Lighting owners cancel their timers on this synchronous notification.
+      publish(state.transport, 'diagnosing');
       const trace: CapacityTraceEvent[] = [];
       const startedAt = performance.now();
       const event = (
@@ -388,6 +393,7 @@ export function createFullrideLightController(
           }
         }
         diagnosticAbort = null;
+        publish(state.transport, 'idle', null);
       }
       return Object.freeze({
         status: outcome.status,

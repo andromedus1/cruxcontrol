@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BoardLightController, BoardLightState } from '../board-control/light-controller.ts';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
@@ -112,7 +112,7 @@ describe('PlaylistPlayThrough', () => {
     expect(screen.getByText('2 of 4')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'First climb' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Connect' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Light this climb' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Light this climb' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByText('3 of 4')).toBeInTheDocument();
@@ -139,7 +139,7 @@ describe('PlaylistPlayThrough', () => {
     expect(controller.preview).not.toHaveBeenCalled();
   });
 
-  it('lights exactly the current available climb only after the explicit action', async () => {
+  it('automatically lights the first climb and the next selected climb', async () => {
     const first = entry(FIRST_ID, 'First climb', 0);
     const second = entry(SECOND_ID, 'Second climb', 1);
     const entries = [first, second];
@@ -159,11 +159,10 @@ describe('PlaylistPlayThrough', () => {
       />,
     );
 
+    await waitFor(() => expect(controller.preview).toHaveBeenCalledWith([{ placementId: definition.placements[0]!.id, color: definition.rolePresets.start.lightColor }]));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(controller.light).not.toHaveBeenCalled();
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Light this climb' })); });
-    expect(controller.light).toHaveBeenCalledOnce();
-    expect(controller.light).toHaveBeenCalledWith([
+    await waitFor(() => expect(controller.preview).toHaveBeenCalledTimes(2));
+    expect(controller.preview).toHaveBeenLastCalledWith([
       {
         placementId: definition.placements[1]!.id,
         color: definition.rolePresets.start.lightColor,

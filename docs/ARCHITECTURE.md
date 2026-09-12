@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-09-05
+updated: 2026-09-12
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -76,12 +76,21 @@ feature item bodies in `.work/`, not here. Capabilities are in
    always come from the generated definition; pixels never become domain geometry.
 6. **Climb Browser** — the implemented source-neutral My Climbs/Drafts/Trash
    list/detail surface drives the renderer and controller for browser-local climbs.
+   The shared `BoardControlBar` owns explicit Connect/Reconnect actions across browser,
+   editor, and playlist views. Climb detail and editing share automatic scene lighting
+   through `useEditorLighting`; view changes never request a Bluetooth chooser.
    Fast community-catalog filtering and shareable provider URLs remain downstream of
    catalog bootstrap.
 7. **Route Editor** — a reducer-driven responsive workspace edits unrestricted local
    climbs, coalesces lifecycle-aware autosaves, exposes conflict/failure recovery, and
-   composes the renderer with explicit Light Draft and opt-in Live Preview. Provider
-   adapters own future source-native encoding and optional publication. Versioned effect
+   composes the renderer with `useEditorLighting`. Connected-board scene changes are
+   debounced for 180 ms and sent through the controller's latest-frame-wins preview
+   queue; a connected transition also schedules the current scene. Scene-content keys
+   prevent metadata edits or repository refreshes from restarting unchanged scenes.
+   Effects preflight capacity before their initial queued frame and start scheduling
+   only after that frame is applied. Retry/restart/stop remain explicit controls;
+   automatic lighting never initiates connection. Provider adapters own future
+   source-native encoding and optional publication. Versioned effect
    groups share one two-pass pure frame engine: assignment effects render first, procedural
    spatial layers target definition geometry without fake assignments, and semantic roles
    are reasserted last. Version 1 dispatch preserves existing saved recipes; version-2
@@ -125,8 +134,12 @@ feature item bodies in `.work/`, not here. Capabilities are in
    management surface, and exact-order board play-through for named, annotated,
    manually ordered local/provider climb references. Runtime resolution preserves
    unavailable Trash, missing, or incompatible-board entries without cross-database
-   writes. Play-through keeps position ephemeral and delegates preview, connection,
-   and explicit serialized lighting to the existing climb-detail/controller boundary.
+   writes. Play-through keeps position ephemeral and delegates preview and automatic
+   lighting to the shared climb-detail/controller boundary. Management and unavailable
+   play-through views retain the shared explicit connection control. Available local
+   entries expose Edit through the existing route editor; the workspace retains the
+   source playlist ID and optional entry key in memory so Back resumes that list or
+   play-through entry without changing persisted membership or navigation schemas.
    Portable export snapshots resolvable local climb content without sender-local IDs
    and preserves namespaced provider references in a strict independently versioned
    envelope. Fragment URLs are used only below the bounded URL limit; lossless JSON

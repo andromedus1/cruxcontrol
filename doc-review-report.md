@@ -1,128 +1,80 @@
 # Doc Review Report
 
 **Project:** CruxControl
-**Audited snapshot:** `de09b418a7fbf4c0e0f4085b5b9b93ba1a13ff72` (`de09b41`)
-**Date:** 2026-09-05
-**Documents reviewed:** 5 (5 system, 0 module)
-**Passes run:** 1 system-level pass; no module pass (no module planning docs discovered)
+**Audited snapshot:** implementation at `760a5da` plus the documentation working tree
+**Date:** 2026-09-12
+**Documents reviewed:** 6 (5 system planning documents plus README)
+**Passes run:** 1 independently delegated system-level consistency pass
 **Issues found:** Critical 0 · High 0 · Medium 0 · Low 0 · Info 0
 
 ## Scope and method
 
-The review used the research-pipeline `doc-review` workflow and its build-process
-reference. The current planning corpus was taken from `docs/knowledge-index.yaml`:
-`docs/VISION.md`, `docs/PRINCIPLES.md`, `docs/SPEC.md`, `docs/ARCHITECTURE.md`,
-and `docs/DEPLOY.md`. The 17 research entries informed provenance and blocking-brief
-checks; they were not re-audited as planning documents. The one historical entry,
-`docs/architecture/history/north-star.md`, was excluded as superseded.
+This bounded research-pipeline `doc-review` pass followed the build-process reference
+and checked the automatic connected-board lighting and playlist editing update.
+The planning corpus came from `docs/knowledge-index.yaml`: `docs/VISION.md`,
+`docs/PRINCIPLES.md`, `docs/SPEC.md`, `docs/ARCHITECTURE.md`, and `docs/DEPLOY.md`.
+README was included as the user-facing description of these capabilities.
 
-Module discovery found no `modules/` directory, no non-historical module north-star
-entry, and no module architecture set under `docs/`. The excluded untracked paths
-`.peeragent/`, `docs/kilter_docs/`, and `docs/set_boulders/` were not treated as
-planning corpus.
+An independent agent compared the changed prose with the current lighting hook,
+climb detail, route editor, shared connection bar, playlist management/play-through,
+and workspace navigation. It checked cross-document consistency, frontmatter,
+local links, and indexed blocking-brief existence. No module planning documents
+required separate passes. No Critical or High finding required a fix/re-audit loop.
 
-The audit checked document ownership and cross-document consistency, frontmatter,
-referenced paths, indexed blocking metadata, and the current code contracts behind
-the recently documented animation, library recovery, and PWA update decisions. It
-did not run unit, build, browser, or physical-board tests; those are outside this
-bounded documentation pass. This report does not establish deployed status or
-physical hardware acceptance.
+Research substance, historical planning, completed work items, and the untracked
+`.peeragent/`, `docs/kilter_docs/`, and `docs/set_boulders/` directories were outside
+this review. The report establishes source/document consistency, not deployed
+behavior or physical-board acceptance. Unit, browser, and hardware tests were not
+run by this documentation pass.
 
-## Pass 1: System-Level
+## Pass 1: System-level findings
 
-### Critical (0)
+No findings at any severity.
 
-None.
+## Verified contracts
 
-### High (0)
+- `useEditorLighting` uses scene-content keys and a 180 ms debounce to update an
+  already-connected board when the selected scene changes or a connection completes.
+  Metadata edits and repository refreshes do not restart unchanged scenes. Animation
+  starts only after the initial queued frame is applied.
+- `ClimbDetail` and `RouteEditorWorkspace` share that hook. `BoardControlBar` retains
+  explicit Connect/Reconnect actions; automatic scene updates do not open a chooser.
+  Retry/restart/stop remain available, and Clear remains in editor capacity diagnostics.
+- `CruxControlWorkspace` keeps the source playlist ID and optional entry key in memory.
+  `PlaylistLibrary` and `PlaylistPlayThrough` use them to restore list/play-through
+  context after editing an available local climb. Unavailable climbs cannot be edited.
+- The update introduces no conflict with VISION, PRINCIPLES, or DEPLOY. Deployment
+  remains gated by the approved CI workflow.
 
-None.
+## Frontmatter, links, and index
 
-### Medium (0)
+All 5 system planning documents have compliant frontmatter under the project's
+established `type: planning` convention. SPEC and ARCHITECTURE carry the update date
+2026-09-12. All 15 local Markdown links resolve.
 
-None.
+The installed knowledge-index regenerator ran with an explicit discovery filter
+excluding the two untracked private input directories. It found 23 documents
+(5 planning, 17 research, 1 historical) and 108 substrate items, with 0 errors and
+0 warnings. All three derived index files were regenerated. The active feature
+count reflects the in-progress delivery snapshot; terminal stage changes are owned
+by the delivery workflow.
 
-### Low (0)
+## Blocking briefs and phase checks
 
-None.
+All 7 indexed blocking-brief paths exist:
 
-### Info (0)
+- `.research/briefs/cloudflare-deploy/parent.md`
+- `.research/briefs/kilter-grade-prediction/parent.md`
+- `docs/briefs/board-control-web-bluetooth.md`
+- `docs/briefs/board-rendering-and-filtering.md`
+- `docs/briefs/catalog-sync-api.md`
+- `docs/briefs/foundation-pwa-sqlite.md`
+- `docs/briefs/recommendations-and-training.md`
 
-None.
-
-## Frontmatter and index integrity
-
-All 5 current planning documents have non-empty `description`, `type`, `kind`, and
-`updated` fields. The project index consistently records them as `kind: planning`
-and the index reports 5 planning, 17 research, and 1 historical document. The
-index’s generated counts and paths match the discovered tracked corpus at the
-audited snapshot.
-
-All planning-document links resolve, including the references to `SPEC.md`,
-`ARCHITECTURE.md`, `VISION.md`, the two local briefs, the Cloudflare research brief,
-and the superseded history document. No broken cross-reference was found.
-
-## Clean areas
-
-- The intent split is coherent: VISION owns the product direction and non-goals;
-  PRINCIPLES owns durable decision rules; SPEC owns capabilities and domain
-  contracts; ARCHITECTURE owns boundaries, flows, dependencies, and risks; DEPLOY
-  owns the operational runbook.
-- The Fullride first-slice scope, provider/controller/board separation, local-first
-  storage, source provenance, and Chromium Web Bluetooth constraint are stated
-  consistently across the current planning docs.
-- The animation compatibility boundary is documented accurately. `renderSpatialGroup`
-  dispatches saved recipe version 1 to the v1 renderer and version 2 to the v2
-  renderer (`web/src/light-effects/spatial-frame.ts:7-20`); the preset registry
-  creates v2 presets and explicit upgrades preserve authored identity/settings
-  (`web/src/light-effects/preset-library.ts:6-37`). The v2 bee has six seeded
-  waypoints and closed final-flight behavior (`web/src/light-effects/spatial-frame-v2.ts:58-168`).
-  The documented empty-frame, foreground-only, and capacity behavior is represented
-  by the editor lighting lifecycle (`web/src/route-editor/use-editor-lighting.ts:148-155,183-259,311-317`).
-- Whole-library backup claims match the implementation: the format and limits are
-  explicit (`web/src/library-backup/codec.ts:15-22`), review compares canonical
-  same-ID records and reports conflicts without replacement IDs
-  (`web/src/library-backup/codec.ts:202-233`), and restore commits each IndexedDB
-  store independently while adding only absent records and aborting on conflict
-  (`web/src/library-backup/service.ts:81-103`; `web/src/library-backup/indexeddb-store.ts:80-179`).
-  Trash is retained until the explicit permanent-delete command
-  (`web/src/drafts/indexeddb-repository.ts:225-334`; `web/src/app/CruxControlWorkspace.tsx:283-308`).
-- Prompt-mode PWA claims match the configuration and coordinator. Workbox keeps
-  `skipWaiting` and `clientsClaim` false and registration injection disabled
-  (`web/vite.config.ts:9-16,45-52`); startup registers and admits once at module
-  scope (`web/src/main.tsx:6-9`). The coordinator checks visibility, blockers,
-  waiting-worker identity, controller identity, and an exclusive `ifAvailable`
-  lock before posting activation, then retains protection on delayed activation
-  (`web/src/pwa/update-service.ts:344-452`). Workspace state supplies editor,
-  import/backup, mutation, list, play-through, and board-operation blockers
-  (`web/src/app/CruxControlWorkspace.tsx:224-250`).
-- DEPLOY matches the repository workflow and Wrangler configuration: the workflow
-  uses the documented CI lane, `needs: [web]`, main-push and `ENABLE_DEPLOY` gates,
-  and the documented Cloudflare secrets (`.github/workflows/ci.yml:8-21,77-90`;
-  `web/wrangler.jsonc`).
-
-## Blocking briefs status
-
-There is no current roadmap planning document with phase tables or `DONE`/`NEXT`
-output claims, so there are no roadmap blocking-brief lines to verify and no DONE
-phase verification table to produce. The seven `blocks_phase` entries carried by
-the index all resolve to files on disk:
-
-| Brief | Indexed consumer | Exists on disk? | Status |
-| --- | --- | --- | --- |
-| `.research/briefs/cloudflare-deploy/parent.md` | `epic-foundation-ci-deploy` | Yes | Written |
-| `.research/briefs/kilter-grade-prediction/parent.md` | `epic-grade-prediction` | Yes | Written |
-| `docs/briefs/board-control-web-bluetooth.md` | `epic-board-control` | Yes | Written |
-| `docs/briefs/board-rendering-and-filtering.md` | `epic-climb-browser` | Yes | Written |
-| `docs/briefs/catalog-sync-api.md` | `epic-catalog-sync` | Yes | Written |
-| `docs/briefs/foundation-pwa-sqlite.md` | `epic-foundation` | Yes | Written |
-| `docs/briefs/recommendations-and-training.md` | `epic-recommendations` | Yes | Written |
+No phase completion claim changed in this update. Delivery decomposition and stage
+verification remain in `.work/`; this pass did not re-audit completed work items.
 
 ## Provenance summary
-
-The 16 indexed research brief/report artifacts with a `research_method` field are
-grouped as follows. The separate `research-analysis` landscape entry is excluded
-from this brief/report aggregation, per the workflow.
 
 | Research method | Briefs/reports | Latest updated |
 | --- | ---: | --- |
@@ -131,17 +83,8 @@ from this brief/report aggregation, per the workflow.
 | `/research` | 1 | 2026-06-14 |
 | `migrated` | 2 | 2026-08-02 |
 
-The highest-fidelity method present is `/deep-research`. Four lower-tier `/brief`
-artifacts predate the latest `/deep-research` artifact and are informational refresh
-candidates under the workflow’s recency rule: `board-control-web-bluetooth`,
-`board-rendering-and-filtering`, `catalog-sync-api`, and
-`recommendations-and-training`. This is provenance information, not a documentation
-finding; no refresh was commissioned in this bounded audit.
-
-## Current limits
-
-The review verifies source/document alignment at the named Git snapshot and checks
-that implementation contracts and referenced paths exist. It does not claim that a
-real board has been exercised, that the PWA has been deployed, that Cloudflare
-credentials or branch protection are configured, or that future catalog, logbook,
-ML, recommendation, native iOS, or additional-board functionality is implemented.
+The skill's mechanical age/tool-tier rule identifies four older `/brief` entries
+as refresh candidates: board-control-web-bluetooth, board-rendering-and-filtering,
+catalog-sync-api, and recommendations-and-training. This is informational metadata;
+it does not establish that their research conclusions are stale or require refresh
+for this bounded behavior update.

@@ -115,7 +115,8 @@ test('keeps the complete editor and persistent actions usable on a phone viewpor
   await page.getByRole('button', { name: 'Create climb' }).click();
   await expect(page.locator('.board-renderer__viewport')).toHaveAttribute('data-scale', '1');
   await expect(page.getByRole('button', { name: 'Mark finished' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Connect & light' })).toBeVisible();
+  await expect(page.getByRole('status', { name: 'Board connection' })).toBeVisible();
+  await expect(page.getByText('Live Preview', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: /^Hold 1, Unselected/ }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: /^Hold 1, Start/ })).toBeVisible();
@@ -156,7 +157,7 @@ test('persists multi-list membership, manual order, and Trash-safe resolution', 
   await page.getByRole('button', { name: /Lists.*2 lists/ }).click();
   await page.getByRole('button', { name: /Projects.*2 climbs/ }).click();
   await page.getByRole('button', { name: 'Move up Moon Arete' }).click();
-  await expect(page.getByRole('status')).toHaveText('Saved');
+  await expect(page.getByRole('status').filter({ hasText: /^Saved$/ })).toHaveText('Saved');
   await expect(page.locator('.playlist-entries li strong')).toHaveText([
     'Moon Arete',
     'Tidal Wave',
@@ -204,10 +205,17 @@ test('persists multi-list membership, manual order, and Trash-safe resolution', 
   await page.getByRole('button', { name: 'Play list' }).click();
   await expect(page.getByText('1 of 2')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Moon Arete' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Light this climb' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Light this climb' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByText('2 of 2')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Tidal Wave' })).toBeVisible();
+  await page.getByRole('button', { name: 'Edit climb', exact: true }).click();
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Tidal Wave');
+  await page.getByLabel('Name', { exact: true }).fill('Tidal Wave edited');
+  await expect(page.locator('.save-chip')).toHaveText('saved');
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(page.getByText('2 of 2')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tidal Wave edited' })).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,

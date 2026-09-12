@@ -5,6 +5,7 @@ import type { LocalClimbDraft, LocalDraftId } from '../drafts/types.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
 import type { ConfiguredBoardInstallation } from '../installations/contracts.ts';
 import { playlistReferenceKey } from './codec.ts';
+import { BoardControlBar } from '../climb-browser/BoardControlBar.tsx';
 import { PlaylistImportDialog } from './PlaylistImportDialog.tsx';
 import { PlaylistPlayThrough } from './PlaylistPlayThrough.tsx';
 import { PlaylistShareDialog } from './PlaylistShareDialog.tsx';
@@ -21,6 +22,11 @@ interface RetryState {
   readonly run: () => Promise<void>;
 }
 
+export interface PlaylistEditReturn {
+  readonly playlistId: PlaylistId;
+  readonly entryKey?: string;
+}
+
 export interface PlaylistLibraryProps {
   readonly playlists: readonly LocalPlaylist[];
   readonly localClimbs: readonly LocalClimbDraft[];
@@ -33,6 +39,8 @@ export interface PlaylistLibraryProps {
   readonly onChanged: (playlist: LocalPlaylist | null) => void;
   readonly onRefresh: () => Promise<void>;
   readonly onOpenLocalClimb: (id: LocalDraftId) => void;
+  readonly onEditLocalClimb?: (id: LocalDraftId, returnTo: PlaylistEditReturn) => void;
+  readonly initialView?: PlaylistEditReturn | null;
   readonly initialImportFragment?: string | null;
   readonly history?: PlaylistHistoryAdapter;
   readonly transports?: PlaylistTransportAdapters;
@@ -68,6 +76,8 @@ export function PlaylistLibrary({
   onChanged,
   onRefresh,
   onOpenLocalClimb,
+  onEditLocalClimb,
+  initialView,
   initialImportFragment = null,
   history,
   transports,
@@ -77,11 +87,12 @@ export function PlaylistLibrary({
   onOperationEnd,
 }: PlaylistLibraryProps) {
   const playlistsRef = useRef(playlists);
-  const [selectedId, setSelectedId] = useState<PlaylistId | null>(playlists[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<PlaylistId | null>(initialView?.playlistId ?? playlists[0]?.id ?? null);
   const [newName, setNewName] = useState('');
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
-  const [playingId, setPlayingId] = useState<PlaylistId | null>(null);
+  const [playingId, setPlayingId] = useState<PlaylistId | null>(initialView?.entryKey ? initialView.playlistId : null);
+  const [resumeEntryKey, setResumeEntryKey] = useState(initialView?.entryKey);
   const [sharing, setSharing] = useState(false);
   const [importing, setImporting] = useState(() => Boolean(initialImportFragment));
   const [pendingImportFragment, setPendingImportFragment] = useState(initialImportFragment);
@@ -331,6 +342,7 @@ export function PlaylistLibrary({
         )}
       </aside>
       <div className="playlist-editor">
+        {!playing && <BoardControlBar controller={controller} />}
         {error && (
           <div className="playlist-error" role="alert">
             <p>{error.message}</p>
@@ -346,7 +358,11 @@ export function PlaylistLibrary({
             definition={definition}
             controller={controller}
             compatibilityIssue={resolvedCompatibilityIssue}
-            onExit={() => setPlayingId(null)}
+            onExit={() => { setPlayingId(null); setResumeEntryKey(undefined); }}
+            initialEntryKey={resumeEntryKey}
+            onEditLocalClimb={onEditLocalClimb
+              ? (id, entryKey) => onEditLocalClimb(id, { playlistId: selected.id, entryKey })
+              : undefined}
           />
         ) : selected ? (
           <>
@@ -371,7 +387,7 @@ export function PlaylistLibrary({
                 onChange={(event) => setNotes(event.currentTarget.value)}
               />
               <div className="playlist-metadata-actions">
-                <span role="status" aria-live="polite">
+                <span role="status" aria-label="List changes" aria-live="polite">
                   {status}
                 </span>
                 <button className="button button--secondary" type="submit">
@@ -389,7 +405,7 @@ export function PlaylistLibrary({
                   className="button button--primary"
                   type="button"
                   disabled={resolved.length === 0}
-                  onClick={() => setPlayingId(selected.id)}
+                  onClick={() => { setResumeEntryKey(undefined); setPlayingId(selected.id); }}
                 >
                   Play list
                 </button>
@@ -452,6 +468,15 @@ export function PlaylistLibrary({
                               onClick={() => onOpenLocalClimb(localId)}
                             >
                               View {label}
+                            </button>
+                          )}
+                          {localId && onEditLocalClimb && (
+                            <button
+                              type="button"
+                              disabled={unavailable}
+                              onClick={() => onEditLocalClimb(localId, { playlistId: selected.id })}
+                            >
+                              Edit {label}
                             </button>
                           )}
                           <button

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import type { BoardLightController } from '../board-control/light-controller';
 import type { BoardDefinition } from '../domain/boards/definition';
 import { ClimbDetail } from './ClimbDetail';
+import { BoardControlBar } from './BoardControlBar';
 import type { ClimbViewKey, ClimbViewRecord } from './types';
 import './LocalClimbViewer.css';
 
@@ -97,6 +98,7 @@ export function LocalClimbViewer({
   return (
     <div className="local-climb-viewer">
       <aside className="climb-list-pane" aria-label={heading}>
+        {!selected && <BoardControlBar controller={controller} />}
         <header className="workspace-header">
           <div>
             <p className="eyebrow">Fullride 7×10</p>
@@ -179,6 +181,7 @@ export function LocalClimbViewer({
                 ×
               </button>
               <ClimbDetail
+                key={selected.key}
                 definition={definition}
                 climb={selected}
                 controller={controller}

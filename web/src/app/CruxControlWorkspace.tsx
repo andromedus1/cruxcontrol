@@ -3,7 +3,7 @@ import { LocalClimbViewer } from '../climb-browser/LocalClimbViewer';
 import type { ClimbViewKey } from '../climb-browser/types';
 import { toClimbViewRecord } from '../drafts/to-climb-view-record';
 import type { DraftContent, LocalClimbDraft, LocalDraftId } from '../drafts/types';
-import { PlaylistLibrary } from '../playlists/PlaylistLibrary';
+import { PlaylistLibrary, type PlaylistEditReturn } from '../playlists/PlaylistLibrary';
 import { PlaylistMembershipDialog } from '../playlists/PlaylistMembershipDialog';
 import type { LocalPlaylist } from '../playlists/types';
 import { RouteEditorWorkspace } from '../route-editor/RouteEditorWorkspace';
@@ -112,6 +112,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
     globalThis.location?.hash.startsWith('#playlist=') ? 'lists' : 'finished',
   );
   const [editing, setEditing] = useState<LocalDraftId | null>(null);
+  const [playlistEditReturn, setPlaylistEditReturn] = useState<PlaylistEditReturn | null>(null);
   const [selectedKey, setSelectedKey] = useState<ClimbViewKey | null>(null);
   const [membershipDraft, setMembershipDraft] = useState<LocalClimbDraft | null>(null);
   const [importingScreenshots, setImportingScreenshots] = useState(false);
@@ -352,7 +353,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const adoptDraftIdentity = useCallback(
     (draft: LocalClimbDraft) => {
       replaceDraft(draft);
-      setCollection(draft.status === 'draft' ? 'drafts' : 'finished');
+      setCollection((current) => current === 'lists' ? current : draft.status === 'draft' ? 'drafts' : 'finished');
       setEditing(draft.id);
     },
     [replaceDraft],
@@ -409,6 +410,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
             aria-pressed={collection === value}
             onClick={() => {
               setCollection(value);
+              setPlaylistEditReturn(null);
               setSelectedKey(null);
               setMembershipDraft(null);
             }}
@@ -516,6 +518,13 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           onSafetyStateChange={setPlaylistSafety}
           onOperationStart={beginOperation}
           onOperationEnd={endOperation}
+          initialView={playlistEditReturn}
+          onEditLocalClimb={(id, returnTo) => {
+            const draft = drafts.find((candidate) => candidate.id === id);
+            if (!draft || draft.trashedAt !== undefined || draftCompatibilityIssue(draft, runtime)) return;
+            setPlaylistEditReturn(returnTo);
+            setEditing(id);
+          }}
           onOpenLocalClimb={(id) => {
             const draft = drafts.find((candidate) => candidate.id === id);
             if (!draft || draft.trashedAt !== undefined) return;

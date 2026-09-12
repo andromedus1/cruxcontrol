@@ -59,7 +59,7 @@ describe('create-save-light integration', () => {
     apply(5);
 
     await waitFor(() => expect(document.querySelector('.save-chip')).toHaveTextContent('saved'));
-    fireEvent.click(screen.getByRole('button', { name: 'Connect & light' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     await waitFor(() =>
       expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(1),
     );
