@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { BoardLightController } from '../board-control/light-controller.ts';
 import { ClimbDetail } from '../climb-browser/ClimbDetail.tsx';
+import { BoardControlBar } from '../climb-browser/BoardControlBar.tsx';
+import type { LocalDraftId } from '../drafts/types.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
 import type { ResolvedPlaylistEntry } from './resolve.ts';
 import type { LocalPlaylist, PlaylistId } from './types.ts';
@@ -14,6 +16,8 @@ export interface PlaylistPlayThroughProps {
   readonly controller?: BoardLightController | null;
   readonly compatibilityIssue: (entry: ResolvedPlaylistEntry) => string | null;
   readonly onExit: () => void;
+  readonly initialEntryKey?: string;
+  readonly onEditLocalClimb?: (id: LocalDraftId, entryKey: string) => void;
 }
 
 interface PlayThroughPosition {
@@ -48,10 +52,12 @@ export function PlaylistPlayThrough({
   controller,
   compatibilityIssue,
   onExit,
+  initialEntryKey,
+  onEditLocalClimb,
 }: PlaylistPlayThroughProps) {
   const [position, setPosition] = useState<PlayThroughPosition>(() => ({
     playlistId: playlist.id,
-    key: entries[0]?.key ?? null,
+    key: initialEntryKey ?? entries[0]?.key ?? null,
     index: 0,
   }));
 
@@ -99,6 +105,7 @@ export function PlaylistPlayThrough({
           Exit play-through
         </button>
       </header>
+      {!available && <BoardControlBar controller={controller} />}
       {current ? (
         <>
           <nav className="playlist-play-through__navigation" aria-label="Playlist navigation">
@@ -129,6 +136,11 @@ export function PlaylistPlayThrough({
                 climb={current.climb}
                 controller={controller}
                 headingLevel={2}
+                onEdit={current.reference.kind === 'local' && onEditLocalClimb
+                  ? () => {
+                      if (current.reference.kind === 'local') onEditLocalClimb(current.reference.id, current.key);
+                    }
+                  : undefined}
               />
             </div>
           ) : (

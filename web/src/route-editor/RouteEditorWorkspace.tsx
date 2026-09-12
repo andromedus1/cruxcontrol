@@ -15,6 +15,7 @@ import { useAnimationClock } from '../light-effects/use-animation-clock';
 import { renderAnimationFrame } from '../light-effects/frame';
 import './RouteEditorWorkspace.css';
 import { BoardCapacityDiagnostics } from '../board-control/BoardCapacityDiagnostics';
+import { BoardControlBar } from '../climb-browser/BoardControlBar';
 
 export function RouteEditorWorkspace({
   definition,
@@ -74,17 +75,9 @@ export function RouteEditorWorkspace({
   const back = () => {
     if (!risky || window.confirm('Leave with changes that may not be saved?')) onBack();
   };
-  const lightBusy = lighting.status === 'connecting' || lighting.status === 'lighting';
+  const lightBusy = lighting.status === 'lighting';
   const unsupported = !controller || lighting.controllerState.transport.status === 'unsupported';
-  const lightLabel = lighting.animationRunning
-    ? 'Restart animation'
-    : lighting.status === 'connecting'
-      ? 'Connecting…'
-      : lighting.status === 'lighting'
-        ? 'Lighting…'
-        : lighting.controllerState.transport.status === 'connected'
-          ? 'Light draft'
-          : 'Connect & light';
+  const connected = lighting.controllerState.transport.status === 'connected';
   const activatePlacement = (placementId: BoardPlacementId) => {
     if (state.tool.kind !== 'eyedropper') {
       dispatch({ type: 'activate-placement', placementId });
@@ -107,6 +100,7 @@ export function RouteEditorWorkspace({
   };
   return (
     <main className="route-editor">
+      <BoardControlBar controller={controller} />
       <header className="route-editor__header">
         <button className="button button--secondary" type="button" onClick={back}>
           Back
@@ -282,7 +276,7 @@ export function RouteEditorWorkspace({
               ? 'Bluetooth control is unavailable here; editing and saving still work.'
               : lighting.status === 'previewing'
                 ? 'Previewing latest holds…'
-                : '')}
+                : connected ? 'Changes light automatically.' : 'Connect a board to light this climb automatically.')}
           </span>
           {lighting.capacity && (
             <span className="editor-actions__capacity">
@@ -293,17 +287,6 @@ export function RouteEditorWorkspace({
             </span>
           )}
         </p>
-        <label className="live-toggle">
-          <input
-            type="checkbox"
-            checked={lighting.livePreview}
-            disabled={
-              lighting.animationRunning || lighting.controllerState.transport.status !== 'connected'
-            }
-            onChange={(event) => lighting.setLivePreview(event.target.checked)}
-          />
-          Live Preview
-        </label>
         {lighting.animationRunning && (
           <button
             className="button button--secondary"
@@ -325,14 +308,14 @@ export function RouteEditorWorkspace({
         >
           {state.content.status === 'draft' ? 'Mark finished' : 'Move to drafts'}
         </button>
-        <button
+        {connected && (hasAnimatedAssignments || lighting.message) && <button
           className="button button--primary"
           type="button"
-          disabled={unsupported || lightBusy}
+          disabled={lightBusy}
           onClick={() => void lighting.lightDraft()}
         >
-          {lightLabel}
-        </button>
+          {hasAnimatedAssignments ? 'Restart animation' : 'Retry lighting'}
+        </button>}
       </footer>
     </main>
   );

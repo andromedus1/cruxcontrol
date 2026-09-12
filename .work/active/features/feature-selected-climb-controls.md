@@ -1,7 +1,7 @@
 ---
 id: feature-selected-climb-controls
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: null
 depends_on: []
@@ -85,3 +85,35 @@ and regression tests guard it. Preserve existing foreground and capacity constra
 One inline owner; no child stories because these tightly related seams fit one stride.
 Execution capability: current Codex agent. Review weight: standard (project convention),
 one independent feature review after integrated verification.
+
+## Implementation notes
+
+- Shared lighting now schedules connected scene changes after 180 ms and uses the
+  controller's serialized latest-scene preview path for static and animated scenes.
+  Semantic scene comparison avoids restarting effects on repository refreshes.
+- Generation guards prevent a delayed first write from restarting an animation
+  after selection changes, visibility loss, clearing, or unmount.
+- Connection bars appear in library, detail, editor, list management, and unavailable
+  play-through entries. The initial Connect remains a direct gesture.
+- Playlist rows and play-through edit the original local climb; ephemeral return
+  context preserves the selected list and entry across editor autosave and Back.
+- Removed Live Preview state/UI/CSS and the duplicate static-only preview path.
+  Retry, restart, stop, capacity validation, and disconnected browsing remain.
+- Tests updated for automatic selection semantics and named connection/list status
+  regions. Added real-controller delayed-write regressions and workspace edit/return
+  integration; expanded the phone browser playlist flow to edit, save, and return.
+- Discrepancies: normal lighting no longer connects inside the hook. The existing
+  connection control owns pairing; its state transition triggers the selected scene.
+- Adjacent production issues: none. Obsolete tests were repaired in-session.
+
+## Verification
+
+- `npm test`: 84 files, 636 tests passed.
+- `npm run build`: TypeScript and production PWA build passed.
+- `npm run lint`, `git diff --check`: passed.
+- Production browser suite: 11/12 initially passed; one stale mobile control
+  assertion repaired, then all four local-route-editor browser workflows passed.
+  Combined results cover all 12 browser workflows, including mobile playlist editing.
+- Physical Bluetooth hardware awaits the user's dogfooding session.
+- PR CI and standard independent review are pending. Claude peer authentication
+  expired; review uses the allowed same-harness fresh-context fallback.

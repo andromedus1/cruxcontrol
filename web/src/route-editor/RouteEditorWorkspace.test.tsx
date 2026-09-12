@@ -49,7 +49,8 @@ describe('RouteEditorWorkspace', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Advanced Light/ }));
     expect(screen.getByLabelText('red channel')).toHaveAttribute('max', '7');
     expect(screen.getByLabelText('blue channel')).toHaveAttribute('max', '3');
-    expect(screen.getByRole('button', { name: 'Connect & light' })).toBeDisabled();
+    expect(screen.getByRole('status', { name: 'Board connection' })).toHaveTextContent('Bluetooth unavailable');
+    expect(screen.queryByText('Live Preview', { exact: true })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save now' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Mark finished' })).toBeInTheDocument();
     expect(document.querySelector('.board-renderer__viewport')).toHaveAttribute('data-scale', '1');

@@ -15,6 +15,8 @@ import type { CruxControlRuntime } from './create-runtime';
 import { CruxControlWorkspace } from './CruxControlWorkspace';
 import { activeInstallationId, createAppInstallationRegistry } from './installations';
 import type { AppUpdateService, AppUpdateSnapshot } from '../pwa/update-service.ts';
+import { MockBoardByteTransport } from '../board-control/mock-byte-transport';
+import { createFullrideLightController } from '../board-control/light-controller';
 
 const original: LocalClimbDraft = {
   ...draftContent({ name: 'Original', installationId: activeInstallationId }),
@@ -114,6 +116,44 @@ function updateServiceFor(snapshot: AppUpdateSnapshot): AppUpdateService {
 }
 
 describe('CruxControlWorkspace', () => {
+  it('pairs from lists, edits a playlist climb, and returns to the selected entry with saved changes', async () => {
+    const second = { ...original, id: localDraftId('22222222-2222-4222-8222-222222222222'), name: 'Second climb' };
+    let climbs = [original, second];
+    const storedList = playlist('Circuit', climbs.map(({ id }) => ({ kind: 'local', id })));
+    const runtime = runtimeWith({
+      list: vi.fn(async (options) => options?.collection === 'trash' ? [] : climbs),
+      update: vi.fn(async (id, revision, content) => {
+        const saved = persisted(id, Number(revision) + 1, content);
+        climbs = climbs.map((climb) => climb.id === id ? saved : climb);
+        return saved;
+      }),
+    }, { list: vi.fn().mockResolvedValue([storedList]) });
+    const transport = new MockBoardByteTransport();
+    const controller = createFullrideLightController({ definition: runtime.installation.definition, transport });
+    render(<CruxControlWorkspace runtime={{ ...runtime, controller }} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Lists.*1 list/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+    await screen.findByText(/Connected ·/);
+    expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Play list' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => expect(transport.operations.filter(({ type }) => type === 'write')).toHaveLength(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit climb' }));
+    expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Second climb');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Edited in circuit' } });
+    await waitFor(() => expect(document.querySelector('.save-chip')).toHaveTextContent('saved'));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByRole('heading', { name: 'Circuit' })).toBeInTheDocument();
+    expect(screen.getByText('2 of 2')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Edited in circuit' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Exit play-through' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Original' }));
+    expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Original');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByRole('button', { name: 'Play list' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument();
+  });
+
   it('keeps editing inert until an explicit reload resolves a controller mismatch', async () => {
     const runtime = runtimeWith();
     const updateService = updateServiceFor({
@@ -492,7 +532,7 @@ describe('CruxControlWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit climb' }));
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Recovered copy' } });
     fireEvent.click(await screen.findByRole('button', { name: 'Save a copy' }));
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('saved'));
+    await waitFor(() => expect(document.querySelector('.save-chip')).toHaveTextContent('saved'));
 
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Recovered copy v2' } });
     await waitFor(() => expect(update).toHaveBeenCalledTimes(2));

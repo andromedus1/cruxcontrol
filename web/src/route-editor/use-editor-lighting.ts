@@ -40,16 +40,14 @@ export function useEditorLighting({
   const [controllerState, setControllerState] = useState(
     () => controller?.getState() ?? unsupported,
   );
-  const [livePreview, setLivePreviewState] = useState(false);
   const [animationRunning, setAnimationRunning] = useState(false);
   const [effectiveAnimationFps, setEffectiveAnimationFps] = useState<number | null>(null);
-  const [explicitStatus, setExplicitStatus] = useState<'idle' | 'connecting' | 'lighting'>('idle');
+  const [explicitStatus, setExplicitStatus] = useState<'idle' | 'lighting'>('idle');
   const [previewStatus, setPreviewStatus] = useState<'idle' | 'previewing' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);
   const assignmentsRef = useRef(assignments);
   const effectGroupsRef = useRef(effectGroups);
-  const busyRef = useRef(false);
-  const skipNextPreview = useRef(false);
+  const automaticTimer = useRef<number | null>(null);
   const previewSequence = useRef(0);
   const animationSequence = useRef(0);
   const animationTimer = useRef<number | null>(null);
@@ -60,12 +58,17 @@ export function useEditorLighting({
 
   const cancelAnimation = useCallback(() => {
     animationSequence.current += 1;
+    previewSequence.current += 1;
+    if (automaticTimer.current !== null) window.clearTimeout(automaticTimer.current);
+    automaticTimer.current = null;
     recentBatchMs.current = [];
     if (animationTimer.current !== null) window.clearTimeout(animationTimer.current);
     animationTimer.current = null;
     if (mounted.current) {
       setAnimationRunning(false);
       setEffectiveAnimationFps(null);
+      setExplicitStatus('idle');
+      setPreviewStatus('idle');
     }
   }, []);
 
@@ -119,27 +122,6 @@ export function useEditorLighting({
     [controller],
   );
 
-  const preview = useCallback(async () => {
-    if (!controller) return;
-    const sequence = ++previewSequence.current;
-    setMessage(null);
-    setPreviewStatus('previewing');
-    try {
-      await previewScene(staticScene());
-      if (mounted.current && previewSequence.current === sequence) setPreviewStatus('idle');
-    } catch (error) {
-      if (mounted.current && previewSequence.current === sequence) {
-        setPreviewStatus('error');
-        setMessage(error instanceof Error ? error.message : 'Could not preview the draft.');
-      }
-    }
-  }, [controller, previewScene, staticScene]);
-
-  useEffect(() => {
-    if (controllerState.transport.status === 'connected' || !livePreview) return;
-    setLivePreviewState(false);
-  }, [controllerState.transport.status, livePreview]);
-
   useEffect(() => {
     if (controllerState.transport.status === 'connected') return;
     cancelAnimation();
@@ -153,36 +135,9 @@ export function useEditorLighting({
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [cancelAnimation]);
 
-  useEffect(() => {
-    if (
-      !livePreview ||
-      animationRunning ||
-      controllerState.transport.status !== 'connected' ||
-      !controller
-    )
-      return;
-    if (skipNextPreview.current) {
-      skipNextPreview.current = false;
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      void preview();
-    }, previewDelayMs);
-    return () => window.clearTimeout(timer);
-  }, [
-    assignments,
-    effectGroups,
-    animationRunning,
-    controller,
-    controllerState.transport.status,
-    livePreview,
-    preview,
-    previewDelayMs,
-  ]);
-
   const startAnimation = useCallback(
     (startedAt: number) => {
-      if (!controller) return;
+      if (!controller || !mounted.current || document.hidden) return;
       const transport = controller.getState().transport;
       if (transport.status !== 'connected') return;
       const apiLevel = apiLevelForAuroraDeviceName(transport.device.name);
@@ -262,17 +217,12 @@ export function useEditorLighting({
   );
 
   const lightDraft = useCallback(async () => {
-    if (!controller || busyRef.current) return;
+    if (!controller || controller.getState().transport.status !== 'connected' || document.hidden) return;
+    cancelAnimation();
+    const sequence = previewSequence.current;
     try {
-      busyRef.current = true;
-      cancelAnimation();
-      previewSequence.current += 1;
       setMessage(null);
       setPreviewStatus('idle');
-      if (controller.getState().transport.status !== 'connected') {
-        setExplicitStatus('connecting');
-        await controller.requestAndConnect();
-      }
       setExplicitStatus('lighting');
       const groupIds = new Set(effectGroupsRef.current.map(({ id }) => id));
       const animated = effectGroupsRef.current.some((group) => group.model === 'spatial') || assignmentsRef.current.some(
@@ -308,20 +258,34 @@ export function useEditorLighting({
           return;
         }
       }
-      // An empty spatial pose is a valid held animation frame (for example a
-      // bird quiet interval). Send it through preview so the controller's
-      // clearing operation cannot be mistaken for an explicit stop.
-      if (scene.length === 0 && !animated) await controller.clear();
-      else if (scene.length === 0 && animated) await previewScene(scene);
-      else await controller.light(scene);
-      if (animated) startAnimation(startedAt);
+      // Automatic scene replacement shares the controller's latest-frame-wins queue.
+      // Empty scenes use the same path, without masquerading as an explicit stop.
+      const result = await previewScene(scene);
+      if (mounted.current && previewSequence.current === sequence && result.status === 'applied' && animated) {
+        startAnimation(startedAt);
+      }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not light the draft.');
+      if (mounted.current && previewSequence.current === sequence) {
+        setMessage(error instanceof Error ? error.message : 'Could not light the climb.');
+      }
     } finally {
-      busyRef.current = false;
-      if (mounted.current) setExplicitStatus('idle');
+      if (mounted.current && previewSequence.current === sequence) setExplicitStatus('idle');
     }
   }, [cancelAnimation, controller, definition, previewScene, startAnimation, staticScene]);
+
+  // Repository refreshes recreate arrays; only actual scene changes should send
+  // lights or restart playback. Metadata edits and status notifications do not.
+  const sceneKey = JSON.stringify([assignments, effectGroups]);
+  useEffect(() => {
+    cancelAnimation();
+    if (controllerState.transport.status === 'connected' && !document.hidden) {
+      automaticTimer.current = window.setTimeout(() => {
+        automaticTimer.current = null;
+        void lightDraft();
+      }, previewDelayMs);
+    }
+    return cancelAnimation;
+  }, [cancelAnimation, controllerState.transport.status, lightDraft, previewDelayMs, sceneKey]);
 
   const stopAnimation = useCallback(async () => {
     cancelAnimation();
@@ -354,19 +318,6 @@ export function useEditorLighting({
     }
   }, [cancelAnimation, controller, staticScene]);
 
-  const setLivePreview = (enabled: boolean) => {
-    if (enabled) {
-      if (animationRunning || controllerState.transport.status !== 'connected' || !controller)
-        return;
-      skipNextPreview.current = true;
-      setLivePreviewState(true);
-      void preview();
-      return;
-    }
-    previewSequence.current += 1;
-    setLivePreviewState(false);
-    setPreviewStatus('idle');
-  };
   const status =
     explicitStatus !== 'idle'
       ? explicitStatus
@@ -376,7 +327,6 @@ export function useEditorLighting({
 
   return {
     controllerState,
-    livePreview,
     animationRunning,
     status,
     message,
@@ -388,7 +338,6 @@ export function useEditorLighting({
             measured: capacity.measured,
             effectiveAnimationFps,
           }),
-    setLivePreview,
     lightDraft,
     stopAnimation,
   };

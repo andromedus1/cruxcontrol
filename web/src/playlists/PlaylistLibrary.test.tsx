@@ -159,7 +159,7 @@ describe('PlaylistLibrary', () => {
       expect.objectContaining({ name: 'Saturday projects', notes: 'Warm up first.' }),
     );
 
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
+    await waitFor(() => expect(screen.getByRole('status', { name: 'List changes' })).toHaveTextContent('Saved'));
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     fireEvent.click(screen.getByRole('button', { name: 'Delete list' }));
     await waitFor(() => expect(repository.delete).toHaveBeenCalledOnce());
@@ -237,14 +237,14 @@ describe('PlaylistLibrary', () => {
     await waitFor(() => expect(screen.getByLabelText('List name')).toHaveValue('First list'));
     fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'Updated notes' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
+    await waitFor(() => expect(screen.getByRole('status', { name: 'List changes' })).toHaveTextContent('Saved'));
 
     act(() => applyPendingChanged());
     await waitFor(() => expect(screen.getByLabelText('List name')).toHaveValue('First list'));
-    expect(screen.getByRole('status')).toHaveTextContent('Saved');
+    expect(screen.getByRole('status', { name: 'List changes' })).toHaveTextContent('Saved');
 
     fireEvent.click(screen.getByRole('button', { name: /Second list.*0 climbs/ }));
-    expect(screen.getByRole('status')).toHaveTextContent('');
+    expect(screen.getByRole('status', { name: 'List changes' })).toHaveTextContent('');
   });
 
   it('reports a nonempty new list draft as dirty', async () => {

@@ -83,7 +83,7 @@ describe('LocalClimbViewer', () => {
     expect(screen.getByText('V4')).toBeInTheDocument();
     expect(screen.getByText('Andrew')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Garage Circuit' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Light this climb' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Light this climb' })).not.toBeInTheDocument();
   });
 
   it('does not silently replace a stale selection', () => {
