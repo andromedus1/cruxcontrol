@@ -1,7 +1,7 @@
 ---
 id: story-fix-phone-preview-launch
 kind: story
-stage: review
+stage: done
 tags: [bug, infra]
 parent: null
 depends_on: []
@@ -68,9 +68,15 @@ admission, preserve authored data, and compare all records after updating.
 
 ## Review (2026-09-12)
 
-**Verdict**: Approve; CI completion pending before terminal transition.
+**Verdict**: Approve.
 
 **Blockers**: none.
 
 **Notes**: Bounded inline standalone-story review, standard weight; no independent
 code-review lane required. Reviewed the direct npm workspace invocation against its real HTTP smoke test. Verified standing preservation instructions match existing IndexedDB stores, backup codecs, and safe update admission. No data-clearing, origin-switching, profile-resetting, or library-writing operation is introduced.
+
+## Completion
+
+Required CI passed on reviewed head `7623f0c`: lint, typecheck, unit/integration
+tests, production build, and all browser workflows. Run:
+https://github.com/andromedus1/cruxcontrol/actions/runs/34714635797

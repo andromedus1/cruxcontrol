@@ -1,7 +1,7 @@
 ---
 id: story-automatic-animation-session
 kind: story
-stage: review
+stage: done
 tags: [ui, ble]
 parent: null
 depends_on: [feature-selected-climb-controls]
@@ -70,9 +70,15 @@ project's small-UI-change exception.
 
 ## Review (2026-09-12)
 
-**Verdict**: Approve; CI completion pending before terminal transition.
+**Verdict**: Approve.
 
 **Blockers**: none.
 
 **Notes**: Bounded inline standalone-story review, standard weight; no independent
 code-review lane required. Reviewed foreground relighting through the existing guard/queue/capacity path, hidden-page cancellation, explicit pairing, stale-write sequence guards, diagnostics admission, and error-only recovery UI. Removed unused stop code and obsolete tests. Current scene data and storage are unchanged.
+
+## Completion
+
+Required CI passed on reviewed head `7623f0c`: lint, typecheck, unit/integration
+tests, production build, and all browser workflows. Run:
+https://github.com/andromedus1/cruxcontrol/actions/runs/34714635797
