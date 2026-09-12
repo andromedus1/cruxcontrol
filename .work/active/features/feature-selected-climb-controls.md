@@ -1,7 +1,7 @@
 ---
 id: feature-selected-climb-controls
 kind: feature
-stage: review
+stage: done
 tags: [ui, ble]
 parent: null
 depends_on: []
@@ -60,17 +60,17 @@ preview writes, so reuse that boundary for automatic complete scenes.
 
 ## Acceptance criteria
 
-- [ ] Selecting a saved climb, advancing a playlist, or editing holds lights the
+- [x] Selecting a saved climb, advancing a playlist, or editing holds lights the
   latest scene automatically; a disconnected selection never launches a chooser.
-- [ ] Connecting with a selection sends that scene and starts any supported effects.
-- [ ] Rapid changes coalesce; stale async work cannot restart previous playback.
-- [ ] Stop/clear, hidden documents, disconnect, and unmount cancel playback;
+- [x] Connecting with a selection sends that scene and starts any supported effects.
+- [x] Rapid changes coalesce; stale async work cannot restart previous playback.
+- [x] Stop/clear, hidden documents, disconnect, and unmount cancel playback;
   capacity rejection stays visible without automatic retry loops.
-- [ ] Edit is available for compatible local climbs in detail, playlist rows, and
+- [x] Edit is available for compatible local climbs in detail, playlist rows, and
   play-through; Back returns to the same list/entry. Unavailable entries stay guarded.
-- [ ] Connect is accessible in library/detail, editor, playlist management, and
+- [x] Connect is accessible in library/detail, editor, playlist management, and
   play-through, including unavailable entries.
-- [ ] Required lint, typecheck, unit/integration, browser, build, and PR CI checks pass.
+- [x] Required lint, typecheck, unit/integration, browser, build, and PR CI checks pass.
 
 ## Testing and risks
 
@@ -108,15 +108,14 @@ one independent feature review after integrated verification.
 
 ## Verification
 
-- `npm test`: 84 files, 636 tests passed.
+- `npm test`: 84 files, 638 tests passed locally (CI skips the existing private-source fixture).
 - `npm run build`: TypeScript and production PWA build passed.
 - `npm run lint`, `git diff --check`: passed.
-- Production browser suite: 11/12 initially passed; one stale mobile control
-  assertion repaired, then all four local-route-editor browser workflows passed.
-  Combined results cover all 12 browser workflows, including mobile playlist editing.
+- `npm -w web run test:e2e`: all 12 production browser workflows passed.
+- GitHub CI passed at application commit `f247923`, run `34712467277`:
+  https://github.com/andromedus1/cruxcontrol/actions/runs/34712467277
+- PR: https://github.com/andromedus1/cruxcontrol/pull/17
 - Physical Bluetooth hardware awaits the user's dogfooding session.
-- PR CI and standard independent review are pending. Claude peer authentication
-  expired; review uses the allowed same-harness fresh-context fallback.
 
 ## Review findings and fixes
 
@@ -138,10 +137,26 @@ and one stale message. All are accepted and handled in this feature:
   now asserts the named board connection status; pairing behavior remains covered
   through the real-controller/workspace tests.
 
-Closure requires fix verification and green CI, with no second independent pass
+Closure uses fix verification and green CI, with no second independent pass
 under the project's standard review weight.
 
 Fix verification: 638 tests across 84 files, all 12 production browser workflows,
 lint, TypeScript, and production build pass. Both material findings are resolved;
-the same-climb slow-frame test was confirmed failing before its fix. Final PR CI
-remains the completion gate.
+the same-climb slow-frame test was confirmed failing before its fix. Application PR CI is green.
+
+## Review (2026-09-12)
+
+**Verdict**: Approve after verified fixes.
+
+**Blockers**: None unresolved. Cancelled timing samples and diagnostic exclusivity
+were fixed with regression tests; diagnostic controls derive from shared controller
+state so navigation cannot expose controls during an active case.
+
+**Important**: Stale connection guidance fixed. None deferred.
+**Nits / rejected proposals**: None.
+
+**Notes**: Standard weight, one independent same-harness fresh-context Sol review.
+The Claude peer failed with an expired OAuth session, so the supported fallback ran.
+The receiver adjudicated all findings and verified fixes without a second review,
+as required by standard weight. Documentation consistency review found no issues.
+Application and infrastructure remain on PR #17; no deployment was requested.
