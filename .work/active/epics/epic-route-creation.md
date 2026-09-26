@@ -1,24 +1,24 @@
 ---
 id: epic-route-creation
 kind: epic
-stage: implementing
+stage: review
 tags: [ui]
 parent: null
 depends_on: [epic-climb-browser, epic-board-control]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-09-12
+updated: 2026-09-26
 ---
 
 # Route Creation: Local Draft Editor + Lighting
 
 ## Current delivery state
 
-The original local-editor scope passed review, as recorded below. The expanded
-epic remains open because [the effects feature](../features/epic-route-creation-flashy-light-effect-demos.md)
-still needs its standard independent review. The 2026-09-12 backlog cleanup
-corrected the aggregate stage without claiming that review had run.
+All seven child features have completed their required reviews. The expanded epic
+is ready for its separate aggregate review across authoring, lifecycle, screenshot
+import, saved animations, measured capacity, and effects. The effects review
+corrections and everyday reliability changes pass local checks and GitHub CI.
 
 The early opt-in Live Preview and explicit Light Draft decisions below are
 superseded by [automatic selected-climb lighting](../../archive/feature-selected-climb-controls.md)
@@ -185,3 +185,6 @@ color persistence at 1440×900 plus compact keyboard/sticky-action behavior at
 bounded duplicate gestures, and latest-frame-wins preview. Physical BLE remains
 pending on a powered Fullride 7×10 with Android Chrome; this approval makes no claim
 that the hardware checkpoint has passed.
+
+## Child features reviewed and complete (2026-09-26)
+All direct children are done: local-draft-library, editor-workspace, climb-lifecycle, animated-light-designs, kilter-screenshot-import, board-light-capacity-envelope, and flashy-light-effect-demos (all prefixed `epic-route-creation-`). Effects standard review completed with five verified corrections. Aggregate review should inspect current create/save/reopen/import/lifecycle/effects/control integration and foundation assertions, without repeating feature-level line review. Current behavior supersedes the original explicit Light Draft/Live Preview design through the accepted automatic-lighting and shared-header follow-ups. Local 662 tests and 13 browser workflows plus CI run 36249285638 are green.
