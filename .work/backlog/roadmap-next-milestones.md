@@ -22,8 +22,8 @@ selected here.
    [resolved screenshot warnings](../archive/idea-screenshot-import-resolved-warnings.md),
    [native-share cancellation](../archive/idea-native-share-cancel-status.md), and
    [playlist boundary focus](../archive/idea-playlist-play-through-boundary-focus.md).
-   Continue dogfooding after the update; implementation completion does not mean
-   the PR has been merged or the phone updated.
+   PR #20 is merged into `andromedus1/cruxcontrol` main. Continue dogfooding after
+   the phone update; merging the PR does not update the phone.
 2. **Shared contributed climbs: the next major addition.** Scope the
    [shared-library idea](idea-shared-climb-library.md) so Andrew's partner and
    friends can contribute climbs, receive library updates, control the board, and
@@ -77,10 +77,11 @@ selected here.
   Their completed family is archived; full implementation and review records are
   preserved at each stub's `git_ref`. Completed checkpoints under the unfinished
   foundation remain active intentionally.
-- Before scoping the shared library, resolve the two unanswered audience questions:
-  invited partner/friends first or everyone using CruxControl; and whether those
-  people need iPhone board control. General approval of this roadmap did not answer
-  either question or choose an update mechanism.
+- Shared-library audience decisions are settled: invited partner and friends first,
+  with Android board control sufficient initially (confirmed 2026-09-26). The
+  [owning idea](idea-shared-climb-library.md) records the decisions, remaining
+  publication-policy question, and implementation grounding. iPhone board control
+  stays deferred. Invitation/access and update mechanisms remain to be designed.
 - At shared-library scoping, align the foundation documents with the approved
   priority. `docs/VISION.md` still calls ML the headline differentiator and contains
   a blanket no-server-side-user-data statement alongside its narrower allowance for
