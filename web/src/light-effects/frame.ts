@@ -146,7 +146,10 @@ export function renderAnimationFrame(options: RenderAnimationFrameOptions): Ligh
     if (group.model !== 'spatial') continue;
     for (const light of renderSpatialGroup(options.definition, options.assignments, group, options.elapsedMs)) composed.set(light.placementId, light);
   }
-  // Semantic route roles are exact and topmost regardless of spatial layer order.
-  for (const assignment of options.assignments) if (assignment.appearance.kind === 'role') composed.set(assignment.placementId, Object.freeze({ placementId: assignment.placementId, color: baseColor(options.definition, assignment) }));
+  // Spatial backgrounds protect semantic roles exactly and topmost. Assignment-only
+  // effects retain their explicit opt-in animation, including on role holds.
+  if (options.effectGroups.some((group) => group.model === 'spatial')) {
+    for (const assignment of options.assignments) if (assignment.appearance.kind === 'role') composed.set(assignment.placementId, Object.freeze({ placementId: assignment.placementId, color: baseColor(options.definition, assignment) }));
+  }
   return Object.freeze([...composed.values()]);
 }

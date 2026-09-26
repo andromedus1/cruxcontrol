@@ -15,6 +15,7 @@ import {
 import type { PortablePlaylistV1 } from './portable-types.ts';
 import type { LocalPlaylist } from './types.ts';
 import { activeInstallationId, createAppInstallationRegistry } from '../app/installations.ts';
+import { createSpatialPreset } from '../light-effects/preset-library.ts';
 
 const installation = createAppInstallationRegistry().require(activeInstallationId);
 const placements = installation.definition.placements;
@@ -223,6 +224,35 @@ describe('portable playlist import', () => {
   ] as const)('rejects %s before execution at %s', (code, path, change) => {
     expect(() => planPlaylistImport(change(source()), installation)).toThrowError(
       expect.objectContaining<Partial<PlaylistImportCompatibilityError>>({ code, path }),
+    );
+  });
+
+  it.each(['include', 'exclude'] as const)('rejects an unknown spatial %s target before execution', (targetKind) => {
+    const value = source();
+    const spatial = createSpatialPreset('snake', 17);
+    const changed: PortablePlaylistV1 = {
+      ...value,
+      playlist: {
+        ...value.playlist,
+        entries: value.playlist.entries.map((entry, index) => index === 0 && entry.kind === 'local-snapshot'
+          ? {
+              ...entry,
+              snapshot: {
+                ...entry.snapshot,
+                effectGroups: [{
+                  ...spatial,
+                  target: { ...spatial.target, [targetKind]: [boardPlacementId('missing-target')] },
+                }],
+              },
+            }
+          : entry),
+      },
+    };
+    expect(() => planPlaylistImport(changed, installation)).toThrowError(
+      expect.objectContaining<Partial<PlaylistImportCompatibilityError>>({
+        code: 'unknown-placement',
+        path: `playlist.entries[0].snapshot.effectGroups[0].target.${targetKind}[0]`,
+      }),
     );
   });
 

@@ -26,6 +26,7 @@ function eligible(definition: BoardDefinition, assignments: readonly BoardHoldAs
     if (exclude.has(placement.id)) return false;
     const assignment = assignmentMap.get(placement.id);
     if (assignment?.appearance.kind === 'role') return false;
+    if (group.target.scope === 'unused' && assignment !== undefined) return false;
     if (group.target.scope === 'selected') return include.has(placement.id);
     if (include.has(placement.id)) return true;
     return group.target.scope === 'background-board' || assignment === undefined;
