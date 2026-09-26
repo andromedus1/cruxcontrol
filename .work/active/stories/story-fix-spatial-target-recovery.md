@@ -1,7 +1,7 @@
 ---
 id: story-fix-spatial-target-recovery
 kind: story
-stage: review
+stage: done
 tags: [bug, data]
 parent: null
 depends_on: []
@@ -32,4 +32,4 @@ Focused inline correction at standard weight; bounded standalone-story review an
 Baseline inline capability: a bounded compatibility check with two regression cases. Extended the existing check without changing codecs, persisted data, rendering, or UI structure. Both initially failing cases now pass; full verification passes 85 files/664 tests, lint, TypeScript/Vite/PWA build, and 13 production Chromium workflows. Documentation check confirms existing SPEC/README recovery assertions now hold; no new contract or documentation surface. No adjacent findings.
 
 ## Bounded inline review
-Approve on local evidence: both spatial target lists use the active definition, assignment and non-spatial behavior remains intact, and recovery preserves authored records without opening the editor. Latest PR CI is required before final closure.
+Approve on local evidence: both spatial target lists use the active definition, assignment and non-spatial behavior remains intact, and recovery preserves authored records without opening the editor. CI run 36250137466 passed for application commit 2a7fb76; the bounded inline review is approved and complete.
