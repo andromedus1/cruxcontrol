@@ -1,7 +1,7 @@
 ---
 id: idea-screenshot-import-resolved-warnings
 kind: story
-stage: review
+stage: done
 tags: [ui, data]
 parent: null
 depends_on: []
@@ -54,3 +54,13 @@ The dialog used the immutable recognition warning array as both historical evide
 - Red-green evidence: the original dialog behavior required a checkbox after title entry; the new integration assertion failed until readiness used reconciled warnings. The pure reconciliation tests then passed for mapped corrections and correctly retained off-grid warnings.
 - Inline review: the helper compares only the warning's uniquely mapped placement against the candidate's immutable original assignments, retains original warning objects, and leaves centroid-only off-grid evidence behind the existing acknowledgment. The current repository typecheck is blocked by the unrelated host edit in `web/src/route-editor/LightEffectsPanel.tsx` (`velocityX`/`velocityY` access on the `SpatialRecipe` union); screenshot-import tests and lint remain green. Stage remains `review` for host integrated checks/CI.
 - Adjacent issues parked: none.
+
+## Review closure (2026-09-26)
+
+**Verdict**: Approve.
+
+Bounded inline standalone review: immutable candidate evidence is retained; only title or corresponding changed cell resolves its warning. Unrelated edits and reverting a correction retain/restore warnings; centroid-only off-grid warnings still need acknowledgment.
+
+**Blockers**: none unresolved. **Important**: none. **Review weight**: standard, from project convention (standalone stories use bounded inline review).
+
+**Verification**: 85 Vitest files / 662 tests; lint; TypeScript/Vite/PWA production build; all 13 Chromium workflows. GitHub CI run [36249285638](https://github.com/andromedus1/cruxcontrol/actions/runs/36249285638) passed for application commit `93cda6a`. No phone maintenance or user-data migration occurred.
