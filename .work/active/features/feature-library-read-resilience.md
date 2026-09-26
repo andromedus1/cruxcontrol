@@ -1,7 +1,7 @@
 ---
 id: feature-library-read-resilience
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, data]
 parent: null
 depends_on: []
@@ -23,7 +23,7 @@ The user approved these two reliability fixes before shared-library/catalog work
 Separate climb and playlist refresh outcomes instead of one all-or-nothing workspace refresh. Retain independent repositories and existing validation.
 
 ## Architectural choice
-Use an additive `DraftListOptions.onUnreadableRecord?: (issue: DraftReadIssue) => void` callback, with `DraftReadIssue` carrying string `key` and `message`. Default list/get/import/backup semantics remain strict. Only workspace list calls opt into tolerant reads and collect warnings for both active and Trash lists. A full-store cursor in tolerant mode catches records missing the ordering index; sort decoded records newest-first with descending ID ties. Skip only explicit corrupt/schema errors and retain the original row in place. Storage/cursor failures still reject. Alternatives: globally skipping invalid rows would conceal incomplete input from imports; changing every list return to a result envelope would unnecessarily change unrelated callers.
+Use an additive `DraftListOptions.onUnreadableRecord?: (issue: DraftReadIssue) => void` callback, with `DraftReadIssue` carrying string `key` and `message`. Default list/get/import/backup semantics remain strict. Only workspace list calls opt into tolerant reads and collect warnings for both active and Trash lists. A full-store cursor catches records missing the ordering index in both modes; strict reads reject them rather than silently omit them, while tolerant reads report them; sort decoded records newest-first with descending ID ties. Skip only explicit corrupt/schema errors and retain the original row in place. Storage/cursor failures still reject. Alternatives: globally skipping invalid rows would conceal incomplete input from imports; changing every list return to a result envelope would unnecessarily change unrelated callers.
 
 The trickiest unit is distinguishing unreadable rows from storage failures without omitting rows missing index keys. Tests inject both corrupt and future-schema rows, with and without index fields, alongside healthy active/Trash records; verify raw rows remain identical and strict reads still reject.
 
@@ -43,3 +43,6 @@ Use fake IndexedDB regression coverage plus workspace interaction tests for inde
 
 ## Execution
 One cohesive inline implementation owner; standard independent feature review per project convention. Existing highest-capability host is appropriate for preservation and read isolation. No implementation fanout is needed. Mockup exemption: bug fixes reuse existing warning and retry structure.
+
+## Implementation and review admission (2026-09-26)
+Both child checkpoints are verified complete. Focused repository/workspace suite passes all 33 tests, including regressions demonstrated red before changes. Existing ordering/revision/lifecycle tests remain green. Independent standard feature review is required before completion; full suite and CI are part of final integration. No schema change, raw salvage export, or device maintenance.
