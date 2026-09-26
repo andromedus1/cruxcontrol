@@ -25,7 +25,7 @@ export interface PlaylistShareDialogProps {
 }
 
 interface ShareStatus {
-  readonly kind: 'progress' | 'success' | 'error';
+  readonly kind: 'progress' | 'success' | 'cancelled' | 'error';
   readonly message: string;
 }
 
@@ -84,13 +84,18 @@ export function PlaylistShareDialog({
     progress: string,
     success: string,
     action: () => Promise<void>,
+    cancellationMessage?: string,
   ): Promise<void> {
     setStatus({ kind: 'progress', message: progress });
     try {
       await action();
       setStatus({ kind: 'success', message: success });
     } catch (error) {
-      setStatus({ kind: 'error', message: message(error) });
+      if (cancellationMessage && (error instanceof Error || error instanceof DOMException) && error.name === 'AbortError') {
+        setStatus({ kind: 'cancelled', message: cancellationMessage });
+      } else {
+        setStatus({ kind: 'error', message: message(error) });
+      }
     }
   }
 
@@ -185,8 +190,9 @@ export function PlaylistShareDialog({
                 className="button button--primary"
                 type="button"
                 onClick={() =>
-                  void run('Opening share…', 'Share completed', () =>
-                    sharePlaylist(prepared.webShare!, adapters),
+                  void run('Opening share…', 'Share completed',
+                    () => sharePlaylist(prepared.webShare!, adapters),
+                    'Sharing cancelled',
                   )
                 }
               >
