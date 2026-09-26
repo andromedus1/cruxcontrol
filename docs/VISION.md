@@ -2,13 +2,14 @@
 description: CruxControl vision, problem, audience, principles, and non-goals
 type: planning
 kind: planning
-updated: 2026-08-02
+updated: 2026-09-26
 nav_priority: high
 summary: >
   CruxControl is a Kilter-first, eventually universal climbing-board app. Its
   first complete vertical slice controls a home Fullride 7x10, while its domain,
   catalog, and controller boundaries allow other boards to be added without
-  surrendering offline use, data ownership, or source fidelity.
+  surrendering offline use, data ownership, or source fidelity. The next milestone
+  shares explicitly contributed climbs within an invited circle.
 decisions:
   - "Web app (not native) so Web Bluetooth, shareable URLs, and cross-device use come for free."
   - "Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional."
@@ -16,8 +17,9 @@ decisions:
   - "Board definitions, catalog providers, and controller protocols are independent extension points."
   - "Imports may use public or user-authorized sources; access and redistribution constraints are enforced per provider."
   - "Static/backendless remains the default, with a narrow service allowed later only where a provider or collaboration capability requires it."
-  - "ML grade prediction is the headline differentiator, not a nice-to-have."
-  - "Distributed to friends as a static, installable PWA — no backend, no accounts; each user runs their own client with local data. Framework chosen for distribution robustness."
+  - "Shared contributed climbs are the next major addition; community catalogs and a logbook precede longer-term grade prediction and personalized training."
+  - "The installable PWA keeps private authoring and playlists local; an invited shared library may use a narrow, research-grounded collaboration service."
+  - "Invited partner and friends can publish explicit submissions immediately to their group; Android board control is sufficient initially."
 ---
 
 # CruxControl — Vision
@@ -28,8 +30,10 @@ CruxControl is a data-owning climbing-board app whose first complete target is a
 home Kilter Board Fullride 7x10. Its implemented first milestone creates, saves,
 reopens, and lights unrestricted browser-local climbs through a fast, offline-first
 client; organizes them into shareable lists; and supports locally reviewed screenshot
-imports and editable light effects. Community-catalog browsing, logging results, grade
-prediction, and personalized training extend that wall-session loop in later milestones.
+imports and editable light effects. The next addition lets invited partner and friends
+contribute climbs to a shared library and receive updates independently of app releases.
+Community-catalog browsing and logging follow; grade prediction and personalized
+training extend the wall-session loop in longer-term milestones.
 
 The longer-term north star is one app for any supported Bluetooth climbing board,
 with each board community's climbs available through source-aware catalog adapters.
@@ -56,14 +60,18 @@ provider-independent contracts matter.
 ## Who It's For
 
 Andrew Clark — owner of a home Kilter Board Fullride 7x10 — and a small circle of
-**friends he intends to distribute the app to**. Each user runs their own client
-against their own Kilter board and keeps their own local data. Local playlists are
+**invited partner and friends**. Each person keeps private authoring and playlists
+in their own client and can control a compatible board. Explicitly submitted climbs
+become available immediately within the invited group, without Andrew approving
+each submission. Android board control is sufficient initially. Local playlists are
 already portable by bounded URL or lossless file; provider climb URLs remain future
 catalog work. The design begins with this
 "distribute to friends" case: an installable PWA built for static hosting once the
-deployment setup and acceptance checks are complete. It is not initially a commercial,
-server-backed, multi-tenant product. Supporting more board types broadens the
-hardware and catalog surface, not the initial operating model.
+deployment setup and acceptance checks are complete. The shared library permits a
+narrow collaboration service where research establishes the need; it does not make
+local authoring depend on a service. Supporting more board types broadens the
+hardware and catalog surface without requiring public registration or commercial
+multi-tenancy.
 
 ## Principles
 
@@ -73,15 +81,15 @@ hardware and catalog surface, not the initial operating model.
   official app's biggest weakness is the bar to clear.
 - **Data-driven over hand-curated.** Where a data source exists (the Kilter
   catalog, sync API), build a pipeline rather than curate by hand.
-- **Intelligence is core.** Grade prediction and personalized training are
-  defining features, designed in from the architecture, not bolted on.
+- **Useful sessions first.** Shared climbs, reliable local ownership, and community
+  browsing take priority. Grade prediction and personalized training remain
+  longer-term capabilities supported by the architecture.
 - **Web platform.** Web Bluetooth makes a no-install, shareable, cross-device
   client possible — lean into it.
 - **Distributable by default.** The app is built as a hosted, installable PWA a
-  friend can open from a URL once deployment is configured — no per-user setup, no backend. Robustness for
-  distribution (stability across browsers/devices, easy install, no server to
-  operate) is a first-class principle — and the criterion by which the framework
-  (React + Vite) was chosen.
+  friend can open from a URL once deployment is configured. Easy installation and
+  stability across browsers/devices are first-class principles. Group access should
+  require minimal setup, while local use remains independent of shared services.
 - **Kilter-first, not Kilter-bound.** Finish one excellent Fullride 7x10 path
   before widening implementation, while keeping identities and edge contracts
   safe for multiple boards from the start.
@@ -94,10 +102,11 @@ hardware and catalog surface, not the initial operating model.
 
 ## Non-Goals
 
-- **Not a server-backed / multi-tenant product.** The app is designed for
-  distribution to friends as a static, hosted PWA, but there is no backend: no accounts, no
-  billing, no server-side user data, no hosting of other people's boards. Each
-  user's data stays in their own browser.
+- **Not a public social or commercial multi-tenant product.** The first shared
+  library serves one invited circle. Billing, public discovery, and hosting or
+  remotely controlling other people's boards are outside its scope. A collaboration
+  service may hold explicit contributions and the access data needed for the group;
+  private drafts, playlists, and future logbook data stay locally owned.
 - **Not simultaneous board rollout.** The Fullride 7x10 remains the first complete
   product milestone. Other Aurora boards and MoonBoard follow through separately
   researched adapters rather than delaying the Kilter path.

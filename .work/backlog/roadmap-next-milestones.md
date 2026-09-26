@@ -22,10 +22,10 @@ selected here.
    [resolved screenshot warnings](../archive/idea-screenshot-import-resolved-warnings.md),
    [native-share cancellation](../archive/idea-native-share-cancel-status.md), and
    [playlist boundary focus](../archive/idea-playlist-play-through-boundary-focus.md).
-   Continue dogfooding after the update; implementation completion does not mean
-   the PR has been merged or the phone updated.
+   PR #20 is merged into `andromedus1/cruxcontrol` main. Continue dogfooding after
+   the phone update; merging the PR does not update the phone.
 2. **Shared contributed climbs: the next major addition.** Scope the
-   [shared-library idea](idea-shared-climb-library.md) so Andrew's partner and
+   [shared-library epic](../active/epics/epic-shared-climb-library.md) so Andrew's partner and
    friends can contribute climbs, receive library updates, control the board, and
    make their own playlists. Aim for explicit submission, library updates independent
    of app releases, and personal drafts/playlists under each person's control.
@@ -77,15 +77,18 @@ selected here.
   Their completed family is archived; full implementation and review records are
   preserved at each stub's `git_ref`. Completed checkpoints under the unfinished
   foundation remain active intentionally.
-- Before scoping the shared library, resolve the two unanswered audience questions:
-  invited partner/friends first or everyone using CruxControl; and whether those
-  people need iPhone board control. General approval of this roadmap did not answer
-  either question or choose an update mechanism.
-- At shared-library scoping, align the foundation documents with the approved
-  priority. `docs/VISION.md` still calls ML the headline differentiator and contains
-  a blanket no-server-side-user-data statement alongside its narrower allowance for
-  collaboration services. Preserve local ownership, offline use, and recoverability
-  while deciding the smallest service the shared library actually requires.
+- Shared-library audience decisions are settled: invited partner and friends first,
+  with Android board control sufficient initially (confirmed 2026-09-26). The
+  [owning epic](../active/epics/epic-shared-climb-library.md) records the decisions and
+  implementation grounding. Invited members publish immediately within the group,
+  without an approval queue. iPhone board control stays deferred. The verified
+  [access/storage comparison](../../.research/analysis/briefs/invited-offline-library.md)
+  conditionally recommends a small Cloudflare service; design alignment on personal
+  copies and the mockup journeys is pending in the owning epic.
+- Foundation intent now prioritizes the invited library and permits a narrow
+  collaboration service without surrendering local ownership, offline use, or
+  recoverability. The epic owns research and design decisions; no service stack or
+  authentication provider has been selected.
 - Refresh current provider research before implementing old Kilter sync assumptions.
   [Kilter's support page](https://app.kiltergrips.com/support) describes the move off
   its unsupported old app. [Boardsesh's API documentation](https://www.boardsesh.com/docs)

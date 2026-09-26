@@ -2,15 +2,16 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-09-12
+updated: 2026-09-26
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
   local board inventory, provider-aware catalogs, BLE control, climb browsing and
-  editing, logbook/session tracking, grade prediction, and recommendations in an
-  offline-first client.
+  editing, invited shared contributions, logbook/session tracking, grade prediction,
+  and recommendations in an offline-first client.
 decisions:
-  - "Capabilities are grouped into nine areas; board control + browser are the MVP surface."
+  - "The local wall-session loop is implemented; an invited shared climb library is the next capability to design."
+  - "Invited members explicitly publish climbs immediately to their group; personal authoring/playlists remain local and Android board control is sufficient initially."
   - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
   - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
   - "Grade-prediction target is community consensus difficulty_average from climb_stats."
@@ -220,6 +221,25 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Distinct from auto-generated circuits (Capability 7, algorithmic) and from
   session tracking (Capability 4, logging attempts).
 
+### 9. Shared Contributed Climb Library (Intended)
+
+- Serve Andrew's invited partner and friends. Public registration and discovery
+  are outside the first shared-library milestone.
+- Publish a member's explicitly submitted climb immediately to the group, without
+  an approval queue. Only explicitly chosen content is contributed; local autosave
+  does not publish private work.
+- Receive group contributions independently of app releases. Publication availability
+  does not imply instantaneous delivery to every device; refresh behavior, versioning,
+  and offline caching are defined during research-grounded design.
+- Browse compatible contributions, use them in personal playlists, and control the
+  board through the existing Android controller path. iPhone control is deferred.
+- Preserve locally authored climbs, list order and membership, saved recipes, Trash,
+  and backup/recovery guarantees. Shared content updates or removals must not silently
+  overwrite private edits or remove personally retained climbs.
+- Local editing and board sessions remain usable if the shared service is unavailable.
+  Invitation/access, contribution revision/removal, and recipient update semantics
+  require design before implementation. This capability is not yet delivered.
+
 ## Domain Model
 
 The model mirrors the official Kilter SQLite schema (see
@@ -351,14 +371,17 @@ The model mirrors the official Kilter SQLite schema (see
   catalog grows — not one-off scripts.
 - **Distributable PWA.** The app is built for static, hosted, installable PWA
   distribution so a friend can open it from a URL after deployment is configured,
-  with no per-user setup and no backend. Each user runs an
-  independent client with browser-local data; there is no shared server or accounts.
+  with browser-local private data. The running app has no shared service or accounts;
+  the intended invited library may add a narrowly scoped collaboration service and
+  access mechanism after research. Local use must not require that service.
   Distribution robustness — stable across mainstream Chromium browsers/devices,
   installable, trivially hostable on static infra (Cloudflare Workers Static Assets) — is a hard
   requirement; it was the criterion by which the framework (React + Vite) was chosen.
-- **Per-user isolation.** One user's local data (logbook, playlists, drafts) is never
-  visible to another. Current playlist sharing is explicit through bounded URL fragments
-  or lossless files; individual/provider climb URLs arrive with future catalog browsing.
+- **Per-user isolation.** Private drafts, playlists, and future logbook data remain
+  local unless the user explicitly shares chosen content. Current playlist sharing
+  uses bounded URL fragments or lossless files; the intended shared library publishes
+  explicit contributions to invited members. Shared access must not expose the rest
+  of a member's local library.
 - **Provider policy.** Acquisition uses public or user-authorized sources and does
   not bypass access controls. Import capability and redistribution are separate
   decisions recorded per provider.
