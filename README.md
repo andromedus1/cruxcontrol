@@ -138,8 +138,9 @@ checks, and Playwright Chromium browser workflows. A real three-generation Workb
 checks that a climb survives legacy generation A's natural waiting transition to generation
 B and generation B's explicit safe apply to generation C. CI runs the browser workflows
 against the production build and retains traces and screenshots from failures for seven days.
-Automated transport and renderer tests use deterministic fakes for repeatability; device-level
-acceptance remains future work.
+Automated transport and renderer tests use deterministic fakes for repeatability. Prior
+Android/API-2 physical checks cover the current effects dogfooding and conservative controller
+profile; API-3 and other device, browser, and controller-profile acceptance remain unmeasured.
 
 ## Deployment
 
