@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-flashy-light-effect-demos
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: epic-route-creation
 depends_on: [epic-route-creation-animated-light-designs, epic-route-creation-kilter-screenshot-import, epic-route-creation-board-light-capacity-envelope]
@@ -336,3 +336,6 @@ engine, worst-case complete-scene preflight, render-time target evaluation, serp
 reflected typed procedural geometry, role-kind protection with definition-driven reserved
 colors, bottom-to-top layers, and versioned self-contained recipes. Rejected virtual/fake
 assignments, a separate background array/runtime, and a general scene-graph rewrite.
+
+## Review admission (2026-09-26)
+Implementation and physical acceptance were already complete. Revalidated the current integrated tree: 84 Vitest files / 637 tests pass and the TypeScript/Vite/PWA production build passes. Standard independent feature review is running through a same-harness fresh-context Sol reviewer after the preferred Claude peer failed with expired OAuth credentials. No device maintenance performed.
