@@ -36,6 +36,13 @@ locally owned and exportable.
   releases, and personal drafts/playlists under each person's control, as already
   approved in the saved roadmap.
 
+## Design decisions
+
+- **Saved-copy behavior:** keep personally saved copies unchanged when a shared
+  climb is revised or withdrawn; offer updates for explicit acceptance. Publisher
+  changes must not silently alter the retained climb or its playlist membership
+  and ordering — confirmed by Andrew on 2026-09-26.
+
 ## Scope boundary
 
 The first audience is one invited circle, not public registration. The milestone
@@ -86,16 +93,17 @@ explicit JWT validation and real route/session checks part of the eventual servi
 proof. Keep author/member authorization and retry/revision guarantees inside the
 application contract; edge sign-in does not supply them automatically.
 
-Research recommends retained personal snapshots, explicit updates, owner-managed
-published revisions, withdrawal from future distribution, and online-only explicit
-publication initially. These are proposals for design alignment, not confirmed
-product decisions or implemented behavior.
+Andrew confirmed the research recommendation to retain personal snapshots and
+offer updates explicitly. Owner-managed published revisions, withdrawal from
+future distribution, and online-only explicit publication initially remain proposals
+for design alignment. None of these mechanisms is implemented yet.
 
 ## Design handoff
 
 Run the research-enhanced `epic-design --only-questions` pass before autonomous
-decomposition/implementation. Settle publication ownership/revision/removal rules,
-recipient update behavior, and the invite flow from the researched options.
+decomposition/implementation. Inherit the confirmed saved-copy behavior; settle
+publication ownership/revision/removal rules and the invite flow from the researched
+options.
 The existing deployment path and artwork-distribution item are audience-access
 companions: invited access is not evidence of artwork redistribution permission.
 Any new hosting origin must leave the phone's existing library intact and follow
@@ -180,10 +188,9 @@ a static baseline, plus disconfirming Access/session evidence.
 
 ## Directional alignment pending
 
-Two questions are with Andrew; no answer is inferred from elapsed time:
+The saved-copy decision is recorded above. One question remains with Andrew;
+no answer is inferred from elapsed time:
 
-- **Saved-copy behavior:** recommend retaining personal copies when the published
-  source changes or is withdrawn, with explicit acceptance of later revisions.
 - **Mockup journey:** enter shared browsing, sign in by email code when needed,
   browse, inspect, and save to a personal playlist; publish through an explicit
   review from an authored climb. Reuse the established visual system and allow
