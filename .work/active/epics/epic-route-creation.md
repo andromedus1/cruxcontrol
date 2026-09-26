@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation
 kind: epic
-stage: review
+stage: done
 tags: [ui]
 parent: null
 depends_on: [epic-climb-browser, epic-board-control]
@@ -15,10 +15,11 @@ updated: 2026-09-26
 
 ## Current delivery state
 
-All seven child features have completed their required reviews. The expanded epic
-is ready for its separate aggregate review across authoring, lifecycle, screenshot
-import, saved animations, measured capacity, and effects. The effects review
-corrections and everyday reliability changes pass local checks and GitHub CI.
+All seven child features and this expanded epic have completed their required
+reviews. Authoring, lifecycle, screenshot import, saved animations, measured API-2
+capacity, and effects are complete for the accepted scope. The effects and aggregate
+review corrections pass local checks and GitHub CI. Current Trash retention is
+explicit Delete forever; no automatic expiry is claimed.
 
 The early opt-in Live Preview and explicit Light Draft decisions below are
 superseded by [automatic selected-climb lighting](../../archive/feature-selected-climb-controls.md)
@@ -190,4 +191,11 @@ that the hardware checkpoint has passed.
 All direct children are done: local-draft-library, editor-workspace, climb-lifecycle, animated-light-designs, kilter-screenshot-import, board-light-capacity-envelope, and flashy-light-effect-demos (all prefixed `epic-route-creation-`). Effects standard review completed with five verified corrections. Aggregate review should inspect current create/save/reopen/import/lifecycle/effects/control integration and foundation assertions, without repeating feature-level line review. Current behavior supersedes the original explicit Light Draft/Live Preview design through the accepted automatic-lighting and shared-header follow-ups. Local 662 tests and 13 browser workflows plus CI run 36249285638 are green.
 
 ## Aggregate review (2026-09-26)
-Standard weight, one independent fresh-context Sol pass. Accepted one material gap: saved spatial include/exclude references were omitted from definition-aware compatibility checks. `story-fix-spatial-target-recovery` adds the check and verifies unchanged recovery records. All other create/save/reopen/import/lifecycle/effects/controller seams passed aggregate inspection; reviewer ran 7 integration files/90 tests. Fix verification passes the full 664-test suite, lint/build and 13 browser workflows; latest CI pending. No second independent epic pass is required. Current Trash retention is explicit Delete forever, superseding the historical 30-day purge. Prior API-2 physical evidence applies; no new device run and API 3 remains unmeasured.
+Standard weight, one independent fresh-context Sol pass. Accepted one material gap: saved spatial include/exclude references were omitted from definition-aware compatibility checks. `story-fix-spatial-target-recovery` adds the check and verifies unchanged recovery records. All other create/save/reopen/import/lifecycle/effects/controller seams passed aggregate inspection; reviewer ran 7 integration files/90 tests. Fix verification passes the full 664-test suite, lint/build and 13 browser workflows; CI run 36250137466 passed for application commit 2a7fb76. No second independent epic pass is required. Current Trash retention is explicit Delete forever, superseding the historical 30-day purge. Prior API-2 physical evidence applies; no new device run and API 3 remains unmeasured.
+
+## Final completion review (2026-09-26)
+The authorized run closed the effects/route-creation loose end and six saved everyday-reliability items, plus the aggregate spatial-target recovery correction. Shared-library, catalog, and other roadmap implementation remain outside this run. Feature production used bounded ownership with inline integration; standard review weight comes from `.work/CONVENTIONS.md`.
+
+Exactly one balanced same-harness fresh-context Sol completion pass found no new material implementation blocker. The preferred external peer was unavailable due expired OAuth. The reviewer confirmed the spatial recovery correction and full local evidence: 85 files/664 tests, lint, TypeScript/Vite/PWA build, and 13 Chromium workflows. CI run 36250137466 subsequently passed. Two documentation nits were accepted: qualify semantic-role reassertion for spatial backgrounds in ARCHITECTURE and distinguish prior API-2 dogfooding from unmeasured API-3/other device acceptance in README. The stale opening review status is corrected. No second independent completion pass is required.
+
+Completed family records will be archived with refs to committed full bodies; roadmap links and the generated navigator are refreshed together. No merge, deployment, or phone maintenance is claimed. PR #20 owns the proposed application update.
