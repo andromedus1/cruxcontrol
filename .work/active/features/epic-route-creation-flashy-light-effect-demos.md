@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-flashy-light-effect-demos
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, ble]
 parent: epic-route-creation
 depends_on: [epic-route-creation-animated-light-designs, epic-route-creation-kilter-screenshot-import, epic-route-creation-board-light-capacity-envelope]
@@ -342,3 +342,6 @@ Implementation and physical acceptance were already complete. Revalidated the cu
 
 ## Review findings (2026-09-26)
 Standard, one independent same-harness Sol pass completed. Five confirmed blockers are owned by `epic-route-creation-flashy-light-effect-demos-review-fixes`: assignment-only role animation, unused-scope include precedence, reversed layer buttons, unknown imported spatial target IDs, and missing Beach Ball direction control. Fix and verify this named set, then close without re-review. Pentagram child reserve copy (15 vs current 20) is a documentation nit to reconcile before archival.
+
+## Review fix verification (2026-09-26)
+All five material findings are fixed and regression-tested in `epic-route-creation-flashy-light-effect-demos-review-fixes`. The host verified the contract qualification for assignment-only role effects, unused-target masking in both versions, later-is-topmost layering, definition-aware import rejection, and persisted Beach Ball direction edits including zero velocities. Focused tests: 63 pass. Integrated suite: 85 files / 662 tests pass; production TypeScript/Vite/PWA build and lint pass. Pentagram reserve nit is reconciled. No unresolved review findings; CI and the aggregate epic lane remain before terminal closure. Exactly one independent standard feature pass ran; closure is fix-verification only.
