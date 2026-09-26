@@ -107,4 +107,14 @@ describe('detectKilterFullrideRings', () => {
     expect(result.rings).toEqual([]);
     expect(result.warnings[0]?.code).toBe('unsupported-profile');
   });
+
+  it('rejects dimensions above the analysis cap before detector buffers are allocated', () => {
+    const result = detectKilterFullrideRings({
+      width: 2161,
+      height: 4800,
+      data: new Uint8ClampedArray(0),
+    });
+    expect(result.rings).toEqual([]);
+    expect(result.warnings[0]?.code).toBe('unsupported-profile');
+  });
 });

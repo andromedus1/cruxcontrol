@@ -1,5 +1,6 @@
 import type { BoardDefinition } from '../domain/boards/definition';
 import { interpretKilterScreenshot, suppliedEntryToCandidate } from './interpret';
+import { SCREENSHOT_MAX_HEIGHT, SCREENSHOT_MAX_WIDTH } from './ring-detector';
 import type { AnalyzedScreenshot, ScreenshotPixels } from './types';
 
 interface AnalysisCanvas {
@@ -52,6 +53,11 @@ export async function analyzeKilterScreenshotFile(
   const bitmap = await platform.decode(file);
   let canvas: AnalysisCanvas | null = null;
   try {
+    if (bitmap.width > SCREENSHOT_MAX_WIDTH || bitmap.height > SCREENSHOT_MAX_HEIGHT) {
+      throw new Error(
+        `Screenshot dimensions ${bitmap.width}×${bitmap.height} exceed the analysis limit of ${SCREENSHOT_MAX_WIDTH}×${SCREENSHOT_MAX_HEIGHT}.`,
+      );
+    }
     canvas = platform.createCanvas();
     canvas.width = bitmap.width;
     canvas.height = bitmap.height;
