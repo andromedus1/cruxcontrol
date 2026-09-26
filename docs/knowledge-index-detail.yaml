@@ -1,13 +1,13 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
-generated_at: '2026-09-26T16:14:40Z'
+generated_at: '2026-09-26T16:46:35Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
   docs/ARCHITECTURE.md:
     summary: 'High-level architecture for a Kilter-first climbing-board platform: typed board definitions
       and namespaced identities, independent catalog providers and controller profiles, on-demand local
-      catalogs, and a Fullride 7x10 first slice. An invited contribution library is intended; its collaboration
-      mechanism remains a research-gated design decision.
+      catalogs, and a Fullride 7x10 first slice. An invited contribution library is intended; a verified
+      access/storage comparison informs its pending collaboration design.
 
       '
     decisions:
@@ -38,8 +38,8 @@ documents:
       safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes.
     - Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and
       runs browser inference through ONNX Runtime Web.
-    - The invited shared library is an intended collaboration boundary; access, storage, and update mechanisms
-      require research before selection and must preserve local authoring authority.
+    - The invited shared library is an intended collaboration boundary; a verified access/storage comparison
+      informs design selection, which must preserve local authoring authority.
   docs/DEPLOY.md:
     summary: 'Operator runbook for the CI-gated Cloudflare Workers Static Assets deployment, including
       secrets, opt-in enablement, branch protection, and verification.
@@ -592,3 +592,7 @@ documents:
     - Crowd-sourced Kilter labels are biased — the "Quick Log Ascent" flash mechanism inflates the assigned-grade
       bin; kilterbench mitigates by truncating that bin to ≤50% of repeats and dropping climbs with <500
       repeats [github-kilterbench]{5}.
+  .research/analysis/briefs/invited-offline-library.md:
+    summary: A minimal Access-protected Worker with D1 is a conditional fit for one invited circle; Supabase
+      provides an alternative with admin invitations, database policies, and production SMTP configuration.
+      Local-copy and publication semantics remain explicit product decisions.

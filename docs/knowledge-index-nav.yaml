@@ -1,11 +1,11 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
 schema_version: 3
-generated_at: '2026-09-26T16:14:40Z'
+generated_at: '2026-09-26T16:46:35Z'
 generated_from: frontmatter
-total_docs: 23
+total_docs: 24
 by_kind:
   planning: 5
-  research: 17
+  research: 18
   historical: 1
 substrate_summary:
   active:

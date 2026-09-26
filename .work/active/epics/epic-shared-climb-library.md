@@ -2,7 +2,9 @@
 id: epic-shared-climb-library
 kind: epic
 stage: drafting
-tags: [ui, data, security, needs-research]
+tags: [ui, data, security]
+research_refs:
+  - .research/analysis/briefs/invited-offline-library.md
 parent: null
 depends_on: [epic-route-creation, epic-playlists, epic-build-effects-hardening-library-backup]
 release_binding: null
@@ -51,7 +53,7 @@ epic. Existing portable file sharing remains useful and is not replaced by this 
 Andrew approved this as the next major addition in the
 [saved milestone priorities](../../backlog/roadmap-next-milestones.md). Aim for explicit climb
 submission, library updates independent of app releases, and personal drafts and
-playlists that remain under each person's control. Scoping is in progress; no
+playlists that remain under each person's control. Design alignment is in progress; no
 service, authentication provider, or synchronization contract is selected yet.
 
 ## Research gate and downstream decision
@@ -67,9 +69,27 @@ boundary it uses, and how published versions reach each client. Do not select a
 stack or write production service code before this gate is resolved.
 
 The existing Cloudflare deployment brief supplies project context but does not
-establish an invitation/authentication or collaboration-data design. Proposed output:
+establish an invitation/authentication or collaboration-data design. The output is
 one focused synthesis brief with standard verification and agent judgment inside
-this bounded question; research kickoff settings await the user's confirmation.
+this bounded question; Andrew confirmed this setup on 2026-09-26.
+
+The [comparison brief](../../../.research/analysis/briefs/invited-offline-library.md)
+now supplies that grounding. Its conditional recommendation is an Access-protected
+Worker API with D1 alongside the static application, with Supabase retained as a
+viable option if application-managed accounts/invitations become important. The
+comparison does not establish actual account entitlements, a production hostname,
+mobile sign-in behavior, or deployment cost. No service has been provisioned.
+
+For this repository, `web/wrangler.jsonc` currently declares Static Assets without
+an application Worker. The researched Static Assets identity limitation makes
+explicit JWT validation and real route/session checks part of the eventual service
+proof. Keep author/member authorization and retry/revision guarantees inside the
+application contract; edge sign-in does not supply them automatically.
+
+Research recommends retained personal snapshots, explicit updates, owner-managed
+published revisions, withdrawal from future distribution, and online-only explicit
+publication initially. These are proposals for design alignment, not confirmed
+product decisions or implemented behavior.
 
 ## Design handoff
 
@@ -122,5 +142,82 @@ That direction is already captured in [Multi-Board Providers](../../backlog/epic
 Large scope: adds a collaboration boundary and intended shared-data capability.
 Foundation intent is rolled forward without choosing a service architecture.
 Dependencies are completed archived capabilities; `work-view --blocking
-epic-shared-climb-library --paths` found no cycle. Feature decomposition and research
-execution are pending their respective design/grounding checkpoints.
+epic-shared-climb-library --paths` found no cycle. Feature decomposition and mockups
+remain pending design alignment. The source-grounded comparison passed standard
+verification, recorded below; the research tag is cleared without advancing stage.
+
+## Research engagement registration (2026-09-26)
+
+The user approved the proposed question, agent-selected comparisons within its scope,
+and standard verification. This is one integrated architecture comparison, authored
+inline; the independent adversarial read remains required.
+
+```yaml
+intent: terminate-in-position
+output_kind: synthesis-brief
+consumer: calibrated-work
+verification_rigor: standard
+temporal_contract: re-engage-on-trigger
+primitives_extends: []
+primitives_opts_out: []
+decision_relevance: Choose invitation/access, shared contribution storage, and update semantics; evidence may select a minimal hosted service, a managed auth/data platform, or a static baseline while preserving offline local ownership.
+scope_authority: in-engagement-judgment
+analytical_artifact_type: per-campaign-brief
+```
+
+Prior-art check: existing deployment research covers static hosting and CI, not
+invited collaboration. It is context only, not a citation source or refresh target.
+This is a new gap-fill engagement.
+
+Framing candidates: (1) integrated comparison of three deployable approaches;
+(2) separate access, storage, and sync specialist facets; (3) prototype-first build.
+Choose (1): the decisions are coupled and the initial question is narrow enough for
+one source-grounded brief. (2) risks disconnected auth/storage recommendations;
+(3) would commit infrastructure before its tradeoffs are understood. No specialist
+fan-out or cross-synthesis; standard verification still applies. Self-flag: existing
+Cloudflare deployment can bias selection, so explicitly test a managed platform and
+a static baseline, plus disconfirming Access/session evidence.
+
+## Directional alignment pending
+
+Two questions are with Andrew; no answer is inferred from elapsed time:
+
+- **Saved-copy behavior:** recommend retaining personal copies when the published
+  source changes or is withdrawn, with explicit acceptance of later revisions.
+- **Mockup journey:** enter shared browsing, sign in by email code when needed,
+  browse, inspect, and save to a personal playlist; publish through an explicit
+  review from an authored climb. Reuse the established visual system and allow
+  returns to browsing rather than imposing a one-way wizard.
+
+The remaining invite administration choice can start with operator-managed access
+under the researched small-circle model; a self-service invitation console is not
+assumed. Resolve the directional pass and committed mockups before decomposition.
+
+## Research verification (2026-09-26)
+
+Standard verification is complete: 17 source-direct attestations, 39 resolved
+citations, zero broken or thin chains. Two named-feature lint flags are line-wrap
+false positives: the path/routing claim and D1 recovery-window claim each have
+adjacent citations to the exact supporting detail. No estimate, superlative,
+unfetched attribution, or analytical-artifact citation was found in the lead check.
+
+The independent reader reopened all 17 official sources. First pass requested four
+corrections: preserve the Cloudflare JWT/context documentation tension; attest the
+actual logout behavior; mark comparative judgments as inference; and locally cite
+the D1 transaction claim. The source records and brief were corrected in place,
+including precise cookie wording and explicit no-extra-parsing context detail.
+Second-pass verdict: **APPROVED**; all eight checklist categories passed:
+
+- Semantic citation chains and uncited claim shapes: corrected and supported.
+- Contradictions and relevance weighting: the provider wording tension remains
+  visible, and both platform alternatives retain their qualifications.
+- Quote context and analytical-tier inheritance: no substantive verbatim quote
+  distortion or prior-analysis-as-source citation.
+- Source locations and semantic attestation depth: the details are locatable and
+  sufficiently specific, including the narrow invitation-API claim.
+
+The lead independently rechecked Access session/logout behavior, Static Assets
+identity limitations, the general JWT instruction, and Supabase production SMTP
+requirements against fetched provider pages, then reread the corrected comparison
+and lint findings. This verifies the research, not a deployed service or accepted
+product design. No acquisition failure or additional research queue item remains.

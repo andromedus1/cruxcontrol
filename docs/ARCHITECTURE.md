@@ -8,8 +8,8 @@ summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
   definitions and namespaced identities, independent catalog providers and
   controller profiles, on-demand local catalogs, and a Fullride 7x10 first slice.
-  An invited contribution library is intended; its collaboration mechanism remains
-  a research-gated design decision.
+  An invited contribution library is intended; a verified access/storage comparison
+  informs its pending collaboration design.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; local SQLite through wa-sqlite AccessHandlePoolVFS in a Web Worker is the catalog read path."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
@@ -23,7 +23,7 @@ decisions:
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
   - "PWA updates use an app-owned prompt-mode Workbox registration, shared Web Locks admission, and explicit safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes."
   - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
-  - "The invited shared library is an intended collaboration boundary; access, storage, and update mechanisms require research before selection and must preserve local authoring authority."
+  - "The invited shared library is an intended collaboration boundary; a verified access/storage comparison informs design selection, which must preserve local authoring authority."
 ---
 
 # CruxControl — Architecture
@@ -195,10 +195,12 @@ The shared contribution library is not implemented. Its design must distinguish
 explicit publication and group updates from browser-local authoring and personal
 playlists. It should reuse existing versioned snapshot validation, board-definition
 compatibility, renderer/controller composition, and local recovery mechanisms.
-Access control, published identity/revisions, removal behavior, and recipient update
-reconciliation remain research-gated; no backend or authentication provider is
-selected by this scope. The static PWA and local repositories remain the client
-foundation. Existing portable file imports do not establish ongoing shared identity.
+The verified [invited-library comparison](../.research/analysis/briefs/invited-offline-library.md)
+conditionally recommends an Access-protected Worker API with D1 and retains Supabase
+as an alternative. Access control, published identity/revisions, removal behavior,
+and recipient updates remain design decisions; no service is implemented or selected
+by this scope alone. The static PWA and local repositories remain the client foundation.
+Existing portable file imports do not establish ongoing shared identity.
 
 ### Current and established module flows
 
