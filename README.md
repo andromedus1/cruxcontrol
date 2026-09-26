@@ -13,7 +13,10 @@ account or application server required.
   their identity or contents. Trash remains until you explicitly choose **Delete forever**.
 - Organize climbs into multiple named lists, reorder them, play through them on the
   board, and share complete lists by bounded URL or JSON file. Edit a local climb from
-  a list and return to the same list or play-through entry.
+  a list and return to the same list or play-through entry. Play-through announces the
+  climb and position and moves keyboard focus to the enabled navigation button when
+  reaching either end. Dismissing the device's share sheet reports cancellation without
+  an error alert.
 - Download and restore a bounded whole-library JSON backup containing saved climbs,
   Trash, orphan climbs, all installations, playlists, shared memberships, IDs, revisions,
   timestamps, and animation recipes. Recovery adds missing IDs, skips identical records,
@@ -105,12 +108,17 @@ separate Python project.
   LED positions, supported angles, and semantic role presets.
 - Independent versioned IndexedDB repositories own local climbs and lists, including
   optimistic revisions, lifecycle recovery, portable list snapshots, whole-library backup,
-  and offline use.
+  and offline use. Workspace reads report corrupt or unsupported climb records while
+  keeping healthy climbs and Trash available and leaving unreadable records untouched.
+  Climbs and lists refresh independently; a list read failure retains previously loaded
+  lists and offers **Retry loading lists** in Lists.
 - Library backup uses a 25 MiB file limit with limits of 10,000 climbs, 1,000 playlists,
   and 100,000 playlist references. Export checks for changes across the two stores and
   asks you to finish edits in other tabs; the check is bounded and does not form one
   cross-database atomic snapshot. It uses the existing browser-local origin and saved
-  records only; no schema rewrite, cloud upload, or account is involved.
+  records only; no schema rewrite, cloud upload, or account is involved. Backup reads
+  remain strict: unreadable records block export rather than producing an incomplete
+  backup. The backup file cannot salvage corrupt raw records.
 - A version-dispatched pure frame engine drives both screen preview and BLE output. It
   preserves v1 snapshots, uses prepared definition geometry and per-group held-frame/path
   reuse for v2, and leaves saved recipes editable as the preset library evolves. Stable
