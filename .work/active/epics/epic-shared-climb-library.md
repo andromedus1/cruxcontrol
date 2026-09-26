@@ -1,7 +1,7 @@
 ---
 id: epic-shared-climb-library
 kind: epic
-stage: drafting
+stage: implementing
 tags: [ui, data, security]
 research_refs:
   - .research/analysis/briefs/invited-offline-library.md
@@ -46,8 +46,26 @@ locally owned and exportable.
   when needed → browse → inspect → save to a personal playlist; publishing starts
   from an authored climb → review the shared snapshot → publish to the group.
   Reuse the existing visual style and allow easy returns to browsing — confirmed
-  by Andrew on 2026-09-26. This approves creating the mocks, not the finished visual
-  design or a particular authentication provider.
+  by Andrew on 2026-09-26. Andrew subsequently walked through the rendered previews
+  and selected **Use this design direction** on 2026-09-26. Both journeys are signed
+  off; this does not select an authentication provider.
+- **Small-circle operations:** start with operator-managed invitations and removal
+  of access. There is no member-administration screen or public signup in this
+  milestone. This is the minimal implementation choice already proposed in the
+  directional pass, not an additional user-confirmed requirement.
+- **Contribution lifecycle:** authors explicitly publish revisions or withdraw their
+  own contributions; an operator can remove a contribution from distribution.
+  Editing a personal climb never republishes it automatically. These working rules
+  apply the research recommendation and the ownership copy in the approved preview;
+  they do not authorize members to edit each other's contributions.
+- **Network behavior:** publishing requires a connection and an explicit action.
+  A successful commit is available to the next authorized refresh; no push delivery
+  or background publication queue is required. Failed/expired shared access leaves
+  local editing, saved climbs, playlists, and board control available.
+- **Service selection:** validate the conditional Access + Worker + D1 candidate
+  in the access feature before committing to production hosting. Keep Supabase as
+  the researched fallback if actual account, hostname, or mobile-session constraints
+  invalidate that candidate. No infrastructure has been provisioned.
 
 ## Scope boundary
 
@@ -66,8 +84,9 @@ epic. Existing portable file sharing remains useful and is not replaced by this 
 Andrew approved this as the next major addition in the
 [saved milestone priorities](../../backlog/roadmap-next-milestones.md). Aim for explicit climb
 submission, library updates independent of app releases, and personal drafts and
-playlists that remain under each person's control. Design alignment is in progress; no
-service, authentication provider, or synchronization contract is selected yet.
+playlists that remain under each person's control. The main journeys are approved;
+the four child features below own implementation design. Production service selection
+still depends on the access proof.
 
 ## Research gate and downstream decision
 
@@ -99,17 +118,17 @@ explicit JWT validation and real route/session checks part of the eventual servi
 proof. Keep author/member authorization and retry/revision guarantees inside the
 application contract; edge sign-in does not supply them automatically.
 
-Andrew confirmed the research recommendation to retain personal snapshots and
-offer updates explicitly. Owner-managed published revisions, withdrawal from
-future distribution, and online-only explicit publication initially remain proposals
-for design alignment. None of these mechanisms is implemented yet.
+Andrew confirmed retaining personal snapshots and offering updates explicitly.
+The design decisions above adopt the smallest ownership and online-publication
+rules consistent with that choice and the approved preview. None of these mechanisms
+is implemented yet.
 
 ## Design handoff
 
-Run the research-enhanced `epic-design --only-questions` pass before autonomous
-decomposition/implementation. Inherit the confirmed saved-copy behavior; settle
-publication ownership/revision/removal rules and the invite flow from the researched
-options.
+The directional question pass and rendered journey sign-off are complete. Start
+feature design with `epic-shared-climb-library-invited-access`, then follow the
+declared dependency chain. Inherit the decisions above without repeating the
+audience, Android, publication, saved-copy, or visual-direction questions.
 The existing deployment path and artwork-distribution item are audience-access
 companions: invited access is not evidence of artwork redistribution permission.
 Any new hosting origin must leave the phone's existing library intact and follow
@@ -132,16 +151,23 @@ mobile-first previews with a responsive desktop layout:
   Review shows the contribution snapshot, audience, attribution, and retained-copy
   rule. Confirmation returns to the shared list with the sample contribution visible.
 
-The journey outline and existing visual style were approved on 2026-09-26; the
-rendered previews await visual sign-off. The review navigation strip is outside the
+**Signed off: 2026-09-26.** Andrew approved the rendered browsing/saving and publishing
+journeys. [PR #22](https://github.com/andromedus1/cruxcontrol/pull/22) is merged with
+passing CI. The review navigation strip is outside the
 product UI. Sample names/climbs are fictional, geometry comes from the committed
 Fullride definition, and hold shapes reuse the authored schematic vocabulary.
 The previews perform no email, authentication, library-storage, or Bluetooth work.
 
 These are focused journey previews. Final integration must retain the existing
-Drafts, Trash, and Playlists destinations alongside shared browsing. Explicit update
-review, member administration, and failure/recovery flows remain downstream design
-work; this preview does not claim to cover them.
+Drafts, Trash, and Playlists destinations alongside shared browsing. Lifecycle actions
+compose the selected surfaces: an update notice in climb detail, a compact changes
+summary with an explicit choice, the existing publication preview for revisions,
+and the existing destructive-confirmation pattern for withdrawal. Failure states
+reuse the application's inline error/retry treatment. Operator-managed membership
+has no new application screen. These variants are not separately rendered in the
+preview. Under AGENTS.md's existing-component exception they need no separate flow;
+if feature design exposes a novel comparison or recovery surface, mock that surface
+before production UI work. Approval does not cover an unseen redesign.
 
 Validation: all 10 HTML pages rendered at 390px and 1280px with no page exceptions,
 broken local links, or horizontal document overflow. Walked email/code sign-in,
@@ -181,8 +207,9 @@ That direction is already captured in [Multi-Board Providers](../../backlog/epic
 Large scope: adds a collaboration boundary and intended shared-data capability.
 Foundation intent is rolled forward without choosing a service architecture.
 Dependencies are completed archived capabilities; `work-view --blocking
-epic-shared-climb-library --paths` found no cycle. Feature decomposition and mockups
-await visual alignment; the approved journey outlines now have linked mockups.
+epic-shared-climb-library --paths` found no cycle. The approved flows now ground four
+child features, each at `drafting`; the epic is `implementing` because decomposition
+is complete, not because the shared service is delivered.
 The source-grounded comparison passed standard
 verification, recorded below; the research tag is cleared without advancing stage.
 
@@ -220,14 +247,80 @@ a static baseline, plus disconfirming Access/session evidence.
 
 ## Directional alignment
 
-Andrew confirmed saved-copy behavior and the mockup journeys above. Generate polished,
-mobile-first flows using the existing tokens/components/motion, with a responsive
-desktop layout. Use hybrid review navigation and ordinary in-product back links;
-the review step strip is not proposed as application navigation.
+Andrew confirmed saved-copy behavior and signed off both rendered journeys. Keep
+the mobile-first layout, existing tokens/components/motion, responsive desktop
+composition, and ordinary in-product back links. The review step strip is not
+application navigation. No further strategic question is needed for decomposition:
+settled product direction is inherited, and actual hosting is an explicit proof
+obligation rather than an assumed deployment choice.
 
-The remaining invite administration choice can start with operator-managed access
-under the researched small-circle model; a self-service invitation console is not
-assumed. Resolve the directional pass and committed mockups before decomposition.
+## Decomposition
+
+Four capability slices keep authorization, explicit distribution, local acquisition,
+and later changes reviewable without splitting the work into database/API/UI layers.
+The service comparison considered Cloudflare, Supabase, and file exchange; use the
+conditional Cloudflare candidate for the first proof, retain Supabase as fallback,
+and keep portable files available independently. A database-only foundation or a
+separate deployment feature would hide the access capability's real acceptance
+boundary, so service provisioning, session behavior, and operational proof belong
+to invited access.
+
+### Child features
+
+- [Invited access](../features/epic-shared-climb-library-invited-access.md) — enter
+  the group with email sign-in, enforce current membership, and preserve local
+  sessions through auth failure — depends on: `[]`.
+- [Publish a contribution](../features/epic-shared-climb-library-publish.md) — review
+  and explicitly publish an attributed, retry-safe snapshot — depends on:
+  `[epic-shared-climb-library-invited-access]`.
+- [Browse and save](../features/epic-shared-climb-library-browse-save.md) — find,
+  inspect, light, and retain compatible contributions in personal playlists —
+  depends on: `[epic-shared-climb-library-publish]`.
+- [Explicit updates and withdrawal](../features/epic-shared-climb-library-updates.md)
+  — revise or withdraw owned contributions and let recipients choose whether to
+  accept updates while retaining their data — depends on:
+  `[epic-shared-climb-library-browse-save]`.
+
+The chain reflects real contract consumers. Publication establishes shared identity
+and immutable revisions; saving records that provenance from its first version;
+the final feature consumes both to offer explicit updates. No catalog bootstrap,
+logbook, iOS bridge, or manufacturer-sync dependency is introduced.
+
+### Decomposition risks
+
+- **Access proof first:** actual hostname/account configuration and mobile sign-in
+  are unverified. Static Assets does not pass verified Access context to the user
+  Worker. The access feature must prove the trust boundary, alternative routes,
+  expiry, and revocation before declaring the candidate production-ready.
+- **Local ownership is the hardest data boundary:** initial saves must include
+  backupable source identity/revision. Subsequent updates must detect intervening
+  local edits and preserve stable local IDs and playlist order. Separate IndexedDB
+  stores are not one transaction; interrupted saves need explicit recovery.
+- **Lost responses and concurrent writers:** retries must not duplicate publication;
+  updates must reject stale expectations. Refresh failure or a partial result is
+  never evidence that a source was withdrawn.
+- **Deployment is not a phone migration:** retain the existing origin during phone
+  maintenance, validate a fresh backup, and restore deliberately if a different
+  origin is chosen. The artwork-distribution companion remains a hosting gate;
+  use the authored schematic path where redistribution is unresolved.
+- **Keep features bounded:** initial publication owns creation and the revision
+  identity contract; the final lifecycle feature owns later mutations. Auth,
+  mutation, preservation, browser, and operational checks belong to their owning
+  features, not additional test/refactor/deployment items.
+
+Grounding used direct reads of the existing workspace, draft and playlist types,
+portable import, Static Assets configuration, and sibling item boundaries. These
+known seams left no separate exploration question, so no Explore fan-out was needed.
+
+## Design advisory review
+
+One fresh-context advisory pass at the project's `standard` weight examined the
+four feature boundaries, dependency chain, approval claims, privacy, and local-data
+preservation. No decomposition blocker was found. Accepted its one useful addition:
+authors must rediscover owned publications after browser recovery or on a second
+device; the publish and lifecycle briefs now assign that responsibility explicitly.
+No extra feature or approval is needed. This is design advice, not implementation
+verification or the epic's eventual completion review.
 
 ## Research verification (2026-09-26)
 

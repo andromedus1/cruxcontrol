@@ -10,7 +10,7 @@ summary: >
   editing, invited shared contributions, logbook/session tracking, grade prediction,
   and recommendations in an offline-first client.
 decisions:
-  - "The local wall-session loop is implemented; an invited shared climb library is the next capability to design."
+  - "The local wall-session loop is implemented; approved invited-library journeys guide access, publication, retained personal copies, and explicit source updates."
   - "Invited members explicitly publish climbs immediately to their group; personal authoring/playlists remain local and Android board control is sufficient initially."
   - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
   - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
@@ -229,16 +229,20 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   an approval queue. Only explicitly chosen content is contributed; local autosave
   does not publish private work.
 - Receive group contributions independently of app releases. Publication availability
-  does not imply instantaneous delivery to every device; refresh behavior, versioning,
-  and offline caching are defined during research-grounded design.
+  does not imply instantaneous delivery to every device. Start with explicit online
+  publication and bounded refresh; personal saved copies provide guaranteed offline use.
 - Browse compatible contributions, use them in personal playlists, and control the
   board through the existing Android controller path. iPhone control is deferred.
 - Preserve locally authored climbs, list order and membership, saved recipes, Trash,
   and backup/recovery guarantees. Shared content updates or removals must not silently
   overwrite private edits or remove personally retained climbs.
-- Local editing and board sessions remain usable if the shared service is unavailable.
-  Invitation/access, contribution revision/removal, and recipient update semantics
-  require design before implementation. This capability is not yet delivered.
+- Authors explicitly revise or withdraw their own contributions; withdrawal controls
+  future distribution and leaves retained copies usable. Recipients review and accept
+  updates explicitly, protecting intervening private edits and preserving list order.
+- Start with operator-managed invitations and access removal for one circle. Local
+  editing and board sessions remain usable if shared sign-in expires or the service
+  is unavailable. Provider selection requires a real hosting/session proof. This
+  capability is not yet delivered.
 
 ## Domain Model
 

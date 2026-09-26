@@ -1,13 +1,14 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
-generated_at: '2026-09-26T16:46:35Z'
+generated_at: '2026-09-26T18:21:11Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
   docs/ARCHITECTURE.md:
     summary: 'High-level architecture for a Kilter-first climbing-board platform: typed board definitions
       and namespaced identities, independent catalog providers and controller profiles, on-demand local
-      catalogs, and a Fullride 7x10 first slice. An invited contribution library is intended; a verified
-      access/storage comparison informs its pending collaboration design.
+      catalogs, and a Fullride 7x10 first slice. An invited contribution library is intended; approved
+      journeys and a verified access/storage comparison guide its bounded collaboration service and retained
+      local copies.
 
       '
     decisions:
@@ -38,8 +39,9 @@ documents:
       safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes.
     - Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and
       runs browser inference through ONNX Runtime Web.
-    - The invited shared library is an intended collaboration boundary; a verified access/storage comparison
-      informs design selection, which must preserve local authoring authority.
+    - The intended invited library separates authenticated publication and immutable source revisions
+      from retained browser-local copies; production service selection remains conditional on a hosting/session
+      proof.
   docs/DEPLOY.md:
     summary: 'Operator runbook for the CI-gated Cloudflare Workers Static Assets deployment, including
       secrets, opt-in enablement, branch protection, and verification.
@@ -70,8 +72,8 @@ documents:
 
       '
     decisions:
-    - The local wall-session loop is implemented; an invited shared climb library is the next capability
-      to design.
+    - The local wall-session loop is implemented; approved invited-library journeys guide access, publication,
+      retained personal copies, and explicit source updates.
     - Invited members explicitly publish climbs immediately to their group; personal authoring/playlists
       remain local and Android board control is sufficient initially.
     - The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats).
