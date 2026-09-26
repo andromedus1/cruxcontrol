@@ -1,7 +1,7 @@
 ---
 id: idea-screenshot-import-dimension-limit
 kind: story
-stage: review
+stage: done
 tags: [security, data]
 parent: null
 depends_on: []
@@ -53,3 +53,13 @@ The decoded bitmap dimensions were copied into a canvas before the detector's pr
 - Red-green evidence: the new oversized-bitmap test first reached canvas setup (`Cannot set properties of undefined`); after the pre-allocation guard was implemented, the dimension regressions passed and the full screenshot-import suite remained green.
 - Inline review: the cap is checked before `createCanvas`, detector profile validation precedes `connectedComponents`, and the decoded bitmap remains closed on both rejection and extraction errors. The current repository typecheck is blocked by the unrelated host edit in `web/src/route-editor/LightEffectsPanel.tsx` (`velocityX`/`velocityY` access on the `SpatialRecipe` union); screenshot-import tests and lint remain green. Stage remains `review` for host integrated checks/CI.
 - Adjacent issues parked: none.
+
+## Review closure (2026-09-26)
+
+**Verdict**: Approve.
+
+Bounded inline standalone review: dimension checks precede canvas and detector pixel access, resources close on failure, and normal/supplied screenshots retain their path.
+
+**Blockers**: none unresolved. **Important**: none. **Review weight**: standard, from project convention (standalone stories use bounded inline review).
+
+**Verification**: 85 Vitest files / 662 tests; lint; TypeScript/Vite/PWA production build; all 13 Chromium workflows. GitHub CI run [36249285638](https://github.com/andromedus1/cruxcontrol/actions/runs/36249285638) passed for application commit `93cda6a`. No phone maintenance or user-data migration occurred.
