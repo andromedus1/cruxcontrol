@@ -5,7 +5,7 @@ import {
   DraftRepositoryError,
   translateDraftStorageError,
 } from './errors.ts';
-import { DRAFT_STORE_NAME, DRAFT_UPDATED_ORDER_INDEX } from './open-draft-database.ts';
+import { DRAFT_STORE_NAME } from './open-draft-database.ts';
 import type {
   DraftListOptions,
   DraftRepositoryOptions,
@@ -165,25 +165,31 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
 
   async list(options: DraftListOptions = {}): Promise<readonly LocalClimbDraft[]> {
     let request: IDBRequest<IDBCursorWithValue | null>;
+    let transaction: IDBTransaction;
     try {
-      const transaction = this.#database.transaction(DRAFT_STORE_NAME, 'readonly');
-      request = transaction
-        .objectStore(DRAFT_STORE_NAME)
-        .index(DRAFT_UPDATED_ORDER_INDEX)
-        .openCursor(null, 'prev');
+      transaction = this.#database.transaction(DRAFT_STORE_NAME, 'readonly');
+      const store = transaction.objectStore(DRAFT_STORE_NAME);
+      // Every read must see rows missing the ordering index key: strict consumers
+      // must reject incomplete inputs, and recovery consumers must report them.
+      request = store.openCursor();
     } catch (cause) {
       throw translateDraftStorageError(cause, 'Could not list local drafts');
     }
     return new Promise((resolve, reject) => {
       const drafts: LocalClimbDraft[] = [];
+      transaction.onabort = () => reject(transactionError(transaction, 'Could not list local drafts'));
+      transaction.oncomplete = () => {
+        drafts.sort((a, b) => {
+          if (a.updatedAt !== b.updatedAt) return a.updatedAt < b.updatedAt ? 1 : -1;
+          return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
+        });
+        resolve(Object.freeze(drafts));
+      };
       request.onerror = () =>
         reject(translateDraftStorageError(request.error, 'Could not list local drafts'));
       request.onsuccess = () => {
         const cursor = request.result;
-        if (!cursor) {
-          resolve(Object.freeze(drafts));
-          return;
-        }
+        if (!cursor) return;
         try {
           const draft = decodeStoredDraft(cursor.value);
           if (
@@ -194,7 +200,17 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
             drafts.push(draft);
           cursor.continue();
         } catch (error) {
-          reject(error);
+          if (
+            options.onUnreadableRecord && error instanceof DraftRepositoryError &&
+            (error.code === 'corrupt-record' || error.code === 'schema-unsupported')
+          ) {
+            try {
+              options.onUnreadableRecord({ key: String(cursor.primaryKey), message: error.message });
+              cursor.continue();
+            } catch (cause) {
+              reject(cause);
+            }
+          } else reject(error);
         }
       };
     });

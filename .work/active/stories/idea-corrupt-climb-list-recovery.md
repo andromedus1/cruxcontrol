@@ -1,7 +1,7 @@
 ---
 id: idea-corrupt-climb-list-recovery
 kind: story
-stage: implementing
+stage: done
 tags: [data]
 parent: feature-library-read-resilience
 depends_on: []
@@ -26,3 +26,8 @@ Authorized in the everyday-reliability cleanup. Preserve stored library data and
 
 ## Simplification opportunity
 Repair the existing path directly; no new subsystem.
+
+## Implementation notes (2026-09-26)
+Root cause: the indexed list cursor rejected on the first corrupt decoded row and could miss rows without index metadata. Added explicit opt-in read diagnostics; full-store enumeration preserves ordering, reports corrupt/future records, and leaves bytes unchanged. Strict reads still reject incomplete input. Repository regression failed before fix and passes afterward, including healthy active/Trash rows, unindexed corruption, future versions, raw preservation and real storage failures.
+
+Verification: `npm -w web test -- src/drafts/indexeddb-repository.test.ts src/app/CruxControlWorkspace.test.tsx` — 33 tests pass. TypeScript passed after integration. Child checkpoint closes directly; parent owns standard independent review. Inline host capability chosen for data-preservation contract. Full repository/CI checks follow before parent completion.
