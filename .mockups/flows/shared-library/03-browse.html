@@ -1,0 +1,3383 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Shared library · CruxControl preview</title>
+    <link rel="stylesheet" href="../../design-system/tokens.css" />
+    <link rel="stylesheet" href="../../design-system/components.css" />
+    <link rel="stylesheet" href="../../design-system/motion.css" />
+    <style>
+      .is-thumbnail .flow-hybrid,
+      .is-thumbnail .app-header,
+      .is-thumbnail .session-strip,
+      .is-thumbnail .app-tabs {
+        display: none;
+      }
+      .is-thumbnail .app-shell {
+        min-height: 0;
+      }
+      .is-thumbnail .page {
+        padding: 20px 16px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      a.btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+      }
+      .btn {
+        line-height: 1.3;
+        min-height: 46px;
+      }
+      .btn-primary {
+        color: var(--color-bg-primary);
+      }
+      button:disabled {
+        cursor: default;
+      }
+      .flow-hybrid {
+        padding: 8px 20px;
+        background: var(--color-bg-inverse);
+        color: var(--color-text-inverse);
+        font: 12px/1.4 var(--font-mono);
+      }
+      .review-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .flow-hybrid a {
+        color: inherit;
+        min-height: 32px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .review-steps {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        margin-top: 4px;
+      }
+      .review-steps a {
+        white-space: nowrap;
+        text-decoration: none;
+        opacity: 0.74;
+        border-bottom: 2px solid transparent;
+      }
+      .review-steps a[aria-current="step"] {
+        opacity: 1;
+        border-color: currentColor;
+      }
+      .review-note {
+        opacity: 0.85;
+        font-size: 11px;
+      }
+      .app-shell {
+        max-width: 1120px;
+        margin: auto;
+        background: var(--color-bg-primary);
+        min-height: calc(100dvh - 100px);
+      }
+      .app-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 24px 12px;
+      }
+      .brand {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        font-weight: 700;
+        text-decoration: none;
+        color: var(--color-text-primary);
+        font-size: 20px;
+      }
+      .brand-mark {
+        width: 30px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--color-border-strong);
+        border-radius: var(--radius-sm);
+        font: 600 11px var(--font-mono);
+        color: var(--color-accent);
+      }
+      .identity {
+        font: 12px var(--font-mono);
+        color: var(--color-text-secondary);
+      }
+      .session-strip {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px 12px;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .session-label {
+        font-size: 13px;
+        color: var(--color-text-secondary);
+      }
+      .session-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .status-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--color-text-secondary);
+        margin-right: 7px;
+      }
+      .session-button {
+        font-size: 12px;
+        min-height: 38px;
+        padding: 6px 10px;
+      }
+      .app-tabs {
+        display: flex;
+        gap: 8px;
+        border-bottom: 1px solid var(--color-border);
+        padding: 8px 24px;
+        background: var(--color-bg-secondary);
+      }
+      .app-tabs a {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        padding: 8px 14px;
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        color: var(--color-text-secondary);
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .app-tabs a[aria-current="page"] {
+        color: var(--color-text-primary);
+        background: var(--color-accent-muted);
+        box-shadow: inset 0 0 0 1px var(--color-accent);
+      }
+      .page {
+        padding: 28px 24px 48px;
+      }
+      .page-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+      .page-head p {
+        margin: 8px 0 0;
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        font: 500 11px/1.4 var(--font-mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--color-text-secondary);
+      }
+      h1 {
+        font-size: var(--font-size-2xl);
+        line-height: var(--line-height-tight);
+        margin: 0 0 12px;
+        letter-spacing: -0.025em;
+      }
+      h2 {
+        font-size: var(--font-size-lg);
+        line-height: 1.3;
+        margin: 0 0 10px;
+      }
+      p {
+        margin: 0 0 16px;
+      }
+      .muted,
+      .small {
+        color: var(--color-text-secondary);
+      }
+      .small {
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .tiny {
+        font: 12px/1.5 var(--font-mono);
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 24px;
+      }
+      .actions .btn {
+        flex: 1;
+      }
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        font-size: 14px;
+        margin: -8px 0 16px;
+        gap: 8px;
+      }
+      .mono {
+        font-family: var(--font-mono);
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 48px;
+        align-items: center;
+        padding: 20px 24px;
+      }
+      .hero h1 {
+        font-size: var(--font-size-3xl);
+        max-width: 450px;
+      }
+      .hero p {
+        max-width: 430px;
+      }
+      .hero-art {
+        padding: 20px;
+        background: var(--color-bg-secondary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        transform: rotate(2deg);
+        max-width: 320px;
+        justify-self: center;
+        box-shadow: 10px 14px 0 var(--color-bg-tertiary);
+      }
+      .hero-art .board-svg {
+        max-height: 350px;
+      }
+      .hero-caption {
+        margin-top: 12px;
+        font: 12px var(--font-mono);
+        text-align: center;
+        color: var(--color-text-secondary);
+      }
+      .note {
+        border-left: 2px solid var(--color-accent);
+        padding: 2px 0 2px 14px;
+        margin: 24px 0;
+      }
+      .note p {
+        margin: 0;
+      }
+      .feature-line {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 16px 0;
+        border-top: 1px solid var(--color-border);
+      }
+      .feature-number {
+        font: 12px var(--font-mono);
+        color: var(--color-accent);
+        padding-top: 3px;
+      }
+      .feature-line strong {
+        display: block;
+        margin-bottom: 3px;
+      }
+      .feature-line p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--color-text-secondary);
+      }
+      .auth-wrap {
+        max-width: 470px;
+        margin: 24px auto;
+      }
+      .auth-card {
+        padding: 32px;
+      }
+      .auth-card form {
+        margin-top: 24px;
+      }
+      .field {
+        margin-bottom: 18px;
+      }
+      .field label {
+        font-size: 14px;
+      }
+      .auth-card .btn {
+        width: 100%;
+      }
+      .code-input {
+        letter-spacing: 0.3em;
+        font: 24px var(--font-mono);
+      }
+      .auth-symbol,
+      .success-symbol {
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: var(--radius-md);
+        background: var(--color-accent-muted);
+        color: var(--color-accent);
+        font-size: 24px;
+        margin-bottom: 24px;
+      }
+      .auth-footer {
+        text-align: center;
+        margin-top: 20px;
+      }
+      .auth-footer a {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .inline-status {
+        margin-top: 12px;
+        font-size: 14px;
+        color: var(--color-success);
+      }
+      .search-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 180px;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .search-wrap {
+        position: relative;
+      }
+      .search-wrap svg {
+        position: absolute;
+        top: 15px;
+        left: 13px;
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: var(--color-text-secondary);
+        stroke-width: 1.8;
+      }
+      .search-wrap input {
+        padding-left: 40px;
+      }
+      .filter-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 5px;
+      }
+      .result-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin: 18px 0 10px;
+        color: var(--color-text-secondary);
+        font: 12px var(--font-mono);
+      }
+      .browse-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 28px;
+      }
+      .climb-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 10px;
+      }
+      .climb-list > li > a {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-bg-secondary);
+        padding: 16px;
+        color: var(--color-text-primary);
+        text-decoration: none;
+        min-height: 90px;
+      }
+      .climb-list > li > a:hover {
+        border-color: var(--color-accent);
+      }
+      .grade-tile {
+        height: 52px;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        background: var(--color-bg-tertiary);
+        border-radius: var(--radius-sm);
+        font: 600 18px var(--font-mono);
+      }
+      .grade-tile small {
+        font-size: 10px;
+        font-weight: 400;
+        color: var(--color-text-secondary);
+      }
+      .climb-title {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .climb-meta {
+        display: block;
+        font-size: 13px;
+        color: var(--color-text-secondary);
+      }
+      .arrow {
+        color: var(--color-text-secondary);
+      }
+      .board-preview {
+        padding: 18px;
+        border: 1px solid var(--color-border);
+        background: var(--color-bg-secondary);
+        border-radius: var(--radius-lg);
+      }
+      .board-svg {
+        width: 100%;
+        max-height: 520px;
+        display: block;
+      }
+      .board-panel {
+        fill: var(--color-bg-tertiary);
+        stroke: var(--color-border-strong);
+        stroke-width: 0.3;
+      }
+      .neutral-hold path {
+        fill: var(--color-border-strong);
+        opacity: 0.42;
+      }
+      .bolt {
+        fill: var(--color-bg-primary);
+      }
+      .active-hold path {
+        fill: currentColor;
+        stroke: var(--color-bg-primary);
+        stroke-width: 0.25;
+      }
+      .hold-ring {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 0.55;
+      }
+      .active-hold.start {
+        color: var(--color-role-start);
+      }
+      .active-hold.middle {
+        color: var(--color-role-middle);
+      }
+      .active-hold.finish {
+        color: var(--color-role-finish);
+      }
+      .active-hold.foot {
+        color: var(--color-role-foot);
+      }
+      .board-preview .role-legend {
+        margin: 14px 0 0;
+        justify-content: center;
+        gap: 12px;
+      }
+      .board-preview .role {
+        font-size: 11px;
+      }
+      .browse-preview {
+        align-self: start;
+      }
+      .browse-preview .board-svg {
+        height: 335px;
+      }
+      .preview-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .preview-title h2 {
+        margin: 0;
+      }
+      .text-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        font-size: 14px;
+      }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 32px;
+        align-items: start;
+      }
+      .detail-copy {
+        padding: 12px 0;
+      }
+      .byline {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .avatar {
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--color-accent-muted);
+        color: var(--color-accent);
+        font: 500 13px var(--font-mono);
+      }
+      .byline span:last-child {
+        font-size: 14px;
+        color: var(--color-text-secondary);
+      }
+      .facts {
+        display: flex;
+        gap: 24px;
+        padding: 18px 0;
+        border-block: 1px solid var(--color-border);
+        margin: 20px 0;
+      }
+      .facts div {
+        display: grid;
+        gap: 4px;
+      }
+      .facts strong {
+        font: 500 20px var(--font-mono);
+      }
+      .facts span {
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
+      .detail-copy .actions {
+        flex-direction: column;
+      }
+      .detail-copy .btn {
+        width: 100%;
+      }
+      .note.small {
+        font-size: 13px;
+      }
+      .detail-title-line {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .detail-title-line h1 {
+        margin: 0;
+      }
+      .save-wrap {
+        max-width: 620px;
+        margin: 0 auto;
+      }
+      .save-summary {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 24px 0;
+        padding-bottom: 22px;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .save-summary .board-svg {
+        width: 64px;
+        height: 88px;
+      }
+      .save-summary h2 {
+        margin-bottom: 4px;
+      }
+      .playlist-options {
+        display: grid;
+        gap: 10px;
+        border: 0;
+        margin: 20px 0;
+        padding: 0;
+      }
+      .playlist-options legend {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+      .playlist-option {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        min-height: 74px;
+        padding: 14px 16px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        background: var(--color-bg-secondary);
+      }
+      .playlist-option:has(input:checked) {
+        border-color: var(--color-accent);
+        background: var(--color-accent-muted);
+      }
+      .playlist-option input {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--color-accent);
+      }
+      .playlist-option span {
+        display: grid;
+        gap: 3px;
+      }
+      .playlist-option small {
+        color: var(--color-text-secondary);
+        font-size: 13px;
+      }
+      .success-card {
+        padding: 32px;
+      }
+      .success-card .success-symbol {
+        background: color-mix(
+          in srgb,
+          var(--color-success) 16%,
+          var(--color-bg-secondary)
+        );
+        color: var(--color-success);
+      }
+      .playlist-result {
+        margin: 24px 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: climbs;
+      }
+      .playlist-result li {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--color-border);
+        counter-increment: climbs;
+      }
+      .playlist-result li:before {
+        content: counter(climbs, decimal-leading-zero);
+        font: 12px var(--font-mono);
+        color: var(--color-text-secondary);
+      }
+      .playlist-result li:last-child {
+        color: var(--color-success);
+      }
+      .review-grid {
+        display: grid;
+        grid-template-columns: 0.8fr 1.2fr;
+        gap: 32px;
+        align-items: start;
+      }
+      .review-list {
+        margin: 20px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .review-list li {
+        padding: 16px 0;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .review-list li strong {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      .review-list li span {
+        display: block;
+        font-size: 14px;
+        color: var(--color-text-secondary);
+      }
+      .audience {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+        background: var(--color-bg-secondary);
+        margin: 20px 0;
+      }
+      .audience strong {
+        font-size: 14px;
+      }
+      .audience span {
+        font-size: 13px;
+        color: var(--color-text-secondary);
+      }
+      .summary-card {
+        padding: 20px;
+        margin-top: 24px;
+      }
+      .summary-card .byline {
+        margin-bottom: 0;
+      }
+      .divider {
+        height: 1px;
+        background: var(--color-border);
+        margin: 24px 0;
+      }
+      .no-results {
+        padding: 28px 16px;
+        text-align: center;
+        border: 1px dashed var(--color-border);
+        border-radius: var(--radius-md);
+      }
+      .notice-row {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: 12px 16px;
+        font-size: 13px;
+        color: var(--color-text-secondary);
+        margin-top: 20px;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .overview {
+        max-width: 1120px;
+        margin: auto;
+        padding: 40px 24px;
+      }
+      .overview-intro {
+        max-width: 720px;
+      }
+      .overview-intro h1 {
+        font-size: 36px;
+      }
+      .overview .actions {
+        max-width: 620px;
+      }
+      .journey-section {
+        margin-top: 40px;
+      }
+      .journey-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+      }
+      .step-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+      }
+      .step-card {
+        overflow: hidden;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        background: var(--color-bg-secondary);
+      }
+      .step-card > header {
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .step-card > header span {
+        font: 12px var(--font-mono);
+        color: var(--color-text-secondary);
+      }
+      .step-card > header a {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .frame-window {
+        height: 250px;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      .frame-window iframe {
+        border: 0;
+        width: 133.334%;
+        height: 720px;
+        transform: scale(0.75);
+        transform-origin: top left;
+      }
+      .step-description {
+        padding: 14px 16px;
+        font-size: 13px;
+        color: var(--color-text-secondary);
+        border-top: 1px solid var(--color-border);
+        min-height: 94px;
+      }
+      .step-description p {
+        margin: 0 0 6px;
+      }
+      .cross-jump {
+        font: 11px var(--font-mono);
+        color: var(--color-text-link);
+      }
+      .overview-note {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-top: 36px;
+        border-top: 1px solid var(--color-border);
+        padding-top: 24px;
+      }
+      .overview-note p {
+        font-size: 14px;
+        color: var(--color-text-secondary);
+      }
+      @media (min-width: 1200px) {
+        .app-shell {
+          border-inline: 1px solid var(--color-border);
+        }
+      }
+      @media (max-width: 760px) {
+        .flow-hybrid {
+          padding: 8px 12px;
+        }
+        .review-steps {
+          gap: 14px;
+        }
+        .review-note {
+          width: 100%;
+        }
+        .app-header {
+          padding: 16px 16px 10px;
+        }
+        .session-strip {
+          padding: 0 16px 12px;
+        }
+        .session-label {
+          font-size: 12px;
+        }
+        .session-actions {
+          gap: 8px;
+        }
+        .app-tabs {
+          padding: 8px 12px;
+          gap: 4px;
+        }
+        .app-tabs a {
+          padding: 8px 12px;
+        }
+        .page {
+          padding: 24px 16px 36px;
+        }
+        .page-head {
+          gap: 12px;
+        }
+        .page-head .btn {
+          padding: 8px 12px;
+        }
+        .page-head p {
+          font-size: 13px;
+        }
+        .hero {
+          grid-template-columns: 1fr;
+          gap: 28px;
+          padding: 12px 0;
+        }
+        .hero h1 {
+          font-size: 36px;
+        }
+        .hero-art {
+          display: none;
+        }
+        .hero .actions {
+          flex-direction: column;
+        }
+        .auth-wrap {
+          margin: 12px auto;
+        }
+        .auth-card {
+          padding: 24px;
+        }
+        .browse-grid {
+          grid-template-columns: 1fr;
+        }
+        .browse-preview {
+          display: none;
+        }
+        .search-row {
+          grid-template-columns: minmax(0, 1fr) 128px;
+          gap: 8px;
+        }
+        .climb-list > li > a {
+          padding: 14px 12px;
+          gap: 12px;
+        }
+        .detail-grid,
+        .review-grid {
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+        .detail-grid .board-preview {
+          order: 1;
+        }
+        .detail-copy {
+          display: contents;
+        }
+        .detail-copy > header {
+          grid-row: 1;
+        }
+        .detail-copy > .detail-bottom {
+          grid-row: 3;
+        }
+        .detail-grid .board-svg {
+          max-height: 390px;
+        }
+        .detail-copy .byline {
+          margin-bottom: 0;
+        }
+        .facts {
+          margin: 0 0 20px;
+          padding-top: 0;
+          border-top: 0;
+        }
+        .review-grid .board-preview {
+          max-width: 320px;
+          width: 100%;
+          margin: auto;
+        }
+        .review-grid .board-svg {
+          max-height: 280px;
+        }
+        .review-grid {
+          gap: 24px;
+        }
+        .success-card {
+          padding: 24px;
+        }
+        .save-wrap > .card {
+          padding: 20px;
+        }
+        .overview {
+          padding: 28px 16px;
+        }
+        .overview-intro h1 {
+          font-size: 30px;
+        }
+        .step-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+        .frame-window iframe {
+          width: 151.516%;
+          transform: scale(0.66);
+        }
+        .step-description {
+          min-height: 116px;
+        }
+        .overview-note {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .journey-heading {
+          display: block;
+        }
+        .actions {
+          gap: 8px;
+        }
+        .btn-ghost {
+          padding-inline: 8px;
+        }
+        .role-legend {
+          gap: 8px !important;
+        }
+      }
+      @media (max-width: 460px) {
+        .step-grid {
+          grid-template-columns: 1fr;
+        }
+        .frame-window iframe {
+          width: 117.648%;
+          transform: scale(0.85);
+        }
+        .frame-window {
+          height: 290px;
+        }
+        .step-description {
+          min-height: 0;
+        }
+        .page-head h1 {
+          font-size: 26px;
+        }
+        .session-actions .board-status {
+          font-size: 10px;
+        }
+        .identity {
+          font-size: 11px;
+        }
+        .overview .actions {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="flow-hybrid">
+      <div class="review-line">
+        <strong>Design preview · Find & save</strong
+        ><a href="index.html">Overview</a
+        ><span class="review-note" id="preview-help"
+          >Sample content · no accounts, saves, or board commands</span
+        >
+      </div>
+      <nav class="review-steps" aria-label="Preview steps">
+        <a href="02-sign-in.html" aria-label="Previous preview step">←</a
+        ><a href="01-entry.html">1 Enter</a
+        ><a href="02-sign-in.html">2 Sign in</a
+        ><a href="03-browse.html" aria-current="step">3 Browse</a
+        ><a href="04-climb.html">4 Inspect</a><a href="05-save.html">5 Save</a
+        ><a href="04-climb.html" aria-label="Next preview step">→</a>
+      </nav>
+    </header>
+    <div class="app-shell">
+      <header class="app-header">
+        <a class="brand" href="03-browse.html"
+          ><span class="brand-mark" aria-hidden="true">CC</span>CruxControl</a
+        ><span class="identity">Alex · invited member</span>
+      </header>
+      <div class="session-strip">
+        <span class="session-label"
+          >Fullride 7×10 <span aria-hidden="true">·</span> 40°</span
+        >
+        <div class="session-actions">
+          <span class="board-status">Not connected</span
+          ><button
+            class="btn btn-secondary session-button"
+            type="button"
+            data-demo-connect
+          >
+            Connect
+          </button>
+        </div>
+      </div>
+      <nav class="app-tabs" aria-label="Library">
+        <a href="../share-climb/01-your-climb.html">My Climbs</a
+        ><a href="03-browse.html" aria-current="page">Shared Library</a>
+      </nav>
+      <main class="page" id="main">
+        <header class="page-head">
+          <div>
+            <p class="eyebrow">YOUR INVITED CIRCLE</p>
+            <h1>Shared Library</h1>
+            <p class="muted">A little inspiration for your next session.</p>
+          </div>
+          <button class="btn btn-secondary" id="refresh" type="button">
+            ↻ Refresh
+          </button>
+        </header>
+        <div class="browse-grid">
+          <section aria-label="Shared climbs">
+            <div class="search-row">
+              <div>
+                <label class="filter-label" for="search">Find a climb</label>
+                <div class="search-wrap">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="10" cy="10" r="6.5" />
+                    <path d="m15 15 5 5" /></svg
+                  ><input
+                    class="input"
+                    id="search"
+                    type="search"
+                    placeholder="Climb or setter"
+                  />
+                </div>
+              </div>
+              <div>
+                <label class="filter-label" for="angle">Wall angle</label
+                ><select class="select" id="angle">
+                  <option value="all">All angles</option>
+                  <option value="40">40°</option>
+                  <option value="35">35°</option>
+                </select>
+              </div>
+            </div>
+            <div class="result-meta">
+              <span id="result-count" role="status"
+                >3 climbs · Fullride 7×10</span
+              ><span id="refresh-status" aria-live="polite">Up to date</span>
+            </div>
+            <ul class="climb-list">
+              <li data-climb data-search="blue hour maya" data-angle="40">
+                <a href="04-climb.html?climb=blue-hour"
+                  ><span class="grade-tile">V3<small>40°</small></span
+                  ><span
+                    ><span class="climb-title">Blue Hour</span
+                    ><span class="climb-meta"
+                      >Maya · Steady movement · just shared</span
+                    ></span
+                  ><span class="arrow" aria-hidden="true">↗</span></a
+                >
+              </li>
+              <li data-climb data-search="side step jamie" data-angle="40">
+                <a href="04-climb.html?climb=side-step"
+                  ><span class="grade-tile">V2<small>40°</small></span
+                  ><span
+                    ><span class="climb-title">Side Step</span
+                    ><span class="climb-meta"
+                      >Jamie · Footwork · shared yesterday</span
+                    ></span
+                  ><span class="arrow" aria-hidden="true">↗</span></a
+                >
+              </li>
+              <li data-climb data-search="slow burn morgan" data-angle="35">
+                <a href="04-climb.html?climb=slow-burn"
+                  ><span class="grade-tile">V4<small>35°</small></span
+                  ><span
+                    ><span class="climb-title">Slow Burn</span
+                    ><span class="climb-meta"
+                      >Morgan · Keep moving · shared yesterday</span
+                    ></span
+                  ><span class="arrow" aria-hidden="true">↗</span></a
+                >
+              </li>
+            </ul>
+            <div class="no-results" id="no-results" hidden>
+              <h2>No matching climbs</h2>
+              <p class="small">Try a setter’s name or another angle.</p>
+              <button class="btn btn-secondary" id="reset-search" type="button">
+                Clear filters
+              </button>
+            </div>
+            <div class="notice-row">
+              Saved copies stay in My Climbs. You decide whether to accept a
+              later update.
+            </div>
+            <a class="text-link" href="../share-climb/01-your-climb.html"
+              >Have something to share? Open your climbs →</a
+            >
+          </section>
+          <aside class="board-preview browse-preview">
+            <div class="preview-title">
+              <div>
+                <p class="eyebrow">TAKE A LOOK</p>
+                <h2>Blue Hour</h2>
+              </div>
+              <span class="badge">V3 · 40°</span>
+            </div>
+            <!-- Geometry from generated Fullride definition; schematic paths from hold-artwork.tsx. Synthetic climb, no personal data or source pixels. --><svg
+              class="board-svg"
+              viewBox="-47 18 94 132"
+              role="img"
+              aria-label="Sample Fullride climb: green starts, blue handholds, pink finish, orange feet"
+            >
+              <rect
+                x="-46"
+                y="19"
+                width="92"
+                height="130"
+                rx="2"
+                class="board-panel"
+              />
+              <g transform="translate(-40 140)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(0)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 132)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(37)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 124)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(74)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 116)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(111)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 108)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(148)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 100)" class="neutral-hold">
+                <path d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z" transform="rotate(5)" />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 92)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(42)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 84)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(79)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 76)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(116)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 68)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(153)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 60)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(10)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 52)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(47)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 44)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(84)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 36)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(121)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-40 28)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(158)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 32)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(15)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 40)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(52)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 48)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(89)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 56)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(126)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 64)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(163)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 72)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(20)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 80)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(57)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 88)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(94)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 96)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(131)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 104)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(168)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 112)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(25)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 120)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(62)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 128)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(99)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-36 136)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(136)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 140)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(173)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 132)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(30)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 124)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(67)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 116)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(104)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 108)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(141)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 100)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(178)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 92)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(35)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 84)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(72)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 76)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(109)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 68)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(146)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 60)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(3)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 52)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(40)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 44)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(77)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 36)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(114)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-32 28)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(151)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 32)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(8)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 40)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(45)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 48)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(82)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 56)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(119)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 64)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(156)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 72)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(13)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 80)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(50)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 88)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(87)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 96)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(124)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 104)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(161)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 112)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(18)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 120)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(55)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 128)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(92)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-28 136)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(129)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 140)" class="active-hold foot">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(166)"
+                />
+                <circle r="3.25" class="hold-ring" />
+              </g>
+              <g transform="translate(-24 132)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(23)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 124)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(60)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 116)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(97)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 108)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(134)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 100)" class="active-hold middle">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(171)"
+                />
+                <circle r="3.25" class="hold-ring" />
+              </g>
+              <g transform="translate(-24 92)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(28)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 84)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(65)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 76)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(102)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 68)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(139)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 60)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(176)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 52)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(33)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 44)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(70)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 36)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(107)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-24 28)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(144)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 32)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(1)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 40)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(38)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 48)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(75)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 56)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(112)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 64)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(149)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 72)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(6)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 80)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(43)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 88)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(80)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 96)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(117)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 104)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(154)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 112)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(11)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 120)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(48)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 128)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(85)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-20 136)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(122)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 140)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(159)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 132)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(16)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 124)" class="active-hold start">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(53)"
+                />
+                <circle r="3.25" class="hold-ring" />
+              </g>
+              <g transform="translate(-16 116)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(90)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 108)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(127)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 100)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(164)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 92)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(21)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 84)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(58)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 76)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(95)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 68)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(132)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 60)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(169)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 52)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(26)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 44)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(63)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 36)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(100)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-16 28)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(137)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 32)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(174)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 40)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(31)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 48)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(68)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 56)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(105)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 64)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(142)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 72)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(179)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 80)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(36)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 88)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(73)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 96)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(110)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 104)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(147)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 112)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(4)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 120)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(41)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 128)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(78)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-12 136)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(115)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 140)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(152)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 132)" class="neutral-hold">
+                <path d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z" transform="rotate(9)" />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 124)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(46)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 116)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(83)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 108)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(120)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 100)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(157)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 92)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(14)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 84)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(51)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 76)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(88)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 68)" class="active-hold middle">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(125)"
+                />
+                <circle r="3.25" class="hold-ring" />
+              </g>
+              <g transform="translate(-8 60)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(162)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 52)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(19)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 44)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(56)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 36)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(93)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-8 28)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(130)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 32)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(167)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 40)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(24)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 48)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(61)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 56)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(98)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 64)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(135)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 72)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(172)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 80)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(29)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 88)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(66)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 96)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(103)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 104)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(140)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 112)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(177)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 120)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(34)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 128)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(71)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(-4 136)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(108)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 140)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(145)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 132)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(2)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 124)" class="active-hold start">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(39)"
+                />
+                <circle r="3.25" class="hold-ring" />
+              </g>
+              <g transform="translate(0 116)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(76)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 108)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(113)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 100)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(150)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 92)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(7)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 84)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(44)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 76)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(81)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 68)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(118)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 60)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(155)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 52)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(12)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 44)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(49)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 36)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(86)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(0 28)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(123)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 32)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(160)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 40)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(17)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 48)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(54)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 56)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(91)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 64)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(128)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 72)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(165)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 80)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(22)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 88)" class="active-hold middle">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(59)"
+                />
+                <circle r="3.25" class="hold-ring" />
+              </g>
+              <g transform="translate(4 96)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(96)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 104)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(133)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 112)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(170)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 120)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(27)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 128)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(64)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(4 136)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(101)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 140)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(138)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 132)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(175)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 124)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(32)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 116)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(69)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 108)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(106)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 100)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(143)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 92)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(0)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 84)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(37)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 76)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(74)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 68)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(111)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 60)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(148)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 52)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(5)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 44)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(42)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(8 36)" class="active-hold finish">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(79)"
+                />
+                <circle r="3.25" class="hold-ring" />
+              </g>
+              <g transform="translate(8 28)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(116)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 32)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(153)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 40)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(10)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 48)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(47)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 56)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(84)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 64)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(121)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 72)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(158)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 80)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(15)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 88)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(52)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 96)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(89)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 104)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(126)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 112)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(163)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 120)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(20)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 128)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(57)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(12 136)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(94)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 140)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(131)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 132)" class="active-hold foot">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(168)"
+                />
+                <circle r="3.25" class="hold-ring" />
+              </g>
+              <g transform="translate(16 124)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(25)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 116)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(62)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 108)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(99)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 100)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(136)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 92)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(173)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 84)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(30)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 76)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(67)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 68)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(104)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 60)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(141)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 52)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(178)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 44)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(35)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 36)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(72)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(16 28)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(109)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 32)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(146)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 40)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(3)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 48)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(40)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 56)" class="active-hold middle">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(77)"
+                />
+                <circle r="3.25" class="hold-ring" />
+              </g>
+              <g transform="translate(20 64)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(114)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 72)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(151)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 80)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(8)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 88)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(45)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 96)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(82)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 104)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(119)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 112)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(156)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 120)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(13)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 128)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(50)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(20 136)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(87)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 140)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(124)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 132)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(161)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 124)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(18)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 116)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(55)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 108)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(92)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 100)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(129)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 92)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(166)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 84)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(23)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 76)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(60)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 68)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(97)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 60)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(134)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 52)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(171)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 44)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(28)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 36)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(65)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(24 28)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(102)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 32)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(139)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 40)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(176)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 48)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(33)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 56)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(70)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 64)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(107)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 72)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(144)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 80)" class="neutral-hold">
+                <path d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z" transform="rotate(1)" />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 88)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(38)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 96)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(75)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 104)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(112)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 112)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(149)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 120)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(6)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 128)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(43)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(28 136)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(80)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 140)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(117)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 132)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(154)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 124)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(11)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 116)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(48)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 108)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(85)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 100)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(122)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 92)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(159)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 84)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(16)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 76)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(53)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 68)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(90)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 60)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(127)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 52)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(164)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 44)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(21)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 36)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(58)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(32 28)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(95)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 32)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(132)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 40)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(169)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 48)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(26)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 56)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(63)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 64)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(100)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 72)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(137)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 80)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(174)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 88)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(31)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 96)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(68)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 104)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(105)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 112)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(142)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 120)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(179)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 128)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(36)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(36 136)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(73)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 140)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(110)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 132)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(147)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 124)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(4)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 116)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(41)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 108)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(78)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 100)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(115)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 92)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(152)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 84)" class="neutral-hold">
+                <path
+                  d="M-1.9 1.3 L-1.4-1.4 1.8-.7 1.4 1.4Z"
+                  transform="rotate(9)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 76)" class="neutral-hold">
+                <path
+                  d="M-1.8-.2 Q-1.3-1.8.5-1.5 Q2-.8 1.6.8 Q.5 1.8-1.4 1.2Z"
+                  transform="rotate(46)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 68)" class="neutral-hold">
+                <path
+                  d="M-1.2-1.8 Q.1-1.2 1.2-1.7 L1.7 1.4 Q.2 1.9-1.5 1.2Z"
+                  transform="rotate(83)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 60)" class="neutral-hold">
+                <path
+                  d="M-1.5-1 Q-.4-2 1.2-1.1 Q2 .1 1.1 1.5 Q-.5 2-1.7.7Z"
+                  transform="rotate(120)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 52)" class="neutral-hold">
+                <path
+                  d="M-2-1.4 L1.7-1.1 2 1-1.8 1.4Z"
+                  transform="rotate(157)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 44)" class="neutral-hold">
+                <path
+                  d="M-1.8-1.2 Q0-2 1.8-1 L1.3 1.4 Q0 .4-1.4 1.5Z"
+                  transform="rotate(14)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 36)" class="neutral-hold">
+                <path
+                  d="M-1.7-1.6 L1.5-1.4 1.8 1.3-1.4 1.7Z"
+                  transform="rotate(51)"
+                />
+                <circle r=".24" class="bolt" />
+              </g>
+              <g transform="translate(40 28)" class="neutral-hold">
+                <path
+                  d="M-2-1.1 Q0-1.8 2-.8 L1.5 1.2 Q0 1.7-1.7 1Z"
+                  transform="rotate(88)"
+                />
+                <circle r=".24" class="bolt" />
+              </g></svg
+            ><a class="text-link" href="04-climb.html?climb=blue-hour"
+              >Inspect Maya’s climb →</a
+            >
+          </aside>
+        </div>
+      </main>
+    </div>
+    <script>
+      if (new URLSearchParams(location.search).has("thumbnail"))
+        document.body.classList.add("is-thumbnail");
+      document.querySelectorAll("[data-demo-connect]").forEach((b) =>
+        b.addEventListener("click", () => {
+          document.getElementById("preview-help").textContent =
+            "Board connection is represented only. This preview never requests Bluetooth.";
+        }),
+      );
+      const search = document.querySelector("#search"),
+        angle = document.querySelector("#angle");
+      function filter() {
+        let count = 0;
+        document.querySelectorAll("[data-climb]").forEach((row) => {
+          const show =
+            row.dataset.search.includes(search.value.trim().toLowerCase()) &&
+            (angle.value === "all" || row.dataset.angle === angle.value);
+          row.hidden = !show;
+          if (show) count++;
+        });
+        document.querySelector("#result-count").textContent =
+          count + " " + (count === 1 ? "climb" : "climbs") + " · Fullride 7×10";
+        document.querySelector("#no-results").hidden = count > 0;
+      }
+      search.addEventListener("input", filter);
+      angle.addEventListener("change", filter);
+      document.querySelector("#reset-search").addEventListener("click", () => {
+        search.value = "";
+        angle.value = "all";
+        filter();
+        search.focus();
+      });
+      document.querySelector("#refresh").addEventListener("click", (e) => {
+        const b = e.currentTarget;
+        b.disabled = true;
+        b.textContent = "Refreshing…";
+        document.querySelector("#refresh-status").textContent =
+          "Checking for climbs…";
+        setTimeout(() => {
+          b.disabled = false;
+          b.textContent = "↻ Refresh";
+          document.querySelector("#refresh-status").textContent =
+            "Up to date · just now";
+        }, 350);
+      });
+      if (
+        new URLSearchParams(location.search).get("published") ===
+        "evening-circuit"
+      ) {
+        const li = document.createElement("li");
+        li.dataset.climb = "";
+        li.dataset.search = "evening circuit alex";
+        li.dataset.angle = "40";
+        li.innerHTML =
+          '<a href="../share-climb/03-published.html"><span class="grade-tile">V3<small>40°</small></span><span><span class="climb-title">Evening Circuit</span><span class="climb-meta">You · just published</span></span><span class="badge badge--success">Shared</span></a>';
+        document.querySelector(".climb-list").prepend(li);
+        filter();
+      }
+    </script>
+  </body>
+</html>

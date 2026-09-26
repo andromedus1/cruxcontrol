@@ -42,6 +42,12 @@ locally owned and exportable.
   climb is revised or withdrawn; offer updates for explicit acceptance. Publisher
   changes must not silently alter the retained climb or its playlist membership
   and ordering — confirmed by Andrew on 2026-09-26.
+- **Mockup journey and visual direction:** shared-library entry → email-code sign-in
+  when needed → browse → inspect → save to a personal playlist; publishing starts
+  from an authored climb → review the shared snapshot → publish to the group.
+  Reuse the existing visual style and allow easy returns to browsing — confirmed
+  by Andrew on 2026-09-26. This approves creating the mocks, not the finished visual
+  design or a particular authentication provider.
 
 ## Scope boundary
 
@@ -111,12 +117,37 @@ the standing backup/restore process before agent-operated phone maintenance.
 
 ## Mockups
 
-Inherit `.mockups/design-system/`. New shared-library and contribution surfaces
-require committed mockups before production UI. Proposed journey for alignment:
-open the group's library, inspect a shared climb, and add it to a personal list;
-from an authored climb, review the shared snapshot and explicitly publish it.
-Invitation/sign-in screens depend on the research outcome. No flow is marked
-approved or implemented yet.
+Inherits `.mockups/design-system/` tokens, components, and motion. Polished,
+mobile-first previews with a responsive desktop layout:
+
+- [Both journeys](../../../.mockups/flows/shared-library/index.html) — the review
+  navigator; primary paths and return links are shown together.
+- **Find and save:** `shared-library/01-entry.html` → `02-sign-in.html` →
+  `03-browse.html` → `04-climb.html` → `05-save.html`, under `.mockups/flows/`.
+  Email/code entry is illustrative; the final hosted authentication surface depends
+  on service selection. Search, angle filtering, existing/new playlist choice, and
+  a save confirmation with ordered membership are interactive.
+- [Publish a climb](../../../.mockups/flows/share-climb/index.html):
+  `01-your-climb.html` → `02-review.html` → `03-published.html`.
+  Review shows the contribution snapshot, audience, attribution, and retained-copy
+  rule. Confirmation returns to the shared list with the sample contribution visible.
+
+The journey outline and existing visual style were approved on 2026-09-26; the
+rendered previews await visual sign-off. The review navigation strip is outside the
+product UI. Sample names/climbs are fictional, geometry comes from the committed
+Fullride definition, and hold shapes reuse the authored schematic vocabulary.
+The previews perform no email, authentication, library-storage, or Bluetooth work.
+
+These are focused journey previews. Final integration must retain the existing
+Drafts, Trash, and Playlists destinations alongside shared browsing. Explicit update
+review, member administration, and failure/recovery flows remain downstream design
+work; this preview does not claim to cover them.
+
+Validation: all 10 HTML pages rendered at 390px and 1280px with no page exceptions,
+broken local links, or horizontal document overflow. Walked email/code sign-in,
+setter search and empty results, appending a retained copy to an existing playlist,
+creating a new playlist, and explicit publication/return. Checked dark and light
+renders and verified shared CSS tokens resolve. Browser storage remained empty.
 
 ## Simplification opportunity
 
@@ -151,7 +182,8 @@ Large scope: adds a collaboration boundary and intended shared-data capability.
 Foundation intent is rolled forward without choosing a service architecture.
 Dependencies are completed archived capabilities; `work-view --blocking
 epic-shared-climb-library --paths` found no cycle. Feature decomposition and mockups
-remain pending design alignment. The source-grounded comparison passed standard
+await visual alignment; the approved journey outlines now have linked mockups.
+The source-grounded comparison passed standard
 verification, recorded below; the research tag is cleared without advancing stage.
 
 ## Research engagement registration (2026-09-26)
@@ -186,15 +218,12 @@ fan-out or cross-synthesis; standard verification still applies. Self-flag: exis
 Cloudflare deployment can bias selection, so explicitly test a managed platform and
 a static baseline, plus disconfirming Access/session evidence.
 
-## Directional alignment pending
+## Directional alignment
 
-The saved-copy decision is recorded above. One question remains with Andrew;
-no answer is inferred from elapsed time:
-
-- **Mockup journey:** enter shared browsing, sign in by email code when needed,
-  browse, inspect, and save to a personal playlist; publish through an explicit
-  review from an authored climb. Reuse the established visual system and allow
-  returns to browsing rather than imposing a one-way wizard.
+Andrew confirmed saved-copy behavior and the mockup journeys above. Generate polished,
+mobile-first flows using the existing tokens/components/motion, with a responsive
+desktop layout. Use hybrid review navigation and ordinary in-product back links;
+the review step strip is not proposed as application navigation.
 
 The remaining invite administration choice can start with operator-managed access
 under the researched small-circle model; a self-service invitation console is not
