@@ -116,6 +116,19 @@ function updateServiceFor(snapshot: AppUpdateSnapshot): AppUpdateService {
 }
 
 describe('CruxControlWorkspace', () => {
+  it('preserves an unsaved new-list name and its update blocker after an empty snapshot fails to refresh', async () => {
+    const runtime = runtimeWith();
+    const service = updateServiceFor({ status: 'current', phase: 'current', message: '', updateAvailable: false, blockedReason: null, canApply: false, dismissed: false });
+    const view = render(<CruxControlWorkspace runtime={runtime} updateService={service} />);
+    fireEvent.click(screen.getByRole('button', { name: /Lists/ }));
+    fireEvent.change(await screen.findByLabelText('New list'), { target: { value: 'Not saved yet' } });
+    await waitFor(() => expect(service.setBlocked).toHaveBeenLastCalledWith('Save your list changes before updating.'));
+    view.rerender(<CruxControlWorkspace runtime={{ ...runtime, playlists: { ...runtime.playlists, list: vi.fn().mockRejectedValue(new Error('Empty cache refresh failed')) } }} updateService={service} />);
+    expect(await screen.findByText('Empty cache refresh failed')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Not saved yet')).toBeInTheDocument();
+    expect(service.setBlocked).toHaveBeenLastCalledWith('Save your list changes before updating.');
+  });
+
   it('loads climbs without waiting for a pending playlist read', async () => {
     const runtime = runtimeWith({ list: listCollections([original], []) }, {
       list: vi.fn(() => new Promise<readonly LocalPlaylist[]>(() => undefined)),

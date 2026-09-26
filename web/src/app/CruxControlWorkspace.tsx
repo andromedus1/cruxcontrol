@@ -113,6 +113,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const [playlists, setPlaylists] = useState<readonly LocalPlaylist[]>([]);
   const [readIssues, setReadIssues] = useState<readonly DraftReadIssue[]>([]);
   const [playlistError, setPlaylistError] = useState('');
+  const [playlistsLoaded, setPlaylistsLoaded] = useState(false);
   const [collection, setCollection] = useState<WorkspaceDestination>(() =>
     globalThis.location?.hash.startsWith('#playlist=') ? 'lists' : 'finished',
   );
@@ -162,6 +163,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const refreshPlaylists = useCallback(async (throwOnError = true) => {
     try {
       setPlaylists(await runtime.playlists.list());
+      setPlaylistsLoaded(true);
       setPlaylistError('');
     } catch (cause) {
       setPlaylistError(cause instanceof Error ? cause.message : 'Could not load your lists.');
@@ -541,7 +543,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
         </div>
       )}
       {collection === 'lists' ? (
-        (!playlistError || playlists.length > 0) && <PlaylistLibrary
+        playlistsLoaded ? <PlaylistLibrary
           playlists={playlists}
           localClimbs={drafts}
           repository={runtime.playlists}
@@ -575,6 +577,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
             globalThis.location?.hash.startsWith('#playlist=') ? globalThis.location.hash : null
           }
         />
+        : !playlistError && <p role="status">Loading lists…</p>
       ) : (
         <LocalClimbViewer
           definition={runtime.installation.definition}

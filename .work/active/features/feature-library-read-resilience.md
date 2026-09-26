@@ -1,7 +1,7 @@
 ---
 id: feature-library-read-resilience
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, data]
 parent: null
 depends_on: []
@@ -49,3 +49,6 @@ Both child checkpoints are verified complete. Focused repository/workspace suite
 
 ## Review findings (2026-09-26)
 One standard same-harness Sol review confirmed the repository and partial-read contracts, but found that an empty cached playlist snapshot was treated as no cache, causing an unsaved new-list name and its update blocker to disappear on read failure. Accepted as material. Track successful snapshot loading independently of its length, defer initial list authoring until that snapshot exists, and preserve the mounted surface on subsequent failures. The regression reproduced the lost field before the fix. Standard closure requires verification of this fix only; no second independent pass.
+
+## Review fix verification (2026-09-26)
+The empty-cache regression failed before the fix and passes afterward. All 19 workspace tests pass. Initial authoring waits for the first successful playlist snapshot; successful empty snapshots are retained just like nonempty snapshots, so read failure cannot discard a new-list name or release its dirty-state update gate. Production-browser recovery verifies unchanged raw corrupt/future rows beside a healthy saved climb and Trash; all five targeted library/editor browser tests pass. Standard one-pass review has no unresolved findings; final full checks and CI remain before terminal closure.
