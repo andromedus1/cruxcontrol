@@ -8,17 +8,16 @@ depends_on: [epic-route-creation-flashy-light-effect-demos-spatial-engine]
 release_binding: null
 gate_origin: null
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-09-26
 ---
 
 # Add a fading red pentagram preset
 
 ## Brief
 
-Trace a five-point pentagram across the board with a sparse, capacity-safe set of red
-lights and fade the complete symbol in and out. Default to a 15-light reserve so the shape
-remains readable while leaving five measured API-2 lights available for a climb or other
-decoration; users may edit the reserve up to the full 20-light ceiling.
+Trace a circled inverted five-point pentagram with red lights and fade the complete
+symbol in and out. The default 20-light reserve uses the full measured API-2 scene
+budget; additional route/static lights require a smaller effect reserve.
 
 ## Design decisions
 
@@ -30,7 +29,7 @@ decoration; users may edit the reserve up to the full 20-light ceiling.
 
 ## Acceptance criteria
 
-- [x] The default pose selects at most 15 unique eligible placements around all five star
+- [x] The default pose selects at most 20 unique eligible placements around the circle and five star
   chords and uses red-only colors outside exact protected role-color values.
 - [x] Brightness changes coherently over time while placement geometry stays stable.
 - [x] Draft and portable codecs round-trip the recipe and reject invalid fade rates.
@@ -39,7 +38,8 @@ decoration; users may edit the reserve up to the full 20-light ceiling.
 
 The renderer scores board placements against five normalized star chords, keeps the
 nearest declared footprint stable, and applies one shared interpolated palette color to
-the whole outline. The default 15-light reserve leaves five measured API-2 scene slots.
+the whole outline. The default 20-light reserve covers ten circle anchors and ten star-stroke anchors.
+This matches the parent feature and physical-board refinement; review reconciled the stale reserve description.
 
 ## Verification
 
