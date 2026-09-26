@@ -1,7 +1,7 @@
 ---
 id: feature-library-read-resilience
 kind: feature
-stage: review
+stage: implementing
 tags: [ui, data]
 parent: null
 depends_on: []
@@ -46,3 +46,6 @@ One cohesive inline implementation owner; standard independent feature review pe
 
 ## Implementation and review admission (2026-09-26)
 Both child checkpoints are verified complete. Focused repository/workspace suite passes all 33 tests, including regressions demonstrated red before changes. Existing ordering/revision/lifecycle tests remain green. Independent standard feature review is required before completion; full suite and CI are part of final integration. No schema change, raw salvage export, or device maintenance.
+
+## Review findings (2026-09-26)
+One standard same-harness Sol review confirmed the repository and partial-read contracts, but found that an empty cached playlist snapshot was treated as no cache, causing an unsaved new-list name and its update blocker to disappear on read failure. Accepted as material. Track successful snapshot loading independently of its length, defer initial list authoring until that snapshot exists, and preserve the mounted surface on subsequent failures. The regression reproduced the lost field before the fix. Standard closure requires verification of this fix only; no second independent pass.
