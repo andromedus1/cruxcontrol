@@ -5,7 +5,8 @@ import { DraftConflictError } from '../drafts/errors';
 import type { LocalDraftRepository } from '../drafts/repository';
 import { draftContent } from '../drafts/test-fixtures';
 import type { DraftContent, LocalClimbDraft } from '../drafts/types';
-import { layoutRevisionId } from '../domain/boards/identity';
+import { boardPlacementId, layoutRevisionId } from '../domain/boards/identity';
+import { createSpatialPreset } from '../light-effects/preset-library';
 import { playlistId, playlistRevision } from '../playlists/codec';
 import { encodePlaylistFragment } from '../playlists/portable-codec';
 import type { PortablePlaylistV1 } from '../playlists/portable-types';
@@ -528,6 +529,24 @@ describe('CruxControlWorkspace', () => {
     await waitFor(() => expect(deletePermanently).toHaveBeenCalledTimes(2));
     expect(screen.getByRole('heading', { name: 'Trash is empty' })).toBeInTheDocument();
     expect(window.confirm).toHaveBeenCalledOnce();
+  });
+
+  it.each(['include', 'exclude'] as const)('preserves climbs with unavailable spatial %s targets for recovery', async (targetKind) => {
+    const group = createSpatialPreset('snake', 17);
+    const incompatible: LocalClimbDraft = {
+      ...original,
+      schemaVersion: 4,
+      effectGroups: [{ ...group, target: { ...group.target, [targetKind]: [boardPlacementId('missing-target')] } }],
+    };
+    const before = JSON.stringify(incompatible);
+    const runtime = runtimeWith({ list: listCollections([incompatible], []) });
+    render(<CruxControlWorkspace runtime={runtime} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Drafts.*1 climb/ }));
+    expect(screen.getByRole('region', { name: 'Recovery needed' })).toHaveTextContent('references unavailable hold missing-target');
+    expect(screen.getByRole('button', { name: 'Move Original to Trash' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit climb' })).not.toBeInTheDocument();
+    expect(runtime.drafts.update).not.toHaveBeenCalled();
+    expect(JSON.stringify(incompatible)).toBe(before);
   });
 
   it('keeps incompatible climbs visible with only safe recovery actions', async () => {
