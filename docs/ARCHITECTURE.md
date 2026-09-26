@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-09-12
+updated: 2026-09-26
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -96,8 +96,10 @@ feature item bodies in `.work/`, not here. Capabilities are in
    connection. Provider adapters own future
    source-native encoding and optional publication. Versioned effect
    groups share one two-pass pure frame engine: assignment effects render first, procedural
-   spatial layers target definition geometry without fake assignments, and semantic roles
-   are reasserted last. Version 1 dispatch preserves existing saved recipes; version-2
+   spatial layers target definition geometry without fake assignments, and semantic role
+   holds are reasserted last when a spatial background exists. Assignment-only effects
+   intentionally animate explicitly assigned role holds. Version 1 dispatch preserves
+   existing saved recipes; version-2
    spatial presets default to 90–150-second closed themed trajectories, and explicit
    upgrades preserve authored settings except the version and max(old period, new default).
    Prepared geometry and bounded per-group held-frame/path reuse avoid repeated spatial work.

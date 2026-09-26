@@ -102,6 +102,11 @@ describe('spatial effect rendering', () => {
     ];
     const selected: SpatialLightEffectGroup = { ...preset('snake'), footprint:2, target:{scope:'selected',include:[rolePlacement!.id, customPlacement!.id],exclude:[]} };
     expect(renderSpatialGroup(definition, assignments, selected, 0).map(({placementId})=>placementId)).toEqual([customPlacement!.id]);
+    const onlyCustomExclusions = definition.placements.filter(({ id }) => id !== customPlacement!.id).map(({ id }) => id);
+    for (const version of [1, 2] as const) {
+      const unused: SpatialLightEffectGroup = { ...selected, recipeVersion: version, target:{scope:'unused',include:[customPlacement!.id],exclude:onlyCustomExclusions} };
+      expect(renderSpatialGroup(definition, assignments, unused, 0).map(({placementId})=>placementId)).not.toContain(customPlacement!.id);
+    }
     const background: SpatialLightEffectGroup = { ...selected, target:{...selected.target,scope:'background-board'} };
     const frame = renderAnimationFrame({ definition, assignments, effectGroups:[background], elapsedMs:0 });
     expect(frame.find(({placementId})=>placementId===rolePlacement!.id)?.color).toBe(definition.rolePresets.start.lightColor);

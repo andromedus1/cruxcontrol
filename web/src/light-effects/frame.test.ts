@@ -125,4 +125,46 @@ describe('renderAnimationFrame', () => {
       green,
     ]);
   });
+
+  it('animates an explicitly assigned semantic role without a spatial background', () => {
+    const role: BoardHoldAssignment = {
+      placementId: first.id,
+      appearance: { kind: 'role', role: 'start' },
+      effectGroupId: groupId,
+    };
+    expect(renderAnimationFrame({
+      definition: kilterFullride7x10Definition,
+      assignments: [role],
+      effectGroups: [group()],
+      elapsedMs: 500,
+    })).toEqual([{ placementId: first.id, color: black }]);
+  });
+
+  it('keeps semantic roles exact when a spatial background is present', () => {
+    const role: BoardHoldAssignment = {
+      placementId: first.id,
+      appearance: { kind: 'role', role: 'start' },
+      effectGroupId: groupId,
+    };
+    const spatial = {
+      model: 'spatial' as const,
+      id: lightEffectGroupId('spatial-background'),
+      recipeVersion: 2 as const,
+      recipe: { kind: 'snake' as const, direction: 'forward' as const, bodyLength: 1 },
+      seed: 1,
+      palette: [red],
+      periodMs: 90_000,
+      intensity: 1,
+      footprint: 1,
+      target: { scope: 'background-board' as const, include: [], exclude: [] },
+    };
+    expect(renderAnimationFrame({
+      definition: kilterFullride7x10Definition,
+      assignments: [role],
+      effectGroups: [group(), spatial],
+      elapsedMs: 500,
+    }).find(({ placementId }) => placementId === first.id)?.color).toBe(
+      kilterFullride7x10Definition.rolePresets.start.lightColor,
+    );
+  });
 });

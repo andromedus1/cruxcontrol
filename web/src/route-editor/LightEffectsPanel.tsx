@@ -32,8 +32,14 @@ const shapeLabel = (kind: SpatialEffectKind) => ({
   bumblebee: 'Hover fraction',
 } as Partial<Record<SpatialEffectKind, string>>)[kind];
 
+function signedBeachBallVelocity(value: number, positive: boolean): number {
+  const magnitude = Math.abs(value) || 1;
+  return positive ? magnitude : -magnitude;
+}
+
 export function LightEffectsPanel({ state, assignments, selectedId, onSelectedIdChange, dispatch }: { readonly state: RouteEditorState; readonly assignments: readonly BoardHoldAssignment[]; readonly selectedId: LightEffectGroupId | null; readonly onSelectedIdChange: (id: LightEffectGroupId | null) => void; readonly dispatch: Dispatch<RouteEditorAction> }) {
   const selected = state.content.effectGroups.find(({ id }) => id === selectedId) ?? null;
+  const beachBallRecipe = selected?.model === 'spatial' && selected.recipe.kind === 'beach-ball' ? selected.recipe : null;
   const update = (changes: Readonly<Record<string, unknown>>) => { if (selected) dispatch({ type: 'update-effect-group', id: selected.id, changes }); };
   const addColor = (color: ApiLevel3Color) => { if (selected && !selected.palette.includes(color) && selected.palette.length < 8) update({ palette: Object.freeze([...selected.palette, color]) }); };
   const setBumblebeeColor = (index: 0 | 1) => {
@@ -53,7 +59,7 @@ export function LightEffectsPanel({ state, assignments, selectedId, onSelectedId
     dispatch({ type: 'replace-effect-groups', groups: Object.freeze(groups) });
   };
   return <section className="light-effects" aria-labelledby="effects-heading">
-    <div className="light-effects__heading"><div><h2 id="effects-heading">Effects</h2><p>Route colors stay protected. Background presets use the remaining light budget.</p></div></div>
+    <div className="light-effects__heading"><div><h2 id="effects-heading">Effects</h2><p>Route colors stay protected from background presets. Background presets use the remaining light budget.</p></div></div>
     <details><summary>Add a preset</summary><div className="preset-grid">{SPATIAL_PRESETS.filter(({ kind }) => kind !== 'frogger').map((preset) => <button key={preset.kind} type="button" onClick={() => addPreset(preset.kind)}>{preset.label}<small>{preset.footprint} lights</small></button>)}</div></details>
     <button type="button" onClick={() => { const id = createGroupId(); dispatch({ type: 'add-effect-group', group: { model: 'assigned', id, kind: 'pulse', palette: Object.freeze([state.advancedColor]), periodMs: 1800, intensity: .75 } }); onSelectedIdChange(id); }}>Add effect</button>
     <p className={plan.worstCaseLights > 20 ? 'capacity-warning' : ''}>Board reserve: {plan.assignmentLights} route/static + {plan.spatialReserves.reduce((sum, item) => sum + item.lights, 0)} effects = {plan.worstCaseLights}/20 lights at 2 FPS</p>
@@ -74,6 +80,10 @@ export function LightEffectsPanel({ state, assignments, selectedId, onSelectedId
           <p>Wings <span style={{ background: apiLevel3ColorHex(selected.palette[1] ?? selected.palette[0] ?? 0) }} aria-hidden="true" /> <button type="button" onClick={() => setBumblebeeColor(1)}>Set Wings to current color</button></p>
           <small>Current advanced color: {apiLevel3ColorHex(state.advancedColor).toUpperCase()}</small>
         </div>}
+        {beachBallRecipe && <>
+          <label>Horizontal direction<select aria-label="Horizontal direction" value={beachBallRecipe.velocityX >= 0 ? 'right' : 'left'} onChange={(event) => update({ recipe: Object.freeze({ ...beachBallRecipe, velocityX: signedBeachBallVelocity(beachBallRecipe.velocityX, event.target.value === 'right') }) })}><option value="right">Right</option><option value="left">Left</option></select></label>
+          <label>Vertical direction<select aria-label="Vertical direction" value={beachBallRecipe.velocityY >= 0 ? 'up' : 'down'} onChange={(event) => update({ recipe: Object.freeze({ ...beachBallRecipe, velocityY: signedBeachBallVelocity(beachBallRecipe.velocityY, event.target.value === 'up') }) })}><option value="up">Up</option><option value="down">Down</option></select></label>
+        </>}
         <div className="light-effects__loop-status" aria-live="polite">
           <p>{selected.recipeVersion === 1 ? 'Original loop' : 'Seamless loop'}</p>
           {selected.recipeVersion === 1 && <>
@@ -89,7 +99,7 @@ export function LightEffectsPanel({ state, assignments, selectedId, onSelectedId
       <label>Intensity<input aria-label="Effect intensity" type="range" min="0" max="100" value={Math.round(selected.intensity*100)} onChange={(event) => update({ intensity:Number(event.target.value)/100 })}/><output>{Math.round(selected.intensity*100)}%</output></label>
       <div className="light-effects__palette" aria-label="Effect palette">{selected.palette.map((color,index) => <button key={`${color}-${index}`} type="button" aria-label={`Remove color ${apiLevel3ColorHex(color).toUpperCase()}`} disabled={selected.palette.length===1} style={{background:apiLevel3ColorHex(color)}} onClick={() => update({palette:Object.freeze(selected.palette.filter((_,i)=>i!==index))})}/>)}<button type="button" disabled={selected.palette.length>=8||selected.palette.includes(state.advancedColor)} onClick={() => addColor(state.advancedColor)}>Add current color</button></div>
       {selected.model !== 'spatial' && <><p>{assignments.filter(({effectGroupId}) => effectGroupId === selected.id).length} {assignments.filter(({effectGroupId}) => effectGroupId === selected.id).length === 1 ? 'hold' : 'holds'} in this effect</p><div className="effect-tools" role="radiogroup" aria-label="Effect assignment tool"><button type="button" role="radio" aria-checked={state.tool.kind==='apply-effect'} onClick={() => dispatch({type:'set-tool',tool:{kind:'apply-effect',effectGroupId:selected.id}})}>Apply selected effect</button><button type="button" role="radio" aria-checked={state.tool.kind==='remove-effect'} onClick={() => dispatch({type:'set-tool',tool:{kind:'remove-effect'}})}>Remove effect</button></div></>}
-      <div className="effect-tools"><button type="button" onClick={() => move(-1)}>Layer up</button><button type="button" onClick={() => move(1)}>Layer down</button></div>
+      <div className="effect-tools"><button type="button" onClick={() => move(1)}>Layer up</button><button type="button" onClick={() => move(-1)}>Layer down</button></div>
       <button className="light-effects__delete" type="button" onClick={() => { const next=state.content.effectGroups.find(({id})=>id!==selected.id)?.id??null; dispatch({type:'remove-effect-group',id:selected.id}); onSelectedIdChange(next); }}>Delete effect group</button>
     </div> : <p className="light-effects__empty">Choose a preset or add a hold effect.</p>}
   </section>;

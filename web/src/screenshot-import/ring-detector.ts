@@ -3,6 +3,11 @@ import type { DetectedRing, ScreenshotImportWarning, ScreenshotPixels } from './
 
 const REFERENCE_WIDTH = 1080;
 const REFERENCE_HEIGHT = 2400;
+// Keep analysis within twice the reference width and height (2,160×4,800,
+// about 10.4 megapixels), which covers the supplied profile and ordinary
+// phone screenshots while bounding canvas and detector memory use.
+export const SCREENSHOT_MAX_WIDTH = REFERENCE_WIDTH * 2;
+export const SCREENSHOT_MAX_HEIGHT = REFERENCE_HEIGHT * 2;
 const REFERENCE_LEFT = 48.5;
 const REFERENCE_TOP = 652;
 const REFERENCE_PITCH = 49.05;
@@ -38,12 +43,14 @@ function unsupportedProfile(pixels: ScreenshotPixels): ScreenshotImportWarning |
     !Number.isInteger(pixels.height) ||
     pixels.width < 270 ||
     pixels.height < 600 ||
+    pixels.width > SCREENSHOT_MAX_WIDTH ||
+    pixels.height > SCREENSHOT_MAX_HEIGHT ||
     Math.abs(ratio / expectedRatio - 1) > 0.02 ||
     pixels.data.length !== pixels.width * pixels.height * 4
   ) {
     return {
       code: 'unsupported-profile',
-      message: `Expected a Kilter Fullride screenshot with a 1080×2400 profile; received ${pixels.width}×${pixels.height}.`,
+      message: `Expected a Kilter Fullride screenshot between 270×600 and ${SCREENSHOT_MAX_WIDTH}×${SCREENSHOT_MAX_HEIGHT}; received ${pixels.width}×${pixels.height}.`,
     };
   }
   return null;

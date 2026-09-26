@@ -94,4 +94,23 @@ describe('analyzeKilterScreenshotFile', () => {
     ).rejects.toThrow('canvas allocation failed');
     expect(close).toHaveBeenCalledOnce();
   });
+
+  it('rejects an oversized decoded bitmap before canvas allocation and closes it', async () => {
+    const close = vi.fn();
+    const createCanvas = vi.fn();
+    const adapter = platform({
+      decode: vi.fn(async () => ({ width: 2161, height: 4800, close }) as unknown as ImageBitmap),
+      createCanvas,
+    });
+
+    await expect(
+      analyzeKilterScreenshotFile(
+        new File(['huge'], 'huge.png'),
+        kilterFullride7x10Definition,
+        adapter,
+      ),
+    ).rejects.toThrow('2161×4800');
+    expect(createCanvas).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledOnce();
+  });
 });

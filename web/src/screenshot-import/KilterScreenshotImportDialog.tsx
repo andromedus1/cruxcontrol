@@ -7,6 +7,7 @@ import { applyEditorTool } from '../route-editor/assignments';
 import { analyzeKilterScreenshotFile } from './file-analysis';
 import { importScreenshotCandidates } from './import-batch';
 import { createSuppliedFullrideCandidates } from './supplied-batch';
+import { reconcileScreenshotImportWarnings } from './warning-reconciliation';
 import type {
   AnalyzedScreenshot,
   ConfirmedScreenshotCandidate,
@@ -88,6 +89,14 @@ export function KilterScreenshotImportDialog({
   const [scale, setScale] = useState(1);
   const current = items[index];
   const currentFile = current?.file;
+  const currentWarnings = current
+    ? reconcileScreenshotImportWarnings({
+        candidate: current.candidate,
+        definition: installation.definition,
+        name: current.name,
+        assignments: current.assignments,
+      })
+    : [];
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -203,14 +212,21 @@ export function KilterScreenshotImportDialog({
   }
 
   const warningBlocked = Boolean(
-    current && current.candidate.warnings.length > 0 && !current.warningsOverridden,
+    current && currentWarnings.length > 0 && !current.warningsOverridden,
   );
   const itemReady = Boolean(current?.name.trim()) && !warningBlocked;
   const allReady =
     items.length > 0 &&
     items.every(
       (item) =>
-        item.name.trim() && (item.candidate.warnings.length === 0 || item.warningsOverridden),
+        item.name.trim() &&
+        (reconcileScreenshotImportWarnings({
+          candidate: item.candidate,
+          definition: installation.definition,
+          name: item.name,
+          assignments: item.assignments,
+        }).length === 0 ||
+          item.warningsOverridden),
     );
 
   return (
@@ -303,11 +319,11 @@ export function KilterScreenshotImportDialog({
             />
           </label>
 
-          {current.candidate.warnings.length > 0 && (
+          {currentWarnings.length > 0 && (
             <div className="screenshot-import-warnings">
               <h3>Needs confirmation</h3>
               <ul>
-                {current.candidate.warnings.map((warning, warningIndex) => (
+                {currentWarnings.map((warning, warningIndex) => (
                   <li key={`${warning.code}-${warningIndex}`}>{warning.message}</li>
                 ))}
               </ul>

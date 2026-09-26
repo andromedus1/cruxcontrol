@@ -246,6 +246,7 @@ function eligible(
     if (exclude.has(point.id)) return false;
     const assignment = assignmentMap.get(point.id);
     if (assignment?.appearance.kind === 'role') return false;
+    if (group.target.scope === 'unused' && assignment !== undefined) return false;
     if (group.target.scope === 'selected') return include.has(point.id);
     if (include.has(point.id)) return true;
     return group.target.scope === 'background-board' || assignment === undefined;

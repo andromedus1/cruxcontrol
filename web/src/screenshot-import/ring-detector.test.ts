@@ -107,4 +107,16 @@ describe('detectKilterFullrideRings', () => {
     expect(result.rings).toEqual([]);
     expect(result.warnings[0]?.code).toBe('unsupported-profile');
   });
+
+  it.each([[2161, 4800], [2160, 4801]])('rejects %i×%i before reading pixel data or allocating detector buffers', (width, height) => {
+    const result = detectKilterFullrideRings({
+      width,
+      height,
+      get data(): Uint8ClampedArray {
+        throw new Error('Oversized images must be rejected before pixel access');
+      },
+    });
+    expect(result.rings).toEqual([]);
+    expect(result.warnings[0]?.code).toBe('unsupported-profile');
+  });
 });

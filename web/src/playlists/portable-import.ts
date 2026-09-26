@@ -123,6 +123,20 @@ export function planPlaylistImport(
         );
       }
     });
+    snapshot.effectGroups.forEach((group, groupIndex) => {
+      if (group.model !== 'spatial') return;
+      for (const targetKind of ['include', 'exclude'] as const) {
+        group.target[targetKind].forEach((placementId, targetIndex) => {
+          if (!placementIds.has(placementId)) {
+            throw new PlaylistImportCompatibilityError(
+              'unknown-placement',
+              `${path}.effectGroups[${groupIndex}].target.${targetKind}[${targetIndex}]`,
+              `hold ${placementId} is unavailable on the active board`,
+            );
+          }
+        });
+      }
+    });
   });
 
   const unresolvedProviderCount = providerReferenceCount;

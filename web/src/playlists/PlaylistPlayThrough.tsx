@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { BoardLightController } from '../board-control/light-controller.ts';
 import { ClimbDetail } from '../climb-browser/ClimbDetail.tsx';
 import type { LocalDraftId } from '../drafts/types.ts';
@@ -54,6 +54,10 @@ export function PlaylistPlayThrough({
   initialEntryKey,
   onEditLocalClimb,
 }: PlaylistPlayThroughProps) {
+  const previousRef = useRef<HTMLButtonElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
+  const statusRef = useRef<HTMLParagraphElement>(null);
+  const pendingFocus = useRef<'previous' | 'next' | null>(null);
   const [position, setPosition] = useState<PlayThroughPosition>(() => ({
     playlistId: playlist.id,
     key: initialEntryKey ?? entries[0]?.key ?? null,
@@ -83,9 +87,21 @@ export function PlaylistPlayThrough({
     }
   }, [current?.key, currentIndex, playlist.id, position]);
 
-  const move = (index: number) => {
+  useLayoutEffect(() => {
+    if (!pendingFocus.current) return;
+    const target = pendingFocus.current === 'previous' ? previousRef.current : nextRef.current;
+    pendingFocus.current = null;
+    if (target && !target.disabled) target.focus();
+    else statusRef.current?.focus();
+  }, [currentIndex, entries.length]);
+
+  const move = (index: number, source: HTMLButtonElement) => {
     const entry = entries[index];
     if (!entry) return;
+    if (document.activeElement === source) {
+      if (index === 0) pendingFocus.current = 'next';
+      else if (index === entries.length - 1) pendingFocus.current = 'previous';
+    }
     setPosition({ playlistId: playlist.id, key: entry.key, index });
   };
 
@@ -107,22 +123,24 @@ export function PlaylistPlayThrough({
       {current ? (
         <>
           <nav className="playlist-play-through__navigation" aria-label="Playlist navigation">
-            <p role="status" aria-live="polite" aria-atomic="true">
-              {currentIndex + 1} of {entries.length}
+            <p ref={statusRef} tabIndex={-1} role="status" aria-live="polite" aria-atomic="true">
+              <span>{currentIndex + 1} of {entries.length}</span> — {entryLabel(current)}
             </p>
             <button
+              ref={previousRef}
               className="button button--secondary"
               type="button"
               disabled={currentIndex === 0}
-              onClick={() => move(currentIndex - 1)}
+              onClick={(event) => move(currentIndex - 1, event.currentTarget)}
             >
               Previous
             </button>
             <button
+              ref={nextRef}
               className="button button--secondary"
               type="button"
               disabled={currentIndex === entries.length - 1}
-              onClick={() => move(currentIndex + 1)}
+              onClick={(event) => move(currentIndex + 1, event.currentTarget)}
             >
               Next
             </button>

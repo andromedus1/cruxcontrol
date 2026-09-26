@@ -2,12 +2,58 @@
 
 **Project:** CruxControl
 **Audited snapshot:** implementation at `760a5da` plus the documentation working tree
-**Date:** 2026-09-12
+**Baseline date:** 2026-09-12
+**Follow-up date:** 2026-09-26
 **Documents reviewed:** 6 (5 system planning documents plus README)
-**Passes run:** 1 independently delegated system-level consistency pass
-**Issues found:** Critical 0 · High 0 · Medium 0 · Low 0 · Info 0
+**Passes run:** 1 baseline system-level pass plus 1 scoped `--system-only` follow-up
+**Issues found:** baseline 0; follow-up 0 unresolved, 2 stale assertions corrected
 
-## Scope and method
+## Follow-up system-level pass — 2026-09-26
+
+This required research-pipeline `doc-review --system-only` follow-up covered the two
+sentence-level corrections in `README.md` and `docs/ARCHITECTURE.md`. The planning
+corpus remains `docs/VISION.md`, `docs/PRINCIPLES.md`, `docs/SPEC.md`,
+`docs/ARCHITECTURE.md`, and `docs/DEPLOY.md`; `CLAUDE.md` was checked for local
+constraints. No module planning documents required a separate pass.
+
+### Resolved: spatial role protection wording
+
+**Files:** `docs/ARCHITECTURE.md`, `web/src/light-effects/frame.ts`
+
+The architecture sentence described semantic roles as always being reasserted last.
+The frame engine reasserts role colors only when at least one spatial group exists;
+assignment-only effects intentionally animate explicitly assigned role holds. The
+architecture wording now states both conditions.
+
+### Resolved: device acceptance scope
+
+**Files:** `README.md`, archived evidence at
+`.work/archive/epic-route-creation-flashy-light-effect-demos.md` and
+`.work/archive/epic-route-creation-board-light-capacity-envelope-physical-results.md`
+
+README wording broadly treated device acceptance as future work, while the completed
+records contain Android Chrome effects dogfooding and an accepted Android/API-2
+controller profile. API-3 and other device, browser, and controller profiles remain
+unmeasured. README now states that evidence boundary.
+
+### Follow-up cross-document result
+
+- All five system planning documents have frontmatter and existing local links.
+- `docs/ARCHITECTURE.md` now carries `updated: 2026-09-26`.
+- The architecture, specification, principles, and README agree that the current
+  physical profile is Android/API-2, uses complete scenes, and remains foreground-bound.
+- No additional contradiction or stale assertion was found in the scoped review.
+
+### Proposals
+
+None. The remaining API-3 and alternate-device/profile measurements are explicitly
+unmeasured evidence boundaries, not documentation defects for this correction.
+
+This follow-up did not expand into shared-library/catalog roadmap design or alter
+generated knowledge indexes. Unit, browser, and hardware tests were not run by this
+documentation pass.
+
+## Baseline scope and method
 
 This bounded research-pipeline `doc-review` pass followed the build-process reference
 and checked the automatic connected-board lighting and playlist editing update.
@@ -27,11 +73,11 @@ this review. The report establishes source/document consistency, not deployed
 behavior or physical-board acceptance. Unit, browser, and hardware tests were not
 run by this documentation pass.
 
-## Pass 1: System-level findings
+## Baseline pass: system-level findings
 
 No findings at any severity.
 
-## Verified contracts
+## Baseline verified contracts
 
 - `useEditorLighting` uses scene-content keys and a 180 ms debounce to update an
   already-connected board when the selected scene changes or a connection completes.
@@ -46,11 +92,11 @@ No findings at any severity.
 - The update introduces no conflict with VISION, PRINCIPLES, or DEPLOY. Deployment
   remains gated by the approved CI workflow.
 
-## Frontmatter, links, and index
+## Baseline frontmatter, links, and index
 
 All 5 system planning documents have compliant frontmatter under the project's
-established `type: planning` convention. SPEC and ARCHITECTURE carry the update date
-2026-09-12. All 15 local Markdown links resolve.
+established `type: planning` convention. SPEC and ARCHITECTURE carried the update date
+2026-09-12 at baseline. All 15 local Markdown links resolve.
 
 The installed knowledge-index regenerator ran with an explicit discovery filter
 excluding the two untracked private input directories. It found 23 documents
@@ -59,7 +105,7 @@ excluding the two untracked private input directories. It found 23 documents
 count reflects the in-progress delivery snapshot; terminal stage changes are owned
 by the delivery workflow.
 
-## Blocking briefs and phase checks
+## Baseline blocking briefs and phase checks
 
 All 7 indexed blocking-brief paths exist:
 
@@ -71,10 +117,10 @@ All 7 indexed blocking-brief paths exist:
 - `docs/briefs/foundation-pwa-sqlite.md`
 - `docs/briefs/recommendations-and-training.md`
 
-No phase completion claim changed in this update. Delivery decomposition and stage
-verification remain in `.work/`; this pass did not re-audit completed work items.
+No phase completion claim changed in the baseline update. Delivery decomposition and
+stage verification remain in `.work/`; this pass did not re-audit completed work items.
 
-## Provenance summary
+## Baseline provenance summary
 
 | Research method | Briefs/reports | Latest updated |
 | --- | ---: | --- |

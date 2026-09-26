@@ -39,6 +39,29 @@ function readRaw(database: IDBDatabase, id: string): Promise<unknown> {
 }
 
 describe('IndexedDbLocalDraftRepository', () => {
+  it('lists healthy rows with diagnostics while preserving unreadable rows, including unindexed records', async () => {
+    const ids = [FIRST_DRAFT_ID, SECOND_DRAFT_ID];
+    const context = await repository({ createId: () => ids.shift()! });
+    const healthy = await context.repository.create(draftContent({ name: 'Healthy' }));
+    const other = await context.repository.create(draftContent({ name: 'Trash' }));
+    const trash = await context.repository.trash(other.id, other.revision);
+    const database = await openDraftDatabase(context.factory);
+    const corrupt = { id: 'corrupt', schemaVersion: 4, angle: 'bad' };
+    const future = { id: 'future', schemaVersion: 999, updatedOrder: ['2099', 'future'] };
+    await putRaw(database, corrupt);
+    await putRaw(database, future);
+    const onUnreadableRecord = vi.fn();
+    expect(await context.repository.list({ onUnreadableRecord })).toEqual([healthy]);
+    expect(onUnreadableRecord.mock.calls.map(([issue]) => issue.key).sort()).toEqual(['corrupt', 'future']);
+    expect(await context.repository.list({ collection: 'trash', onUnreadableRecord })).toEqual([trash]);
+    expect(await readRaw(database, 'corrupt')).toEqual(corrupt);
+    expect(await readRaw(database, 'future')).toEqual(future);
+    await expect(context.repository.list()).rejects.toMatchObject({ code: 'corrupt-record' });
+    context.repository.close();
+    await expect(context.repository.list({ onUnreadableRecord })).rejects.toMatchObject({ code: 'unavailable' });
+    database.close();
+  });
+
   it('supports unrestricted CRUD, exact revisions, and immutable snapshots', async () => {
     const times = ['2026-08-02T12:00:00.000Z', '2026-08-02T13:00:00.000Z'];
     const context = await repository({

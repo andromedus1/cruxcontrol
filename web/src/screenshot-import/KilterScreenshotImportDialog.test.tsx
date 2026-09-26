@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { activeInstallationId, createAppInstallationRegistry } from '../app/installations';
 import type { LocalDraftRepository } from '../drafts/repository';
 import { KilterScreenshotImportDialog } from './KilterScreenshotImportDialog';
-import type { AnalyzedScreenshot, ScreenshotImportResult } from './types';
+import type { AnalyzedScreenshot, ScreenshotImportResult, ScreenshotImportWarning } from './types';
 
 const installation = createAppInstallationRegistry().require(activeInstallationId);
 
@@ -19,15 +19,26 @@ function repository(): LocalDraftRepository {
   };
 }
 
-function analyzed(file: File, name: string, warning = false): AnalyzedScreenshot {
+function analyzed(
+  file: File,
+  name: string,
+  warning: boolean | ScreenshotImportWarning = false,
+  assignments: AnalyzedScreenshot['candidate']['assignments'] = [],
+): AnalyzedScreenshot {
+  const warnings =
+    typeof warning === 'boolean'
+      ? warning
+        ? [{ code: 'title-required' as const, message: 'Confirm this title.' }]
+        : []
+      : [warning];
   return {
     file,
     candidate: {
       sourceName: file.name,
       sourceSha256: 'f'.repeat(64),
       name,
-      assignments: [],
-      warnings: warning ? [{ code: 'title-required', message: 'Confirm this title.' }] : [],
+      assignments,
+      warnings,
     },
   };
 }
@@ -111,12 +122,12 @@ describe('KilterScreenshotImportDialog', () => {
     expect(revokeObjectUrl).toHaveBeenCalledWith('blob:b.png');
   });
 
-  it('requires a name and explicit warning override, supports keyboard hold cycling, then imports', async () => {
+  it('resolves the title warning after naming and imports after the corrected hold is reviewed', async () => {
     const file = new File(['a'], 'unknown.png');
     const importCandidates = vi.fn(async (_repo, _installation, candidates) => {
       expect(candidates[0]).toMatchObject({
         name: 'Corrected title',
-        warningsOverridden: true,
+        warningsOverridden: false,
         assignments: [expect.objectContaining({ appearance: { kind: 'role', role: 'start' } })],
       });
       return emptyResult;
@@ -139,8 +150,10 @@ describe('KilterScreenshotImportDialog', () => {
     const importButton = await screen.findByRole('button', { name: 'Import 1 draft' });
     expect(importButton).toBeDisabled();
     fireEvent.change(screen.getByLabelText('Climb name'), { target: { value: 'Corrected title' } });
-    expect(importButton).toBeDisabled();
-    fireEvent.click(screen.getByRole('checkbox', { name: 'I reviewed and accept these warnings' }));
+    expect(importButton).toBeEnabled();
+    expect(
+      screen.queryByRole('checkbox', { name: 'I reviewed and accept these warnings' }),
+    ).not.toBeInTheDocument();
     const firstHold = screen.getByRole('button', { name: 'Hold 1, Unselected' });
     fireEvent.keyDown(firstHold, { key: 'Enter' });
     expect(importButton).toBeEnabled();
@@ -148,6 +161,60 @@ describe('KilterScreenshotImportDialog', () => {
     await waitFor(() => expect(importCandidates).toHaveBeenCalledOnce());
     expect(onImported).toHaveBeenCalledWith(emptyResult);
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('reconciles a low-confidence warning only for its cell and restores it when reverted', async () => {
+    const file = new File(['a'], 'low-confidence.png');
+    const initialAssignment = {
+      placementId: installation.definition.placements[0]!.id,
+      appearance: { kind: 'role' as const, role: 'start' as const },
+    };
+    const warning: ScreenshotImportWarning = {
+      code: 'low-confidence',
+      column: 0,
+      row: 28,
+      role: 'start',
+      message: 'The start ring requires confirmation.',
+    };
+    const importCandidates = vi.fn(async (_repo, _installation, candidates) => {
+      expect(candidates[0]).toMatchObject({ warningsOverridden: false });
+      return emptyResult;
+    });
+    render(
+      <KilterScreenshotImportDialog
+        installation={installation}
+        repository={repository()}
+        analyzeFile={vi.fn(async () => analyzed(file, 'Named climb', warning, [initialAssignment]))}
+        importCandidates={importCandidates}
+        createObjectUrl={() => 'blob:low-confidence'}
+        revokeObjectUrl={vi.fn()}
+        onImported={vi.fn(async () => undefined)}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Screenshot files'), { target: { files: [file] } });
+    const importButton = await screen.findByRole('button', { name: 'Import 1 draft' });
+    expect(importButton).toBeDisabled();
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Hold 2, Unselected' }), { key: 'Enter' });
+    expect(screen.getByText(warning.message)).toBeInTheDocument();
+    expect(importButton).toBeDisabled();
+
+    const firstHold = screen.getByRole('button', { name: 'Hold 1, Start' });
+    fireEvent.keyDown(firstHold, { key: 'Enter' });
+    expect(screen.queryByText(warning.message)).not.toBeInTheDocument();
+    expect(importButton).toBeEnabled();
+
+    for (let index = 0; index < 4; index += 1) {
+      fireEvent.keyDown(firstHold, { key: 'Enter' });
+    }
+    expect(screen.getByText(warning.message)).toBeInTheDocument();
+    expect(importButton).toBeDisabled();
+
+    fireEvent.keyDown(firstHold, { key: 'Enter' });
+    expect(screen.queryByText(warning.message)).not.toBeInTheDocument();
+    fireEvent.click(importButton);
+    await waitFor(() => expect(importCandidates).toHaveBeenCalledOnce());
   });
 
   it('reports partial failures and permits an idempotent retry without closing', async () => {

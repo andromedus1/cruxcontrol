@@ -4,6 +4,13 @@ import type { DraftContent, DraftRevision, LocalClimbDraft, LocalDraftId } from 
 export interface DraftListOptions {
   readonly installationId?: BoardInstallationId;
   readonly collection?: 'active' | 'drafts' | 'finished' | 'trash';
+  /** Opt into partial reads with diagnostics; unreadable rows stay unchanged in storage. */
+  readonly onUnreadableRecord?: (issue: DraftReadIssue) => void;
+}
+
+export interface DraftReadIssue {
+  readonly key: string;
+  readonly message: string;
 }
 
 export interface LocalDraftRepository {

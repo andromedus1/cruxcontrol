@@ -49,6 +49,27 @@ function transports(overrides: Partial<PlaylistTransportAdapters> = {}) {
 }
 
 describe('PlaylistShareDialog', () => {
+  it('treats native share cancellation neutrally and preserves real failures and file fallback', async () => {
+    const share = vi.fn().mockRejectedValueOnce(new DOMException('Cancelled', 'AbortError'))
+      .mockRejectedValueOnce(new DOMException('Sharing denied', 'NotAllowedError'));
+    const adapter = transports({ share });
+    render(<PlaylistShareDialog playlist={playlist()} localClimbs={[climb()]} transports={adapter} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Share with another app' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Sharing cancelled'));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Share with another app' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Sharing denied');
+    fireEvent.click(screen.getByRole('button', { name: 'Download file' }));
+    expect(adapter.startDownload).toHaveBeenCalledOnce();
+  });
+
+  it('does not classify a clipboard AbortError as native share cancellation', async () => {
+    render(<PlaylistShareDialog playlist={playlist()} localClimbs={[climb()]}
+      transports={transports({ writeClipboardText: vi.fn().mockRejectedValue(new DOMException('Copy aborted', 'AbortError')) })} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Copy aborted');
+  });
+
   it('offers truthful link, file, and supported Web Share actions with accessible status', async () => {
     const adapter = transports();
     render(

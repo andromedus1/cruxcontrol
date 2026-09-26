@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { kilterFullride7x10Definition } from '../domain/boards/definitions/kilter-fullride-7x10';
 import { apiLevel3Color } from '../domain/boards/colors';
@@ -172,6 +172,62 @@ describe('RouteEditorWorkspace', () => {
     expect(screen.getByLabelText('Hover fraction')).toHaveValue(0);
     fireEvent.change(screen.getByLabelText('Hover fraction'), { target: { value: '0.35' } });
     expect(screen.getByLabelText('Hover fraction')).toHaveValue(.35);
+  });
+
+  it('edits both Beach Ball direction axes while retaining authored speeds', () => {
+    let saved: LocalClimbDraft | undefined;
+    const saveRepository: LocalDraftRepository = {
+      ...repository,
+      update: vi.fn(async (_id, _revision, content) => {
+        const updated = { ...draft, ...content };
+        saved = updated;
+        return updated;
+      }),
+    };
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={saveRepository} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Beach ball 4 lights/ }));
+    expect(screen.getByLabelText('Horizontal direction')).toHaveValue('right');
+    expect(screen.getByLabelText('Vertical direction')).toHaveValue('up');
+    fireEvent.change(screen.getByLabelText('Horizontal direction'), { target: { value: 'left' } });
+    fireEvent.change(screen.getByLabelText('Vertical direction'), { target: { value: 'down' } });
+    expect(screen.getByLabelText('Horizontal direction')).toHaveValue('left');
+    expect(screen.getByLabelText('Vertical direction')).toHaveValue('down');
+    return waitFor(() => {
+      const group = saved?.effectGroups[0];
+      expect(group?.model === 'spatial' ? group.recipe : undefined).toEqual({ kind: 'beach-ball', velocityX: -1, velocityY: -0.73, size: 4 });
+    });
+  });
+
+  it('gives zero Beach Ball velocities a usable direction without changing nonzero magnitudes', async () => {
+    const ball = createSpatialPreset('beach-ball', 9);
+    const zeroVelocityDraft = { ...draft, effectGroups: [{ ...ball, recipe: { ...ball.recipe, velocityX: 0, velocityY: -0 } }] };
+    let saved: LocalClimbDraft | undefined;
+    const saveRepository: LocalDraftRepository = {
+      ...repository,
+      update: vi.fn(async (_id, _revision, content) => {
+        const updated = { ...zeroVelocityDraft, ...content };
+        saved = updated;
+        return updated;
+      }),
+    };
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={zeroVelocityDraft} repository={saveRepository} onBack={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText('Horizontal direction'), { target: { value: 'left' } });
+    fireEvent.change(screen.getByLabelText('Vertical direction'), { target: { value: 'down' } });
+    await waitFor(() => {
+      const group = saved?.effectGroups[0];
+      expect(group?.model === 'spatial' ? group.recipe : undefined).toEqual({ kind: 'beach-ball', velocityX: -1, velocityY: -1, size: 4 });
+    });
+  });
+
+  it('moves Layer up toward the later, topmost effect group', () => {
+    render(<RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Snake 7 lights/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Beach ball 4 lights/ }));
+    const groupSelect = screen.getByLabelText('Effect group');
+    fireEvent.change(groupSelect, { target: { value: groupSelect.querySelector('option')?.getAttribute('value') } });
+    fireEvent.click(screen.getByRole('button', { name: 'Layer up' }));
+    const options = Array.from(screen.getByLabelText('Effect group').querySelectorAll('option')).map((option) => option.textContent);
+    expect(options).toEqual(['1. Beach ball', '2. Snake']);
   });
 
   it('shows and explicitly adopts the longer seamless loop for a saved v1 effect', () => {

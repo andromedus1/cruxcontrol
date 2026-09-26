@@ -1,7 +1,7 @@
 ---
 id: roadmap-next-milestones
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-09-26
 tags: []
 ---
 
@@ -14,13 +14,16 @@ selected here.
 
 ## Agreed order
 
-1. **Reliable everyday sessions.** Continue dogfooding and prioritize
-   [corrupt-climb recovery](idea-corrupt-climb-list-recovery.md),
-   [playlist read-failure isolation](idea-isolate-playlist-read-failures.md),
-   [screenshot dimension limits](idea-screenshot-import-dimension-limit.md),
-   [resolved screenshot warnings](idea-screenshot-import-resolved-warnings.md),
-   [native-share cancellation](idea-native-share-cancel-status.md), and
-   [playlist boundary focus](idea-playlist-play-through-boundary-focus.md).
+1. **Reliable everyday sessions.** The six selected fixes are implemented and
+   verified in [PR #20](https://github.com/andromedus1/cruxcontrol/pull/20):
+   [corrupt-climb recovery](../archive/idea-corrupt-climb-list-recovery.md),
+   [playlist read-failure isolation](../archive/idea-isolate-playlist-read-failures.md),
+   [screenshot dimension limits](../archive/idea-screenshot-import-dimension-limit.md),
+   [resolved screenshot warnings](../archive/idea-screenshot-import-resolved-warnings.md),
+   [native-share cancellation](../archive/idea-native-share-cancel-status.md), and
+   [playlist boundary focus](../archive/idea-playlist-play-through-boundary-focus.md).
+   Continue dogfooding after the update; implementation completion does not mean
+   the PR has been merged or the phone updated.
 2. **Shared contributed climbs: the next major addition.** Scope the
    [shared-library idea](idea-shared-climb-library.md) so Andrew's partner and
    friends can contribute climbs, receive library updates, control the board, and
@@ -68,11 +71,12 @@ selected here.
 
 - Read this capture, then query `.work/bin/work-view --ready` and the linked items.
   Dependency readiness does not override this product priority order.
-- The [effects feature](../active/features/epic-route-creation-flashy-light-effect-demos.md)
-  has completed implementation and physical dogfooding, but still needs its standard
-  independent feature review. Its parent remains open; finish the required review
-  and aggregate closure before archiving that family. Completed checkpoints under
-  the unfinished foundation also remain active intentionally.
+- The [effects feature](../archive/epic-route-creation-flashy-light-effect-demos.md)
+  and [route-creation epic](../archive/epic-route-creation.md) have completed their
+  required reviews, including verified corrections for saved spatial-target recovery.
+  Their completed family is archived; full implementation and review records are
+  preserved at each stub's `git_ref`. Completed checkpoints under the unfinished
+  foundation remain active intentionally.
 - Before scoping the shared library, resolve the two unanswered audience questions:
   invited partner/friends first or everyone using CruxControl; and whether those
   people need iPhone board control. General approval of this roadmap did not answer
