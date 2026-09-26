@@ -116,6 +116,56 @@ function updateServiceFor(snapshot: AppUpdateSnapshot): AppUpdateService {
 }
 
 describe('CruxControlWorkspace', () => {
+  it('loads climbs without waiting for a pending playlist read', async () => {
+    const runtime = runtimeWith({ list: listCollections([original], []) }, {
+      list: vi.fn(() => new Promise<readonly LocalPlaylist[]>(() => undefined)),
+    });
+    render(<CruxControlWorkspace runtime={runtime} />);
+    fireEvent.click(screen.getByRole('button', { name: /Drafts/ }));
+    expect(await screen.findByText('Original')).toBeInTheDocument();
+  });
+
+  it('retains cached lists and unsaved list edits when a later refresh fails', async () => {
+    const runtime = runtimeWith({}, { list: vi.fn().mockResolvedValue([playlist('Saved list')]) });
+    const view = render(<CruxControlWorkspace runtime={runtime} />);
+    fireEvent.click(screen.getByRole('button', { name: /Lists/ }));
+    const name = await screen.findByDisplayValue('Saved list');
+    fireEvent.change(name, { target: { value: 'Unsaved list name' } });
+    view.rerender(<CruxControlWorkspace runtime={{ ...runtime, playlists: { ...runtime.playlists, list: vi.fn().mockRejectedValue(new Error('Temporary read failure')) } }} />);
+    expect(await screen.findByText('Temporary read failure')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Unsaved list name')).toBeInTheDocument();
+  });
+
+  it('keeps climbs and Trash usable when playlist reads fail, and retries Lists independently', async () => {
+    const trash = { ...original, id: localDraftId('22222222-2222-4222-8222-222222222222'), name: 'Recover me', trashedAt: original.updatedAt };
+    const lists = vi.fn().mockRejectedValue(new Error('Playlist store unavailable'));
+    const runtime = runtimeWith({ list: listCollections([original], [trash]) }, { list: lists });
+    render(<CruxControlWorkspace runtime={runtime} />);
+    fireEvent.click(screen.getByRole('button', { name: /Drafts/ }));
+    expect(await screen.findByText('Original')).toBeInTheDocument();
+    expect(screen.queryByText('Playlist store unavailable')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Trash/ }));
+    expect(await screen.findByText('Recover me')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Lists/ }));
+    expect(await screen.findByText('Playlist store unavailable')).toBeInTheDocument();
+    lists.mockResolvedValue([playlist('Recovered list')]);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry loading lists' }));
+    expect(await screen.findByText('Recovered list')).toBeInTheDocument();
+    expect(screen.queryByText('Playlist store unavailable')).not.toBeInTheDocument();
+  });
+
+  it('shows preserved unreadable-row diagnostics alongside healthy climbs without duplicate notices', async () => {
+    const list = vi.fn<LocalDraftRepository['list']>(async (options) => {
+      options?.onUnreadableRecord?.({ key: 'broken-row', message: 'Unsupported stored climb version' });
+      return options?.collection === 'trash' ? [] : [original];
+    });
+    render(<CruxControlWorkspace runtime={runtimeWith({ list })} />);
+    fireEvent.click(screen.getByRole('button', { name: /Drafts/ }));
+    expect(await screen.findByText('Original')).toBeInTheDocument();
+    expect(screen.getAllByText(/broken-row/)).toHaveLength(1);
+    expect(screen.getByText(/stored records are unchanged/i)).toBeInTheDocument();
+  });
+
   it('pairs from lists, edits a playlist climb, and returns to the selected entry with saved changes', async () => {
     const second = { ...original, id: localDraftId('22222222-2222-4222-8222-222222222222'), name: 'Second climb' };
     let climbs = [original, second];

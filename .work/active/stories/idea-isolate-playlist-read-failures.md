@@ -1,7 +1,7 @@
 ---
 id: idea-isolate-playlist-read-failures
 kind: story
-stage: implementing
+stage: done
 tags: [ui, data]
 parent: feature-library-read-resilience
 depends_on: []
@@ -27,3 +27,8 @@ Authorized in the everyday-reliability cleanup. Preserve stored library data and
 
 ## Simplification opportunity
 Repair the existing path directly; no new subsystem.
+
+## Implementation notes (2026-09-26)
+Root cause: one Promise.all withheld both climb collections when playlist loading failed. Climb and playlist refresh now settle independently and commit their own state; Lists exposes retry without suppressing the library. Recovery notices identify unreadable climbs and retain original stored evidence. Tests failed before the fix and now cover independent failure/retry, pending playlist read, deduplicated diagnostics, and preservation of cached lists plus unsaved edits.
+
+Verification: `npm -w web test -- src/drafts/indexeddb-repository.test.ts src/app/CruxControlWorkspace.test.tsx` — 33 tests pass. TypeScript passed after integration. Child checkpoint closes directly; parent owns standard independent review. Inline host capability chosen for data-preservation contract. Full repository/CI checks follow before parent completion.

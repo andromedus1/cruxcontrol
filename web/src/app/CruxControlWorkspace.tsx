@@ -3,6 +3,7 @@ import { LocalClimbViewer } from '../climb-browser/LocalClimbViewer';
 import type { ClimbViewKey } from '../climb-browser/types';
 import { toClimbViewRecord } from '../drafts/to-climb-view-record';
 import type { DraftContent, LocalClimbDraft, LocalDraftId } from '../drafts/types';
+import type { DraftReadIssue } from '../drafts/repository';
 import { PlaylistLibrary, type PlaylistEditReturn } from '../playlists/PlaylistLibrary';
 import { PlaylistMembershipDialog } from '../playlists/PlaylistMembershipDialog';
 import type { LocalPlaylist } from '../playlists/types';
@@ -110,6 +111,8 @@ export interface CruxControlWorkspaceProps {
 export function CruxControlWorkspace({ runtime, updateService }: CruxControlWorkspaceProps) {
   const [drafts, setDrafts] = useState<readonly LocalClimbDraft[]>([]);
   const [playlists, setPlaylists] = useState<readonly LocalPlaylist[]>([]);
+  const [readIssues, setReadIssues] = useState<readonly DraftReadIssue[]>([]);
+  const [playlistError, setPlaylistError] = useState('');
   const [collection, setCollection] = useState<WorkspaceDestination>(() =>
     globalThis.location?.hash.startsWith('#playlist=') ? 'lists' : 'finished',
   );
@@ -156,27 +159,40 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
     setPendingOperations(operationCount.current);
   }, []);
 
-  const refresh = useCallback(async (throwOnError = false) => {
+  const refreshPlaylists = useCallback(async (throwOnError = true) => {
     try {
-      const [active, trash, storedPlaylists] = await Promise.all([
-        runtime.drafts.list({ collection: 'active' }),
-        runtime.drafts.list({ collection: 'trash' }),
-        runtime.playlists.list(),
-      ]);
-      setDrafts(Object.freeze([...active, ...trash]));
-      setPlaylists(storedPlaylists);
-      setError('');
-      setRetryAction(null);
+      setPlaylists(await runtime.playlists.list());
+      setPlaylistError('');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not load the local workspace.');
-      setRetryAction({ label: 'Retry refreshing climbs', run: () => void refresh() });
+      setPlaylistError(cause instanceof Error ? cause.message : 'Could not load your lists.');
       if (throwOnError) throw cause;
     }
   }, [runtime]);
 
-  const refreshPlaylists = useCallback(async () => {
-    setPlaylists(await runtime.playlists.list());
+  const refreshClimbs = useCallback(async () => {
+    try {
+      const issues = new Map<string, DraftReadIssue>();
+      const onUnreadableRecord = (issue: DraftReadIssue) => { issues.set(issue.key, issue); };
+      const [active, trash] = await Promise.all([
+        runtime.drafts.list({ collection: 'active', onUnreadableRecord }),
+        runtime.drafts.list({ collection: 'trash', onUnreadableRecord }),
+      ]);
+      setDrafts(Object.freeze([...active, ...trash]));
+      setReadIssues([...issues.values()]);
+      setError('');
+      setRetryAction(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not load the local workspace.');
+      setRetryAction({ label: 'Retry refreshing climbs', run: () => { void refreshClimbs().catch(() => undefined); } });
+      throw cause;
+    }
   }, [runtime]);
+
+  const refresh = useCallback(async (throwOnError = false) => {
+    const results = await Promise.allSettled([refreshClimbs(), refreshPlaylists()]);
+    const failed = results.find((result) => result.status === 'rejected');
+    if (throwOnError && failed?.status === 'rejected') throw failed.reason;
+  }, [refreshClimbs, refreshPlaylists]);
 
   useEffect(() => {
     void refresh();
@@ -464,6 +480,19 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           </button>
         </div>
       )}
+      {readIssues.length > 0 && (
+        <div className="workspace-error" role="alert">
+          <p>Some climbs could not be read. Their stored records are unchanged; healthy climbs and Trash remain available. Backups cannot include unreadable records until they are recovered.</p>
+          <ul>{readIssues.map((issue) => <li key={issue.key}>{issue.key}: {issue.message}</li>)}</ul>
+        </div>
+      )}
+      {collection === 'lists' && playlistError && (
+        <div className="workspace-error" role="alert">
+          <p>{playlistError}</p>
+          <p>Your climbs are still available. Previously loaded lists are retained.</p>
+          <button type="button" onClick={() => void refreshPlaylists(false)}>Retry loading lists</button>
+        </div>
+      )}
       {collection !== 'lists' && incompatibleDrafts.length > 0 && (
         <section
           className="incompatible-climbs"
@@ -512,7 +541,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
         </div>
       )}
       {collection === 'lists' ? (
-        <PlaylistLibrary
+        (!playlistError || playlists.length > 0) && <PlaylistLibrary
           playlists={playlists}
           localClimbs={drafts}
           repository={runtime.playlists}
@@ -523,7 +552,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           compatibilityIssue={(draft) => draftCompatibilityIssue(draft, runtime)}
           onChanged={(playlist) => {
             if (playlist) replacePlaylist(playlist);
-            else void refreshPlaylists();
+            else void refreshPlaylists(false);
           }}
           onRefresh={refresh}
           onSafetyStateChange={setPlaylistSafety}
@@ -568,7 +597,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
                 }
           }
           onManageLists={
-            collection === 'trash'
+            collection === 'trash' || Boolean(playlistError)
               ? undefined
               : (key) => {
                   const draft = compatibleDrafts.find(
