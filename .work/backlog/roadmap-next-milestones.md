@@ -83,8 +83,9 @@ selected here.
   implementation grounding. Invited members publish immediately within the group,
   without an approval queue. iPhone board control stays deferred. The verified
   [access/storage comparison](../../.research/analysis/briefs/invited-offline-library.md)
-  conditionally recommends a small Cloudflare service; design alignment on personal
-  copies and the mockup journeys is pending in the owning epic.
+  conditionally recommends a small Cloudflare service. Personal copies stay unchanged
+  and updates require explicit acceptance. Andrew approved the browse/save and publish
+  journey outlines; their rendered mockups await visual review in the owning epic.
 - Foundation intent now prioritizes the invited library and permits a narrow
   collaboration service without surrendering local ownership, offline use, or
   recoverability. The epic owns research and design decisions; no service stack or
