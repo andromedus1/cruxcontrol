@@ -1,14 +1,14 @@
 ---
 id: epic-route-creation-flashy-light-effect-demos
 kind: feature
-stage: review
+stage: done
 tags: [ui, ble]
 parent: epic-route-creation
 depends_on: [epic-route-creation-animated-light-designs, epic-route-creation-kilter-screenshot-import, epic-route-creation-board-light-capacity-envelope]
 release_binding: null
 gate_origin: null
 created: 2026-08-02
-updated: 2026-09-12
+updated: 2026-09-26
 ---
 
 # Flashy Light-Effect Demonstrations
@@ -315,7 +315,7 @@ visibility/disconnect/unmount retain existing cancellation semantics.
 - Delivered: draft v4/portable v2 spatial snapshots; deterministic two-pass engine; Ocean Tide, Tie-dye Spiral, Matrix Rain, Snake, Beach Ball, Pac-Man, Pong, Bird Flock, Frogger, and fading circled inverted pentagram presets; independent target painting/layering; editable palette/speed/intensity/direction/shape/footprint/scope; conservative API-2 preflight and runtime reserve assertion.
 - Verification: the current 68-file / 443-test suite, TypeScript typecheck, ESLint, Vite/PWA production build, and Playwright phone suite are green.
 - Powered-board observations: Android Chrome dogfooding confirmed effects start and remain capacity-safe; Beach Ball, Pong, and Matrix read successfully; Bird Flock and Pac-Man are recognizable; cadence/path-variance fixes followed observed repetition; and the circled inverted pentagram was refined through multiple physical-board bounces.
-- Closure status: implementation and acceptance evidence are complete. The feature remains `implementing` until its required standard independent feature review runs; no physical-dogfood blocker remains.
+- Closure status: implementation and acceptance evidence are complete. Implementation, physical dogfooding, and standard feature review with verified fixes are complete; no physical-dogfood blocker remains.
 
 ## Backlog consolidation (2026-09-12)
 
@@ -324,7 +324,7 @@ and [protected-background idea](../../archive/idea-protected-whole-board-effects
 because their core capabilities are delivered here. The optional Pong score/serve
 beat and a stronger perceptual color-distance guarantee were retired with those
 ideas; neither is claimed as implemented or added to this feature's acceptance.
-The required standard independent feature review remains outstanding.
+The required standard independent feature review is complete; see the dated review record.
 
 ## Other agent review
 
@@ -345,3 +345,13 @@ Standard, one independent same-harness Sol pass completed. Five confirmed blocke
 
 ## Review fix verification (2026-09-26)
 All five material findings are fixed and regression-tested in `epic-route-creation-flashy-light-effect-demos-review-fixes`. The host verified the contract qualification for assignment-only role effects, unused-target masking in both versions, later-is-topmost layering, definition-aware import rejection, and persisted Beach Ball direction edits including zero velocities. Focused tests: 63 pass. Integrated suite: 85 files / 662 tests pass; production TypeScript/Vite/PWA build and lint pass. Pentagram reserve nit is reconciled. No unresolved review findings; CI and the aggregate epic lane remain before terminal closure. Exactly one independent standard feature pass ran; closure is fix-verification only.
+
+## Review closure (2026-09-26)
+
+**Verdict**: Approve.
+
+One independent standard same-harness Sol feature pass; all five accepted findings fixed and verified without re-review. Pentagram reserve nit corrected.
+
+**Blockers**: none unresolved. **Important**: none. **Review weight**: standard, from project convention (standalone stories use bounded inline review).
+
+**Verification**: 85 Vitest files / 662 tests; lint; TypeScript/Vite/PWA production build; all 13 Chromium workflows. GitHub CI run [36249285638](https://github.com/andromedus1/cruxcontrol/actions/runs/36249285638) passed for application commit `93cda6a`. No phone maintenance or user-data migration occurred.
