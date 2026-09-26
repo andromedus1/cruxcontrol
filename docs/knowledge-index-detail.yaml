@@ -1,13 +1,13 @@
-# Auto-generated. DO NOT EDIT BY HAND.
-# On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-09-12T20:33:28Z'
+# Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
+generated_at: '2026-09-26T16:14:40Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
   docs/ARCHITECTURE.md:
     summary: 'High-level architecture for a Kilter-first climbing-board platform: typed board definitions
       and namespaced identities, independent catalog providers and controller profiles, on-demand local
-      catalogs, and a Fullride 7x10 first slice.
+      catalogs, and a Fullride 7x10 first slice. An invited contribution library is intended; its collaboration
+      mechanism remains a research-gated design decision.
 
       '
     decisions:
@@ -38,6 +38,8 @@ documents:
       safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes.
     - Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and
       runs browser inference through ONNX Runtime Web.
+    - The invited shared library is an intended collaboration boundary; access, storage, and update mechanisms
+      require research before selection and must preserve local authoring authority.
   docs/DEPLOY.md:
     summary: 'Operator runbook for the CI-gated Cloudflare Workers Static Assets deployment, including
       secrets, opt-in enablement, branch protection, and verification.
@@ -63,12 +65,15 @@ documents:
       contracts rather than presentation details.
   docs/SPEC.md:
     summary: 'The capability contract for a Kilter-first, multi-board-capable CruxControl: local board
-      inventory, provider-aware catalogs, BLE control, climb browsing and editing, logbook/session tracking,
-      grade prediction, and recommendations in an offline-first client.
+      inventory, provider-aware catalogs, BLE control, climb browsing and editing, invited shared contributions,
+      logbook/session tracking, grade prediction, and recommendations in an offline-first client.
 
       '
     decisions:
-    - Capabilities are grouped into nine areas; board control + browser are the MVP surface.
+    - The local wall-session loop is implemented; an invited shared climb library is the next capability
+      to design.
+    - Invited members explicitly publish climbs immediately to their group; personal authoring/playlists
+      remain local and Android board control is sufficient initially.
     - The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats).
     - Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect.
     - Grade-prediction target is community consensus difficulty_average from climb_stats.
@@ -93,6 +98,7 @@ documents:
     summary: 'CruxControl is a Kilter-first, eventually universal climbing-board app. Its first complete
       vertical slice controls a home Fullride 7x10, while its domain, catalog, and controller boundaries
       allow other boards to be added without surrendering offline use, data ownership, or source fidelity.
+      The next milestone shares explicitly contributed climbs within an invited circle.
 
       '
     decisions:
@@ -105,14 +111,19 @@ documents:
       per provider.
     - Static/backendless remains the default, with a narrow service allowed later only where a provider
       or collaboration capability requires it.
-    - ML grade prediction is the headline differentiator, not a nice-to-have.
-    - Distributed to friends as a static, installable PWA — no backend, no accounts; each user runs their
-      own client with local data. Framework chosen for distribution robustness.
+    - Shared contributed climbs are the next major addition; community catalogs and a logbook precede
+      longer-term grade prediction and personalized training.
+    - The installable PWA keeps private authoring and playlists local; an invited shared library may use
+      a narrow, research-grounded collaboration service.
+    - Invited partner and friends can publish explicit submissions immediately to their group; Android
+      board control is sufficient initially.
   docs/architecture/history/north-star.md:
-    summary: The original north-star document that combined vision, capabilities, proposed architecture,
+    summary: 'The original north-star document that combined vision, capabilities, proposed architecture,
       and a phased roadmap. Its content has been split into the rolling-foundation docs (VISION.md, SPEC.md,
       ARCHITECTURE.md) and its Phase 0–3 roadmap migrated to epic items in .work/. Retained for provenance;
       do not edit.
+
+      '
     supersession_note: 'Split into docs/VISION.md (vision, problem, principles, non-goals), docs/SPEC.md
       (capabilities, domain model, constraints), and docs/ARCHITECTURE.md (modules, data flow, dependencies,
       risks). The Phase 0–3 roadmap is superseded by epic items in .work/. Retained for provenance.

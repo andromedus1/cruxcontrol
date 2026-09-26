@@ -6,7 +6,7 @@
 #   2 = enforce (missing v2 fields are errors)
 # Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-09-26T15:04:21Z
+generated_at: 2026-09-26T16:14:40Z
 generated_from: frontmatter
 total_docs: 23
 
@@ -40,7 +40,7 @@ documents:
     title: CruxControl — Specification
     type: planning
     kind: planning
-    updated: 2026-09-12
+    updated: 2026-09-26
     consumer_hint: CruxControl capabilities, domain model, constraints, and non-functional requirements
     nav_priority: high
 
@@ -48,7 +48,7 @@ documents:
     title: CruxControl — Vision
     type: planning
     kind: planning
-    updated: 2026-08-02
+    updated: 2026-09-26
     consumer_hint: CruxControl vision, problem, audience, principles, and non-goals
     nav_priority: high
 
