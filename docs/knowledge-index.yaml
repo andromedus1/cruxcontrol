@@ -6,7 +6,7 @@
 #   2 = enforce (missing v2 fields are errors)
 # Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-09-12T20:33:28Z
+generated_at: 2026-09-26T15:04:21Z
 generated_from: frontmatter
 total_docs: 23
 
@@ -17,8 +17,9 @@ documents:
     title: CruxControl — Architecture
     type: planning
     kind: planning
-    updated: 2026-09-12
+    updated: 2026-09-26
     consumer_hint: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
+    nav_priority: high
 
   - path: docs/DEPLOY.md
     title: Deploy
@@ -33,6 +34,7 @@ documents:
     kind: planning
     updated: 2026-08-02
     consumer_hint: Product and engineering principles governing CruxControl decisions
+    nav_priority: high
 
   - path: docs/SPEC.md
     title: CruxControl — Specification
@@ -40,6 +42,7 @@ documents:
     kind: planning
     updated: 2026-09-12
     consumer_hint: CruxControl capabilities, domain model, constraints, and non-functional requirements
+    nav_priority: high
 
   - path: docs/VISION.md
     title: CruxControl — Vision
@@ -47,6 +50,7 @@ documents:
     kind: planning
     updated: 2026-08-02
     consumer_hint: CruxControl vision, problem, audience, principles, and non-goals
+    nav_priority: high
 
   # ── research ──────────────────────────────────────────────────────────────
 
@@ -59,6 +63,7 @@ documents:
     research_method: /research
     blocks_phase: epic-foundation-ci-deploy
     consumer_hint: Read before designing epic-foundation-ci-deploy — which Cloudflare target (Workers vs Pages) and deploy mechanism (GitHub Actions vs native Git) for a distributable static React+Vite PWA
+    nav_priority: high
 
   - path: .research/briefs/kilter-grade-prediction/classical-models.md
     title: Classical models on engineered features for Kilter grade prediction
@@ -114,6 +119,7 @@ documents:
     research_method: /deep-research
     blocks_phase: epic-grade-prediction
     consumer_hint: The synthesis of the Kilter grade-prediction research campaign — the recommended ML approach for predicting per-angle community-consensus difficulty from hold placements/roles/angle, training offline in Python and running inference in-browser. Read before designing the epic-grade-prediction work.
+    nav_priority: high
 
   - path: .research/briefs/kilter-grade-prediction/prior-work-datasets.md
     title: "Prior Work & Datasets: Kilter Board Grade Prediction"
@@ -133,6 +139,7 @@ documents:
     research_method: /brief
     blocks_phase: epic-board-control
     consumer_hint: Read before designing epic-board-control — Web Bluetooth connection lifecycle, GATT, and reliability patterns for driving the Kilter board
+    nav_priority: high
 
   - path: docs/briefs/board-rendering-and-filtering.md
     title: "Brief: Board Rendering & Catalog Filtering (Climb Browser)"
@@ -143,6 +150,7 @@ documents:
     research_method: /brief
     blocks_phase: epic-climb-browser
     consumer_hint: Read before designing epic-climb-browser — how to render the 2D board and filter the catalog, grounded in Climbdex prior art
+    nav_priority: high
 
   - path: docs/briefs/catalog-sync-api.md
     title: "Brief: Catalog Sync & the Kilter API (Sync Engine)"
@@ -153,6 +161,7 @@ documents:
     research_method: /brief
     blocks_phase: epic-catalog-sync
     consumer_hint: Read before designing epic-catalog-sync — the Kilter sync protocol, what BoardLib does, and the auth boundary for user/publish data
+    nav_priority: high
 
   - path: docs/briefs/data-model.md
     title: "Kilter Board Data Model: A Technical Primer"
@@ -161,6 +170,7 @@ documents:
     updated: 2026-08-02
     research_method: migrated
     consumer_hint: Kilter Board SQLite schema, frames encoding, hold roles, grading system, and the sync/web API
+    nav_priority: high
 
   - path: docs/briefs/foundation-pwa-sqlite.md
     title: "Brief: Distributable Offline-First PWA + In-Browser SQLite (Foundation)"
@@ -171,6 +181,7 @@ documents:
     research_method: /brief
     blocks_phase: epic-foundation
     consumer_hint: Read before designing epic-foundation — which framework, in-browser SQLite approach, and PWA/hosting strategy for a distributable CruxControl
+    nav_priority: high
 
   - path: docs/briefs/hardware-and-protocol.md
     title: Kilter Board Fullride 7x10 -- Technical Primer
@@ -179,6 +190,7 @@ documents:
     updated: 2026-08-02
     research_method: migrated
     consumer_hint: Kilter Board Fullride 7x10 hardware, BLE/Nordic UART packet protocol, LED system, and angle adjustment
+    nav_priority: high
 
   - path: docs/briefs/recommendations-and-training.md
     title: "Brief: Recommendations & Training Methodology"
@@ -189,6 +201,7 @@ documents:
     research_method: /brief
     blocks_phase: epic-recommendations
     consumer_hint: Read before designing epic-recommendations — content-based recsys for a single user + climbing-training methodology for circuits, weakness, and progression
+    nav_priority: high
 
   - path: .research/briefs/kilter-grade-prediction/campaign.md
     title: "Campaign Report: Kilter Grade Prediction"
@@ -201,7 +214,7 @@ documents:
 
   - path: .research/analysis/landscapes/climbing-board-ecosystem.md
     title: Climbing-board ecosystem landscape
-    type: research-analysis
+    type: landscape
     kind: research
     updated: 2026-08-02
     consumer_hint: Current prior-art landscape for universal climbing-board control, catalogs, and user-data portability
