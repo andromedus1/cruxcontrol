@@ -1,7 +1,7 @@
 ---
 id: story-fix-spatial-target-recovery
 kind: story
-stage: implementing
+stage: review
 tags: [bug, data]
 parent: null
 depends_on: []
@@ -27,3 +27,9 @@ Extend the existing definition-aware workspace check to both spatial target list
 
 ## Review policy
 Focused inline correction at standard weight; bounded standalone-story review and epic fix verification, no repeated independent epic review.
+
+## Implementation notes
+Baseline inline capability: a bounded compatibility check with two regression cases. Extended the existing check without changing codecs, persisted data, rendering, or UI structure. Both initially failing cases now pass; full verification passes 85 files/664 tests, lint, TypeScript/Vite/PWA build, and 13 production Chromium workflows. Documentation check confirms existing SPEC/README recovery assertions now hold; no new contract or documentation surface. No adjacent findings.
+
+## Bounded inline review
+Approve on local evidence: both spatial target lists use the active definition, assignment and non-spatial behavior remains intact, and recovery preserves authored records without opening the editor. Latest PR CI is required before final closure.

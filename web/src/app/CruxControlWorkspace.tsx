@@ -55,7 +55,15 @@ function draftCompatibilityIssue(
     return `uses unsupported angle ${draft.angle}°`;
   const placementIds = new Set(definition.placements.map(({ id }) => id));
   const unknown = draft.assignments.find(({ placementId }) => !placementIds.has(placementId));
-  return unknown ? `references unavailable hold ${unknown.placementId}` : null;
+  if (unknown) return `references unavailable hold ${unknown.placementId}`;
+  for (const group of draft.effectGroups) {
+    if (group.model !== 'spatial') continue;
+    for (const targetKind of ['include', 'exclude'] as const) {
+      const unavailable = group.target[targetKind].find((id) => !placementIds.has(id));
+      if (unavailable) return `references unavailable hold ${unavailable}`;
+    }
+  }
+  return null;
 }
 
 function contentOf(draft: LocalClimbDraft, status = draft.status): DraftContent {
