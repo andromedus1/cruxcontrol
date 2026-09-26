@@ -1,7 +1,7 @@
 ---
 id: epic-route-creation-flashy-light-effect-demos
 kind: feature
-stage: review
+stage: implementing
 tags: [ui, ble]
 parent: epic-route-creation
 depends_on: [epic-route-creation-animated-light-designs, epic-route-creation-kilter-screenshot-import, epic-route-creation-board-light-capacity-envelope]
@@ -339,3 +339,6 @@ assignments, a separate background array/runtime, and a general scene-graph rewr
 
 ## Review admission (2026-09-26)
 Implementation and physical acceptance were already complete. Revalidated the current integrated tree: 84 Vitest files / 637 tests pass and the TypeScript/Vite/PWA production build passes. Standard independent feature review is running through a same-harness fresh-context Sol reviewer after the preferred Claude peer failed with expired OAuth credentials. No device maintenance performed.
+
+## Review findings (2026-09-26)
+Standard, one independent same-harness Sol pass completed. Five confirmed blockers are owned by `epic-route-creation-flashy-light-effect-demos-review-fixes`: assignment-only role animation, unused-scope include precedence, reversed layer buttons, unknown imported spatial target IDs, and missing Beach Ball direction control. Fix and verify this named set, then close without re-review. Pentagram child reserve copy (15 vs current 20) is a documentation nit to reconcile before archival.
