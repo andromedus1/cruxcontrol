@@ -19,3 +19,6 @@ New Zero Trust organizations must configure this login method. Access policy rul
 
 ### User experience
 The emailed code expires after ten minutes and is single-use. An address rejected by policy receives no code, although the interface presents the same submission message.
+
+### Allow OTP emails through your email gateway
+The documented sender is noreply@notify.cloudflare.com. Access performs this code-delivery flow; this page does not require configuring a separate application SMTP sender.

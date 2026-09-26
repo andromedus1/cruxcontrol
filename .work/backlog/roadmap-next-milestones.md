@@ -86,9 +86,13 @@ selected here.
   conditionally recommends a small Cloudflare service. Personal copies stay unchanged
   and updates require explicit acceptance. Andrew approved the rendered browse/save
   and publish journeys; [PR #22](https://github.com/andromedus1/cruxcontrol/pull/22)
-  is merged. The epic now owns four drafting features: invited access, publication,
-  browsing/saving, and explicit updates/withdrawal. Start with
-  [invited access](../active/features/epic-shared-climb-library-invited-access.md).
+  is merged. The epic owns four features: invited access, publication,
+  browsing/saving, and explicit updates/withdrawal. Invited access is designed with
+  service, provider-proof, client and delivery stories; the other features remain
+  drafting. Start with its [service boundary](../active/stories/epic-shared-climb-library-invited-access-boundary.md).
+  Andrew has no hosting account or domain. The [cost/setup comparison](../../.research/analysis/briefs/invited-library-hosting-costs.md)
+  supports a conditional free Cloudflare proof, with no domain purchase required;
+  actual mobile/route checks still precede production selection.
 - Foundation intent now prioritizes the invited library and permits a narrow
   collaboration service without surrendering local ownership, offline use, or
   recoverability. The epic owns research and design decisions; no service stack or

@@ -5,6 +5,7 @@ stage: implementing
 tags: [ui, data, security]
 research_refs:
   - .research/analysis/briefs/invited-offline-library.md
+  - .research/analysis/briefs/invited-library-hosting-costs.md
 parent: null
 depends_on: [epic-route-creation, epic-playlists, epic-build-effects-hardening-library-backup]
 release_binding: null
@@ -66,6 +67,11 @@ locally owned and exportable.
   in the access feature before committing to production hosting. Keep Supabase as
   the researched fallback if actual account, hostname, or mobile-session constraints
   invalidate that candidate. No infrastructure has been provisioned.
+- **Starting from scratch:** Andrew has no Cloudflare account or domain, confirmed
+  2026-09-26. The checked [cost/setup extension](../../../.research/analysis/briefs/invited-library-hosting-costs.md)
+  still favors testing the candidate on a supplied hostname with provider-delivered
+  codes. This is an agent recommendation conditional on the access proof, not a
+  purchase, user commitment to a provider, or promise of free operation.
 
 ## Scope boundary
 
@@ -208,8 +214,10 @@ Large scope: adds a collaboration boundary and intended shared-data capability.
 Foundation intent is rolled forward without choosing a service architecture.
 Dependencies are completed archived capabilities; `work-view --blocking
 epic-shared-climb-library --paths` found no cycle. The approved flows now ground four
-child features, each at `drafting`; the epic is `implementing` because decomposition
-is complete, not because the shared service is delivered.
+child features. Invited access now has its detailed design and four child stories
+at `implementing`; publication, browse/save and updates remain `drafting`. The epic
+is `implementing` because decomposition is complete, not because the shared service
+is delivered. Access implementation and hosted evidence are still pending.
 The source-grounded comparison passed standard
 verification, recorded below; the research tag is cleared without advancing stage.
 
