@@ -19,3 +19,6 @@ The built-in service restricts delivery to project team addresses, has tight rat
 
 ### Set up custom SMTP
 The guide describes configuring a separate SMTP provider and sender details for production email delivery.
+
+### Use the Send Email Auth Hook
+The guide also supports replacing SMTP with the Send Email Auth Hook, for example to use an email provider's HTTP API. SMTP is therefore not the exclusive supported delivery mechanism; application email authentication still needs an appropriate delivery setup beyond the restricted default service.

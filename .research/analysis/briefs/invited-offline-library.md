@@ -4,7 +4,7 @@ type: brief
 kind: research
 provenance: agent-synthesis
 updated: 2026-09-26
-summary: A minimal Access-protected Worker with D1 is a conditional fit for one invited circle; Supabase provides an alternative with admin invitations, database policies, and production SMTP configuration. Local-copy and publication semantics remain explicit product decisions.
+summary: A minimal Access-protected Worker with D1 is a conditional fit for one invited circle; Supabase provides an alternative with admin invitations, database policies, and separately configured email delivery. Local-copy and publication semantics remain explicit product decisions.
 decisions_informed: [invited-library-access, shared-contribution-storage, offline-copy-semantics]
 verification_status: complete
 ---
@@ -182,7 +182,7 @@ automatic. [shared-library-cf-worker-access]{2}
 [shared-library-cf-sessions]{6} [shared-library-cf-version-urls]{11}
 
 {inferred: aggregate} Supabase's invitation API and row policies are substantive alternatives,
-especially if invitations become an in-app capability. Its SMTP requirement and
+especially if invitations become an in-app capability. Its separate email-delivery setup and
 stale tokens qualify the convenience of managed Auth.
 [shared-library-sb-invite]{13} [shared-library-sb-rls]{15}
 [shared-library-sb-smtp]{14} [shared-library-sb-signout]{17}
@@ -203,6 +203,10 @@ gaps. Publication ownership and local-copy update rules require product alignmen
 
 ## Revisions
 
+- 2026-09-26 — **Correction:** replace exclusive SMTP wording in the summary and
+  comparative analysis with separate email-delivery configuration. The source also
+  permits Send Email Auth Hook; the extended SMTP attestation records that option.
+  The default service's recipient restriction and the recommendation are unchanged.
 - 2026-09-26 — **Correction:** expose the conflicting breadth of Cloudflare's JWT
   guidance; extend JWT/logout attestations and distinguish comparative inferences.
   Add a local citation for the D1 transaction primitive and make the summary's
