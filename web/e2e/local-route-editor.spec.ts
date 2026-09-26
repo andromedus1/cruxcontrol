@@ -206,7 +206,14 @@ test('persists multi-list membership, manual order, and Trash-safe resolution', 
   await expect(page.getByText('1 of 2')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Moon Arete' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Light this climb' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('2 of 2')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Previous' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('1 of 2')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeFocused();
+  await page.keyboard.press('Enter');
   await expect(page.getByText('2 of 2')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Tidal Wave' })).toBeVisible();
   await page.getByRole('button', { name: 'Edit climb', exact: true }).click();

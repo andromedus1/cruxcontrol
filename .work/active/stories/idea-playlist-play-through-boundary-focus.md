@@ -1,7 +1,7 @@
 ---
 id: idea-playlist-play-through-boundary-focus
 kind: story
-stage: implementing
+stage: review
 tags: [ui]
 parent: null
 depends_on: []
@@ -26,3 +26,10 @@ Authorized in the everyday-reliability cleanup. Preserve stored library data and
 
 ## Simplification opportunity
 Repair the existing path directly; no new subsystem.
+
+## Implementation notes (2026-09-26)
+Root cause: navigation disabled the focused button at the ends without assigning a new focus target. Capture focus ownership on navigation and use a layout effect after the state commit to focus the enabled sibling, with a status fallback. Position status also announces the climb identity.
+
+Regression: PlaylistPlayThrough.test.tsx first failed when Next stayed focused after becoming disabled; all 6 tests now pass, including both boundaries and not stealing focus elsewhere. The production-browser playlist journey now exercises Enter-based navigation/focus at both boundaries. Bounded inline review confirms stable entry order, no writes, and no controller semantics changed.
+
+Execution: cohesive inline host implementation, project standard weight with bounded standalone review (no independent story reviewer). Full repository/browser/CI verification pending final integration; no adjacent issues bundled.

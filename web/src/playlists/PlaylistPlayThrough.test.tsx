@@ -77,6 +77,30 @@ const disconnectedState: BoardLightState = {
 };
 
 describe('PlaylistPlayThrough', () => {
+  it('moves keyboard focus to the enabled sibling at both navigation boundaries and announces the climb', () => {
+    const entries = [entry(FIRST_ID, 'First climb', 0), entry(SECOND_ID, 'Second climb', 1)];
+    render(<PlaylistPlayThrough playlist={playlist(entries)} entries={entries} definition={definition} compatibilityIssue={() => null} onExit={vi.fn()} />);
+    const next = screen.getByRole('button', { name: 'Next' });
+    const previous = screen.getByRole('button', { name: 'Previous' });
+    next.focus();
+    fireEvent.click(next);
+    expect(next).toBeDisabled();
+    expect(previous).toHaveFocus();
+    expect(screen.getByText('2 of 2').closest('[role="status"]')).toHaveTextContent('Second climb');
+    fireEvent.click(previous);
+    expect(previous).toBeDisabled();
+    expect(next).toHaveFocus();
+  });
+
+  it('does not steal focus from other controls when navigation changes without owning focus', () => {
+    const entries = [entry(FIRST_ID, 'First climb', 0), entry(SECOND_ID, 'Second climb', 1)];
+    render(<PlaylistPlayThrough playlist={playlist(entries)} entries={entries} definition={definition} compatibilityIssue={() => null} onExit={vi.fn()} />);
+    const exit = screen.getByRole('button', { name: 'Exit play-through' });
+    exit.focus();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(exit).toHaveFocus();
+  });
+
   it('traverses exact order and preserves unavailable rows without controller actions', () => {
     const first = entry(FIRST_ID, 'First climb', 0);
     const trashed = entry(SECOND_ID, 'Trashed climb', 1, 'trashed');
