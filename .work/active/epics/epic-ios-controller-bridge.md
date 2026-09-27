@@ -95,7 +95,7 @@ during this preflight. The absent phone blocks physical acceptance, not preparat
 ## Preparation checkpoint
 
 The isolated shell preparation is tracked by
-[`ios-prototype-shell`](../stories/ios-prototype-shell.md). It packages the current
+[`ios-prototype-shell`](../../archive/ios-prototype-shell.md). It packages the current
 screens in `prototypes/ios`, with a separate bundle identity and synthetic backup
 fixture. The native project's assets can be built and synchronized without Xcode;
 this is not a compiled or simulator-tested iPhone app. Its guide owns setup commands
