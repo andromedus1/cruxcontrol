@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const fixturePath = fileURLToPath(
   new URL('../../prototypes/ios/fixtures/synthetic-library.json', import.meta.url),
 );
+type TestWindow = Window & { workerRegistrationAttempts: number };
 
 test('packaged assets restore the synthetic library without registering a worker', async ({ page }) => {
   const fixture = JSON.parse(await readFile(fixturePath, 'utf8'));
@@ -13,12 +14,16 @@ test('packaged assets restore the synthetic library without registering a worker
   // Detect attempts as well as successful registrations: a missing sw.js must
   // not hide a broken packaged startup behind a failed registration.
   await page.addInitScript(() => {
+    const testWindow = window as TestWindow;
+    testWindow.workerRegistrationAttempts = 0;
     navigator.serviceWorker.register = () => {
+      testWindow.workerRegistrationAttempts += 1;
       throw new Error('Packaged startup attempted service-worker registration');
     };
   });
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Create climb' })).toBeVisible();
+  expect(await page.evaluate(() => (window as TestWindow).workerRegistrationAttempts)).toBe(0);
   await expect(page.locator('link[rel="manifest"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'Back up & restore' }).click();
   await page.locator('#library-backup-file').setInputFiles(fixturePath);
@@ -41,6 +46,6 @@ test('packaged assets restore the synthetic library without registering a worker
   expect(exported.playlists).toEqual(expect.arrayContaining(fixture.playlists));
   expect(exported.playlists).toHaveLength(fixture.playlists.length);
   expect(await page.evaluate(() => navigator.serviceWorker.getRegistrations().then((r) => r.length))).toBe(0);
-  await expect(page.getByText(/Could not register CruxControl updates/)).toHaveCount(0);
+  expect(await page.evaluate(() => (window as TestWindow).workerRegistrationAttempts)).toBe(0);
   expect(pageErrors).toEqual([]);
 });

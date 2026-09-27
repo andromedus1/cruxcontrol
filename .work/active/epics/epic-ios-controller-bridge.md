@@ -117,8 +117,10 @@ or a generic framework abstraction during the proof.
   events; React Native core components do not directly supply this renderer.
 - `web/src/app/create-runtime.ts` instantiates IndexedDB repositories and a backup
   store over both databases. Native storage work includes backup integration.
-- `web/src/main.tsx` always starts service-worker update admission. Packaged apps
-  need an explicit bootstrap/update policy, not an assumed browser lifecycle.
+- `web/src/main.tsx` starts the update coordinator before the workspace. Browser
+  builds use service-worker admission; explicit `ios-prototype` builds supply an
+  unavailable coordinator and load bundled assets without registration. Native
+  binary-update preservation still needs simulator/device evidence.
 - Prove light/clear, interruption/reconnect, permission denial and foreground/resume
   on a real iPhone and Fullride. Then test a synthetic climb and ordered playlist
   across relaunch/update, plus whole-library export/restore of IDs, order and recipes.
