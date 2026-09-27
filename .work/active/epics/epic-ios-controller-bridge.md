@@ -10,6 +10,7 @@ gate_origin: null
 research_refs:
   - .research/analysis/landscapes/climbing-board-ecosystem.md
   - .research/analysis/briefs/ios-shared-client.md
+  - .research/analysis/landscapes/ios-board-client-prior-art.md
 created: 2026-08-02
 updated: 2026-09-27
 ---
@@ -33,6 +34,12 @@ first; Andrew has not selected a framework migration. Physical board operation,
 durable storage, native sign-in and release/distribution remain unresolved. Retain
 `needs-research` until those consequential contracts are grounded; this comparison
 does not discharge the whole epic's research gate.
+
+The [prior-art scout](../../../.research/analysis/landscapes/ios-board-client-prior-art.md)
+adds a material counterexample: Boardsesh moved from Capacitor to React Native and
+reports improved responsiveness. Grip Connect implements the proposed Capacitor
+Aurora bridge, while Boardsesh retains custom native BLE. These findings support
+an experiment with explicit acceptance criteria; they do not select a framework.
 
 ## Strategic decisions
 
@@ -75,6 +82,30 @@ or a generic framework abstraction during the proof.
 - Confirm device/OS support, build/signing, and a suitable distribution path before
   calling iOS shippable. No native build, physical test or data migration has occurred.
 
+## Proposed framework decision gate
+
+Retain Capacitor as the first proof candidate because it can exercise our existing
+DOM/SVG screens and `BoardByteTransport` boundary. Before implementation, agree on
+the test phone and representative synthetic library size. Include selection,
+scrolling, editing and foreground effects in the device walk-through; record visible
+stalls, missed input and command delivery as well as connection success. Compare the
+same tasks with the working Android experience, without treating unlike hardware
+as a controlled framework benchmark.
+
+Admission requires responsive interaction, observed correct lights/clear and recovery,
+an explicit durable-storage strategy with backup/update preservation, and a native
+sign-in/API proof. A few successful relaunches do not establish IndexedDB durability.
+Document remaining native adapter and release work before choosing the production
+path. If a significant blocker is attributable to the shell or renderer after
+diagnosis, compare a narrow React Native slice performing the failing task before
+authorizing a larger migration. A protocol error alone does not justify rewriting UI.
+The Safari-extension path remains a secondary experiment if its extra installation
+step is acceptable; its board and installed-PWA behavior are unverified.
+
+This is a proposed gate for the user's framework decision, not authorization to
+rewrite the UI or replace personal data. Shared-library access implementation stays
+on hold under its existing native-origin/authentication design gate.
+
 ## Research engagement registration
 
 User seed: compare shared-code mobile approaches, including the suggested
@@ -95,6 +126,38 @@ primitives_extends: []
 primitives_opts_out: []
 decision_relevance: Choose the first mobile proof and identify access-design changes before shared-library implementation resumes.
 ```
+
+### Prior-art scout follow-up
+
+Andrew requested a second review before framework commitment. Reuse the established
+standard independent-verification depth and agent scope judgment. The scout is a
+new, narrower landscape; the earlier ecosystem and mobile comparison remain lenses,
+not source attestations or artifacts to silently rewrite.
+
+```yaml
+intent: prior-art-landscape
+output_kind: breadth-survey-landscape
+consumer: calibrated-work
+scope_authority: in-engagement-judgment
+verification_rigor: standard
+temporal_contract: re-engage-on-trigger
+primitives_extends: []
+primitives_opts_out: []
+analytical_artifact_type: landscape
+decision_relevance: Identify prior implementations and failures that could change the first mobile proof candidate or its acceptance criteria before choosing a production framework.
+```
+
+Framing considered: framework-by-framework comparison (would repeat the first
+brief); subsystem specialist lanes (would pull detailed implementation design into
+a scout); or one inline survey of concrete projects across board apps, BLE adapters
+and persistence/auth seams (chosen). The sample is not exhaustive; maintainer source
+and release claims are not independent performance measurements. One independent
+adversarial reader checks the resulting landscape. No child work items are emitted.
+
+Engagement completed: 13 source attestations, 31 resolved citations, independent
+review approved after two wording corrections, and lead semantic spot checks passed.
+The native research gate remains open for the device, persistence, identity and
+distribution evidence described above; the epic stays at drafting.
 
 ## Anticipated child features
 

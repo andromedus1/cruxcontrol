@@ -1,8 +1,8 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
 schema_version: 2
-generated_at: '2026-09-27T16:29:24Z'
+generated_at: '2026-09-27T17:13:44Z'
 generated_from: frontmatter
-total_docs: 26
+total_docs: 27
 documents:
 - path: docs/ARCHITECTURE.md
   title: CruxControl — Architecture
@@ -223,6 +223,13 @@ documents:
   updated: 2026-08-02
   consumer_hint: Current prior-art landscape for universal climbing-board control, catalogs, and user-data
     portability
+- path: .research/analysis/landscapes/ios-board-client-prior-art.md
+  title: 'Shared mobile board clients: prior-art scout'
+  type: landscape
+  kind: research
+  updated: 2026-09-27
+  consumer_hint: Read before committing to a shared web and native climbing-board client; compares concrete
+    Capacitor, React Native and Safari-extension prior art and the evidence each leaves unresolved.
 - path: .research/briefs/kilter-grade-prediction/campaign.md
   title: 'Campaign Report: Kilter Grade Prediction'
   type: program-report

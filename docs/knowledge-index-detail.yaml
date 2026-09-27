@@ -1,5 +1,5 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
-generated_at: '2026-09-27T16:29:24Z'
+generated_at: '2026-09-27T17:13:44Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -609,3 +609,17 @@ documents:
     summary: Test a Capacitor native shell and BLE transport before considering a React Native UI migration.
       Electron targets desktop; native storage, lifecycle, authentication and actual-device behavior remain
       proof obligations for either mobile path.
+  .research/analysis/landscapes/ios-board-client-prior-art.md:
+    summary: Grip Connect provides a Capacitor Aurora BLE implementation and a React Native alternative.
+      Boardsesh moved from Capacitor to React Native and reports responsiveness improvements, but retains
+      custom iOS BLE and distinct storage/auth paths. These examples justify a broader device proof, not
+      a framework commitment.
+    key_findings:
+    - Boardsesh's native rewrite is counterevidence to assuming that web UI reuse guarantees satisfactory
+      mobile responsiveness; its release notes are not a controlled framework benchmark.
+    - Grip Connect implements Aurora writes with the proposed Capacitor BLE plugin, while also supplying
+      a React Native adapter; source availability does not prove Fullride acceptance.
+    - Bluetooth write semantics, persistence, credentials and native releases remain explicit platform
+      work in concrete prior art.
+    - A Safari extension offers another path to investigate, with installation and compatibility obligations
+      that remain untested for this application.
