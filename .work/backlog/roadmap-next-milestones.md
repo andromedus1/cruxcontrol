@@ -87,6 +87,13 @@ selected here.
   shared-service implementation. Andrew confirmed iPhone board control is required
   on 2026-09-27. The [comparison](../../.research/analysis/briefs/ios-shared-client.md)
   recommends a Capacitor/native-BLE proof while retaining React Native as an alternative.
+- Andrew accepted that proof-first plan but has no iPhone available yet; a friend's
+  future availability will determine the physical test session. Continue preparation
+  and, once Xcode is available, simulator checks under the iOS epic's
+  [availability sequence](../active/epics/epic-ios-controller-bridge.md#availability-and-proof-sequence).
+  Physical BLE acceptance and the production framework decision remain pending;
+  do not treat this availability constraint as permission to resume shared-service
+  implementation under the unproven native-auth design.
 - Shared-library audience decisions are settled: invited partner and friends first,
   with Android and iPhone board control required. The
   [owning epic](../active/epics/epic-shared-climb-library.md) records the decisions and
