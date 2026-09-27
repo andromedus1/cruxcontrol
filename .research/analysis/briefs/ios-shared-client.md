@@ -19,6 +19,10 @@ Native direction with a web-preserving native shell. This is a bounded architect
 comparison, not a framework benchmark, implementation proof or store-policy review.
 Sources were checked on 2026-09-27.
 
+The companion [prior-art scout](../landscapes/ios-board-client-prior-art.md) examines
+concrete projects and counterexamples. Read it alongside this framework comparison;
+this brief alone is not the complete evidence for a production commitment.
+
 {inferred: aggregate} **Test Capacitor plus a native BLE adapter first.** Its native
 container accepts an existing web application, whereas React Native core components
 create native platform views. For an existing DOM-based interface, retaining the web
@@ -107,6 +111,9 @@ checks; this brief does not promise App Store acceptance.
 
 ## Revisions
 
+- 2026-09-27 — **Correction:** add navigation to the companion prior-art scout.
+  The first-proof recommendation is unchanged; the scout informs its acceptance
+  criteria and does not establish a production framework selection.
 - Standard verification: independent adversarial review covered all eleven source
   attestations and reopened the external and local sources. Its focused second pass
   approved the corrections below. Lead spot checks covered the storage warning,
