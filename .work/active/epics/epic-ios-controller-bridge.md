@@ -57,6 +57,41 @@ an experiment with explicit acceptance criteria; they do not select a framework.
 - **Scope:** foreground wall sessions with the existing animation policy. New
   boards, background animation and a UI redesign are not implied by this request.
 
+## Availability and proof sequence
+
+Andrew accepted the prototype-first plan on 2026-09-27 and confirmed that no iPhone
+is currently available for testing. Physical testing will depend on a friend's
+availability; no date or device/OS version is known. This changes sequencing, not
+the requirement for iPhone board control or the production framework decision.
+
+- **Preparation without an iPhone:** ground the shell/bootstrap, native transport,
+  persistence and identity boundaries; prepare synthetic library/backup fixtures
+  and a repeatable physical-session checklist. Keep the experiment isolated from
+  Andrew's installed app and personal library. A test double can check application
+  state and command contracts, but cannot validate CoreBluetooth or real delivery.
+- **Simulator once tooling is available:** exercise packaged startup, existing
+  screens, navigation, local data operations and backup round trips where supported.
+  Record native API gaps explicitly. Simulator results can uncover functional
+  problems but cannot establish real-phone responsiveness, storage-pressure
+  behavior, Bluetooth delivery or complete device lifecycle recovery. The
+  [BLE plugin's iOS instructions](https://github.com/capacitor-community/bluetooth-le#ios)
+  explicitly require a real device for Bluetooth.
+- **Friend's iPhone plus the board:** run the framework admission checks below,
+  including repeated light/clear, denied permissions, interruption/reconnect,
+  real-device interaction, preservation across updates and native sign-in. Confirm
+  phone/OS, installation method and test data before that session. Do not close the
+  iPhone acceptance gate or make a production framework selection from simulator
+  or Android results.
+
+Local tooling preflight on 2026-09-27: `xcode-select -p` selects Apple's standalone
+Command Line Tools; `xcodebuild -version` cannot run with that selection and
+`xcrun simctl list runtimes --json` cannot find `simctl`. No Xcode app was found in
+the standard application folders or Spotlight bundle search. Full Xcode and an
+iOS simulator runtime are prerequisites for local simulator checks; consult the
+[current Capacitor setup requirements](https://capacitorjs.com/docs/ios) when
+installing. No tooling was installed or global developer-directory setting changed
+during this preflight. The absent phone blocks physical acceptance, not preparation.
+
 ## Simplification opportunity
 
 Reuse `BoardByteTransport`, controller codecs, board definitions and existing
@@ -85,8 +120,9 @@ or a generic framework abstraction during the proof.
 ## Proposed framework decision gate
 
 Retain Capacitor as the first proof candidate because it can exercise our existing
-DOM/SVG screens and `BoardByteTransport` boundary. Before implementation, agree on
-the test phone and representative synthetic library size. Include selection,
+DOM/SVG screens and `BoardByteTransport` boundary. Preparation can start before the
+test phone is available. Define representative synthetic library fixtures during
+preparation and confirm the phone/OS before the physical acceptance session. Include selection,
 scrolling, editing and foreground effects in the device walk-through; record visible
 stalls, missed input and command delivery as well as connection success. Compare the
 same tasks with the working Android experience, without treating unlike hardware
