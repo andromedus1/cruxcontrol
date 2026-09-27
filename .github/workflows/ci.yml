@@ -55,6 +55,47 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  ios-prototype:
+    name: ios prototype (assets / browser smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup prototype Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: prototypes/ios/.nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            prototypes/ios/package-lock.json
+
+      - name: Install web and prototype dependencies
+        run: |
+          npm ci
+          npm --prefix prototypes/ios ci
+
+      - name: Build and sync prototype assets
+        run: npm --prefix prototypes/ios run sync
+
+      - name: Install Chromium
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+
+      - name: Check packaged startup and synthetic library
+        run: npm -w web run test:ios-prototype
+
+      - name: Upload prototype failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-prototype-browser-results
+          path: web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
   ml:
     name: ml (stub lane)
     runs-on: ubuntu-latest

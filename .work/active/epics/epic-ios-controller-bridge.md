@@ -92,6 +92,16 @@ iOS simulator runtime are prerequisites for local simulator checks; consult the
 installing. No tooling was installed or global developer-directory setting changed
 during this preflight. The absent phone blocks physical acceptance, not preparation.
 
+## Preparation checkpoint
+
+The isolated shell preparation is tracked by
+[`ios-prototype-shell`](../stories/ios-prototype-shell.md). It packages the current
+screens in `prototypes/ios`, with a separate bundle identity and synthetic backup
+fixture. The native project's assets can be built and synchronized without Xcode;
+this is not a compiled or simulator-tested iPhone app. Its guide owns setup commands
+and the manual checklist. Native BLE integration remains the next code step; no
+board-control, durability or native-auth acceptance is implied by this checkpoint.
+
 ## Simplification opportunity
 
 Reuse `BoardByteTransport`, controller codecs, board definitions and existing

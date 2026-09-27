@@ -1,0 +1,212 @@
+{
+  "format": "cruxcontrol-library-backup",
+  "version": 1,
+  "exportedAt": "2026-09-27T00:00:00.000Z",
+  "drafts": [
+    {
+      "schemaVersion": 4,
+      "id": "00000000-0000-4000-8000-000000000901",
+      "revision": 1,
+      "status": "draft",
+      "installationId": "home-fullride-7x10",
+      "definitionId": "kilter-fullride-7x10",
+      "layoutRevision": "kilter:7:8:17:f0d70b3db9a6",
+      "name": "Prototype draft",
+      "angle": 40,
+      "assignments": [
+        {
+          "placementId": "kilter:kilter:7:8:17:f0d70b3db9a6:placement:4117",
+          "appearance": {
+            "kind": "role",
+            "role": "start"
+          }
+        }
+      ],
+      "effectGroups": [],
+      "metadata": {
+        "description": "Synthetic prototype data; no personal climbs.",
+        "setterNotes": "Preserve this note."
+      },
+      "createdAt": "2026-09-27T00:00:00.000Z",
+      "updatedAt": "2026-09-27T00:00:00.000Z",
+      "updatedOrder": [
+        "2026-09-27T00:00:00.000Z",
+        "00000000-0000-4000-8000-000000000901"
+      ]
+    },
+    {
+      "schemaVersion": 4,
+      "id": "00000000-0000-4000-8000-000000000902",
+      "revision": 1,
+      "status": "finished",
+      "installationId": "home-fullride-7x10",
+      "definitionId": "kilter-fullride-7x10",
+      "layoutRevision": "kilter:7:8:17:f0d70b3db9a6",
+      "name": "Prototype finish A",
+      "angle": 40,
+      "assignments": [
+        {
+          "placementId": "kilter:kilter:7:8:17:f0d70b3db9a6:placement:4117",
+          "appearance": {
+            "kind": "role",
+            "role": "start"
+          }
+        }
+      ],
+      "effectGroups": [
+        {
+          "model": "spatial",
+          "id": "prototype-tide",
+          "recipeVersion": 2,
+          "recipe": {
+            "kind": "ocean-tide",
+            "direction": "out",
+            "foam": 0.4
+          },
+          "seed": 17,
+          "palette": [
+            22,
+            43
+          ],
+          "periodMs": 120000,
+          "intensity": 0.8,
+          "footprint": 3,
+          "target": {
+            "scope": "unused",
+            "include": [],
+            "exclude": []
+          }
+        }
+      ],
+      "metadata": {
+        "description": "Synthetic prototype data; no personal climbs.",
+        "setterNotes": "Preserve this note."
+      },
+      "createdAt": "2026-09-27T00:00:00.000Z",
+      "updatedAt": "2026-09-27T00:00:00.000Z",
+      "updatedOrder": [
+        "2026-09-27T00:00:00.000Z",
+        "00000000-0000-4000-8000-000000000902"
+      ]
+    },
+    {
+      "schemaVersion": 4,
+      "id": "00000000-0000-4000-8000-000000000903",
+      "revision": 1,
+      "status": "finished",
+      "installationId": "home-fullride-7x10",
+      "definitionId": "kilter-fullride-7x10",
+      "layoutRevision": "kilter:7:8:17:f0d70b3db9a6",
+      "name": "Prototype finish B",
+      "angle": 40,
+      "assignments": [
+        {
+          "placementId": "kilter:kilter:7:8:17:f0d70b3db9a6:placement:4117",
+          "appearance": {
+            "kind": "role",
+            "role": "start"
+          }
+        }
+      ],
+      "effectGroups": [],
+      "metadata": {
+        "description": "Synthetic prototype data; no personal climbs.",
+        "setterNotes": "Preserve this note."
+      },
+      "createdAt": "2026-09-27T00:00:00.000Z",
+      "updatedAt": "2026-09-27T00:00:00.000Z",
+      "updatedOrder": [
+        "2026-09-27T00:00:00.000Z",
+        "00000000-0000-4000-8000-000000000903"
+      ]
+    },
+    {
+      "schemaVersion": 4,
+      "id": "00000000-0000-4000-8000-000000000904",
+      "revision": 1,
+      "status": "finished",
+      "installationId": "home-fullride-7x10",
+      "definitionId": "kilter-fullride-7x10",
+      "layoutRevision": "kilter:7:8:17:f0d70b3db9a6",
+      "name": "Prototype Trash",
+      "angle": 40,
+      "assignments": [
+        {
+          "placementId": "kilter:kilter:7:8:17:f0d70b3db9a6:placement:4117",
+          "appearance": {
+            "kind": "role",
+            "role": "start"
+          }
+        }
+      ],
+      "effectGroups": [],
+      "metadata": {
+        "description": "Synthetic prototype data; no personal climbs.",
+        "setterNotes": "Preserve this note."
+      },
+      "createdAt": "2026-09-27T00:00:00.000Z",
+      "updatedAt": "2026-09-27T00:00:00.000Z",
+      "updatedOrder": [
+        "2026-09-27T00:00:00.000Z",
+        "00000000-0000-4000-8000-000000000904"
+      ],
+      "trashedAt": "2026-09-27T00:00:00.000Z"
+    }
+  ],
+  "playlists": [
+    {
+      "schemaVersion": 1,
+      "id": "00000000-0000-4000-8000-000000000905",
+      "revision": 1,
+      "name": "Prototype ordered",
+      "notes": "Synthetic ordered membership fixture.",
+      "entries": [
+        {
+          "kind": "local",
+          "id": "00000000-0000-4000-8000-000000000903"
+        },
+        {
+          "kind": "local",
+          "id": "00000000-0000-4000-8000-000000000902"
+        }
+      ],
+      "createdAt": "2026-09-27T00:00:00.000Z",
+      "updatedAt": "2026-09-27T00:00:00.000Z",
+      "updatedOrder": [
+        "2026-09-27T00:00:00.000Z",
+        "00000000-0000-4000-8000-000000000905"
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "00000000-0000-4000-8000-000000000906",
+      "revision": 1,
+      "name": "Prototype mixed",
+      "notes": "Synthetic ordered membership fixture.",
+      "entries": [
+        {
+          "kind": "local",
+          "id": "00000000-0000-4000-8000-000000000902"
+        },
+        {
+          "kind": "local",
+          "id": "00000000-0000-4000-8000-000000000901"
+        },
+        {
+          "kind": "local",
+          "id": "00000000-0000-4000-8000-000000000904"
+        },
+        {
+          "kind": "local",
+          "id": "00000000-0000-4000-8000-000000000999"
+        }
+      ],
+      "createdAt": "2026-09-27T00:00:00.000Z",
+      "updatedAt": "2026-09-27T00:00:00.000Z",
+      "updatedOrder": [
+        "2026-09-27T00:00:00.000Z",
+        "00000000-0000-4000-8000-000000000906"
+      ]
+    }
+  ]
+}

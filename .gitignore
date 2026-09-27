@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 web/dist/
+web/dist-ios-prototype/
 *.tsbuildinfo
 
 # Local / env

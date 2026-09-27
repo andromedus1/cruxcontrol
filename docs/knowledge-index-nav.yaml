@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
 schema_version: 3
-generated_at: '2026-09-27T17:13:44Z'
+generated_at: '2026-09-27T20:23:57Z'
 generated_from: frontmatter
 total_docs: 27
 by_kind:
@@ -11,7 +11,7 @@ substrate_summary:
   active:
     epic: 5
     feature: 10
-    story: 4
+    story: 5
     release: 0
   backlog: 12
   releases: {}

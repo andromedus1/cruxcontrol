@@ -1,7 +1,7 @@
 ---
 id: ios-prototype-shell
 kind: story
-stage: implementing
+stage: review
 tags: [infra]
 parent: null
 depends_on: []
@@ -65,3 +65,35 @@ platform abstraction. Keep all Capacitor dependencies outside the production PWA
 Inline, current agent; direct reads answered the integration questions. Effective
 review weight: standard from `.work/CONVENTIONS.md`, with the standalone-story
 bounded inline review exception. No independent worker is needed.
+
+## Implementation notes
+
+- Added `prototypes/ios`: generated SPM Xcode project, pinned package/lockfile,
+  distinct bundle ID, reproducible scripts, synthetic fixture and setup guide.
+- Capacitor 8.4.3 is pinned consistently in npm and SPM. The latest 8.5.2 CLI
+  introduced a development-only xcode → uuid advisory; selecting the preceding
+  stable minor avoids that dependency. Prototype `npm audit` reports zero findings.
+- `web/vite.config.ts` and `register-sw.ts` make only the explicit prototype mode
+  use packaged updates. Reused the existing unavailable-update behavior, without
+  a platform abstraction or production PWA dependency on Capacitor.
+- One browser integration check loads the real packaged assets, rejects any
+  service-worker registration, restores the fixture using the normal UI, reloads,
+  exports and compares every authored record and ordered playlist entry.
+- CI has a separate Node 22 prototype asset/sync/browser lane; ordinary web checks
+  remain on Node 20. This lane is explicitly not a native compilation check.
+- Existing renderer, transport, storage, backup and UI contracts are unchanged.
+  No adjacent production bugs were found or silently repaired.
+
+## Verification
+
+- Local lint and typecheck passed; 85 test files / 664 tests passed.
+- Ordinary production build generates its PWA manifest/worker; prototype build
+  omits them and writes a different output directory. `cap add ios` and repeatable
+  `npm --prefix prototypes/ios run sync` passed.
+- Packaged browser smoke passed: 4 climbs / 2 lists retained, including Trash,
+  recipes, shared membership, dangling reference and exact ordered entries.
+- `plutil` validated generated Info.plist and project.pbxproj.
+- Native compilation, simulator operation, BLE, durable storage and native auth
+  are unverified. Full Xcode is absent. These are explicit later epic checkpoints,
+  not acceptance criteria silently waived for this shell-preparation story.
+- PR CI and bounded inline review pending.

@@ -3,10 +3,15 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  build: {
+    outDir: mode === 'ios-prototype' ? 'dist-ios-prototype' : 'dist',
+  },
   plugins: [
     react(),
     VitePWA({
+      // Packaged prototype assets update with the native binary, not Workbox.
+      disable: mode === 'ios-prototype',
       // Keep a new worker waiting until the app has settled local edits,
       // playback, and repository mutations. Registration is owned by
       // pwa/update-service.ts, so the plugin must not inject a second helper.
@@ -75,4 +80,4 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
   },
-});
+}));
