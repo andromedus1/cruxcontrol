@@ -1,7 +1,7 @@
 ---
 id: ios-prototype-shell
 kind: story
-stage: review
+stage: done
 tags: [infra]
 parent: null
 depends_on: []
@@ -96,4 +96,23 @@ bounded inline review exception. No independent worker is needed.
 - Native compilation, simulator operation, BLE, durable storage and native auth
   are unverified. Full Xcode is absent. These are explicit later epic checkpoints,
   not acceptance criteria silently waived for this shell-preparation story.
-- PR CI and bounded inline review pending.
+- Local implementation verification is complete. Required PR CI is the merge
+  gate; merge only after both web and prototype lanes pass on the submitted head.
+
+## Review (2026-09-27)
+
+**Verdict:** Approve for the bounded shell-preparation scope.
+
+**Blockers:** none unresolved.
+**Important:** none.
+**Nits:** none.
+
+Bounded inline review under the standalone-story exception; no independent code
+reviewer ran. Checked packaged asset paths, pinned npm/SPM versions, generated
+native metadata, isolated identity, browser update behavior and CI commands.
+No new schema, transport, credentials, deployment or personal-data operation is
+introduced. The test initially checked only successful registrations and a generic
+error string; added an explicit attempt counter so caught failures cannot yield
+a false pass. The corrected test and lint pass. Documentation review corrected
+the old bootstrap wording; native acceptance remains visibly pending in the epic
+and guide. No claim of compiled/simulator-tested iOS support is made.
