@@ -6,6 +6,8 @@ import { createAppUpdateService, type AppUpdateService } from './update-service.
  * live lease during its development-only mount cycle.
  */
 export function registerServiceWorker(): AppUpdateService {
-  if (import.meta.env.DEV) return createAppUpdateService({ container: null });
+  if (import.meta.env.DEV || import.meta.env.MODE === 'ios-prototype') {
+    return createAppUpdateService({ container: null });
+  }
   return createAppUpdateService();
 }

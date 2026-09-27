@@ -102,6 +102,12 @@ npm -w web run test:e2e  # build first
 Node 20 or newer is required (see `.nvmrc`). `/web` is an npm workspace; `/ml` is a
 separate Python project.
 
+An experimental [iOS shell](prototypes/ios/README.md) packages the existing screens
+with Capacitor in a separate Node 22+ project. Its setup guide covers synthetic-data
+checks and the pending simulator/device work. Native board control, durable storage,
+and authentication still need proof; this is the first prototype preparation step,
+not shipped iOS support.
+
 ### Implementation highlights
 
 - One immutable Fullride definition owns all 305 placement identities, coordinates,

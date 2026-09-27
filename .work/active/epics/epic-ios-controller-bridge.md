@@ -92,6 +92,16 @@ iOS simulator runtime are prerequisites for local simulator checks; consult the
 installing. No tooling was installed or global developer-directory setting changed
 during this preflight. The absent phone blocks physical acceptance, not preparation.
 
+## Preparation checkpoint
+
+The isolated shell preparation is tracked by
+[`ios-prototype-shell`](../../archive/ios-prototype-shell.md). It packages the current
+screens in `prototypes/ios`, with a separate bundle identity and synthetic backup
+fixture. The native project's assets can be built and synchronized without Xcode;
+this is not a compiled or simulator-tested iPhone app. Its guide owns setup commands
+and the manual checklist. Native BLE integration remains the next code step; no
+board-control, durability or native-auth acceptance is implied by this checkpoint.
+
 ## Simplification opportunity
 
 Reuse `BoardByteTransport`, controller codecs, board definitions and existing
@@ -107,8 +117,10 @@ or a generic framework abstraction during the proof.
   events; React Native core components do not directly supply this renderer.
 - `web/src/app/create-runtime.ts` instantiates IndexedDB repositories and a backup
   store over both databases. Native storage work includes backup integration.
-- `web/src/main.tsx` always starts service-worker update admission. Packaged apps
-  need an explicit bootstrap/update policy, not an assumed browser lifecycle.
+- `web/src/main.tsx` starts the update coordinator before the workspace. Browser
+  builds use service-worker admission; explicit `ios-prototype` builds supply an
+  unavailable coordinator and load bundled assets without registration. Native
+  binary-update preservation still needs simulator/device evidence.
 - Prove light/clear, interruption/reconnect, permission denial and foreground/resume
   on a real iPhone and Fullride. Then test a synthetic climb and ordered playlist
   across relaunch/update, plus whole-library export/restore of IDs, order and recipes.

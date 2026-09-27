@@ -11,6 +11,7 @@ summary: >
   An invited contribution library is intended; approved journeys and a verified
   access/storage comparison guide its bounded collaboration service and retained local copies.
   An iPhone client proof now precedes further shared-service implementation.
+  An isolated experimental Capacitor shell packages the existing screens; native acceptance is pending.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; local SQLite through wa-sqlite AccessHandlePoolVFS in a Web Worker is the catalog read path."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
@@ -202,10 +203,15 @@ as an alternative. The first access capability must validate the actual account,
 hostname, mobile session, and protected API routes before production selection.
 The [iOS client comparison](../.research/analysis/briefs/ios-shared-client.md)
 recommends proving a Capacitor shell before considering a native-view UI migration.
-No shell is selected or implemented. Access design must account for the native
-origin and session return path; its existing same-origin web units are held for
-revision. Native persistence/backup and bootstrap/update behavior also require
-explicit adapters or proof, rather than assuming all browser facilities carry over.
+An isolated [experimental Capacitor shell](../prototypes/ios/README.md) packages the
+existing screens under a separate app identity. Its packaged build disables PWA
+generation and service-worker registration; browser builds retain update admission.
+No production framework is selected, and native compilation, simulator behavior,
+BLE, storage/backup durability, and authentication remain unverified. Access design
+must account for the native origin and session return path; its existing same-origin
+web units are held for revision. Native persistence/backup and bootstrap/update
+behavior require explicit adapters or proof, rather than assuming all browser
+facilities carry over.
 The intended boundary uses current membership authorization, explicit retry-safe
 publication, stable contribution identities, and immutable source revisions.
 Locally retained copies record source provenance without surrendering local ownership;

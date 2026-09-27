@@ -1,0 +1,21 @@
+{
+  "name": "@cruxcontrol/ios-prototype",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm --prefix ../../web run build -- --mode ios-prototype",
+    "sync": "npm run build && cap sync ios",
+    "open": "cap open ios",
+    "run": "npm run sync && cap run ios --no-sync"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.4.3",
+    "@capacitor/ios": "8.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.4.3"
+  }
+}
