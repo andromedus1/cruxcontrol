@@ -1,20 +1,31 @@
 ---
 id: epic-shared-climb-library-invited-access
 kind: feature
-stage: implementing
+stage: drafting
 tags: [ui, security, infra]
 research_refs:
   - .research/analysis/briefs/invited-offline-library.md
   - .research/analysis/briefs/invited-library-hosting-costs.md
+  - .research/analysis/briefs/ios-shared-client.md
 parent: epic-shared-climb-library
 depends_on: []
 release_binding: null
 gate_origin: null
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Enter the invited shared library
+
+## Current design hold
+
+Andrew requires direct iPhone control and asked to establish iOS support before
+further shared-library work (2026-09-27). This feature and its unimplemented stories
+return to drafting while the [iOS epic](../epics/epic-ios-controller-bridge.md)
+establishes the native-client direction. The units below remain a web candidate,
+not an implementation-ready native access contract. Revisit origin, session/cookie
+handling, sign-in return, API transport and storage after the mobile proof. Include
+the actual iPhone shell in provider acceptance. Cloudflare remains conditional.
 
 ## Brief
 

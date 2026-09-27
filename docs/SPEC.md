@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-09-26
+updated: 2026-09-27
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
@@ -11,14 +11,14 @@ summary: >
   and recommendations in an offline-first client.
 decisions:
   - "The local wall-session loop is implemented; approved invited-library journeys guide access, publication, retained personal copies, and explicit source updates."
-  - "Invited members explicitly publish climbs immediately to their group; personal authoring/playlists remain local and Android board control is sufficient initially."
+  - "Invited members explicitly publish climbs immediately to their group; personal authoring/playlists remain local and Android plus iPhone board control are required."
   - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
-  - "Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect."
+  - "The current browser controller requires supported Web Bluetooth; the intended mobile path must supply native iPhone BLE access."
   - "Grade-prediction target is community consensus difficulty_average from climb_stats."
   - "Playlists are a CruxControl-local construct (no Kilter playlist API): local-first, climb-ID-referenced, shareable, board-playable."
   - "Every climb and layout identity is namespaced by provider and immutable board/layout revision; bare vendor IDs never cross domain boundaries."
   - "The Fullride 7x10 is the acceptance board for the first milestone; additional providers are installed on demand."
-  - "Android/desktop Chromium provide Web Bluetooth control; iOS direct control is a later native-bridge capability."
+  - "Establish iPhone board control and native storage/authentication contracts before further shared-library implementation."
   - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
   - "Whole-library backup is a bounded local file of saved records; restore is missing-only, identity-preserving, conflict-blocking, and transactional per IndexedDB store."
@@ -232,7 +232,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   does not imply instantaneous delivery to every device. Start with explicit online
   publication and bounded refresh; personal saved copies provide guaranteed offline use.
 - Browse compatible contributions, use them in personal playlists, and control the
-  board through the existing Android controller path. iPhone control is deferred.
+  board on Android and iPhone. The Android web controller exists; the required
+  iPhone path still needs implementation and physical acceptance.
 - Preserve locally authored climbs, list order and membership, saved recipes, Trash,
   and backup/recovery guarantees. Shared content updates or removals must not silently
   overwrite private edits or remove personally retained climbs.
@@ -242,7 +243,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Start with operator-managed invitations and access removal for one circle. Local
   editing and board sessions remain usable if shared sign-in expires or the service
   is unavailable. Provider selection requires a real hosting/session proof. This
-  capability is not yet delivered.
+  capability is not yet delivered. The hosting/session proof must include the chosen
+  native iPhone client; a web-only same-origin proof is insufficient.
 
 ## Domain Model
 
@@ -359,7 +361,7 @@ The model mirrors the official Kilter SQLite schema (see
 
 - **Browser support.** Direct Web Bluetooth control runs in supported Android and
   desktop Chromium browsers (Chrome/Edge); other browsers can browse but not drive
-  the board.
+  the board through that transport. The intended iPhone client adds native BLE access.
 - **Offline-first.** Local drafts already create, edit, and reopen without network.
   The catalog and logbook must likewise be usable from local storage when their
   milestones ship.
@@ -390,6 +392,10 @@ The model mirrors the official Kilter SQLite schema (see
   not bypass access controls. Import capability and redistribution are separate
   decisions recorded per provider.
 - **Mobile capability.** Responsive local browsing and editing work on modern phones;
-  logging must do the same when its future milestone ships. Direct BLE control
-  requires Web Bluetooth (Android Chromium) or a future native iOS CoreBluetooth
-  bridge; unsupported transports degrade explicitly to browse-only.
+  logging must do the same when its future milestone ships. The shared-library
+  audience requires direct Android and iPhone board control. The iPhone path must
+  prove connection/light/clear, interruption recovery, durable local storage,
+  whole-library export/restore and native sign-in before claiming support.
+  Unsupported transports degrade explicitly to browse-only; that fallback does not
+  satisfy the intended iPhone control requirement. Preserve existing phone data during
+  any move from a browser origin to a native application store.
