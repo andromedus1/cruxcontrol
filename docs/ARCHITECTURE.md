@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-09-26
+updated: 2026-09-27
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -10,12 +10,13 @@ summary: >
   controller profiles, on-demand local catalogs, and a Fullride 7x10 first slice.
   An invited contribution library is intended; approved journeys and a verified
   access/storage comparison guide its bounded collaboration service and retained local copies.
+  An iPhone client proof now precedes further shared-service implementation.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; local SQLite through wa-sqlite AccessHandlePoolVFS in a Web Worker is the catalog read path."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
   - "Provider-native records and provenance are retained beside the normalized read model; catalogs install per provider/layout rather than as one universal bundled database."
   - "BLE is isolated behind a Web Bluetooth adapter with API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
-  - "A native iOS shell, if prioritized, exposes a narrow CoreBluetooth transport bridge to the shared application core."
+  - "The required iPhone path reuses the controller transport boundary; shell, durable storage and native authentication need proof before service implementation resumes."
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
@@ -66,8 +67,8 @@ feature item bodies in `.work/`, not here. Capabilities are in
    and the editor's absolute-time animation scheduler sends complete scenes of at most
    20 lights at up to 2 FPS with one frame in flight and stale deadlines coalesced. Since
    omitted lights replace rather than preserve the previous scene, sparse delta frames
-   are forbidden. Refused playback never rewrites saved assignments. A future iOS shell
-   may supply CoreBluetooth behind the same port.
+   are forbidden. Refused playback never rewrites saved assignments. The intended
+   iPhone path supplies native BLE behind the same port, preserving these contracts.
 5. **Board Renderer** — definition-driven geometry, role colors, and selection.
    For the exact Fullride ID and revision, the private/local prototype resolves one
    immutable, affinely calibrated reference-image underlay beneath 305 semantic
@@ -199,6 +200,12 @@ The verified [invited-library comparison](../.research/analysis/briefs/invited-o
 conditionally recommends an Access-protected Worker API with D1 and retains Supabase
 as an alternative. The first access capability must validate the actual account,
 hostname, mobile session, and protected API routes before production selection.
+The [iOS client comparison](../.research/analysis/briefs/ios-shared-client.md)
+recommends proving a Capacitor shell before considering a native-view UI migration.
+No shell is selected or implemented. Access design must account for the native
+origin and session return path; its existing same-origin web units are held for
+revision. Native persistence/backup and bootstrap/update behavior also require
+explicit adapters or proof, rather than assuming all browser facilities carry over.
 The intended boundary uses current membership authorization, explicit retry-safe
 publication, stable contribution identities, and immutable source revisions.
 Locally retained copies record source provenance without surrendering local ownership;
@@ -347,8 +354,11 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
   and tested per controller profile.
 - **Catalog scale.** Multiple community catalogs can exceed practical bundle/browser
   limits, so catalogs are partitioned and installed per provider/layout.
-- **iOS control.** WebKit does not expose Web Bluetooth. Direct iPhone control needs
-  a native CoreBluetooth bridge; the web client remains useful in browse-only mode.
+- **iOS control and preservation.** The required iPhone client needs proven native
+  BLE, local persistence and authentication. Framework documentation does not establish
+  board compatibility or storage survival. Retain shared protocol/domain behavior;
+  test native lifecycle, export/restore and origin migration without altering the
+  existing personal library. Web-only browse mode does not fulfill iPhone control.
 
 ## History
 

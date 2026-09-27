@@ -10,7 +10,7 @@ depends_on: [epic-shared-climb-library-publish]
 release_binding: null
 gate_origin: null
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Browse shared climbs and retain personal copies
@@ -20,7 +20,8 @@ updated: 2026-09-26
 Let a member browse and refresh the group's contributions, filter by the approved
 search/setter/angle controls, inspect a compatible climb, and save a retained copy
 into an existing or newly named personal playlist. Use the existing board renderer
-and Android controller, with explicit connection and normal scene/capacity rules.
+and shared controller boundary with Android and the intended native iPhone transport,
+with explicit connection and normal scene/capacity rules.
 Preserve My Climbs, Drafts, Trash, Playlists, and persistent board controls when
 adding the shared destination.
 

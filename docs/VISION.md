@@ -2,16 +2,16 @@
 description: CruxControl vision, problem, audience, principles, and non-goals
 type: planning
 kind: planning
-updated: 2026-09-26
+updated: 2026-09-27
 nav_priority: high
 summary: >
   CruxControl is a Kilter-first, eventually universal climbing-board app. Its
   first complete vertical slice controls a home Fullride 7x10, while its domain,
   catalog, and controller boundaries allow other boards to be added without
   surrendering offline use, data ownership, or source fidelity. The next milestone
-  shares explicitly contributed climbs within an invited circle.
+  establishes iPhone board control and shares explicit contributions within an invited circle.
 decisions:
-  - "Web app (not native) so Web Bluetooth, shareable URLs, and cross-device use come for free."
+  - "Share product logic across web, Android and iOS; preserve the working web client while proving native iPhone board control."
   - "Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional."
   - "The Fullride 7x10 is the first complete milestone; one app for any supported climbing board is the long-term north star."
   - "Board definitions, catalog providers, and controller protocols are independent extension points."
@@ -19,7 +19,7 @@ decisions:
   - "Static/backendless remains the default, with a narrow service allowed later only where a provider or collaboration capability requires it."
   - "Shared contributed climbs are the next major addition; community catalogs and a logbook precede longer-term grade prediction and personalized training."
   - "The installable PWA keeps private authoring and playlists local; an invited shared library may use a narrow, research-grounded collaboration service."
-  - "Invited partner and friends can publish explicit submissions immediately to their group; Android board control is sufficient initially."
+  - "Invited partner and friends need Android and iPhone board control; establish the iOS path before advancing shared-library implementation."
 ---
 
 # CruxControl — Vision
@@ -32,6 +32,8 @@ reopens, and lights unrestricted browser-local climbs through a fast, offline-fi
 client; organizes them into shareable lists; and supports locally reviewed screenshot
 imports and editable light effects. The next addition lets invited partner and friends
 contribute climbs to a shared library and receive updates independently of app releases.
+That milestone includes Android and iPhone board control; the iOS client path must
+be established before shared-service implementation advances.
 Community-catalog browsing and logging follow; grade prediction and personalized
 training extend the wall-session loop in longer-term milestones.
 
@@ -63,7 +65,7 @@ Andrew Clark — owner of a home Kilter Board Fullride 7x10 — and a small circ
 **invited partner and friends**. Each person keeps private authoring and playlists
 in their own client and can control a compatible board. Explicitly submitted climbs
 become available immediately within the invited group, without Andrew approving
-each submission. Android board control is sufficient initially. Local playlists are
+each submission. Android and iPhone board control are required. Local playlists are
 already portable by bounded URL or lossless file; provider climb URLs remain future
 catalog work. The design begins with this
 "distribute to friends" case: an installable PWA built for static hosting once the
@@ -84,8 +86,9 @@ multi-tenancy.
 - **Useful sessions first.** Shared climbs, reliable local ownership, and community
   browsing take priority. Grade prediction and personalized training remain
   longer-term capabilities supported by the architecture.
-- **Web platform.** Web Bluetooth makes a no-install, shareable, cross-device
-  client possible — lean into it.
+- **Shared product, platform adapters.** Retain the web client's reusable behavior
+  and add native device access where needed. One product does not eliminate native
+  builds, permissions, persistence or device-specific acceptance.
 - **Distributable by default.** The app is built as a hosted, installable PWA a
   friend can open from a URL once deployment is configured. Easy installation and
   stability across browsers/devices are first-class principles. Group access should
@@ -113,10 +116,10 @@ multi-tenancy.
 - **Not a replacement for the Kilter social graph.** Future catalog adapters will read
   authorized public catalog data and may optionally sync; those capabilities are not
   implemented yet and will not reproduce Kilter's community/social features.
-- **Not native mobile.** A web app on Chrome/Edge is the delivery vehicle; no
-  native app is required for the first milestone. Android and desktop Chromium can
-  control boards; iPhone/iPad are browse/edit capable but need a later native
-  CoreBluetooth bridge for direct control.
+- **No separate mobile product fork.** iPhone board control is intended through a
+  researched mobile integration sharing the application core. Native framework
+  selection remains conditional on hardware, storage and sign-in proof; a separate
+  iOS-only feature set or unsolicited interface redesign is outside the scope.
 
 ## Reference
 

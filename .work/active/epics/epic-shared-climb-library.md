@@ -6,12 +6,13 @@ tags: [ui, data, security]
 research_refs:
   - .research/analysis/briefs/invited-offline-library.md
   - .research/analysis/briefs/invited-library-hosting-costs.md
+  - .research/analysis/briefs/ios-shared-client.md
 parent: null
 depends_on: [epic-route-creation, epic-playlists, epic-build-effects-hardening-library-backup]
 release_binding: null
 gate_origin: null
 created: 2026-09-12
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Shared contributed climb library
@@ -21,16 +22,16 @@ updated: 2026-09-26
 Let Andrew's invited partner and friends explicitly contribute climbs to a shared
 library, receive other members' contributions independently of app releases, and
 use those climbs in their own wall sessions and playlists. Successful submissions
-publish immediately to the invited group. Android board control is sufficient for
-the first shared-library milestone; personal authoring and playlist data remain
+publish immediately to the invited group. Android and iPhone board control are
+required for the shared-library milestone; personal authoring and playlist data remain
 locally owned and exportable.
 
 ## Strategic decisions
 
 - **First audience:** invited partner and friends — confirmed 2026-09-26.
-- **Initial board control:** Android is sufficient. Direct iPhone board control
-  remains deferred and does not block this shared-library milestone — confirmed
-  2026-09-26.
+- **Board control:** include direct iPhone control alongside Android. Establish
+  the [iOS path](epic-ios-controller-bridge.md) before more shared-library work —
+  confirmed 2026-09-27, superseding the Android-only first-delivery decision.
 - **Publication:** invited members' explicit submissions publish immediately within
   the group, without an approval queue — confirmed 2026-09-26.
 - **Ownership:** explicit climb submission, library updates independent of app
@@ -83,9 +84,11 @@ addition. A shared-library failure must not disable local editing or board sessi
 Publication means availability to the group; it does not require real-time delivery
 to every phone. Refresh cadence and offline behavior need an explicit design.
 
-Manufacturer community-catalog acquisition, native iOS control, logbook, ML, public
+Manufacturer community-catalog acquisition, logbook, ML, public
 discovery, and automatic synchronization of private drafts/playlists are outside this
 epic. Existing portable file sharing remains useful and is not replaced by this scope.
+Native iPhone control belongs to the companion iOS epic and is required for this
+audience; its mobile proof precedes further shared-library work.
 
 Andrew approved this as the next major addition in the
 [saved milestone priorities](../../backlog/roadmap-next-milestones.md). Aim for explicit climb
@@ -131,10 +134,10 @@ is implemented yet.
 
 ## Design handoff
 
-The directional question pass and rendered journey sign-off are complete. Start
-feature design with `epic-shared-climb-library-invited-access`, then follow the
-declared dependency chain. Inherit the decisions above without repeating the
-audience, Android, publication, saved-copy, or visual-direction questions.
+The rendered journeys are approved. First establish the iOS client path, then
+revise `epic-shared-climb-library-invited-access` for native sign-in before following
+the dependency chain. Inherit the confirmed audience, Android/iPhone control,
+publication, saved-copy and visual-direction decisions without repeating them.
 The existing deployment path and artwork-distribution item are audience-access
 companions: invited access is not evidence of artwork redistribution permission.
 Any new hosting origin must leave the phone's existing library intact and follow
@@ -214,8 +217,9 @@ Large scope: adds a collaboration boundary and intended shared-data capability.
 Foundation intent is rolled forward without choosing a service architecture.
 Dependencies are completed archived capabilities; `work-view --blocking
 epic-shared-climb-library --paths` found no cycle. The approved flows now ground four
-child features. Invited access now has its detailed design and four child stories
-at `implementing`; publication, browse/save and updates remain `drafting`. The epic
+child features. Invited access retains its web candidate design and four child
+stories, all reopened to `drafting` for iOS requirements; publication, browse/save
+and updates remain `drafting`. The epic
 is `implementing` because decomposition is complete, not because the shared service
 is delivered. Access implementation and hosted evidence are still pending.
 The source-grounded comparison passed standard
@@ -292,7 +296,9 @@ to invited access.
 The chain reflects real contract consumers. Publication establishes shared identity
 and immutable revisions; saving records that provenance from its first version;
 the final feature consumes both to offer explicit updates. No catalog bootstrap,
-logbook, iOS bridge, or manufacturer-sync dependency is introduced.
+logbook or manufacturer-sync dependency is introduced. The iOS proof is the current
+product prerequisite; access is held in drafting rather than depending on completion
+of the entire native distribution epic.
 
 ### Decomposition risks
 

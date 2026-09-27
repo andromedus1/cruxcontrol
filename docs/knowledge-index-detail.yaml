@@ -1,5 +1,5 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
-generated_at: '2026-09-26T19:11:16Z'
+generated_at: '2026-09-27T16:29:24Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -8,7 +8,7 @@ documents:
       and namespaced identities, independent catalog providers and controller profiles, on-demand local
       catalogs, and a Fullride 7x10 first slice. An invited contribution library is intended; approved
       journeys and a verified access/storage comparison guide its bounded collaboration service and retained
-      local copies.
+      local copies. An iPhone client proof now precedes further shared-service implementation.
 
       '
     decisions:
@@ -20,8 +20,8 @@ documents:
       per provider/layout rather than as one universal bundled database.
     - BLE is isolated behind a Web Bluetooth adapter with API-level-2 and API-level-3 Aurora codecs selected
       from the connected controller identity.
-    - A native iOS shell, if prioritized, exposes a narrow CoreBluetooth transport bridge to the shared
-      application core.
+    - The required iPhone path reuses the controller transport boundary; shell, durable storage and native
+      authentication need proof before service implementation resumes.
     - The generated immutable Fullride definition is the shared geometry, placement identity, role, and
       LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while
       schematics remain the distributable fallback.
@@ -75,9 +75,10 @@ documents:
     - The local wall-session loop is implemented; approved invited-library journeys guide access, publication,
       retained personal copies, and explicit source updates.
     - Invited members explicitly publish climbs immediately to their group; personal authoring/playlists
-      remain local and Android board control is sufficient initially.
+      remain local and Android plus iPhone board control are required.
     - The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats).
-    - Web Bluetooth constrains the client to Chromium browsers — an accepted constraint, not a defect.
+    - The current browser controller requires supported Web Bluetooth; the intended mobile path must supply
+      native iPhone BLE access.
     - Grade-prediction target is community consensus difficulty_average from climb_stats.
     - 'Playlists are a CruxControl-local construct (no Kilter playlist API): local-first, climb-ID-referenced,
       shareable, board-playable.'
@@ -85,8 +86,8 @@ documents:
       vendor IDs never cross domain boundaries.
     - The Fullride 7x10 is the acceptance board for the first milestone; additional providers are installed
       on demand.
-    - Android/desktop Chromium provide Web Bluetooth control; iOS direct control is a later native-bridge
-      capability.
+    - Establish iPhone board control and native storage/authentication contracts before further shared-library
+      implementation.
     - Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status
       and recoverable Trash; provider publication validation is a separate future boundary.
     - Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary
@@ -100,11 +101,13 @@ documents:
     summary: 'CruxControl is a Kilter-first, eventually universal climbing-board app. Its first complete
       vertical slice controls a home Fullride 7x10, while its domain, catalog, and controller boundaries
       allow other boards to be added without surrendering offline use, data ownership, or source fidelity.
-      The next milestone shares explicitly contributed climbs within an invited circle.
+      The next milestone establishes iPhone board control and shares explicit contributions within an
+      invited circle.
 
       '
     decisions:
-    - Web app (not native) so Web Bluetooth, shareable URLs, and cross-device use come for free.
+    - Share product logic across web, Android and iOS; preserve the working web client while proving native
+      iPhone board control.
     - 'Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional.'
     - The Fullride 7x10 is the first complete milestone; one app for any supported climbing board is the
       long-term north star.
@@ -117,8 +120,8 @@ documents:
       longer-term grade prediction and personalized training.
     - The installable PWA keeps private authoring and playlists local; an invited shared library may use
       a narrow, research-grounded collaboration service.
-    - Invited partner and friends can publish explicit submissions immediately to their group; Android
-      board control is sufficient initially.
+    - Invited partner and friends need Android and iPhone board control; establish the iOS path before
+      advancing shared-library implementation.
   docs/architecture/history/north-star.md:
     summary: 'The original north-star document that combined vision, capabilities, proposed architecture,
       and a phased roadmap. Its content has been split into the rolling-foundation docs (VISION.md, SPEC.md,
@@ -602,3 +605,7 @@ documents:
     summary: Cloudflare remains a conditional fit for a small private hobby library starting from scratch;
       supplied hostnames and Access email delivery reduce setup, while Supabase's separate email delivery
       setup and free-project pausing change its operating tradeoffs.
+  .research/analysis/briefs/ios-shared-client.md:
+    summary: Test a Capacitor native shell and BLE transport before considering a React Native UI migration.
+      Electron targets desktop; native storage, lifecycle, authentication and actual-device behavior remain
+      proof obligations for either mobile path.

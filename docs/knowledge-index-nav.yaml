@@ -1,34 +1,34 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
 schema_version: 3
-generated_at: '2026-09-26T19:11:16Z'
+generated_at: '2026-09-27T16:29:24Z'
 generated_from: frontmatter
-total_docs: 25
+total_docs: 26
 by_kind:
   planning: 5
-  research: 19
+  research: 20
   historical: 1
 substrate_summary:
   active:
-    epic: 4
+    epic: 5
     feature: 10
     story: 4
     release: 0
-  backlog: 13
+  backlog: 12
   releases: {}
   archive: 93
 recent:
 - path: docs/ARCHITECTURE.md
   title: CruxControl — Architecture
   kind: planning
-  updated: 2026-09-26
+  updated: 2026-09-27
 - path: docs/SPEC.md
   title: CruxControl — Specification
   kind: planning
-  updated: 2026-09-26
+  updated: 2026-09-27
 - path: docs/VISION.md
   title: CruxControl — Vision
   kind: planning
-  updated: 2026-09-26
+  updated: 2026-09-27
 - path: docs/DEPLOY.md
   title: Deploy
   kind: planning

@@ -1,14 +1,14 @@
 ---
 id: epic-shared-climb-library-invited-access-boundary
 kind: story
-stage: implementing
+stage: drafting
 tags: [ui, security, infra]
 parent: epic-shared-climb-library-invited-access
 depends_on: []
 release_binding: null
 gate_origin: null
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Verify shared requests and bind invited members
@@ -25,3 +25,9 @@ order. Follow its corresponding unit; do not duplicate or independently redesign
 the contract here.
 
 Locally signed tokens, real local D1 migrations and concurrent enrollment/revocation tests establish the service contract. No real account, production data or deployment is needed for this story.
+
+## Design hold
+
+Reopened with the parent on 2026-09-27: establish the iOS shell and native access
+contract before implementing the prior web-only design. See the parent’s current
+design hold; this story is not ready for implementation.
