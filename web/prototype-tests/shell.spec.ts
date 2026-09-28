@@ -23,6 +23,8 @@ test('packaged assets restore the synthetic library without registering a worker
   });
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Create climb' })).toBeVisible();
+  // The packaged entry must compose the native transport even in browser inspection.
+  await expect(page.getByRole('status', { name: 'Board connection' })).toHaveText('Bluetooth unavailable');
   expect(await page.evaluate(() => (window as TestWindow).workerRegistrationAttempts)).toBe(0);
   await expect(page.locator('link[rel="manifest"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'Back up & restore' }).click();

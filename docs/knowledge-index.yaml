@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
 schema_version: 2
-generated_at: '2026-09-27T17:13:44Z'
+generated_at: '2026-09-28T18:06:43Z'
 generated_from: frontmatter
 total_docs: 27
 documents:
@@ -8,7 +8,7 @@ documents:
   title: CruxControl — Architecture
   type: planning
   kind: planning
-  updated: 2026-09-27
+  updated: 2026-09-28
   nav_priority: high
   consumer_hint: CruxControl high-level architecture — modules, data flow, conventions, dependencies,
     risks

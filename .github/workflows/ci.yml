@@ -77,6 +77,11 @@ jobs:
           npm ci
           npm --prefix prototypes/ios ci
 
+      - name: Verify native adapter contracts
+        run: |
+          npm --prefix prototypes/ios run lint
+          npm --prefix prototypes/ios test
+
       - name: Build and sync prototype assets
         run: npm --prefix prototypes/ios run sync
 

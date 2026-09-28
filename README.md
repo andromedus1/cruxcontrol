@@ -103,10 +103,11 @@ Node 20 or newer is required (see `.nvmrc`). `/web` is an npm workspace; `/ml` i
 separate Python project.
 
 An experimental [iOS shell](prototypes/ios/README.md) packages the existing screens
-with Capacitor in a separate Node 22+ project. Its setup guide covers synthetic-data
-checks and the pending simulator/device work. Native board control, durable storage,
-and authentication still need proof; this is the first prototype preparation step,
-not shipped iOS support.
+with Capacitor and an isolated native BLE adapter in a separate Node 22+ project.
+It reuses the shared controller and local library, requires explicit connection,
+and disconnects on backgrounding. Its setup guide covers adapter checks, synthetic
+data, and the pending simulator/device work. Native compilation, board operation,
+durable storage, and authentication still need proof before iOS support can ship.
 
 ### Implementation highlights
 

@@ -6,12 +6,17 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "npm --prefix ../../web run build -- --mode ios-prototype",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint --config ../../web/eslint.config.js src",
+    "build": "npm run typecheck && npm --prefix ../../web run build -- --mode ios-prototype",
     "sync": "npm run build && cap sync ios",
     "open": "cap open ios",
     "run": "npm run sync && cap run ios --no-sync"
   },
   "dependencies": {
+    "@capacitor-community/bluetooth-le": "8.3.0",
+    "@capacitor/app": "8.1.1",
     "@capacitor/core": "8.4.3",
     "@capacitor/ios": "8.4.3"
   },

@@ -1,14 +1,40 @@
 # iOS shell prototype
 
-This experiment packages the existing React screens with Capacitor 8.4.3 to prepare
-for iPhone testing. It is the first preparation step: a native BLE adapter has not
-been added, and Capacitor has not been selected as the production framework.
+This experiment packages the existing React screens with Capacitor 8.4.3 and a
+native BLE adapter to prepare for iPhone testing. Native compilation and real-board
+operation remain unverified; Capacitor has not been selected as the production
+framework. The isolated package pins `@capacitor-community/bluetooth-le` 8.3.0 and
+`@capacitor/app` 8.1.1.
 
 The separate app uses bundle ID `io.github.andromedus1.cruxcontrol.prototype` and
 display name **CruxControl Prototype**. It loads bundled assets, with no remote
 `server.url`. The `ios-prototype` build mode writes `web/dist-ios-prototype` and
-disables PWA generation and service-worker registration. Browser builds retain
-their existing PWA update admission behavior.
+selects `src/main.tsx` in this package as its entry point. It disables PWA generation
+and omits service-worker registration and the update coordinator entirely. The
+normal browser entry retains its existing PWA update admission behavior.
+
+## Native transport boundary
+
+The prototype's composition root injects `NativeBleByteTransport` through the
+existing installation registry and `BoardByteTransport` port. It reuses the React
+UI, controller, Aurora codecs, capacity/pacing policy, effects, and IndexedDB
+library repositories. Opening the packaged assets in a browser exposes an
+unavailable transport; it does not fall back to Web Bluetooth.
+
+Bluetooth initialization and device selection begin only after explicit **Connect**.
+The selected device is remembered in memory for the current runtime only; a new
+session must choose again. Native `pause` (backgrounding) invalidates pending work
+and disconnects. `resume` permits an explicit reconnect; it does not reconnect or
+restart effects automatically. `Info.plist` supplies the Bluetooth usage description
+without adding a background Bluetooth mode.
+
+The adapter copies caller buffers and serializes write batches in FIFO order.
+Connection generations reject stale chooser, connect, and write completions;
+disconnect bypasses the write queue, and reconnect waits for pending native writes
+and cleanup. The Nordic UART characteristic must advertise a supported write mode:
+without-response is preferred, with-response is the fallback. Native connect uses
+a 10-second timeout and each native write uses a 5-second timeout. These application
+contracts still need real-device validation.
 
 ## Setup
 
@@ -26,15 +52,17 @@ npm ci
 npm run sync
 ```
 
-`sync` builds the shared web code in prototype mode and copies its assets into the
-committed Swift Package Manager project, `ios/App/App.xcodeproj`. Re-run it after
-web changes. Generated bundles and installed packages are ignored by Git.
+`sync` typechecks the adapter, builds the shared web code in prototype mode, copies
+its assets, and synchronizes the native plugins into the committed Swift Package
+Manager project, `ios/App/App.xcodeproj`. Re-run it after web, adapter, or plugin
+changes. Generated bundles and installed packages are ignored by Git.
 
 A native build needs full Xcode 26 or newer and an installed iOS simulator runtime.
 Standalone Command Line Tools are insufficient. Capacitor's requirements are in
 its [environment setup guide](https://capacitorjs.com/docs/getting-started/environment-setup).
-As checked on 2026-09-27, the development Mac has macOS 26.3 and only Command Line
-Tools. Xcode 26.6 supports that macOS version; Xcode 27 requires macOS 26.6 or newer,
+As checked on 2026-09-28, the development Mac has macOS 26.3, selects standalone
+Command Line Tools, and has no installed Xcode app. Xcode 26.6 supports that macOS
+version; Xcode 27 requires macOS 26.6 or newer,
 according to [Apple's compatibility table](https://developer.apple.com/xcode/system-requirements/).
 An OS upgrade is therefore not required to try this prototype with compatible Xcode.
 
@@ -71,10 +99,14 @@ relaunch does not establish preservation under storage pressure or across update
 
 ## Checks and evidence boundaries
 
-The browser smoke check runs against the packaged-mode web assets:
+Run the adapter's static checks and deterministic transport tests, then the browser
+smoke check against the packaged-mode web assets (use Node 22+):
 
 ```bash
 # From the repository root, after dependency installation
+npm --prefix prototypes/ios run lint
+npm --prefix prototypes/ios run typecheck
+npm --prefix prototypes/ios run test
 npm --prefix prototypes/ios run build
 npm -w web run test:ios-prototype
 ```
@@ -82,9 +114,13 @@ npm -w web run test:ios-prototype
 Playwright's Chromium browser must be installed (`npx playwright install chromium`
 from `web/` when needed).
 
-It checks startup, fixture restore/export, and preservation through browser reload
-in Chromium. It cannot establish that the Xcode project compiles or that these
-operations work in WKWebView. Native compile and simulator checks have not yet run.
+The transport tests exercise a fake native client, including explicit connection,
+write ordering/modes, copied buffers, cancellation, stale completions, failures,
+and shared Fullride light/clear packets. They do not execute CoreBluetooth. The
+browser smoke checks startup, fixture restore/export, and preservation through
+browser reload in Chromium. It cannot establish that the Xcode project compiles or
+that these operations work in WKWebView. Native compile and simulator checks have
+not yet run.
 
 Once Xcode is available, record simulator results against the commit, Xcode version,
 simulator model, and iOS runtime in the owning work item:
@@ -100,18 +136,21 @@ simulator model, and iOS runtime in the owning work item:
   Verify IDs, revisions, lifecycle states, list ordering/membership, and recipes;
   restore into a separate empty test simulator and compare. If file selection or
   download fails, record the native gap instead of counting the dialog as a pass.
-- Confirm connection controls report unsupported: the shell still uses Web
-  Bluetooth, which WKWebView does not provide. No simulated board success is added.
+- Press **Connect** and confirm unsupported Bluetooth is reported: the native BLE
+  plugin does not support the iOS simulator. Library startup should not initialize
+  Bluetooth or open a permission prompt. No simulated board success is added.
 
-All simulator checks above are pending. Native BLE integration is the next distinct
-preparation task; an iOS simulator cannot validate Bluetooth delivery. A real
-iPhone and Fullride board are required for light/clear, permission denial,
-interruption/reconnect, foreground recovery, and actual-device responsiveness.
+All simulator checks above are pending. A real iPhone and Fullride board are required
+for light/clear, permission denial, interruption/reconnect, foreground recovery,
+and actual-device responsiveness. Check that backgrounding ends the session and
+returning requires explicit reconnect before lighting or effects can resume.
 Synthetic-data preservation across an app update, an explicit durable-storage
 strategy, and native sign-in/API behavior also remain acceptance gates.
 
-The [iOS controller epic](../../.work/active/epics/epic-ios-controller-bridge.md)
-owns the remaining work and acceptance evidence. The
+The [native BLE feature](../../.work/active/features/epic-ios-controller-bridge-native-ble.md)
+owns adapter preparation and its review/CI evidence. The
+[iOS controller epic](../../.work/active/epics/epic-ios-controller-bridge.md)
+owns the remaining native acceptance gates. The
 [client comparison](../../.research/analysis/briefs/ios-shared-client.md) and
 [prior-art review](../../.research/analysis/landscapes/ios-board-client-prior-art.md)
 explain why this shell is the first experiment and what could change the framework

@@ -12,7 +12,7 @@ research_refs:
   - .research/analysis/briefs/ios-shared-client.md
   - .research/analysis/landscapes/ios-board-client-prior-art.md
 created: 2026-08-02
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # iOS Controller Bridge
@@ -83,7 +83,7 @@ the requirement for iPhone board control or the production framework decision.
   iPhone acceptance gate or make a production framework selection from simulator
   or Android results.
 
-Local tooling preflight on 2026-09-27: `xcode-select -p` selects Apple's standalone
+Local tooling preflight on 2026-09-28: `xcode-select -p` selects Apple's standalone
 Command Line Tools; `xcodebuild -version` cannot run with that selection and
 `xcrun simctl list runtimes --json` cannot find `simctl`. No Xcode app was found in
 the standard application folders or Spotlight bundle search. Full Xcode and an
@@ -94,13 +94,27 @@ during this preflight. The absent phone blocks physical acceptance, not preparat
 
 ## Preparation checkpoint
 
-The isolated shell preparation is tracked by
+The initial isolated shell preparation is tracked by
 [`ios-prototype-shell`](../../archive/ios-prototype-shell.md). It packages the current
 screens in `prototypes/ios`, with a separate bundle identity and synthetic backup
 fixture. The native project's assets can be built and synchronized without Xcode;
 this is not a compiled or simulator-tested iPhone app. Its guide owns setup commands
-and the manual checklist. Native BLE integration remains the next code step; no
-board-control, durability or native-auth acceptance is implied by this checkpoint.
+and the manual checklist.
+
+[`epic-ios-controller-bridge-native-ble`](../features/epic-ios-controller-bridge-native-ble.md)
+owns native adapter preparation, required review, CI, and merge. It adds a dedicated
+prototype composition root with pinned BLE 8.3.0 and App 8.1.1 plugins, reusing the
+shared UI, controller, codecs, and library. Device selection is explicit and retained
+only in memory for the session. Native backgrounding disconnects; foreground return
+requires explicit reconnect, with no automatic effect restart or background BLE mode.
+Browser inspection exposes unsupported control instead of selecting Web Bluetooth.
+The native simulator also reports unsupported on Connect. Deterministic adapter
+tests and Chromium library checks cannot establish CoreBluetooth behavior.
+
+No native compile, simulator run, real iPhone/board acceptance, storage durability,
+WKWebView backup round trip, native authentication, or distribution acceptance is
+implied by this preparation. Full Xcode remains absent, and physical testing still
+depends on a test phone. Capacitor remains a proof candidate.
 
 ## Simplification opportunity
 
@@ -117,10 +131,10 @@ or a generic framework abstraction during the proof.
   events; React Native core components do not directly supply this renderer.
 - `web/src/app/create-runtime.ts` instantiates IndexedDB repositories and a backup
   store over both databases. Native storage work includes backup integration.
-- `web/src/main.tsx` starts the update coordinator before the workspace. Browser
-  builds use service-worker admission; explicit `ios-prototype` builds supply an
-  unavailable coordinator and load bundled assets without registration. Native
-  binary-update preservation still needs simulator/device evidence.
+- `web/src/main.tsx` starts the update coordinator before the browser workspace.
+  Explicit `ios-prototype` builds select `prototypes/ios/src/main.tsx` instead,
+  inject the native runtime, and omit the service worker and update coordinator.
+  Native binary-update preservation still needs simulator/device evidence.
 - Prove light/clear, interruption/reconnect, permission denial and foreground/resume
   on a real iPhone and Fullride. Then test a synthetic climb and ordered playlist
   across relaunch/update, plus whole-library export/restore of IDs, order and recipes.
@@ -209,7 +223,8 @@ distribution evidence described above; the epic stays at drafting.
 
 ## Anticipated child features
 
-Decompose after shell/transport direction and proof scope are aligned. Existing
+The native BLE preparation feature above is the first active child. Decompose the
+remaining native acceptance work as its evidence and proof scope are aligned. Existing
 visual direction remains the starting point; new connection/recovery surfaces
 must follow mockup-first. Do not treat a research recommendation as implementation
 or approval of an unseen UI redesign.
