@@ -1,7 +1,7 @@
 ---
 id: roadmap-next-milestones
 created: 2026-09-12
-updated: 2026-09-27
+updated: 2026-09-28
 tags: []
 ---
 
@@ -75,6 +75,12 @@ selected here.
 
 ## Resume next session
 
+- **Paused at Andrew's request for laptop migration (2026-09-28).** Read the
+  [migration handoff](idea-laptop-migration-handoff.md) before resuming. Native BLE
+  prototype preparation is merged through PR #29; implementation stays paused
+  until Andrew confirms the new work environment is ready and asks to continue.
+  The handoff distinguishes committed state from local files and personal library
+  data that require separate preservation.
 - Read this capture, then query `.work/bin/work-view --ready` and the linked items.
   Dependency readiness does not override this product priority order.
 - The [effects feature](../archive/epic-route-creation-flashy-light-effect-demos.md)
