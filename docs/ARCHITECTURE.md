@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-09-27
+updated: 2026-09-28
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -11,12 +11,13 @@ summary: >
   An invited contribution library is intended; approved journeys and a verified
   access/storage comparison guide its bounded collaboration service and retained local copies.
   An iPhone client proof now precedes further shared-service implementation.
-  An isolated experimental Capacitor shell packages the existing screens; native acceptance is pending.
+  An isolated experimental Capacitor shell injects native BLE into the shared screens
+  and controller; native compilation and device acceptance are pending.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; local SQLite through wa-sqlite AccessHandlePoolVFS in a Web Worker is the catalog read path."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
   - "Provider-native records and provenance are retained beside the normalized read model; catalogs install per provider/layout rather than as one universal bundled database."
-  - "BLE is isolated behind a Web Bluetooth adapter with API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
+  - "BLE byte I/O is isolated behind Web Bluetooth in the PWA and an experimental native adapter in the iOS shell; both reuse API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
   - "The required iPhone path reuses the controller transport boundary; shell, durable storage and native authentication need proof before service implementation resumes."
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
@@ -68,8 +69,14 @@ feature item bodies in `.work/`, not here. Capabilities are in
    and the editor's absolute-time animation scheduler sends complete scenes of at most
    20 lights at up to 2 FPS with one frame in flight and stale deadlines coalesced. Since
    omitted lights replace rather than preserve the previous scene, sparse delta frames
-   are forbidden. Refused playback never rewrites saved assignments. The intended
-   iPhone path supplies native BLE behind the same port, preserving these contracts.
+   are forbidden. Refused playback never rewrites saved assignments. The isolated
+   iOS prototype supplies `NativeBleByteTransport` behind the same port. Its own
+   composition root injects native I/O into the shared controller and library runtime;
+   browser inspection of prototype assets exposes unsupported control. Device
+   selection is explicit and session-only. Native backgrounding disconnects and
+   invalidates pending work; return requires explicit reconnect before effects resume.
+   Copied buffers, FIFO batches, generation checks, discovered write modes, and native
+   operation timeouts enforce the transport contract. Real iPhone delivery remains unverified.
 5. **Board Renderer** — definition-driven geometry, role colors, and selection.
    For the exact Fullride ID and revision, the private/local prototype resolves one
    immutable, affinely calibrated reference-image underlay beneath 305 semantic
@@ -204,10 +211,11 @@ hostname, mobile session, and protected API routes before production selection.
 The [iOS client comparison](../.research/analysis/briefs/ios-shared-client.md)
 recommends proving a Capacitor shell before considering a native-view UI migration.
 An isolated [experimental Capacitor shell](../prototypes/ios/README.md) packages the
-existing screens under a separate app identity. Its packaged build disables PWA
-generation and service-worker registration; browser builds retain update admission.
+existing screens under a separate app identity. Its dedicated entry point composes
+native BLE and lifecycle plugins, disables PWA generation, and omits service-worker
+registration and the update coordinator. The normal browser entry retains update admission.
 No production framework is selected, and native compilation, simulator behavior,
-BLE, storage/backup durability, and authentication remain unverified. Access design
+real-board BLE, storage/backup durability, and authentication remain unverified. Access design
 must account for the native origin and session return path; its existing same-origin
 web units are held for revision. Native persistence/backup and bootstrap/update
 behavior require explicit adapters or proof, rather than assuming all browser
@@ -232,8 +240,9 @@ Board definition ──▶ Installation registry ─────┼──▶ Bro
                                                            │
                                Controller profile ◀────────┘
                                          │
-                             Web Bluetooth transport ──▶ Physical board
-                             (future: native iOS bridge)
+                             Byte transport ──▶ Physical board
+                             ├─ Web Bluetooth (PWA)
+                             └─ Native BLE (isolated iOS prototype; device proof pending)
 
 Editor ──▶ Local climb repository ──▶ native IndexedDB
   │               (versioned + optimistic)       (browser-local authority)
@@ -322,6 +331,7 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | `vite-plugin-pwa` (Workbox)                 | Service worker + manifest — offline shell and installability; prompt-mode waiting worker consumed by the app-owned update coordinator                                                                        |
 | Web Locks API                               | Shared per-tab admission and exclusive, `ifAvailable` update apply coordination                                                                                                                               |
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
+| Capacitor 8.4.3 + BLE 8.3.0 + App 8.1.1      | Isolated iOS prototype only: bundled shared UI, native byte transport, foreground lifecycle; no background BLE mode                                                                                             |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |
 | BoardLib (Python)                           | Bootstrap the SQLite catalog; sync-protocol reference                                                                                                                                                          |
 | Kilter sync API                             | Incremental catalog + optional logbook sync                                                                                                                                                                    |
