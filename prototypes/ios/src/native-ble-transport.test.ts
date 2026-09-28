@@ -79,6 +79,7 @@ describe('native BLE transport contract', () => {
     unsubscribe();
     await transport.disconnect();
     await transport.reconnect(selected.id);
+    expect(client.initialize).toHaveBeenCalledOnce();
     expect(client.requestDevice).toHaveBeenCalledTimes(1);
     expect(states).toHaveLength(4);
   });
@@ -96,6 +97,18 @@ describe('native BLE transport contract', () => {
     });
     expect(client.requestDevice).not.toHaveBeenCalled();
     expect(transport.getState().status).toBe(code === 'unsupported' ? 'unsupported' : 'error');
+  });
+
+  it('retries failed initialization but keeps a successfully initialized native manager', async () => {
+    const { client, transport } = fixture();
+    client.initialize.mockRejectedValueOnce(new Error('BLE permission denied'));
+    await expect(transport.requestAndConnect()).rejects.toMatchObject({
+      code: 'device-unavailable',
+    });
+    await transport.requestAndConnect();
+    await transport.disconnect();
+    await transport.reconnect();
+    expect(client.initialize).toHaveBeenCalledTimes(2);
   });
 
   it('handles Bluetooth off, cancellation, duplicate chooser and retry', async () => {

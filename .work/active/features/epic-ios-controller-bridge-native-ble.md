@@ -128,11 +128,12 @@ pause/resume lifetime binding, pinned plugin dependencies, Bluetooth usage text
 and generated SPM plugin references. Normal PWA bootstrap remains separate.
 Listener disposal guards late callbacks, including failed native removal.
 
-Verified locally: 29 native transport/runtime tests; prototype lint/typecheck;
+Verified locally: 30 native transport/runtime tests; prototype lint/typecheck;
 prototype asset build and Capacitor sync; Info.plist syntax; packaged Chromium
 restore/export/reload smoke; ordinary web lint/typecheck, all 664 tests and
 production PWA build. Dependency installation audit reports zero vulnerabilities
-for the isolated prototype package. CI and independent review remain pending.
+for the isolated prototype package. Independent review and fix verification are
+complete; CI is running in [PR 29](https://github.com/andromedus1/cruxcontrol/pull/29).
 
 Three additional regressions failed against the initial adapter and now pass:
 unsupported capability remains unsupported across pause/disconnect; iOS cleanup
@@ -146,3 +147,28 @@ The development Mac still selects Command Line Tools and has no full Xcode app.
 Native compilation, iPhone simulator checks and real iPhone/Fullride acceptance
 have not run. These checks remain epic gates, not evidence supplied by doubles
 or the packaged Chromium smoke.
+
+## Review (2026-09-28)
+
+**Verdict:** Approve after receiver-confirmed fixes; CI remains pending.
+
+**Blockers:** None unresolved. The single independent pass requested changes for
+reinitializing the native manager on every reconnect, and confirmed the cleanup
+callback/retry and unsupported-state failures demonstrated by the receiver.
+All are fixed: preserve the manager after its first successful initialization
+(retry failed initialization), retire failed connection generations before native
+cleanup, keep cleanup serialization usable, and preserve unsupported capability.
+The initialization assertions failed before the fix and pass with the full
+30-test adapter/runtime suite afterward; lint/typecheck and build/sync also pass.
+
+**Important / nits / rejected proposals:** None.
+
+**Notes:** Standard weight, exactly one balanced fresh-context pass using
+GPT-5.6 Sol xhigh, same harness/model class. The preferred external Claude reviewer
+could not authenticate because its OAuth session expired; no external review was
+claimed. Required review fallback succeeded. Receiver verified the plugin's
+non-idempotent initialize and disconnect callback ordering in its pinned Swift
+source and adjudicated each finding. Standard closure uses verified fixes without
+a second independent pass. The independent system documentation audit found zero
+issues; `doc-review-report.md` records its snapshot and scope. No native compile,
+simulator, physical BLE, durable storage, or native authentication claim follows.

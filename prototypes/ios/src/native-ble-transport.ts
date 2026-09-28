@@ -52,6 +52,7 @@ export class NativeBleByteTransport implements BoardByteTransport {
   private connection: Connection | null = null;
   private generation = 0;
   private connecting = false;
+  private initialized = false;
   private foreground = true;
   private queue: Promise<void> = Promise.resolve();
   private cleanup: Promise<void> = Promise.resolve();
@@ -228,7 +229,12 @@ export class NativeBleByteTransport implements BoardByteTransport {
       await this.release(this.nativeDevice); // retries a previously failed cleanup
       this.assertCurrent(generation);
       try {
-        await this.client.initialize();
+        if (!this.initialized) {
+          // iOS initialize replaces its CoreBluetooth manager. Keep the manager
+          // that discovered the selected peripheral for subsequent reconnects.
+          await this.client.initialize();
+          this.initialized = true;
+        }
       } catch (cause) {
         const message = messageOf(cause);
         if (message === 'BLE unsupported') {
