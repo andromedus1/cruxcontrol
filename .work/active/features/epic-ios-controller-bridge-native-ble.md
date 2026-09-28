@@ -1,7 +1,7 @@
 ---
 id: epic-ios-controller-bridge-native-ble
 kind: feature
-stage: review
+stage: done
 tags: [ble]
 parent: epic-ios-controller-bridge
 depends_on: [ios-prototype-shell]
@@ -133,7 +133,11 @@ prototype asset build and Capacitor sync; Info.plist syntax; packaged Chromium
 restore/export/reload smoke; ordinary web lint/typecheck, all 664 tests and
 production PWA build. Dependency installation audit reports zero vulnerabilities
 for the isolated prototype package. Independent review and fix verification are
-complete; CI is running in [PR 29](https://github.com/andromedus1/cruxcontrol/pull/29).
+complete. [PR 29](https://github.com/andromedus1/cruxcontrol/pull/29) CI passed on
+implementation head `7852b44`: web lint/typecheck, 664 tests, production build and
+all browser workflows; prototype checks, build/sync and packaged browser smoke;
+and the ML stub lane. [Run 36463631543](https://github.com/andromedus1/cruxcontrol/actions/runs/36463631543)
+records that result. Deployment was correctly skipped for the pull request.
 
 Three additional regressions failed against the initial adapter and now pass:
 unsupported capability remains unsupported across pause/disconnect; iOS cleanup
@@ -150,7 +154,7 @@ or the packaged Chromium smoke.
 
 ## Review (2026-09-28)
 
-**Verdict:** Approve after receiver-confirmed fixes; CI remains pending.
+**Verdict:** Approve after receiver-confirmed fixes and green CI.
 
 **Blockers:** None unresolved. The single independent pass requested changes for
 reinitializing the native manager on every reconnect, and confirmed the cleanup
@@ -172,3 +176,9 @@ source and adjudicated each finding. Standard closure uses verified fixes withou
 a second independent pass. The independent system documentation audit found zero
 issues; `doc-review-report.md` records its snapshot and scope. No native compile,
 simulator, physical BLE, durable storage, or native authentication claim follows.
+
+The bounded adapter-preparation feature is done and remains under its active
+parent. The parent epic stays drafting with needs-research: outstanding native
+compilation, simulator, hardware, storage, authentication and distribution work
+has not been accepted or fully decomposed. Do not roll up the whole epic from
+this one preparatory feature.
