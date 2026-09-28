@@ -128,11 +128,19 @@ pause/resume lifetime binding, pinned plugin dependencies, Bluetooth usage text
 and generated SPM plugin references. Normal PWA bootstrap remains separate.
 Listener disposal guards late callbacks, including failed native removal.
 
-Verified locally: 26 native transport/runtime tests; prototype lint/typecheck;
+Verified locally: 29 native transport/runtime tests; prototype lint/typecheck;
 prototype asset build and Capacitor sync; Info.plist syntax; packaged Chromium
 restore/export/reload smoke; ordinary web lint/typecheck, all 664 tests and
 production PWA build. Dependency installation audit reports zero vulnerabilities
 for the isolated prototype package. CI and independent review remain pending.
+
+Three additional regressions failed against the initial adapter and now pass:
+unsupported capability remains unsupported across pause/disconnect; iOS cleanup
+callbacks cannot hide a connection validation error; and a failed cleanup plus
+late callback cannot poison an explicit retry. Failed attempts retire their
+generation before cleanup, and the cleanup serialization barrier remains usable
+while individual callers still receive failures. Packaged smoke also verifies
+unavailable native control, proving the prototype composition root is selected.
 
 The development Mac still selects Command Line Tools and has no full Xcode app.
 Native compilation, iPhone simulator checks and real iPhone/Fullride acceptance

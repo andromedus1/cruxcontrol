@@ -1,5 +1,5 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
-generated_at: '2026-09-27T20:23:57Z'
+generated_at: '2026-09-28T18:06:43Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -9,7 +9,8 @@ documents:
       catalogs, and a Fullride 7x10 first slice. An invited contribution library is intended; approved
       journeys and a verified access/storage comparison guide its bounded collaboration service and retained
       local copies. An iPhone client proof now precedes further shared-service implementation. An isolated
-      experimental Capacitor shell packages the existing screens; native acceptance is pending.
+      experimental Capacitor shell injects native BLE into the shared screens and controller; native compilation
+      and device acceptance are pending.
 
       '
     decisions:
@@ -19,8 +20,9 @@ documents:
       by an installation registry.
     - Provider-native records and provenance are retained beside the normalized read model; catalogs install
       per provider/layout rather than as one universal bundled database.
-    - BLE is isolated behind a Web Bluetooth adapter with API-level-2 and API-level-3 Aurora codecs selected
-      from the connected controller identity.
+    - BLE byte I/O is isolated behind Web Bluetooth in the PWA and an experimental native adapter in the
+      iOS shell; both reuse API-level-2 and API-level-3 Aurora codecs selected from the connected controller
+      identity.
     - The required iPhone path reuses the controller transport boundary; shell, durable storage and native
       authentication need proof before service implementation resumes.
     - The generated immutable Fullride definition is the shared geometry, placement identity, role, and

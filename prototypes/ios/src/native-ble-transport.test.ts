@@ -314,6 +314,45 @@ describe('native BLE transport contract', () => {
     });
   });
 
+  it('preserves unavailable capability through background and disconnect', async () => {
+    const { client, transport } = fixture();
+    client.initialize.mockRejectedValueOnce(new Error('BLE unsupported'));
+    await expect(transport.requestAndConnect()).rejects.toMatchObject({ code: 'unsupported' });
+    transport.setForeground(false);
+    transport.setForeground(true);
+    await transport.disconnect();
+    expect(transport.getState().status).toBe('unsupported');
+    expect(client.disconnect).not.toHaveBeenCalled();
+  });
+
+  it('preserves the connection failure when native cleanup fires its disconnect callback', async () => {
+    const { client, transport, callbacks } = fixture();
+    client.getServices.mockResolvedValueOnce([]);
+    // iOS invokes onDisconnected before resolving its disconnect call.
+    client.disconnect.mockImplementationOnce(async () => callbacks[0]!());
+    await expect(transport.requestAndConnect()).rejects.toMatchObject({
+      code: 'service-not-found',
+    });
+    expect(transport.getState()).toMatchObject({
+      status: 'error',
+      error: { code: 'service-not-found' },
+    });
+    await transport.reconnect();
+    expect(transport.getState().status).toBe('connected');
+  });
+
+  it('recovers after failed connection cleanup followed by a late native disconnect callback', async () => {
+    const { client, transport, callbacks } = fixture();
+    client.getServices.mockResolvedValueOnce([]);
+    client.disconnect.mockRejectedValueOnce(new Error('Disconnection timeout.'));
+    await expect(transport.requestAndConnect()).rejects.toMatchObject({
+      code: 'service-not-found',
+    });
+    callbacks[0]!();
+    await transport.reconnect();
+    expect(transport.getState().status).toBe('connected');
+  });
+
   it('feeds real Fullride light/clear packets through the native write seam', async () => {
     const { client, transport } = fixture();
     const controller = createFullrideLightController({

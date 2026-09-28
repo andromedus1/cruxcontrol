@@ -95,7 +95,7 @@ export class NativeBleByteTransport implements BoardByteTransport {
   async disconnect(): Promise<void> {
     const generation = ++this.generation;
     this.connection = null;
-    if (!this.client) return;
+    if (!this.client || !this.capability.supported) return;
     this.publish(
       this.remembered
         ? { status: 'disconnecting', device: this.remembered }
@@ -223,7 +223,7 @@ export class NativeBleByteTransport implements BoardByteTransport {
     try {
       // Old native writes must settle before the same device ID can be reused.
       await this.queue;
-      await this.cleanup.catch(() => undefined);
+      await this.cleanup;
       this.assertCurrent(generation);
       await this.release(this.nativeDevice); // retries a previously failed cleanup
       this.assertCurrent(generation);
@@ -320,6 +320,10 @@ export class NativeBleByteTransport implements BoardByteTransport {
       this.publish({ status: 'connected', device: selected });
       return selected;
     } catch (cause) {
+      // Retire this attempt before cleanup: iOS emits onDisconnected while
+      // resolving disconnect, which must not replace the original failure.
+      const failureGeneration = generation === this.generation ? ++this.generation : null;
+      this.connection = null;
       // A connect completing after force-disconnect still needs native cleanup.
       let cleanupFailed = false;
       try {
@@ -327,7 +331,7 @@ export class NativeBleByteTransport implements BoardByteTransport {
       } catch {
         cleanupFailed = true;
       }
-      if (generation !== this.generation) {
+      if (failureGeneration === null || failureGeneration !== this.generation) {
         if (cleanupFailed)
           this.publish({
             status: 'error',
@@ -361,14 +365,13 @@ export class NativeBleByteTransport implements BoardByteTransport {
 
   private release(device: BoardDeviceRef | null): Promise<void> {
     if (!device || !this.client) return this.cleanup;
-    const cleanup = this.cleanup
-      .catch(() => undefined)
-      .then(async () => {
-        await this.client!.disconnect(device.id);
-        if (this.nativeDevice === device) this.nativeDevice = null;
-      });
-    this.cleanup = cleanup;
-    void cleanup.catch(() => undefined);
+    const cleanup = this.cleanup.then(async () => {
+      await this.client!.disconnect(device.id);
+      if (this.nativeDevice === device) this.nativeDevice = null;
+    });
+    // Keep the serialization barrier usable; the caller still sees failure and
+    // nativeDevice remains available for a cleanup retry until confirmed gone.
+    this.cleanup = cleanup.catch(() => undefined);
     return cleanup;
   }
   private assertCurrent(generation: number): void {
