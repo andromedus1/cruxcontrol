@@ -1,9 +1,24 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { fileURLToPath } from 'node:url';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
+  resolve: {
+    alias:
+      mode === 'ios-prototype'
+        ? [
+            {
+              find: '/src/main.tsx',
+              replacement: fileURLToPath(
+                new URL('../prototypes/ios/src/main.tsx', import.meta.url),
+              ),
+            },
+          ]
+        : [],
+    dedupe: ['react', 'react-dom'],
+  },
   build: {
     outDir: mode === 'ios-prototype' ? 'dist-ios-prototype' : 'dist',
   },

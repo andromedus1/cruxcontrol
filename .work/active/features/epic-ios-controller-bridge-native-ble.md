@@ -1,7 +1,7 @@
 ---
 id: epic-ios-controller-bridge-native-ble
 kind: feature
-stage: implementing
+stage: review
 tags: [ble]
 parent: epic-ios-controller-bridge
 depends_on: [ios-prototype-shell]
@@ -120,3 +120,21 @@ One cohesive inline implementation bundle; no child stories needed. Effective
 review weight standard from project conventions: one fresh-context feature review
 after verification, then adjudication and fixes. No design advisory fanout is
 needed for the bounded adapter using the established port.
+
+## Implementation and verification (2026-09-28)
+
+Implemented the dedicated prototype composition root, native byte transport,
+pause/resume lifetime binding, pinned plugin dependencies, Bluetooth usage text
+and generated SPM plugin references. Normal PWA bootstrap remains separate.
+Listener disposal guards late callbacks, including failed native removal.
+
+Verified locally: 26 native transport/runtime tests; prototype lint/typecheck;
+prototype asset build and Capacitor sync; Info.plist syntax; packaged Chromium
+restore/export/reload smoke; ordinary web lint/typecheck, all 664 tests and
+production PWA build. Dependency installation audit reports zero vulnerabilities
+for the isolated prototype package. CI and independent review remain pending.
+
+The development Mac still selects Command Line Tools and has no full Xcode app.
+Native compilation, iPhone simulator checks and real iPhone/Fullride acceptance
+have not run. These checks remain epic gates, not evidence supplied by doubles
+or the packaged Chromium smoke.
