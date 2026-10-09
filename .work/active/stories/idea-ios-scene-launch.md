@@ -1,7 +1,7 @@
 ---
 id: idea-ios-scene-launch
 kind: story
-stage: review
+stage: done
 parent: null
 depends_on: []
 release_binding: null
@@ -79,3 +79,12 @@ identity changed. Authentication return-path behavior is still a later native
 proof, not inferred from forwarding code. No independent story reviewer ran.
 Required aggregate CI remains pending; the first web run hit an unrelated existing
 four-effect test timeout while the prototype lane passed.
+
+## Closure (2026-10-09)
+
+Approved after the recorded review and verified corrections. Required PR31 CI
+passed for commit39210d7: web lint/typecheck/tests/build/browser workflows and the
+prototype adapter/assets/browser lane; deployment was skipped.
+Evidence: https://github.com/andromedus1/cruxcontrol/actions/runs/37971170037 .
+Standalone story closed through the bounded inline lane, without an independent
+reviewer. Broader native acceptance remains owned by the iOS epic.
