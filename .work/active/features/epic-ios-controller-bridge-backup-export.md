@@ -343,3 +343,28 @@ V4 draft and two playlists; capture the exact baseline before the run. Then:
   The packaged-browser Playwright smoke passed 1/1; privacy plist and Xcode project
   parse checks pass. Native build/install and OS round trip are intentionally still
   open for the parent-operated acceptance step.
+
+## Native acceptance evidence (2026-10-09)
+
+- Xcode 27 / iOS 27 native build and installation over the original isolated
+  simulator passed at implementation `40920db`; no uninstall, reset or data clear.
+  Filesystem and Share are registered, the packaged privacy plist parses, and native
+  resolution pins ion-ios-filesystem 2.0.0. Evidence: `/tmp/cruxcontrol-ios-backup-fix/`.
+- Actual OS share sheet presents the JSON file. Cancellation returns “Backup export
+  canceled”, enables retry, and removes the owned cache directory. A retry through
+  Save to Files saved the 4,589-byte JSON in the system Downloads destination; the
+  dialog reports completion and the cache directory is absent afterward. The
+  temporary file was present while the share sheet was open.
+- Copied the actual OS-saved destination file outside Git to
+  `/tmp/cruxcontrol-native-first-export.json`; decoded it using the production codec.
+  Canonical comparison exactly matches all four original fixture records and both
+  playlists, including revisions, dates, Trash, ordered memberships with a missing
+  local reference, and the effect recipe. The fifth record is the native-created
+  draft with exact name, 40-degree angle, V4 grade and zero assignments.
+  Scratch checker/log: `/tmp/cruxcontrol-check-native-backup.mjs` and
+  `/tmp/cruxcontrol-native-backup-compare.log`.
+- Created a separate empty simulator; normal UI verifies zero climbs, drafts, Trash
+  and lists before restore. Second-simulator restore/re-export is still in progress.
+- iOS 27 remote share/file views expose inconsistent accessibility coordinates to
+  Maestro. Screenshot-grounded coordinate taps selected the OS destinations; no
+  injected JavaScript or direct database mutation supplied application data.
