@@ -1,7 +1,7 @@
 ---
 id: epic-universal-board-platform-catalog-domain
 kind: feature
-stage: implementing
+stage: review
 tags: [data]
 parent: null
 depends_on: [epic-universal-board-platform-domain-definition]
@@ -207,14 +207,14 @@ export function projectKilterClimb(
   `null`; healthy neighboring rows remain available.
 
 **Acceptance Criteria**:
-- [ ] A synthetic Fullride frame with roles 42, 43, 44, and 45 maps every native
+- [x] A synthetic Fullride frame with roles 42, 43, 44, and 45 maps every native
       placement to its generated domain ID and correct semantic appearance.
-- [ ] One unavailable hold rejects the whole climb; no partial result is returned.
-- [ ] Malformed, empty, duplicate, oversized, wrong-layout, draft, unlisted,
+- [x] One unavailable hold rejects the whole climb; no partial result is returned.
+- [x] Malformed, empty, duplicate, oversized, wrong-layout, draft, unlisted,
       multi-frame, invalid-numeric, and unsupported-role inputs are excluded.
-- [ ] The selected angle, native grade values, source identity, setter,
+- [x] The selected angle, native grade values, source identity, setter,
       and description survive projection without changing the source row.
-- [ ] A missing label preserves a usable record and its numeric grade.
+- [x] A missing label preserves a usable record and its numeric grade.
 
 ### Unit 2: Consumer contract
 
@@ -299,10 +299,10 @@ export class CatalogReadError extends Error {
   and use `providerClimbId` for existing provider playlist references.
 
 **Acceptance Criteria**:
-- [ ] Existing `ClimbViewRecord`, identity helpers, and playlist reference types
+- [x] Existing `ClimbViewRecord`, identity helpers, and playlist reference types
       remain unchanged; the new record is structurally usable by those consumers.
-- [ ] Unavailable, empty, and failed reads have distinct behavior.
-- [ ] No new runtime dependencies or independently persisted climb model exist.
+- [x] Unavailable, empty, and failed reads have distinct behavior.
+- [x] No new runtime dependencies or independently persisted climb model exist.
 
 ### Unit 3: Parameterized Kilter catalog adapter
 
@@ -360,15 +360,15 @@ export function createKilterCatalog(
   incompatible schema into a healthy empty result. Do not call `catalog.close()`.
 
 **Acceptance Criteria**:
-- [ ] Name/grade/angle filters return the expected synthetic climbs through real
+- [x] Name/grade/angle filters return the expected synthetic climbs through real
       SQLite, including literal wildcard and injection-looking name searches.
-- [ ] Pagination returns every eligible fixture climb once, including valid
+- [x] Pagination returns every eligible fixture climb once, including valid
       climbs after runs of incompatible/malformed rows and short/empty pages.
-- [ ] Every query bounds candidate reads and output; changing a filter or snapshot
+- [x] Every query bounds candidate reads and output; changing a filter or snapshot
       invalidates an old cursor before SQL executes.
-- [ ] `get` accepts existing provider playlist identities, isolates provider and
+- [x] `get` accepts existing provider playlist identities, isolates provider and
       revision namespaces, and returns the same record as an eligible query row.
-- [ ] Query readiness/failure leaves local drafts, playlists, source tables, and
+- [x] Query readiness/failure leaves local drafts, playlists, source tables, and
       connection ownership untouched.
 
 ## Implementation Order
@@ -438,3 +438,13 @@ independent review and green required CI through the parent delivery workflow.
 - **Missing or corrupt schema.** An explicit read error leaves personal libraries
   usable when this adapter is integrated later. No error path clears storage,
   fabricates an empty installed catalog, or modifies authored library data.
+
+## Implementation notes
+- Execution capability: GPT-6 Luna (high), selected by the orchestrator for this bounded adapter and projection delivery.
+- Review weight: standard, from `.work/CONVENTIONS.md`.
+- Files changed: `web/src/catalog/types.ts`; `web/src/data/catalog/kilter-catalog.ts`; `web/src/data/catalog/kilter-projection.ts`; their two tests and the synthetic SQL fixture.
+- Tests added: 25 tests covering complete-frame mapping, rejection of incompatible rows, real-SQLite filters/details/grades, literal search input, cursor invalidation and traversal beyond 250 rejected candidates, identity isolation, readiness and read errors, and row immutability.
+- Simplification: no additional database model, worker, cache, query framework, or runtime dependency was introduced.
+- Discrepancies from design: none. The adapter selects the documented `climb_stats.difficulty_average` source column and aliases it at the boundary.
+- Adjacent issues parked: none.
+- Verification: Node 20.20.2; focused catalog tests 25/25 pass after final test edits; full web unit suite 689/689 pass; full web ESLint passes; TypeScript `--noEmit` passes; Vite production build passes.
