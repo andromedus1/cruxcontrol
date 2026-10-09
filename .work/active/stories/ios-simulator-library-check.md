@@ -77,6 +77,14 @@ checked 2026-10-09. This selects a local verification tool only.
   isolated synthetic data container to `/tmp/cruxcontrol-native-before-font-update`.
   This is diagnostic simulator evidence, not a successful app backup export.
 
+- Native font-update build/install/launch passed without uninstall/reset. Post-update
+  UI retains2finished,2drafts,1Trash,2lists and the exact named V4 draft. Focused
+  Name/Grade no longer zoom horizontally. Returned through the normal detail dialog
+  and verified Prototype ordered still renders B above A with first/last move controls
+  disabled appropriately. Evidence: `/tmp/cruxcontrol-native-list-after-update.json`
+  and `/tmp/cruxcontrol-ios-font-fix/`. This is one synthetic native update check;
+  it does not establish storage-pressure durability or physical-device behavior.
+
 Not yet established: full native exported-record comparison, restore into a second
-simulator, update preservation, mixed-list missing reference/effect interaction,
-landscape, physical BLE, durable storage pressure or authentication.
+simulator, mixed-list missing reference/effect interaction, landscape, physical BLE,
+durable storage pressure or authentication.
