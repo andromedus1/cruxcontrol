@@ -4,11 +4,11 @@ kind: feature
 stage: drafting
 tags: [infra]
 parent: epic-foundation
-depends_on: [epic-foundation-catalog-bootstrap]
+depends_on: [kilter-community-browser]
 release_binding: null
 gate_origin: review
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-10-09
 ---
 
 # Verify Worker + WASM Bundling Under Production Build
@@ -23,12 +23,13 @@ yet**, so the worker chunk + the `wa-sqlite-*.wasm` asset are not in the `vite b
 graph. The config is therefore prepared but UNEXERCISED — the implementation note's
 "verified via a throwaway entry" is not reproducible in CI and will silently rot.
 
-`epic-foundation-catalog-bootstrap` is the first real consumer (it writes the fetched
-`kilter.db` into OPFS through the worker), so it naturally pulls the worker into the build
-graph. This item exists to make that verification explicit rather than incidental.
+`kilter-community-browser` wires the lazy catalog service into the application runtime
+and becomes the first production consumer. Bootstrap owns nonvisual storage and its
+focused worker tests. This item verifies the real application graph, so it waits for
+the browser integration and makes worker/WASM emission explicit rather than incidental.
 
 ## Acceptance criteria
-- [ ] After catalog-bootstrap lands, `npm run build -w @cruxcontrol/web` emits the
+- [ ] After community-browser integration, `npm run build -w @cruxcontrol/web` emits the
       `catalog.worker-*.js` chunk and the hashed `wa-sqlite-*.wasm` asset into `dist/`.
 - [ ] A CI-checkable assertion (or smoke test) confirms those artifacts are emitted, so
       the worker/WASM bundling can't silently regress.
