@@ -250,9 +250,10 @@ status-bar and app-control safe areas without overlap.
 Access design
 must account for the native origin and session return path; its existing same-origin
 web units are held for revision. Native backup delivery encodes UTF-8 JSON into the
-app cache, passes a Filesystem URI to Share, and removes the cache file after success
-or cancellation. Native bootstrap/update integration still requires explicit adapters
-or proof, rather than assuming all browser facilities carry over.
+app cache and passes a Filesystem URI to Share. Successful sharing removes the cache
+copy; cancellation or rejection retains it until the next export preflight because
+a nested OS destination may still need the file. Native bootstrap/update integration
+still requires explicit adapters or proof, rather than assuming all browser facilities carry over.
 The intended boundary uses current membership authorization, explicit retry-safe
 publication, stable contribution identities, and immutable source revisions.
 Locally retained copies record source provenance without surrendering local ownership;

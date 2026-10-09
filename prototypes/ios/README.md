@@ -149,13 +149,13 @@ and iOS runtime in the owning work item:
   separately so preservation comparisons are meaningful.
 - Export through **Save or share library backup**, cancel once, then retry and
   choose **Save to Files** in the iOS share sheet. Cancellation leaves the dialog
-  usable and removes the app-owned cache copy after the OS completes. The successful
-  path saves an actual JSON file; the app reports that export completed and asks
-  users to check the chosen destination. The simulator's saved JSON was decoded
+  usable and retains the app-owned cache copy until the next export preflight,
+  because a nested share destination may still need it. The successful path saves
+  an actual JSON file; the app reports that export completed and asks users to check the chosen destination. The simulator's saved JSON was decoded
   with the production codec and matched all four fixture records, both ordered
   playlists, Trash, missing-reference membership and effect recipe, plus the
-  separately created V4 draft. The owned cache copy is removed after the sheet
-  completes. A separate empty simulator reviewed and restored the saved file
+  separately created V4 draft. The owned cache copy is removed after successful
+  share completion. A separate empty simulator reviewed and restored the saved file
   through the normal picker, retained its five climbs and two playlists after
   relaunch, and re-exported a canonical snapshot matching the first export in
   every record and ordered membership (ignoring the export timestamp). Its owned
@@ -170,8 +170,9 @@ board are required for light/clear, permission denial,
 interruption/reconnect, foreground recovery,
 and actual-device responsiveness. Check that backgrounding ends the session and
 returning requires explicit reconnect before lighting or effects can resume.
-Synthetic-data preservation across an app update, an explicit durable-storage
-strategy, and native sign-in/API behavior also remain acceptance gates.
+Synthetic-data preservation across an app update passed on the simulator.
+Physical-device update preservation, an explicit durable-storage strategy, and
+native sign-in/API behavior remain acceptance gates.
 
 The [native BLE feature](../../.work/active/features/epic-ios-controller-bridge-native-ble.md)
 owns adapter preparation and its review/CI evidence. The

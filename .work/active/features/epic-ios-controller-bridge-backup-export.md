@@ -286,7 +286,8 @@ data only. The current first simulator has the four fixture climbs plus one crea
 V4 draft and two playlists; capture the exact baseline before the run. Then:
 
 1. Export from the normal dialog; first cancel the OS sheet and observe cancellation,
-   unchanged library, enabled retry, and removed temporary cache file.
+   unchanged library, enabled retry, and retained temporary cache file. The next
+   export removes that leftover before preparing its replacement.
 2. Retry and choose Save to Files. Inspect the actual saved JSON outside Git, decode
    it with the existing codec, and compare all saved record IDs/revisions, drafts,
    finished/Trash states and dates, ordered memberships (including the missing local
@@ -402,7 +403,7 @@ V4 draft and two playlists; capture the exact baseline before the run. Then:
   [SharePlugin.swift at the pinned 8.0.3 commit](https://github.com/ionic-team/capacitor-plugins/blob/87c0bb8045db2b4560d3db4b7d8e565c23ec1736/share/ios/Sources/SharePlugin/SharePlugin.swift#L451-L470)
   and [WebKit WKShareSheet.mm](https://raw.githubusercontent.com/WebKit/WebKit/main/Source/WebKit/UIProcess/Cocoa/WKShareSheet.mm#L363-L368).
 - The standard independent pass is complete. The driving agent accepted this one
-  material lifecycle finding and verified the bounded fix; no second independent pass
+  material lifecycle finding; named-fix verification below closes it without a second independent pass
   is required.
 - Accepted correction: once Share is invoked, retain the owned cache file on exact
   cancellation and unknown rejection because a nested OS destination may still need
@@ -417,3 +418,10 @@ V4 draft and two playlists; capture the exact baseline before the run. Then:
 - Follow-up verification: `@cruxcontrol/ios-prototype` runs 24 native adapter tests,
   typecheck, and lint successfully under Node 22. Sync/build and device proof are
   intentionally deferred to the parent while browser catalog work is active.
+
+- Root checked the original `40920db` native app: canceling inside Save to Files
+  returned to the still-open Share sheet with its 4,589-byte cache file intact and
+  the application still awaiting completion. Early callback/deletion was **not
+  reproduced for this destination on iOS 27**. The bounded retention correction is
+  based on WebKit's documented broader callback-lifetime behavior, not a claim that
+  this particular path failed. Evidence: `/tmp/cruxcontrol-native-after-inner-cancel.png`.

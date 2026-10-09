@@ -121,8 +121,9 @@ controls clear of the status bar.
 The [backup export feature](../features/epic-ios-controller-bridge-backup-export.md)
 adds Filesystem 8.1.4 and Share 8.0.3, with the native path writing the unchanged
 UTF-8 backup JSON to app cache and passing its file URI to the iOS share sheet.
-Simulator cancellation returned to a usable dialog and cleaned up the app-owned
-cache; Save to Files produced a destination file that the production codec decoded
+Cancellation returns to a usable dialog; the adapter retains its app-owned cache
+copy until the next export preflight so a nested OS destination can finish.
+Save to Files produced a destination file that the production codec decoded
 and compared against the fixture: four fixture climbs plus the separately created
 V4 draft, two ordered playlists, Trash and missing-reference membership, and the
 effect recipe matched. The sheet completion was followed by cache cleanup. A second
