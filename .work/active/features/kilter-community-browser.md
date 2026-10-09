@@ -1,7 +1,7 @@
 ---
 id: kilter-community-browser
 kind: feature
-stage: review
+stage: done
 tags: [ui, data]
 parent: null
 depends_on: [epic-universal-board-platform-catalog-domain, epic-foundation-catalog-bootstrap]
@@ -577,3 +577,13 @@ composed lighting boundary; no separate physical-board claim is made. General te
 wishlist and minor copy/disabled-versus-hidden differences did not establish a
 current correctness failure. No material finding remains beyond final CI closure,
 and no second independent feature pass is requested at standard weight.
+
+
+## Feature completion
+
+Required GitHub CI passed at correction commit `7fb3b26` in run `37979907534`:
+web lint/typecheck/unit/build/artifact validation, 14 application browser tests,
+dedicated bundled-worker persistence, and the native-prototype browser lane.
+The one standard independent pass and named corrections are complete; root approves
+without an independent re-review. The final resumption-batch integration review is
+separate and does not reopen this feature's line-level review.

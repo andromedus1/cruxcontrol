@@ -45,7 +45,8 @@ schedule, service architecture, or new feature decomposition is selected here.
    The lazy SQLite catalog service and first browser are now wired into the running
    app. Production-browser acceptance passes for consented installation, filtering
    and offline reopening, with exact authored-library preservation. The owning
-   items track final review/CI closure; this branch is not a public release. The
+   items record completed standard reviews and green CI; this branch is not a
+   public release. The
    approved older snapshot is explicitly labeled, has unknown source freshness, and
    receives no automatic refresh. Current official-app coverage and permission for
    public binary distribution remain unresolved; retain the existing provider and

@@ -119,9 +119,9 @@ remain infrastructure, with synthetic worker tests and no separate product surfa
 ## Delivery reconciliation (2026-10-09)
 
 Scaffold, CI/deploy configuration, SQLite read path, PWA shell and catalog bootstrap
-are done. The community browser has passed production-browser acceptance and its
-standard review corrections are being verified. The worker/WASM artifact assertion
-is complete after its independent pass, verified corrections and green CI. These
+are done. The community browser and worker/WASM artifact assertion are complete
+after production-browser acceptance, their standard independent passes, verified
+corrections and green CI. These
 updates reflect already approved feature designs; no epic split, new dependency
 edge, feature reparenting or expansion of browser support was introduced. Keep this
 epic implementing while the deferred storage fallback remains a drafting child.
