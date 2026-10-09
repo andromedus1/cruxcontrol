@@ -652,3 +652,15 @@ Verification completed:
 
 The feature is ready for its standard independent implementation review; final
 integration typecheck and CI remain parent-owned gates.
+
+## Playwright CI integration correction — 2026-10-09
+
+The first integrated CI run let the default app Playwright config discover
+`catalog-bootstrap.spec.ts`, then served the app at `:4173` instead of the dedicated
+test harness at `:4175`. All four tests timed out waiting for `window.catalogHarness`.
+The app config now excludes only that test file; its dedicated config still matches it
+explicitly, and CI runs both commands as separate required steps.
+
+After the correction, normal app discovery listed 13 app tests and dedicated discovery
+listed all four bootstrap tests. Local reruns passed the 13 app E2E tests and all four
+bundled-worker persistence tests.
