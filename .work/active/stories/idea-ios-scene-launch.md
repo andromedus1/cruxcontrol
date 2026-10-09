@@ -66,3 +66,16 @@ No personal library or phone maintenance, no identity/signing data in Git.
   layout defect to capture; startup success is not a full native UX acceptance.
 - Logs/screenshots are outside Git under `/tmp/cruxcontrol-ios-scene-{before,after}`.
   No simulator identifiers or personal content are committed.
+
+## Review (2026-10-09)
+
+Bounded inline review approves the single-scene repair. The scene manifest names
+the compiled delegate and existing Main storyboard, which still creates the same
+Capacitor bridge. The pinned proxy retains cold launch URLs and forwards warm URL
+and browsing activities; plugin lifecycle notifications remain UIKit-owned.
+The before/after native launch check reproduces the SDK rejection and verifies the
+root-cause repair. No app origin, authored storage, dependency version or signing
+identity changed. Authentication return-path behavior is still a later native
+proof, not inferred from forwarding code. No independent story reviewer ran.
+Required aggregate CI remains pending; the first web run hit an unrelated existing
+four-effect test timeout while the prototype lane passed.
