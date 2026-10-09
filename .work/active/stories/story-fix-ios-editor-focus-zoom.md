@@ -1,7 +1,7 @@
 ---
 id: story-fix-ios-editor-focus-zoom
 kind: story
-stage: review
+stage: done
 tags: [ui, bug]
 parent: null
 depends_on: []
@@ -78,6 +78,6 @@ with the existing canonical base token removes the broken fallback path.
 Approve the two-token correction after browser red/green evidence and actual native
 focus inspection. It restores the declared design-system font without restricting
 user zoom, changing persistence, or introducing platform branches. No independent
-story reviewer ran. Latest CI is pending a timing correction to the existing
-sparse-effects save test; the prototype lane passed. Keep at review until required
-aggregate CI succeeds.
+story reviewer ran. Required aggregate CI passed at `2aa8bfc`: run 37973220484 passed web,
+iOS prototype and ML lanes; deployment remains skipped. No unresolved findings.
+Approve to done after the bounded inline review; no independent story pass ran.
