@@ -2,8 +2,8 @@
 id: epic-library-preservation
 kind: epic
 stage: drafting
-tags: [data, security, needs-research]
-research_refs: [android-chrome-recovery-access]
+tags: [data, security]
+research_refs: [android-chrome-recovery-access, independent-library-preservation]
 parent: null
 depends_on: [story-phone-library-recovery]
 release_binding: null
@@ -42,9 +42,11 @@ edits and must not promise that every possible loss can be prevented.
 - **No stack selected:** online backup is authorized as a capability. No provider,
   paid plan, account, upload, public deployment or destructive restore is selected by
   this scope. Choose technology after the focused research and concrete review.
-- **Platform sequencing:** prove the current Android/browser path first; maintain
-  compatibility with the shared-client/native direction. Physical iPhone availability
-  does not block Android data protection. Native guarantees need their own validation.
+- **Platform sequencing:** protect the current Android/browser client first. A
+  bounded native-database experiment can proceed alongside it; request and observe
+  browser persistence as the comparison baseline. Physical iPhone availability does
+  not block Android protection. Real migration requires a verified backup/restore
+  bridge, and native guarantees require their own validation.
 
 ## Required outcomes
 
@@ -96,7 +98,7 @@ erase Andrew's profile to demonstrate recovery.
   failure without destructive fallback. Partial per-store commits remain retryable.
 - Update and migration checks verify actual contents against an independent copy.
 
-## Grounding and research needed
+## Grounding
 
 Reuse the [incident record](../../archive/story-phone-library-recovery.md) and the
 [recovery-access brief](../../../.research/analysis/briefs/android-chrome-recovery-access.md)
@@ -107,7 +109,7 @@ backup limits and per-store transactions are contracts to review, not evidence o
 automatic backup or a cross-store consistent snapshot.
 
 The invited-library/access and iOS briefs are reusable constraints, not a selected
-private-backup architecture. Focused research must settle:
+private-backup architecture. The completed [preservation comparison](../../../.research/analysis/briefs/independent-library-preservation.md) grounds:
 
 - Browser/Android and native execution, persistence and file-delivery limits;
   foreground retry behavior and what survives origin loss.
@@ -116,10 +118,10 @@ private-backup architecture. Focused research must settle:
 - Coherent snapshot capture across current independent stores, revision identity,
   safe acknowledgement and recovery detection without relying on erased local flags.
 
-Run research before architectural decomposition. The `needs-research` tag records
-that requirement, not a need for Andrew to rediscover facts or approve routine work.
-Then run the directional epic-design alignment pass using these settled decisions;
-do not re-ask whether online and portable-file protection are wanted.
+Research verification is complete; the epic remains at drafting for directional
+design and mockup alignment. Apply the corrected comparison and settled decisions;
+do not re-ask whether online and portable-file protection are wanted. Provider
+authentication and native persistence still require implementation proofs.
 
 ## Scope boundaries and simplification
 
@@ -142,3 +144,102 @@ disposition, not the catalog or invited-service implementation. Source and work
 inventory found no existing active automatic-private-backup owner to duplicate.
 Foundation intent now distinguishes local availability from recoverability and
 permits a narrow private-backup service without selecting a vendor.
+
+## Research execution
+
+Andrew explicitly authorized starting this work after the dual-backup scope was
+recorded. The focused decision is whether a private hosted snapshot vault plus
+owner-controlled files can meet the recovery contract without rewriting local
+authoring. Apply standard verification with one independent adversarial read.
+This is existing authorized work; no additional scope-confirmation round is needed.
+
+```yaml
+intent: terminate-in-position
+output_kind: synthesis-brief
+consumer: calibrated-work
+verification_rigor: standard
+temporal_contract: re-engage-on-trigger
+primitives_extends: []
+primitives_opts_out: []
+decision_relevance: Select the backup boundary and first proof from execution, recovery, identity, retention and snapshot-consistency constraints; reject options that require unreliable background work or phone-only recovery secrets.
+scope_authority: pre-registered
+analytical_artifact_type: per-campaign-brief
+```
+
+Substrate check: existing invited-library/cost and iOS analyses inform comparison
+questions but do not establish private-backup behavior; treat them as lenses and
+re-fetch primary documentation. The Android recovery brief describes the incident's
+access limits rather than a prevention architecture.
+
+Candidate engagement shapes: (1) one focused end-to-end backup/recovery comparison,
+(2) separate provider-specific campaigns, (3) a broad native-storage migration
+campaign. Select (1): the decision is one recovery contract, while (2) duplicates
+client constraints and (3) expands beyond the immediate preservation decision.
+Direct code reading plus primary sources is sufficient for acquisition; independent
+review checks the composed recommendation. No specialist authoring fan-out needed.
+
+Andrew additionally asked whether CruxControl should become an installed native app.
+Extend this same assessment to compare actual native persistence with a WebView
+wrapper. The proposed native experiment compares a shared-UI SQLite adapter against browser
+persistence while current Android/browser protection leads. Existing iOS simulator
+tooling can exercise the stronger documented iOS storage case; Android native
+validation remains necessary before a phone-client migration. This is a proof recommendation, not
+authorization to discard the PWA or a claim that the existing iOS shell uses native
+library storage. The existing prototype explicitly reuses IndexedDB.
+
+## Implementation grounding
+
+Direct code reading for the native-app question found reusable domain ports in
+`web/src/drafts/repository.ts` and `web/src/playlists/repository.ts`. However,
+`web/src/app/create-runtime.ts` currently opens both IndexedDB databases and
+constructs their repositories and backup store directly. A native persistence proof
+must exercise a real alternative composition, not relabel the existing databases.
+The existing backup service compares repeated reads of two independent stores;
+that is not a cross-store transaction. Preserve its strict codecs and complete
+logical format while proving a coherent capture boundary.
+
+`prototypes/ios/src/runtime.ts` recognizes iOS explicitly, injects native BLE and
+file delivery, then uses that same IndexedDB-based runtime. Android packaging and
+native persistence are additional work; the compiled iOS shell is not evidence of
+an Android build or SQLite-backed authoring. The community catalog is separately
+reacquirable and does not need to become part of an authored-library backup.
+
+Use the existing synthetic fixture for native capture/relaunch/update/restore
+checks. A new native app is a separate storage identity: moving any remaining
+browser library requires an explicit validated export/import comparison, never an
+assumption that installation transfers browser storage. The source profile must
+remain intact during that handoff. New setup/status/recovery UI still needs the
+mockup alignment already required above.
+
+Keep the native experiment bounded to persistence and complete recovery through the
+existing interface. A failed native proof must lead to a revised adapter or the
+browser backup path, rather than postponing independent protection behind a broad
+mobile rewrite. Choosing the production client, distribution path and hosting account
+remains separate from validating these reversible technical candidates.
+
+## Research outcome and review adjudication
+
+The verified comparison covers browser/native persistence, coherent capture,
+portable-file execution limits, private vault primitives and recoverable sessions.
+One independent Claude Opus pass identified three material corrections, all accepted:
+Android persistent IndexedDB must be the baseline; current-client protection precedes
+real migration; and service authentication must be compared evenly rather than
+ranking Cloudflare storage primitives as proof of native session suitability.
+The lead verified the corrections against primary sources. The review's stronger
+claim that every migration requires completed automatic backup was narrowed: an
+independently retained, validated portable export can bridge migration, and synthetic
+native experiments do not migrate personal data. The CORS cookie warning was also
+kept in its documented Incognito context rather than generalized to every browser.
+
+No service, account, production framework or phone rollout was selected. The next
+design pass should turn current-client protection, complete portable recovery and
+private versioned backup into capability-owned work, with a bounded native-storage
+proof alongside them. Current implementation never calls `navigator.storage.persist()`;
+requesting and reporting its actual result is a concrete initial safeguard, not an
+independent backup and not evidence that it would have prevented this incident.
+
+Research was acquired inline and checked with one independent reader; no authoring
+fan-out or repeated review loop. Output: the linked brief and its source attestations.
+Verification includes citation resolution, primary-source spot checks, local links,
+knowledge-index lint and whitespace checks. The exact data-loss trigger remains
+unproven; the native recommendation must not silently recast it as confirmed eviction.

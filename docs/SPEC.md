@@ -338,7 +338,7 @@ The model mirrors the official Kilter SQLite schema (see
   workspace, route editor, and Web Bluetooth controller. The private artwork does not
   imply redistribution permission: public distribution requires Kilter's permission
   or replacement with redistributable imagery.
-- Locally authored climbs are authoritative in a dedicated native IndexedDB database,
+- Locally authored climbs are authoritative in a dedicated browser-managed IndexedDB database,
   survive reload/reopen, move between Draft and Finished without content validation,
   and remain in Trash until the user explicitly chooses Delete forever. Definition/layout/
   angle/placement incompatibility is surfaced while retaining the stored record unchanged. Drafts remain
@@ -349,7 +349,7 @@ The model mirrors the official Kilter SQLite schema (see
   Decoded bitmap/canvas resources are released after local analysis; selected File
   references and object-URL title evidence are released when review closes. None are
   persisted or uploaded, and exact duplicates are skipped across active climbs and Trash.
-- Flexible lists are authoritative in a separate versioned native IndexedDB database.
+- Flexible lists are authoritative in a separate versioned browser-managed IndexedDB database.
   Their ordered references survive reload, allow one climb in multiple lists, and
   resolve Trash or missing climbs without rewriting membership rows. Exact-order
   play-through keeps navigation position ephemeral, remains browsable while

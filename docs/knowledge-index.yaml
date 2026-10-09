@@ -6,9 +6,9 @@
 #   2 = enforce (missing v2 fields are errors)
 # Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-10-09T22:24:00Z
+generated_at: 2026-10-09T22:55:34Z
 generated_from: frontmatter
-total_docs: 28
+total_docs: 29
 
 documents:
   # ── planning ──────────────────────────────────────────────────────────────
@@ -57,6 +57,14 @@ documents:
     updated: 2026-10-09
     status: locked
     consumer_hint: Which access paths can preserve a missing Chrome IndexedDB library, and what must a specialist confirm before acquisition?
+
+  - path: .research/analysis/briefs/independent-library-preservation.md
+    title: Recoverable local libraries across browser and native clients
+    type: brief
+    kind: research
+    updated: 2026-10-09
+    status: locked
+    consumer_hint: Choose a persistence and independent-backup boundary that survives local origin or device loss.
 
   - path: .research/analysis/briefs/invited-library-hosting-costs.md
     title: Hosting a small invited library from scratch

@@ -1,6 +1,6 @@
 ---
 source_handle: shared-library-cf-application-token
-fetched: 2026-09-26
+fetched: 2026-10-09
 source_url: https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/application-token/
 provenance: source-direct
 substrate_confidence: source-direct

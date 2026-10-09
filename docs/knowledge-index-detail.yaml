@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-09T22:24:00Z'
+generated_at: '2026-10-09T22:55:34Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -334,6 +334,22 @@ documents:
     - Bootloader unlocking deliberately resets data and is unsuitable for preserving an existing library.
     - Public Pixel 8 filesystem-extraction support does not establish support for every OS/security patch
       or recovery of deleted records.
+  .research/analysis/briefs/independent-library-preservation.md:
+    summary: 'Protect the current client with persistence, versioned independent backups and portable
+      files while comparing a shared-UI native database. Android persistence grants narrow the storage
+      difference; the documented WebView warning is stronger on iOS. Recoverable identity, coherent capture
+      and verified restoration define protection, and authentication viability remains a service-selection
+      gate.
+
+      '
+    key_findings:
+    - A native WebView wrapper does not automatically replace browser-backed storage.
+    - Native persistent storage and off-device recovery address different failure modes.
+    - Automatic backup cannot rely on uninterrupted browser background execution.
+    - Account-recoverable immutable snapshots and portable files remain necessary for either client.
+    - Android persistent IndexedDB is the baseline a native storage proof must compare against.
+    - Storage and authentication must be assessed separately; Access re-login and native sessions remain
+      deciding constraints.
   .research/analysis/briefs/invited-library-hosting-costs.md:
     summary: Cloudflare remains a conditional fit for a small private hobby library starting from scratch;
       supplied hostnames and Access email delivery reduce setup, while Supabase's separate email delivery

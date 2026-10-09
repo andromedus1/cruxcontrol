@@ -63,7 +63,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    share an atomic transaction. Unsupported OPFS/worker environments report the
    catalog unavailable. Native records and provenance sit beside a normalized read
    model. Small locally authored climb and playlist aggregates use
-   independent native IndexedDB repositories with versioned codecs and atomic
+   independent browser-managed IndexedDB repositories with versioned codecs and atomic
    optimistic updates; climb storage additionally owns explicit lifecycle commands.
    Library backup reads both stores through their codecs and restores saved records with
    stable IDs in separate per-store transactions; it is a bounded local file workflow,
@@ -176,7 +176,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    content duplicates in active storage or Trash are skipped.
 9. **Future: Logbook & Sessions** — local store of ascents/attempts/sessions with
    analytics; optional push to the Kilter API via the Sync Engine.
-10. **Playlists** — an implemented separate native IndexedDB repository, responsive
+10. **Playlists** — an implemented separate browser-managed IndexedDB repository, responsive
    management surface, and exact-order board play-through for named, annotated,
    manually ordered local/provider climb references. Runtime resolution preserves
    unavailable Trash, missing, or incompatible-board entries without cross-database
@@ -258,6 +258,8 @@ An isolated [experimental Capacitor shell](../prototypes/ios/README.md) packages
 existing screens under a separate app identity. Its dedicated entry point composes
 native BLE and lifecycle plugins, disables PWA generation, and omits service-worker
 registration and the update coordinator. The normal browser entry retains update admission.
+The shell still uses browser-managed IndexedDB for climbs and playlists; native BLE
+and file sharing do not make those library repositories a native database.
 No production framework is selected. Native compilation and startup are verified on
 the iPhone 17 / iOS 27.0 simulator. Synthetic-data startup, scene/lifecycle, safe-area,
 focus, and application-update preservation checks passed. A complete backup was
@@ -296,7 +298,7 @@ Board definition ──▶ Installation registry ─────┼──▶ Bro
                              ├─ Web Bluetooth (PWA)
                              └─ Native BLE (isolated iOS prototype; device proof pending)
 
-Editor ──▶ Local climb repository ──▶ native IndexedDB
+Editor ──▶ Local climb repository ──▶ browser-managed IndexedDB
   │               (versioned + optimistic)       (browser-local authority)
   ├──▶ Renderer ──▶ SVG board surface
   ├──▶ Saved effect snapshots ──▶ two-pass frame engine ──▶ role-protected scene
@@ -306,7 +308,7 @@ Kilter screenshot PNG ──▶ transient local analysis ──▶ editable defi
                                                         └──▶ deduplicated 40° draft ──▶ Local climb repository
 Supplied 16-climb facts (no pixels) ────────────────────┘
 
-Lists ──▶ Local playlist repository ──▶ separate native IndexedDB
+Lists ──▶ Local playlist repository ──▶ separate browser-managed IndexedDB
   └──▶ read-time climb resolver ──▶ available / Trash / missing entry view
   │                                └──▶ ephemeral play-through ──▶ Renderer / controller
   ├──▶ portable snapshot envelope ──▶ fragment URL / JSON file
@@ -339,8 +341,8 @@ or network.
 - **Preserve source truth.** Normalized tables are query projections. Native payloads,
   grades, versions, attribution, and provenance remain available for reconciliation.
 - **Single source of truth.** The local SQLite catalog is the community read model;
-  the native IndexedDB climb store is authoritative for locally authored climbs; the
-  independent native IndexedDB playlist store is authoritative for list metadata and
+  the browser-managed IndexedDB climb store is authoritative for locally authored climbs; the
+  independent browser-managed IndexedDB playlist store is authoritative for list metadata and
   ordered references. The future logbook store owns personal activity.
 - **Local backup semantics.** Backup captures saved records from the existing climb and
   playlist stores, including Trash, orphan rows, other installations, shared references,
