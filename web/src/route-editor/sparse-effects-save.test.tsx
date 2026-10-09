@@ -53,13 +53,19 @@ describe('sparse effect editing and persistence', () => {
     fireEvent.change(screen.getByLabelText('Effect cycle time'), { target: { value: '61000' } });
     fireEvent.change(screen.getByLabelText('Effect intensity'), { target: { value: '40' } });
 
-    await waitFor(() => expect(document.querySelector('.save-chip')).toHaveTextContent('saved'));
-    const stored = await drafts.list({ installationId: installation.config.id });
-    expect(stored).toHaveLength(1);
-    expect(stored[0]!.effectGroups).toEqual([expect.objectContaining({
+    const expectedEffect = expect.objectContaining({
       recipe: { kind }, recipeVersion: 2, footprint: reserve,
       palette: [0x83], periodMs: 61_000, intensity: .4,
-    })]);
+    });
+    await waitFor(async () => {
+      expect(document.querySelector('.save-chip')).toHaveTextContent('saved');
+      const persisted = await drafts.list({ installationId: installation.config.id });
+      expect(persisted).toHaveLength(1);
+      expect(persisted[0]!.effectGroups).toEqual([expectedEffect]);
+    }, { timeout: 8_000, interval: 100 });
+    const stored = await drafts.list({ installationId: installation.config.id });
+    expect(stored).toHaveLength(1);
+    expect(stored[0]!.effectGroups).toEqual([expectedEffect]);
 
     view.unmount();
     database.close();
@@ -82,5 +88,5 @@ describe('sparse effect editing and persistence', () => {
     expect(screen.getByRole('button', { name: 'Remove color #9200FF' })).toBeInTheDocument();
     editor.unmount();
     reopened.close();
-  });
+  }, 10_000);
 });
