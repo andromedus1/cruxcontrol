@@ -1,7 +1,7 @@
 ---
 id: epic-ios-controller-bridge-backup-export
 kind: feature
-stage: implementing
+stage: review
 parent: epic-ios-controller-bridge
 depends_on: [ios-simulator-build-smoke]
 release_binding: null
@@ -364,7 +364,22 @@ V4 draft and two playlists; capture the exact baseline before the run. Then:
   Scratch checker/log: `/tmp/cruxcontrol-check-native-backup.mjs` and
   `/tmp/cruxcontrol-native-backup-compare.log`.
 - Created a separate empty simulator; normal UI verifies zero climbs, drafts, Trash
-  and lists before restore. Second-simulator restore/re-export is still in progress.
+  and lists before restore. Second-simulator restore/re-export passed as recorded below.
 - iOS 27 remote share/file views expose inconsistent accessibility coordinates to
   Maestro. Screenshot-grounded coordinate taps selected the OS destinations; no
   injected JavaScript or direct database mutation supplied application data.
+
+- Second simulator completed the full round trip: downloaded only the first actual
+  saved export over loopback in Safari, selected it in the normal app picker,
+  reviewed and explicitly added 5 climbs and 2 playlists, then terminated/relaunched.
+  UI retained 2 finished climbs, 2 drafts, 1 Trash entry and 2 lists. Re-export via
+  Share > Save to Files yielded an actual 4,589-byte destination file. Production
+  `decodeLibraryBackup` and `canonicalSnapshot` prove exact equality of every record
+  and ordered membership to the first export, ignoring only envelope export time.
+  The second simulator's cache directory is absent after save. Evidence:
+  `/tmp/cruxcontrol-native-backup-roundtrip.log` and the scratch comparison script.
+- Both simulators retain their synthetic libraries. No personal device/library,
+  cloud service or public catalog binary was used. Physical backup behavior,
+  storage-pressure durability, authentication and board control remain unproven.
+- Native acceptance is complete; implementation advances to the standard single
+  independent feature review. Required aggregate CI will gate final completion.

@@ -1,7 +1,7 @@
 ---
 id: ios-simulator-library-check
 kind: story
-stage: implementing
+stage: review
 tags: [infra, ui]
 parent: null
 depends_on: [ios-simulator-build-smoke]
@@ -91,6 +91,21 @@ checked 2026-10-09. This selects a local verification tool only.
   `/tmp/cruxcontrol-native-mixed-next.yaml` and `.log`, plus its screenshot under
   `/tmp/cruxcontrol-native-maestro-mixed-next/`.
 
-Not yet established: full native exported-record comparison, restore into a second
-simulator, effect interaction, landscape, physical BLE, durable storage pressure
-or authentication.
+- The native export repair passed cancellation, cache cleanup, actual Save to Files
+  inspection, and restore/relaunch/re-export in a separate empty simulator.
+  Production-codec canonical comparison matches all five records and both ordered
+  playlists exactly across the round trip, including the fixture effect recipe,
+  Trash and missing-reference membership. The native export feature owns the
+  complete implementation/review evidence.
+
+Not yet established: native effect playback interaction, landscape, physical BLE,
+durable storage pressure or authentication. These remain explicit prototype
+acceptance gaps; this bounded simulator-check story did not promise those outcomes.
+
+## Bounded inline review (2026-10-09)
+
+Approve the scoped synthetic verification after real native interaction and saved
+file comparison. The evidence distinguishes simulator proof, browser tests and
+physical-device requirements, and concrete encountered app bugs were separately
+parked/scoped before repair. No independent story reviewer ran. Keep at review
+until the updated prototype documentation and required aggregate CI are complete.
