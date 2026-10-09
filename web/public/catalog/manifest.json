@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 2,
   "version": 1,
   "board": "kilter-fullride-7x10",
   "file": "kilter-7x10.v1.db.gz",
@@ -6,6 +7,9 @@
   "sha256": "68d6d86aad984aca5cf9967d24c818d5bdf2984631b1fe9b9fa1fd30c0edbbbf",
   "bytesGzipped":  5122102,
   "bytesRaw":  12410880,
+  "generatedOn": "2026-06-14",
+  "source": "legacy-aurora-kilter",
+  "sourceDataThrough": null,
   "generatedFrom": "boardlib database kilter (full catalog) -> prune to product 7 / layout 8 / size 17 / sets {26,27} -> vacuum -> gzip",
   "filter": "climbs WHERE layout_id=8 AND is_listed=1 AND is_draft=0 AND frames_count=1"
 }

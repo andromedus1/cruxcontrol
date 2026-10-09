@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-catalog-bootstrap
 kind: feature
-stage: implementing
+stage: review
 tags: [data]
 parent: epic-foundation
 depends_on: [epic-foundation-sqlite-readpath]
@@ -615,3 +615,40 @@ implementation; standard feature implementation review and CI remain required af
 This feature has no production UI surface. The community-browser feature owns the
 consent, progress, source-age, busy and recovery states and their mockups. This
 supersedes the earlier first-run loading-UI unit under foundation bootstrap.
+
+## Implementation notes and verification — 2026-10-09
+
+Implemented the catalog-only bootstrap port alongside the existing query port.
+The worker holds the origin Web Lock through VFS and receipt lifetime, validates the
+stored receipt before opening its selected slot, and installs into the opposite fixed
+slot before strict-durability receipt activation. Unknown receipt-write outcomes
+retire the worker without deleting the candidate or claiming a stale active receipt.
+Manifest and gzip reads are bounded and same-origin; redirects remain explicit policy
+errors. The build script now emits provenance without inferring source freshness.
+
+The installed and reopened schema checks match the query consumer's required tables
+and columns. The stored receipt remains slot authority when no active connection is
+available. Test-only worker fault controls are compiled only into the dedicated Vite
+harness bundle; no community database enters its build or the repository.
+
+Verification completed:
+
+- Focused catalog tests: manifest, acquisition, receipt, install, OPFS capability, and
+  worker port suites passed (55 tests). The full web suite passed before concurrent
+  library-backup work began: 91 files, 739 tests. A later aggregate run passed 750
+  tests but failed one unrelated `library-backup/delivery.test.ts` assertion
+  (`blob.text is not a function`); rerun after that work lands.
+- Dedicated Chromium/Playwright suite passed: synthetic install and offline reopen,
+  last-good selection after worker exit before receipt commit, new-slot selection after
+  exit after commit, authored climb/playlist order preservation, second-tab lock
+  release/retry, and a fresh-worker retry after injected post-lock initialization
+  contention.
+- `npm run lint`, the test-only production Vite worker build, and the normal web
+  production build passed. `git diff --check` passed.
+- A whole-tree typecheck passed before concurrent library-backup edits began. The
+  latest whole-tree typecheck is pending integration: it currently reports errors only
+  in `CruxControlWorkspace.tsx` and `library-backup/**`, which are outside this feature's
+  ownership and are being changed concurrently. Re-run after that work lands.
+
+The feature is ready for its standard independent implementation review; final
+integration typecheck and CI remain parent-owned gates.

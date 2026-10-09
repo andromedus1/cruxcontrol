@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isOpfsSyncAccessSupported } from './opfs-support.ts';
+import { isOpfsSyncAccessSupported, isWorkerOpfsSyncAccessSupported } from './opfs-support.ts';
 
 describe('isOpfsSyncAccessSupported', () => {
   afterEach(() => {
@@ -7,31 +7,30 @@ describe('isOpfsSyncAccessSupported', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns false in jsdom (no OPFS sync access handles)', () => {
-    // jsdom provides neither navigator.storage.getDirectory nor
-    // FileSystemFileHandle, so detection must report unsupported.
+  it('returns false in jsdom (no OPFS root or Web Locks)', () => {
     expect(isOpfsSyncAccessSupported()).toBe(false);
   });
 
-  it('returns true when both capabilities are present', () => {
-    vi.stubGlobal('navigator', { storage: { getDirectory: () => {} } });
-    vi.stubGlobal('FileSystemFileHandle', {
-      prototype: { createSyncAccessHandle: () => {} },
+  it('returns true when OPFS root access and Web Locks are present', () => {
+    vi.stubGlobal('navigator', {
+      storage: { getDirectory: () => {} },
+      locks: { request: () => {} },
     });
     expect(isOpfsSyncAccessSupported()).toBe(true);
   });
 
-  it('returns false when getDirectory is present but sync handles are not', () => {
+  it('returns false when Web Locks are missing', () => {
     vi.stubGlobal('navigator', { storage: { getDirectory: () => {} } });
-    vi.stubGlobal('FileSystemFileHandle', { prototype: {} });
     expect(isOpfsSyncAccessSupported()).toBe(false);
   });
 
-  it('returns false when sync handles exist but OPFS root access does not', () => {
-    vi.stubGlobal('navigator', { storage: {} });
+  it('checks sync-access handles in the Worker capability probe', () => {
+    vi.stubGlobal('navigator', { storage: { getDirectory: () => {} } });
     vi.stubGlobal('FileSystemFileHandle', {
       prototype: { createSyncAccessHandle: () => {} },
     });
-    expect(isOpfsSyncAccessSupported()).toBe(false);
+    expect(isWorkerOpfsSyncAccessSupported()).toBe(true);
+    vi.stubGlobal('FileSystemFileHandle', { prototype: {} });
+    expect(isWorkerOpfsSyncAccessSupported()).toBe(false);
   });
 });

@@ -1,19 +1,16 @@
 /**
  * Capability detection for the OPFS sync-access-handle path.
  *
- * The browser catalog read path runs wa-sqlite over an OPFS VFS that depends on
- * `FileSystemSyncAccessHandle` (synchronous OPFS handles), which are only
- * *callable* inside a dedicated Worker — but their presence is detectable from
- * the main thread, which is enough for a pre-flight gate before spawning the
- * Worker.
+ * The main thread checks for OPFS root access and Web Locks before spawning a
+ * Worker. Sync-access-handle capability is checked inside that Worker, where
+ * the browser exposes the worker-only API.
  */
 
 /**
  * True only when the environment can run the OPFS sync-access-handle VFS.
  *
- * Checks for `navigator.storage.getDirectory` (OPFS root access) and
- * `FileSystemFileHandle.prototype.createSyncAccessHandle` (synchronous access
- * handles). Pure and synchronous with no side effects.
+ * Checks the main-thread prerequisites. This deliberately does not probe
+ * `createSyncAccessHandle`, whose exposure is worker-specific.
  *
  * Returns `false` under jsdom/Node (no OPFS) and on browsers lacking sync
  * access handles (e.g. older Safari/Firefox) — callers fail fast with a clear
@@ -23,7 +20,14 @@ export function isOpfsSyncAccessSupported(): boolean {
   return (
     typeof navigator !== 'undefined' &&
     typeof navigator.storage?.getDirectory === 'function' &&
-    typeof FileSystemFileHandle !== 'undefined' &&
-    typeof FileSystemFileHandle.prototype?.createSyncAccessHandle === 'function'
+    typeof navigator.locks?.request === 'function'
   );
+}
+
+/** True only when the OPFS synchronous access-handle API exists in a Worker. */
+export function isWorkerOpfsSyncAccessSupported(): boolean {
+  return typeof navigator !== 'undefined'
+    && typeof navigator.storage?.getDirectory === 'function'
+    && typeof FileSystemFileHandle !== 'undefined'
+    && typeof FileSystemFileHandle.prototype?.createSyncAccessHandle === 'function';
 }

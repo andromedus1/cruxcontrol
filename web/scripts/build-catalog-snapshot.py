@@ -15,12 +15,11 @@ Usage:
   pip install boardlib Pillow
   python web/scripts/build-catalog-snapshot.py --version 1
 
-The snapshot is regenerated periodically (the catalog grows); bump --version and
-the client re-fetches when manifest.version changes. The pruned snapshot is ~5 MB
-gzipped, which fits Cloudflare Workers Static Assets' per-file limit, so it ships
-as a same-origin static asset under web/public/catalog/.
+Set --source-data-through only when a verified upstream freshness cutoff is
+known. The build date never acts as a freshness claim.
 """
 import argparse
+import datetime
 import gzip
 import hashlib
 import json
@@ -91,6 +90,16 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--version", type=int, default=1)
     ap.add_argument(
+        "--generated-on",
+        default=datetime.date.today().isoformat(),
+        help="Snapshot build date; does not imply source freshness.",
+    )
+    ap.add_argument(
+        "--source-data-through",
+        default=None,
+        help="Verified source-data cutoff date, or omit when unknown.",
+    )
+    ap.add_argument(
         "--out-dir",
         default=str(pathlib.Path(__file__).resolve().parents[1] / "public" / "catalog"),
     )
@@ -114,8 +123,10 @@ def main() -> None:
 
         gz_name = f"kilter-7x10.v{args.version}.db.gz"
         gz_path = out / gz_name
-        with open(pruned, "rb") as f_in, gzip.open(gz_path, "wb", compresslevel=9) as f_out:
-            shutil.copyfileobj(f_in, f_out)
+        with open(pruned, "rb") as f_in, open(gz_path, "wb") as compressed_file:
+            with gzip.GzipFile(filename="", mode="wb", fileobj=compressed_file,
+                               compresslevel=9, mtime=0) as f_out:
+                shutil.copyfileobj(f_in, f_out)
         raw = pathlib.Path(pruned).stat().st_size
         gz = gz_path.stat().st_size
         sha = hashlib.sha256(gz_path.read_bytes()).hexdigest()
@@ -123,6 +134,7 @@ def main() -> None:
         (out / "manifest.json").write_text(
             json.dumps(
                 {
+                    "schemaVersion": 2,
                     "version": args.version,
                     "board": "kilter-fullride-7x10",
                     "file": gz_name,
@@ -130,7 +142,10 @@ def main() -> None:
                     "sha256": sha,
                     "bytesGzipped": gz,
                     "bytesRaw": raw,
-                    "generatedFrom": "boardlib database kilter (full) -> prune product7/layout8/size17/sets{26,27} -> vacuum -> gzip",
+                    "generatedOn": args.generated_on,
+                    "source": "legacy-aurora-kilter",
+                    "sourceDataThrough": args.source_data_through,
+                    "generatedFrom": "boardlib database kilter (full catalog) -> prune to product 7 / layout 8 / size 17 / sets {26,27} -> vacuum -> gzip",
                     "filter": "climbs WHERE layout_id=8 AND is_listed=1 AND is_draft=0 AND frames_count=1",
                 },
                 indent=2,
@@ -138,8 +153,8 @@ def main() -> None:
             + "\n"
         )
         print(f"Wrote {gz_path} ({gz} bytes, raw {raw}) sha256={sha}")
-        if gz > 25 * 1024 * 1024:
-            print("WARNING: snapshot exceeds 25 MiB — Workers Static Assets per-file limit; host on R2 instead.")
+        if gz > 8 * 1024 * 1024:
+            print("WARNING: snapshot exceeds the app's 8 MiB compressed catalog limit.")
 
 
 if __name__ == "__main__":
