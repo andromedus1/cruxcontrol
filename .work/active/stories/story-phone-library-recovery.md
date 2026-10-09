@@ -1,7 +1,7 @@
 ---
 id: story-phone-library-recovery
 kind: story
-stage: implementing
+stage: review
 tags: [data, prose]
 research_refs: [android-chrome-recovery-access]
 parent: null
@@ -13,6 +13,20 @@ updated: 2026-10-09
 ---
 
 # Investigate the unavailable phone library before any update
+
+## Current disposition
+
+Andrew has chosen to end recovery escalation and proceed on the working assumption
+that the post-migration climbs are lost. No verified, preserving DIY deleted-file
+acquisition path has been established for this phone. No laboratory was contacted,
+paid, or asked to acquire it. This closes the recovery attempt by owner decision;
+it does not establish permanent physical erasure or specialist impossibility.
+
+The evidence remains preserved outside Git. No phone reset, storage cleanup, import,
+reinstallation, or new application deployment is part of this disposition.
+The next priority is [independent library preservation](../epics/epic-library-preservation.md),
+covering both automatic private online backups and portable owner-controlled files,
+as requested by Andrew. Catalog and sharing work remain behind that priority.
 
 ## Brief
 
@@ -57,7 +71,7 @@ story review or a substitute for host verification.
   declare forensic impossibility from ordinary API access.
 - Record a diagnosis with confidence and an explicit protection-design handoff.
 
-## Evidence checkpoint (incomplete)
+## Initial evidence checkpoint
 
 - Original target was the installed Chrome WebAPK at `http://localhost:4173/`;
   it showed `ERR_CONNECTION_REFUSED` before a new production server was started.
@@ -85,7 +99,7 @@ story review or a substitute for host verification.
 - Synthetic iOS simulator exports are excluded as recovery sources for Andrew's data.
 
 No application update, restoration or authored-library write has been performed.
-Recovery assessment and diagnosis remain open.
+Later checkpoints below supersede the initial assessment's access limitations.
 
 
 ## Host re-audit and additional evidence
@@ -130,9 +144,10 @@ Recovery assessment and diagnosis remain open.
   from this percentage alone.
 - Initial code search found no production `deleteDatabase`, bulk `clear`, or
   `navigator.storage.persist` call. Authored deletion paths are per-record operations;
-  a complete historical audit is still pending. This does not prove no code defect.
+  historical searches also found no direct whole-origin deletion path (see review
+  below). These bounded source searches do not prove the absence of every defect.
 
-## Recovery limits still open
+## Limits of the completed recovery attempt
 
 - No forensic disk image has been acquired. Native debugging access has now preserved
   quota metadata and directory inventories. These live reads cannot establish physical
@@ -150,7 +165,8 @@ Recovery assessment and diagnosis remain open.
 
 Out-of-band review job `20261009T210858Z-64dedf90` completed successfully with Claude
 Opus, xhigh, read-only scope and no project changes. One independent pass was used.
-The host retains responsibility for evidence and conclusions; this story is not done.
+The host retains responsibility for evidence and conclusions. Subsequent owner
+disposition closes the recovery attempt, not the uncertainty about physical remnants.
 
 Accepted findings:
 - The original connection-refused page is also evidence that the expected offline
@@ -221,9 +237,9 @@ failed, separate authorized debugging interfaces now permit native file reads an
 directory enumeration. Live directory inventories show no project backing directory
 in the examined legacy, bucket and additional partition locations. This strengthens
 the evidence beyond an empty browser API listing; it is not a raw deleted-data image.
-**Permanent physical loss is not proven.** Andrew has now authorized the specialist
-recovery assessment. It precedes any phone reconstruction/reset/restore; no external
-service has been contacted or promised a result.
+**Permanent physical loss is not proven.** The authorized technical specialist-access
+assessment is complete. Andrew subsequently declined external escalation and chose
+to proceed assuming loss; no external service has been contacted or promised a result.
 
 The diagnosis supported now is: apparent loss/unavailability of the app origin's
 storage, with low-storage eviction a plausible leading hypothesis and no conclusive
@@ -231,7 +247,7 @@ per-origin deletion log. Independent-backup and persistence protections were abs
 backup migration verification failed to leave an accessible recovery copy. Exact
 trigger and time remain unknown.
 
-After Andrew settles the remaining recovery avenue, protection design must address
+The recovery disposition is settled. Protection design must address
 browser-origin loss, device loss, offline writes awaiting protection, immutable prior
 versions, empty-installation recovery without overwriting a good backup, and verified
 restore drills. Persisting browser storage alone is insufficient; distinguish a
@@ -313,5 +329,52 @@ requested one material clarification: disclose the receiving page's target origi
 and distinguish inspection-time quota timestamps from the original loss timeline.
 That correction was applied and verified by the host. No third review was run.
 Citation lint and evidence hashes were checked; the research index was regenerated.
-The story remains implementing pending the specialist recovery disposition and
-subsequent protection-design handoff. No permanent-loss finding is asserted.
+The completed access assessment supplies the protection-design handoff. No
+permanent-loss finding is asserted.
+
+## Final diagnosis and lessons
+
+| Finding | Confidence and limit | Required response |
+| --- | --- | --- |
+| Authored data was stored in the phone's Chrome origin, not served from the laptop. | Confirmed by the repositories and prior backup evidence. Losing the laptop does not itself delete that browser database. | Preserve local/offline authoring while adding an independent recovery copy. |
+| The target origin's authored database files and expected offline resources were unavailable during inspection. | Browser checks and native inventories agree; live inspection is not a deleted-block image. | Exercise complete-origin-loss recovery, not only reload and update survival. |
+| Storage-pressure eviction is a plausible leading explanation. | Andrew recalls a low-storage warning; exact trigger/time and per-origin deletion evidence are absent. Chrome update proximity is not proof. | Reduce eviction exposure where supported, but do not rely on persistence grants as a backup. |
+| Independent protection was inadequate. | Manual export existed; automatic independent backups and trustworthy backup-age state did not. Recorded old-laptop backups were not transferred to the new laptop. | Automatic private versioned backup plus portable files, with restore verification and migration checks. |
+| Debugging did not recover post-migration creations. | No explicit deletion/reset or production update was issued; browser inspections caused state changes and may invoke engine housekeeping. | Retain evidence and report uncertainty without declaring a forensic guarantee. |
+
+The design failure was treating browser-local saving and a manual export facility as
+adequate protection for irreplaceable authored work. A successful local transaction
+does not establish that a library can survive origin loss, device loss, or an erased
+backup machine. Update tests alone do not cover these failure modes. The exact
+deletion cause remains unknown; preventive work need not wait for causal certainty.
+
+## Closure verification
+
+- Existing evidence includes validated original screenshots, hashed quota files and
+  directory inventories, audited phone operations, backup/migration searches, and
+  independent technical reviews with accepted corrections applied.
+- The sixteen preserved imports are explicitly excluded from claims of recovering
+  post-migration climbs. No such climb has been recovered.
+- Current-source and Git-history searches for whole-origin deletion and persistence
+  requests were rechecked without contacting or changing the phone. No direct
+  whole-origin deletion path or persistence request was found; this is scoped evidence.
+- The source `web/src/library-backup/service.ts` confirms explicit file export,
+  bounded cross-store stability checks, and missing-only per-store restoration.
+- Owner disposition, confidence-qualified diagnosis, retained evidence and the
+  prevention handoff satisfy this operational story. Product safeguards remain
+  unimplemented and are owned by `epic-library-preservation`.
+
+## Implementation notes
+
+- Execution capability: host-owned inline prose and evidence reconciliation; no
+  new phone diagnostics or delegated device operations.
+- Review weight: standard, from project conventions; standalone-story closure uses
+  the bounded inline lane. Earlier independent investigations remain evidence.
+- Files changed: this record and the linked preservation scope/priority documents.
+- Tests added/removed: none; no executable behavior changed. Validate document links,
+  substrate dependencies, diff integrity and generated knowledge index.
+- Simplification: one explicit recovery disposition replaces an indefinite lab wait;
+  prevention has a single delivery owner rather than repeated incident proposals.
+- Discrepancy: external acquisition is not completed; Andrew explicitly chose to
+  close that avenue. Physical unrecoverability and a precise deletion cause remain
+  unproved.
