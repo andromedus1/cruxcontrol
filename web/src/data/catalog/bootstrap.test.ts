@@ -80,6 +80,31 @@ describe('catalog snapshot acquisition', () => {
       .rejects.toMatchObject({ code: 'network' });
   });
 
+  it('discards a partial snapshot when the response stream aborts mid-download', async () => {
+    const controller = new AbortController();
+    const progress: { receivedBytes: number; totalBytes: number }[] = [];
+    let abortedStream = false;
+    const stream = new ReadableStream<Uint8Array>({
+      start(streamController) {
+        streamController.enqueue(compressed.subarray(0, 2));
+        controller.signal.addEventListener('abort', () => {
+          abortedStream = true;
+          streamController.error(new DOMException('aborted', 'AbortError'));
+        }, { once: true });
+      },
+    });
+    const fetcher = vi.fn(async () => new Response(stream)) as unknown as typeof fetch;
+    const download = fetchCatalogSnapshot(manifest, fetcher, (entry) => {
+      progress.push(entry);
+      controller.abort();
+    }, controller.signal);
+
+    await expect(download).rejects.toMatchObject({ code: 'aborted' });
+    expect(abortedStream).toBe(true);
+    expect(progress).toEqual([{ receivedBytes: 2, totalBytes: manifest.bytesGzipped }]);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
   it('parses only a bounded manifest from the fixed same-origin endpoint', async () => {
     const response = bodyResponse(JSON.stringify(manifest));
     const fetcher = fetcherFor(response);

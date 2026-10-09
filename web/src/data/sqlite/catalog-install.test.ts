@@ -10,7 +10,7 @@ import type { CatalogManifest } from '../catalog/manifest.ts';
 import { CatalogDb, configureSqliteWasm, type VfsBinding } from './catalog-db.ts';
 import { CATALOG_SLOT_FILENAMES } from './catalog-config.ts';
 import { CATALOG_RAW_LIMIT } from '../catalog/manifest.ts';
-import { installCatalogCandidate, type CatalogInstallContext } from './catalog-install.ts';
+import { installCatalogCandidate, writeCatalogFile, type CatalogInstallContext } from './catalog-install.ts';
 import type { CatalogReceipt, CatalogReceiptStore } from './catalog-receipt.ts';
 
 const fixtureUrl = new URL('./__fixtures__/catalog-bootstrap.sql', import.meta.url);
@@ -50,18 +50,31 @@ class MemoryReceipts implements CatalogReceiptStore {
 
 interface Snapshot { manifest: CatalogManifest; compressed: ArrayBuffer; raw: Uint8Array }
 
-async function makeSnapshot(name: string, version: number): Promise<Snapshot> {
+interface SnapshotOptions {
+  fixtureSql?: string;
+  mutate?(db: CatalogDb): Promise<unknown>;
+}
+
+async function makeSnapshot(name: string, version: number, options: SnapshotOptions = {}): Promise<Snapshot> {
+  const seedFilename = `catalog-seed-${seedIndex++}.sqlite3`;
   const db = await CatalogDb.open(
-    `catalog-seed-${seedIndex++}.sqlite3`,
+    seedFilename,
     binding,
     SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE,
   );
-  const fixture = await readFile(fixtureUrl, 'utf8');
-  await db.query(fixture);
-  await db.query('UPDATE climbs SET name = ? WHERE uuid = ?', [name, 'synthetic-valid']);
-  await db.close();
+  try {
+    const fixture = options.fixtureSql ?? await readFile(fixtureUrl, 'utf8');
+    await db.query(fixture);
+    await db.query('UPDATE climbs SET name = ? WHERE uuid = ?', [name, 'synthetic-valid']);
+    await options.mutate?.(db);
+    await db.close();
+  } catch (cause) {
+    try { await db.close(); } catch { /* The failed synthetic seed is disposable. */ }
+    try { vfs.xDelete(seedFilename, 1); } catch { /* Keep the fixture creation error. */ }
+    throw cause;
+  }
 
-  const source = vfs.mapNameToFile.get(`catalog-seed-${seedIndex - 1}.sqlite3`)!;
+  const source = vfs.mapNameToFile.get(seedFilename)!;
   const raw = new Uint8Array(source.data, 0, source.size).slice();
   vfs.xDelete(source.name, 1);
   const zipped = gzipSync(raw);
@@ -98,6 +111,34 @@ async function queryActive(owner: CatalogInstallContext): Promise<string | null>
   return owner.active
     ? (await owner.active.db.query('SELECT name FROM climbs WHERE uuid = ? ', ['synthetic-valid']))[0]?.name as string ?? null
     : null;
+}
+
+async function expectCandidateRejectionPreservesActive(
+  candidate: Snapshot,
+  beforeCandidate?: () => (() => void) | void,
+): Promise<void> {
+  const first = await makeSnapshot('Prior validated catalog', 1);
+  const receipts = new MemoryReceipts();
+  const owner = context(receipts);
+  await expect(installCatalogCandidate(owner, first.manifest, first.compressed))
+    .resolves.toMatchObject({ ok: true, receipt: { slot: 'a' } });
+  const receiptBefore = receipts.current;
+  const writesBefore = receipts.writes;
+
+  const restore = beforeCandidate?.();
+  try {
+    await expect(installCatalogCandidate(owner, candidate.manifest, candidate.compressed))
+      .resolves.toMatchObject({ ok: false, code: 'schema', retained: { slot: 'a' } });
+  } finally {
+    restore?.();
+  }
+  expect(receipts.current).toBe(receiptBefore);
+  expect(receipts.writes).toBe(writesBefore);
+  expect(await queryActive(owner)).toBe('Prior validated catalog');
+  expect(vfs.mapNameToFile.has(CATALOG_SLOT_FILENAMES.a)).toBe(true);
+  expect(vfs.mapNameToFile.has(CATALOG_SLOT_FILENAMES.b)).toBe(false);
+  await owner.active?.db.close();
+  owner.active = null;
 }
 
 async function clearSlots(): Promise<void> {
@@ -200,6 +241,133 @@ describe('catalog slot installation and receipt activation', () => {
       .resolves.toMatchObject({ ok: false, code: 'schema', retained: { slot: 'a' } });
 
     expect(await queryActive(owner)).toBe('Last good');
+    expect(vfs.mapNameToFile.has(CATALOG_SLOT_FILENAMES.b)).toBe(false);
+  });
+
+  it('retires after an inactive-slot delete error without retrying or mutating activation', async () => {
+    const first = await makeSnapshot('Still active after delete error', 1);
+    const stale = await makeSnapshot('Stale inactive slot', 2);
+    const next = await makeSnapshot('Never written after delete error', 3);
+    const receipts = new MemoryReceipts();
+    const owner = context(receipts);
+    await installCatalogCandidate(owner, first.manifest, first.compressed);
+    writeCatalogFile(vfs as unknown as SQLiteVFS, CATALOG_SLOT_FILENAMES.b, stale.raw);
+    const receiptBefore = receipts.current;
+    const writesBefore = receipts.writes;
+    const deletes: string[] = [];
+    const writes: string[] = [];
+    const openHandles = new Map<number, string>();
+    const open = vi.spyOn(vfs, 'xOpen').mockImplementation((filename, fileId, flags, outFlags) => {
+      if (filename !== null) openHandles.set(fileId, filename);
+      return MemoryVFS.prototype.xOpen.call(vfs, filename, fileId, flags, outFlags);
+    });
+    const deleteFile = vi.spyOn(vfs, 'xDelete').mockImplementation((filename, syncDir) => {
+      deletes.push(filename);
+      const result = MemoryVFS.prototype.xDelete.call(vfs, filename, syncDir);
+      return filename === CATALOG_SLOT_FILENAMES.b ? SQLite.SQLITE_IOERR : result;
+    });
+    const writeFile = vi.spyOn(vfs, 'xWrite').mockImplementation((fileId, data, offset) => {
+      writes.push(openHandles.get(fileId) ?? 'unknown');
+      return MemoryVFS.prototype.xWrite.call(vfs, fileId, data, offset);
+    });
+
+    const result = await installCatalogCandidate(owner, next.manifest, next.compressed);
+    open.mockRestore();
+    deleteFile.mockRestore();
+    writeFile.mockRestore();
+
+    expect(result).toMatchObject({ ok: false, code: 'closed', retained: { slot: 'a' } });
+    expect(deletes).toEqual([CATALOG_SLOT_FILENAMES.b]);
+    expect(writes).toEqual([]);
+    expect(receipts.current).toBe(receiptBefore);
+    expect(receipts.writes).toBe(writesBefore);
+    expect(vfs.mapNameToFile.has(CATALOG_SLOT_FILENAMES.b)).toBe(false);
+    expect(await queryActive(owner)).toBe('Still active after delete error');
+  });
+
+  it('rejects a candidate missing a consumer-required column while retaining the active receipt', async () => {
+    const fixture = await readFile(fixtureUrl, 'utf8');
+    const malformed = fixture.replace(
+      '  is_listed INTEGER\n);\n\nCREATE TABLE climb_stats',
+      '  legacy_is_listed INTEGER\n);\n\nCREATE TABLE climb_stats',
+    );
+    expect(malformed).not.toBe(fixture);
+    await expectCandidateRejectionPreservesActive(
+      await makeSnapshot('Missing required column', 2, { fixtureSql: malformed }),
+    );
+  });
+
+  it('rejects a view substituted for a required ordinary table and retains the active receipt', async () => {
+    const fixture = await readFile(fixtureUrl, 'utf8');
+    const malformed = fixture
+      .replace(/CREATE TABLE climb_stats \([\s\S]*?\);/, `CREATE VIEW climb_stats AS
+        SELECT NULL AS climb_uuid, NULL AS angle, NULL AS display_difficulty,
+          NULL AS difficulty_average, NULL AS benchmark_difficulty,
+          NULL AS ascensionist_count, NULL AS quality_average WHERE 0;`)
+      .replace(/INSERT INTO climb_stats VALUES[\s\S]*?;\n/, '');
+    expect(malformed).not.toBe(fixture);
+    await expectCandidateRejectionPreservesActive(
+      await makeSnapshot('View substituted for table', 2, { fixtureSql: malformed }),
+    );
+  });
+
+  it('rejects a virtual table substituted for a required ordinary table and retains the active receipt', async () => {
+    const candidate = await makeSnapshot('Virtual table substituted for table', 2);
+    await expectCandidateRejectionPreservesActive(
+      candidate,
+      () => {
+        const originalQuery = CatalogDb.prototype.query;
+        const query = vi.spyOn(CatalogDb.prototype, 'query').mockImplementation(
+          async function (this: CatalogDb, sql: string, params?: readonly unknown[]) {
+            const rows = await originalQuery.call(this, sql, params as never);
+            if (sql.startsWith('SELECT name, type, sql FROM sqlite_master')) {
+              return rows.map((row) => row.name === 'climb_stats'
+                ? { ...row, type: 'table', sql: 'CREATE VIRTUAL TABLE climb_stats USING unavailable_module' }
+                : row);
+            }
+            return rows;
+          } as typeof originalQuery,
+        );
+        return () => query.mockRestore();
+      },
+    );
+  });
+
+  it('rejects non-layout-8 and empty climb candidates while retaining the active receipt', async () => {
+    const wrongLayout = await makeSnapshot('Wrong layout candidate', 2, {
+      mutate: (db) => db.query('UPDATE climbs SET layout_id = 1'),
+    });
+    await expectCandidateRejectionPreservesActive(wrongLayout);
+
+    const empty = await makeSnapshot('Empty climbs candidate', 3, {
+      mutate: (db) => db.query('DELETE FROM climbs'),
+    });
+    await expectCandidateRejectionPreservesActive(empty);
+  });
+
+  it('rejects a non-ok integrity_check result without changing the active receipt', async () => {
+    const first = await makeSnapshot('Prior validated catalog', 1);
+    const candidate = await makeSnapshot('Integrity check candidate', 2);
+    const receipts = new MemoryReceipts();
+    const owner = context(receipts);
+    await installCatalogCandidate(owner, first.manifest, first.compressed);
+    const receiptBefore = receipts.current;
+    const writesBefore = receipts.writes;
+    const originalQuery = CatalogDb.prototype.query;
+    const query = vi.spyOn(CatalogDb.prototype, 'query').mockImplementation(
+      async function (this: CatalogDb, sql: string, params?: readonly unknown[]) {
+        if (sql === 'PRAGMA integrity_check') return [{ integrity_check: 'database is corrupt' }];
+        return originalQuery.call(this, sql, params as never);
+      } as typeof originalQuery,
+    );
+
+    const result = await installCatalogCandidate(owner, candidate.manifest, candidate.compressed);
+    query.mockRestore();
+
+    expect(result).toMatchObject({ ok: false, code: 'schema', retained: { slot: 'a' } });
+    expect(receipts.current).toBe(receiptBefore);
+    expect(receipts.writes).toBe(writesBefore);
+    expect(await queryActive(owner)).toBe('Prior validated catalog');
     expect(vfs.mapNameToFile.has(CATALOG_SLOT_FILENAMES.b)).toBe(false);
   });
 

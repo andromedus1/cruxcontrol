@@ -298,7 +298,13 @@ export async function installCatalogCandidate(
 
     const slot: CatalogSlot = previousReceipt ? otherSlot(previousReceipt.slot) : 'a';
     candidateFilename = slotFilename(slot);
-    assertResult(context.vfs.xDelete(candidateFilename, 1), 'Clear inactive catalog slot');
+    try {
+      assertResult(context.vfs.xDelete(candidateFilename, 1), 'Clear inactive catalog slot');
+    } catch (cause) {
+      // A public VFS delete can fail after its path-to-handle mapping changed.
+      // Do not retry cleanup against an association whose state is uncertain.
+      throw fail('closed', 'Could not clear inactive catalog slot; worker must be restarted', cause);
+    }
     writeCatalogFile(context.vfs, candidateFilename, bytes);
     inspectCatalogFile(context.vfs, candidateFilename, manifest.bytesRaw);
     candidateDb = await CatalogDb.open(candidateFilename, {

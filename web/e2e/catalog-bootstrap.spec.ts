@@ -15,6 +15,9 @@ type Harness = {
     playlists: Array<{ id: string; name: string }>;
     memberships: Array<{ playlistId: string; climbId: string; position: number }>;
   }>;
+  receipt(): Promise<{ slot: 'a' | 'b'; manifest: { version: number; bytesRaw: number } } | null>;
+  mutateReceiptBytesRaw(): Promise<void>;
+  restoreReceipt(receipt: { slot: 'a' | 'b'; manifest: { version: number; bytesRaw: number } }): Promise<void>;
   restart(fault?: 'none' | 'before-receipt' | 'after-receipt' | 'pool-init-busy'): Promise<HarnessStatus>;
   close(): Promise<void>;
 };
@@ -128,6 +131,46 @@ test('recovers the receipt-selected slot when the worker exits on either side of
   expect(await api.evaluate((value) => value.queryName())).toBe('Synthetic route v2');
   expect((await api.evaluate((value) => value.status())).receipt?.manifest.version).toBe(2);
   expect(await api.evaluate((value) => value.authored())).toEqual(authoredBefore);
+  await api.evaluate((value) => value.close());
+});
+
+test('retains the lease after invalid receipt metadata, installs into the opposite slot, and reopens the prior image', async ({ page, context }) => {
+  let selected = snapshots[0];
+  await installRoutes(page, () => selected);
+  await readyHarness(page);
+  let api = await harness(page);
+  expect(await api.evaluate((value) => value.install())).toMatchObject({ ok: true, receipt: { slot: 'a' } });
+  const knownReceipt = await api.evaluate((value) => value.receipt());
+  expect(knownReceipt).toMatchObject({ slot: 'a', manifest: { version: 1 } });
+
+  await api.evaluate((value) => value.close());
+  await api.evaluate((value) => value.mutateReceiptBytesRaw());
+  await page.reload();
+  await page.waitForFunction(() => Boolean((window as Window & { catalogHarness?: Harness }).catalogHarness));
+  api = await harness(page);
+  expect(await api.evaluate((value) => value.status())).toMatchObject({ status: 'unavailable', code: 'schema' });
+
+  const contenderPage = await context.newPage();
+  await readyHarness(contenderPage);
+  const contender = await harness(contenderPage);
+  expect(await contender.evaluate((value) => value.status())).toMatchObject({ status: 'unavailable', code: 'busy' });
+  await contenderPage.close();
+
+  selected = snapshots[1];
+  expect(await api.evaluate((value) => value.install())).toMatchObject({
+    ok: true, receipt: { slot: 'b', manifest: { version: 2 } },
+  });
+  expect(await api.evaluate((value) => value.queryName())).toBe('Synthetic route v2');
+
+  await api.evaluate((value) => value.close());
+  await api.evaluate((value, receipt) => value.restoreReceipt(receipt), knownReceipt);
+  await page.reload();
+  await page.waitForFunction(() => Boolean((window as Window & { catalogHarness?: Harness }).catalogHarness));
+  api = await harness(page);
+  expect(await api.evaluate((value) => value.status())).toMatchObject({
+    status: 'ready', receipt: { slot: 'a', manifest: { version: 1 } },
+  });
+  expect(await api.evaluate((value) => value.queryName())).toBe('Synthetic route v1');
   await api.evaluate((value) => value.close());
 });
 

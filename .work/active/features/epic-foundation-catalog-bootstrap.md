@@ -650,8 +650,8 @@ Verification completed:
   in `CruxControlWorkspace.tsx` and `library-backup/**`, which are outside this feature's
   ownership and are being changed concurrently. Re-run after that work lands.
 
-The feature is ready for its standard independent implementation review; final
-integration typecheck and CI remain parent-owned gates.
+The initial implementation advanced to standard independent implementation review;
+final integration typecheck and CI remain parent-owned gates.
 
 ## Playwright CI integration correction — 2026-10-09
 
@@ -664,3 +664,44 @@ explicitly, and CI runs both commands as separate required steps.
 After the correction, normal app discovery listed 13 app tests and dedicated discovery
 listed all four bootstrap tests. Local reruns passed the 13 app E2E tests and all four
 bundled-worker persistence tests.
+
+## Standard review remediation — 2026-10-09
+
+The standard Claude implementation review completed successfully
+(`20261009T183203Z-5f0a1286`). Root adjudicated one material correctness fix and four
+verification additions. The initial inactive-slot `xDelete` now retires the worker on
+any returned or thrown failure, because the pool's path association may already have
+changed; it does not retry deletion, write candidate bytes, or mutate the receipt.
+The regression makes the VFS remove the stale inactive image and then report an I/O
+error, and verifies one delete call, no candidate writes, no receipt change, and the
+last good active image remains intact.
+
+Validation coverage now rejects a missing required column, a view substitution, a
+virtual-table schema marker, wrong-layout rows, an empty climbs table, and a failed
+`integrity_check`, retaining the prior receipt and readable active catalog in each
+case. The pinned WASM build has no FTS5 module, so the virtual-table branch is driven
+through the actual `sqlite_master` query result seam rather than committing or
+constructing a non-loadable database. Acquisition tests also abort after receiving a
+partial streamed body and prove no buffer is returned.
+
+The dedicated Chromium worker test installs v1 in slot `a`, changes only the synthetic
+receipt's `manifest.bytesRaw`, and reopens as `unavailable/schema` rather than empty.
+A second worker receives `busy`, proving the unavailable owner retains the Web Lock.
+The owner installs v2 into slot `b`; after closing, the test restores the exact saved v1
+receipt and reopens/query-checks v1 in `a`, proving the prior image survived.
+
+Adjudication: accepted the inactive-slot delete retirement fix and all four required
+verification additions. The review's separate ideas to expand SQL error taxonomy or
+change query-first lifecycle handling were not adopted: current callers check readiness
+before querying, and broad error remapping could hide storage I/O failures. Authored
+record preservation remains covered by the existing dedicated harness and app-level
+browser integration, without another copy in this test.
+
+Remediation verification so far: focused acquisition/install tests passed (28 tests),
+full web unit suite passed (95 files, 781 tests), lint and whole-web typecheck passed,
+and the dedicated production-bundled worker suite passed (5 tests). The normal app E2E
+rerun is parent-owned integration evidence and remains pending against the
+community-browser owner's final rebuild. The first CI discovery failure is already
+corrected by keeping the dedicated harness config separate from the app config. The
+standard independent review has been consumed; the root agent owns fix verification and
+final CI closure.

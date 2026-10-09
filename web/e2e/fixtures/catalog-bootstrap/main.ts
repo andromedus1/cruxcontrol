@@ -2,6 +2,11 @@ import { fetchCatalogManifest, fetchCatalogSnapshot } from '../../../src/data/ca
 import type { CatalogStorageStatus, CatalogInstallResult } from '../../../src/data/catalog/bootstrap-port.ts';
 import type { CatalogManifest } from '../../../src/data/catalog/manifest.ts';
 import type { CatalogReceipt } from '../../../src/data/sqlite/catalog-receipt.ts';
+import {
+  CATALOG_RECEIPT_DATABASE,
+  CATALOG_RECEIPT_KEY,
+  CATALOG_RECEIPT_STORE,
+} from '../../../src/data/sqlite/catalog-config.ts';
 import { SqliteCatalogPort } from '../../../src/data/sqlite/sqlite-catalog-port.ts';
 
 type Fault = 'none' | 'before-receipt' | 'after-receipt' | 'pool-init-busy';
@@ -17,6 +22,8 @@ interface CatalogHarness {
   queryName(): Promise<string | null>;
   authored(): Promise<AuthoredRecords>;
   receipt(): Promise<CatalogReceipt | null>;
+  mutateReceiptBytesRaw(): Promise<void>;
+  restoreReceipt(receipt: CatalogReceipt): Promise<void>;
   close(): Promise<void>;
   restart(fault?: Fault): Promise<CatalogStorageStatus>;
 }
@@ -84,6 +91,60 @@ async function readAuthoredFixture(): Promise<AuthoredRecords> {
   return { climbs, playlists, memberships: memberships.sort((a, b) => a.position - b.position) };
 }
 
+function openCatalogMetadata(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(CATALOG_RECEIPT_DATABASE);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(CATALOG_RECEIPT_STORE)) {
+        request.transaction?.abort();
+      }
+    };
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
+}
+
+async function updateStoredReceipt(
+  update: (receipt: CatalogReceipt) => CatalogReceipt,
+): Promise<void> {
+  const database = await openCatalogMetadata();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(CATALOG_RECEIPT_STORE, 'readwrite');
+      const store = transaction.objectStore(CATALOG_RECEIPT_STORE);
+      const read = store.get(CATALOG_RECEIPT_KEY);
+      let failed = false;
+      read.onsuccess = () => {
+        try {
+          if (read.result === undefined) throw new Error('Expected a stored synthetic catalog receipt');
+          store.put(update(structuredClone(read.result) as CatalogReceipt), CATALOG_RECEIPT_KEY);
+        } catch (cause) {
+          failed = true;
+          try { transaction.abort(); } catch { /* Keep the receipt update error. */ }
+          reject(cause);
+        }
+      };
+      read.onerror = () => {
+        failed = true;
+        reject(read.error ?? new Error('Could not read the synthetic catalog receipt'));
+      };
+      transaction.oncomplete = () => { if (!failed) resolve(); };
+      transaction.onerror = () => {
+        if (failed) return;
+        failed = true;
+        reject(transaction.error ?? new Error('Could not update the synthetic catalog receipt'));
+      };
+      transaction.onabort = () => {
+        if (failed) return;
+        failed = true;
+        reject(transaction.error ?? new Error('Synthetic catalog receipt update was aborted'));
+      };
+    });
+  } finally {
+    database.close();
+  }
+}
+
 let port: SqliteCatalogPort;
 let currentFault: Fault = 'none';
 let currentStatus: CatalogStorageStatus = { status: 'empty' };
@@ -144,6 +205,15 @@ window.catalogHarness = {
   async receipt() {
     const status = await port.catalogStatus();
     return status.status === 'ready' ? status.receipt : null;
+  },
+  mutateReceiptBytesRaw() {
+    return updateStoredReceipt((receipt) => ({
+      ...receipt,
+      manifest: { ...receipt.manifest, bytesRaw: receipt.manifest.bytesRaw + 1 },
+    }));
+  },
+  restoreReceipt(receipt) {
+    return updateStoredReceipt(() => structuredClone(receipt));
   },
   close() { return port.close(); },
   async restart(fault: Fault = 'none') {
