@@ -72,10 +72,49 @@ describe('createNativeBackupDelivery', () => {
     });
     await expect(delivery.deliver(file)).resolves.toEqual({ status: 'cancelled' });
     expect(share.share).toHaveBeenCalledOnce();
-    expect(filesystem.rmdir).toHaveBeenCalledTimes(2);
+    expect(filesystem.rmdir).toHaveBeenCalledTimes(1);
 
     const unrelated = setup({ share: vi.fn().mockRejectedValue(new Error('Share canceled by destination')) });
     await expect(unrelated.delivery.deliver(file)).rejects.toThrow('Share canceled by destination');
+    expect(unrelated.filesystem.rmdir).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { name: 'exact cancellation', shareError: new Error('Share canceled'), rejects: false },
+    { name: 'unknown share rejection', shareError: new Error('destination unavailable'), rejects: true },
+  ])('retains the cache file after $name and clears it at the next export preflight', async ({ shareError, rejects }) => {
+    const cache = new Map<string, string>();
+    const events: string[] = [];
+    const fileCountsBeforeWrite: number[] = [];
+    const rmdir = vi.fn(async () => {
+      events.push('remove');
+      cache.clear();
+    });
+    const writeFile = vi.fn(async ({ path, data }: { path: string; data: string }) => {
+      events.push('write');
+      fileCountsBeforeWrite.push(cache.size);
+      cache.set(path, data);
+      return { uri };
+    });
+    const share = vi.fn()
+      .mockRejectedValueOnce(shareError)
+      .mockResolvedValueOnce({ activityType: '' });
+    const { delivery } = setup({ rmdir, writeFile, share });
+    const path = `cruxcontrol-backup-export/${file.filename}`;
+
+    if (rejects) {
+      await expect(delivery.deliver(file)).rejects.toThrow('destination unavailable');
+    } else {
+      await expect(delivery.deliver(file)).resolves.toEqual({ status: 'cancelled' });
+    }
+    expect(cache.get(path)).toBe(file.text);
+    expect(events).toEqual(['remove', 'write']);
+    expect(rmdir).toHaveBeenCalledOnce();
+
+    await expect(delivery.deliver({ ...file, text: '{"saved":"next"}' })).resolves.toEqual({ status: 'shared' });
+    expect(events).toEqual(['remove', 'write', 'remove', 'write', 'remove']);
+    expect(fileCountsBeforeWrite).toEqual([0, 0]);
+    expect(cache.size).toBe(0);
   });
 
   it('cleans up a partial write failure and does not open the share sheet', async () => {
@@ -133,6 +172,18 @@ describe('createNativeBackupDelivery', () => {
     expect(filesystem.rmdir).toHaveBeenCalledTimes(2);
   });
 
+  it('retains the file when an aborted caller receives cancellation from an open share sheet', async () => {
+    const pendingShare = deferred<{ activityType: string }>();
+    const { filesystem, share, delivery } = setup({ share: vi.fn(() => pendingShare.promise) });
+    const controller = new AbortController();
+    const operation = delivery.deliver(file, controller.signal);
+    await vi.waitFor(() => expect(share.share).toHaveBeenCalledOnce());
+    controller.abort();
+    pendingShare.reject(new Error('Share canceled'));
+    await expect(operation).resolves.toEqual({ status: 'cancelled' });
+    expect(filesystem.rmdir).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps the successful outcome and reports a failed final cleanup', async () => {
     const rmdir = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('cache locked'));
     const { delivery } = setup({ rmdir });
@@ -142,13 +193,14 @@ describe('createNativeBackupDelivery', () => {
     });
   });
 
-  it('keeps the export error and appends a failed cleanup warning', async () => {
-    const failure = new Error('Share target failed');
+  it('keeps a pre-share export error and appends a failed cleanup warning', async () => {
+    const failure = new Error('disk full');
     const rmdir = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('cache locked'));
-    const { delivery } = setup({ share: vi.fn().mockRejectedValue(failure), rmdir });
+    const { delivery, share } = setup({ writeFile: vi.fn().mockRejectedValue(failure), rmdir });
     await expect(delivery.deliver(file)).rejects.toThrow(
-      "Unable to share the library backup: Share target failed. The temporary backup copy could not be removed from this app's storage.",
+      "Unable to export the library backup: disk full. The temporary backup copy could not be removed from this app's storage.",
     );
+    expect(share.share).not.toHaveBeenCalled();
   });
 
   it('retries cleanup of the owned directory before writing the next export', async () => {

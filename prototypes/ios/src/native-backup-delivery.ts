@@ -20,6 +20,7 @@ function isMissingFileError(cause: unknown): boolean {
 }
 
 function isShareCancellation(cause: unknown): boolean {
+  // @capacitor/share 8.0.3 SharePlugin.swift uses this exact rejection text on iOS.
   return cause instanceof Error
     ? cause.message === 'Share canceled'
     : cause === 'Share canceled';
@@ -67,6 +68,7 @@ export function createNativeBackupDelivery(
 
       let outcome: LibraryBackupDeliveryResult | undefined;
       let failure: Error | undefined;
+      let shareInvoked = false;
       try {
         if (signal?.aborted) {
           outcome = { status: 'cancelled' };
@@ -87,6 +89,10 @@ export function createNativeBackupDelivery(
               throw new Error('Filesystem did not return a valid local backup file URI.');
             }
             try {
+              shareInvoked = true;
+              // Share 8.0.3 completes from UIActivity's callback, which can precede
+              // sheet dismissal; retain the file on rejection for a nested destination.
+              // The next export preflight clears it.
               await dependencies.share.share({ files: [uri], title: 'CruxControl library backup' });
               outcome = { status: 'shared' };
             } catch (cause) {
@@ -103,7 +109,7 @@ export function createNativeBackupDelivery(
       }
 
       try {
-        await removeOwnedDirectory();
+        if (!shareInvoked || outcome?.status === 'shared') await removeOwnedDirectory();
       } catch {
         if (failure) {
           const message = /[.!?]$/.test(failure.message) ? failure.message : `${failure.message}.`;

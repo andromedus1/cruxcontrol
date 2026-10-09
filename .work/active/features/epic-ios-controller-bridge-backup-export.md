@@ -167,20 +167,25 @@ Native operation order:
    `share({ files: [uri], title: 'CruxControl library backup' })`. Resolve `shared`
    for any successful result; normalize only the pinned exact cancellation rejection
    to `cancelled`. All other failures reject with a useful export error.
-4. In `finally`, recursively remove the owned directory after Share resolves/rejects,
-   or after any preparation/write/URI/abort failure. Attempt cleanup even when a
+4. Recursively remove the owned directory after pre-share preparation/write/URI/abort
+   failure, and after Share completes successfully. Attempt cleanup even when a
    failed write may have left partial bytes. Ignore only missing-file errors.
-   Cleanup failure must not turn completed sharing into an export failure: return a
-   warning with the completed/cancelled outcome. If export itself failed, retain that
-   primary error and append that its temporary copy could not be removed. The next
-   attempt retries cleanup. Do not log JSON, records, or file URIs.
+   If Share was invoked and returns cancellation or another rejection, keep its file
+   in the owned directory because the OS may still be completing a nested destination
+   action. The next export's existing preflight removes that leftover before writing
+   the next copy. Do not delete on a timer or when the share sheet first appears.
+   Cleanup failure after successful sharing becomes a warning. For a pre-share export
+   failure, retain that primary error and append a cleanup failure. Do not log JSON,
+   records, or file URIs.
 
 Do not delete the cache file on a timer, on backgrounding, or when the share sheet is
 first presented. The plugin has no sheet-cancellation API: if the caller aborts after
-Share starts, continue awaiting native completion and cleanup; the unmounted UI ignores
-the outcome. No arbitrary timeout may delete a file still being used by the OS. A
-process kill can leave only the cache copy, reclaimed by the next export or the OS;
-the cache copy itself is never represented as a durable backup.
+Share starts, continue awaiting native completion; the unmounted UI ignores the
+outcome. Successful completion cleans up immediately, while cancellation or rejection
+retains the file for the next export preflight. No arbitrary timeout may delete a file
+still being used by the OS. A process kill can leave only the cache copy, reclaimed by
+the next export or the OS; the cache copy itself is never represented as a durable
+backup.
 
 ### 2. Compose the port and preserve dialog safeguards
 
@@ -308,6 +313,7 @@ V4 draft and two playlists; capture the exact baseline before the run. Then:
   backup behavior or durable native storage across updates.
 - **Cleanup and lifecycle:** retain the cache file while the OS owns the share flow;
   failed cleanup is reported, and an interrupted process can leave an app-cache copy.
+  A canceled or rejected Share also leaves its copy until the next export preflight.
   Removing that copy never removes the user-selected destination file.
 - **Version-specific cancellation:** the plugin offers no typed cancellation code on
   iOS 8.0.3. Pin and test the exact source-observed message; all unknown failures stay
@@ -341,8 +347,9 @@ V4 draft and two playlists; capture the exact baseline before the run. Then:
   prototype 25 focused tests, typecheck, and lint pass. `npm run sync` regenerated the
   plugin SPM list with Filesystem 8.1.4 and Share 8.0.3 and built `dist-ios-prototype`.
   The packaged-browser Playwright smoke passed 1/1; privacy plist and Xcode project
-  parse checks pass. Native build/install and OS round trip are intentionally still
-  open for the parent-operated acceptance step.
+  parse checks pass. Native build/install and the original OS round trip passed at
+  `40920db`; this follow-up's cancellation/rejection lifetime still needs the fresh
+  native check recorded below.
 
 ## Native acceptance evidence (2026-10-09)
 
@@ -381,5 +388,32 @@ V4 draft and two playlists; capture the exact baseline before the run. Then:
 - Both simulators retain their synthetic libraries. No personal device/library,
   cloud service or public catalog binary was used. Physical backup behavior,
   storage-pressure durability, authentication and board control remain unproven.
-- Native acceptance is complete; implementation advances to the standard single
-  independent feature review. Required aggregate CI will gate final completion.
+- Initial native acceptance at `40920db` passed as described above. Its observed
+  cancellation cleanup behavior belongs to that implementation and does not verify
+  the deferred cleanup behavior introduced by the review follow-up below.
+
+## Standard review follow-up (2026-10-09)
+
+- Review job: `job20261009T184449Z-dba78387`, standard weight. The driving agent
+  accepted one lifecycle finding: Share 8.0.3 settles from the first
+  `UIActivityViewController` completion callback, while WebKit's share-sheet source
+  guards against callbacks while its activity controller is still presented and
+  allows the callback to occur more than once. Sources checked 2026-10-09:
+  [SharePlugin.swift at the pinned 8.0.3 commit](https://github.com/ionic-team/capacitor-plugins/blob/87c0bb8045db2b4560d3db4b7d8e565c23ec1736/share/ios/Sources/SharePlugin/SharePlugin.swift#L451-L470)
+  and [WebKit WKShareSheet.mm](https://raw.githubusercontent.com/WebKit/WebKit/main/Source/WebKit/UIProcess/Cocoa/WKShareSheet.mm#L363-L368).
+- The standard independent pass is complete. The driving agent accepted this one
+  material lifecycle finding and verified the bounded fix; no second independent pass
+  is required.
+- Accepted correction: once Share is invoked, retain the owned cache file on exact
+  cancellation and unknown rejection because a nested OS destination may still need
+  it. The next export preflight clears it before writing. Successful Share completion
+  still cleans immediately; aborts and failures before Share invocation still clean
+  immediately. No timeout or additional directory was introduced.
+- This follow-up does not change the original successful Save to Files file inspection
+  or second-simulator restore evidence. The earlier observation that cancellation
+  removed cache was made against `40920db` and is superseded for the corrected branch;
+  the parent owns a fresh native check of nested cancellation and retry cleanup before
+  closing this finding. No new native result is claimed here.
+- Follow-up verification: `@cruxcontrol/ios-prototype` runs 24 native adapter tests,
+  typecheck, and lint successfully under Node 22. Sync/build and device proof are
+  intentionally deferred to the parent while browser catalog work is active.
