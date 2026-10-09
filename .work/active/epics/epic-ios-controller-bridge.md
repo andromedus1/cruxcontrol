@@ -133,7 +133,11 @@ re-exported a canonical snapshot matching every record and ordered membership fr
 the first export (ignoring the envelope export timestamp). Its cache copy was also
 removed after OS share completion. This establishes the exercised simulator backup
 round trip; it does not establish physical-device behavior or storage-pressure
-durability.
+durability. The final corrected export retained its cache after cancellation,
+replaced it on retry, and removed it after a successful Save to Files. The actual
+new file again matched every canonical record and ordered membership. That final
+check chose a distinct basename in the OS picker; same-name overwrite interaction
+remains a physical-device checklist case.
 
 These simulator checks do not establish physical iPhone/board acceptance, storage-
 pressure durability, native authentication, or distribution. Physical testing still

@@ -159,7 +159,10 @@ and iOS runtime in the owning work item:
   through the normal picker, retained its five climbs and two playlists after
   relaunch, and re-exported a canonical snapshot matching the first export in
   every record and ordered membership (ignoring the export timestamp). Its owned
-  cache copy was also removed after the share sheet completed.
+  cache copy was also removed after the share sheet completed. The corrected
+  cancellation/retry path was then verified with a distinct OS destination name
+  and another exact canonical comparison. Include repeated exports to an existing
+  filename in physical-device picker acceptance.
 - Press **Connect** and confirm unsupported Bluetooth is reported: the native BLE
   plugin does not support the iOS simulator. Library startup should not initialize
   Bluetooth or open a permission prompt. No simulated board success is added.

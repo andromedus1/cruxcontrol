@@ -118,9 +118,10 @@ remain infrastructure, with synthetic worker tests and no separate product surfa
 
 ## Delivery reconciliation (2026-10-09)
 
-Scaffold, CI/deploy configuration, SQLite read path and PWA shell are done. Bootstrap
-has one standard review with bounded corrections in progress. The community browser
-is being verified, followed by its dependent worker/WASM artifact assertion. These
+Scaffold, CI/deploy configuration, SQLite read path, PWA shell and catalog bootstrap
+are done. The community browser has passed production-browser acceptance and its
+standard review corrections are being verified. The worker/WASM artifact assertion
+is implemented and independently approved, pending final CI. These
 updates reflect already approved feature designs; no epic split, new dependency
 edge, feature reparenting or expansion of browser support was introduced. Keep this
 epic implementing while the deferred storage fallback remains a drafting child.
