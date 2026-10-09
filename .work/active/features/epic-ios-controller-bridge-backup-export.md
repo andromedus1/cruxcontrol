@@ -336,6 +336,7 @@ V4 draft and two playlists; capture the exact baseline before the run. Then:
   remains parent-operated; update the prototype README after that proof records the
   observed scope and outcomes.
 - Adjacent issues parked: none.
+- Implementation commit: `40920db`.
 - Verification: web 48 focused unit/integration tests, typecheck, and lint pass; iOS
   prototype 25 focused tests, typecheck, and lint pass. `npm run sync` regenerated the
   plugin SPM list with Filesystem 8.1.4 and Share 8.0.3 and built `dist-ios-prototype`.
