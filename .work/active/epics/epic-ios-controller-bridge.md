@@ -87,7 +87,7 @@ The laptop migration is complete. The verified host is macOS 26.6 arm64 with Xco
 27.0 (27A266a), iOS 27.0 simulator runtime (24A434), and an isolated iPhone 17
 simulator. Node 20.20.2 and 22.23.3 are installed through nvm; the shell's global
 Node and developer-directory selection remain unchanged. The owning
-[`ios-simulator-build-smoke`](../stories/ios-simulator-build-smoke.md) story records
+[`ios-simulator-build-smoke`](../../archive/ios-simulator-build-smoke.md) story records
 tooling and startup evidence.
 
 ## Preparation checkpoint

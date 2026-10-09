@@ -39,7 +39,7 @@ schedule, service architecture, or new feature decomposition is selected here.
    the active Fullride board. Existing work includes
    [bootstrap](../active/features/epic-foundation-catalog-bootstrap.md),
    [worker/WASM verification](../active/features/epic-foundation-verify-worker-build.md),
-   [provider-neutral queries](../active/features/epic-universal-board-platform-catalog-domain.md),
+   [provider-neutral queries](../archive/epic-universal-board-platform-catalog-domain.md),
    [sync](../active/epics/epic-catalog-sync.md), and
    [storage fallback](epic-foundation-sqlite-idb-fallback.md).
    SQLite catalog infrastructure is present but not wired into the running app;
