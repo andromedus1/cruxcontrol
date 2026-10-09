@@ -2,14 +2,16 @@
 description: CruxControl vision, problem, audience, principles, and non-goals
 type: planning
 kind: planning
-updated: 2026-09-27
+updated: 2026-10-09
 nav_priority: high
 summary: >
   CruxControl is a Kilter-first, eventually universal climbing-board app. Its
   first complete vertical slice controls a home Fullride 7x10, while its domain,
   catalog, and controller boundaries allow other boards to be added without
-  surrendering offline use, data ownership, or source fidelity. The next milestone
-  establishes iPhone board control and shares explicit contributions within an invited circle.
+  surrendering offline use, data ownership, or source fidelity. The first
+  older-snapshot Kilter catalog browser is integrated with explicit consent and
+  offline access while native iPhone preparation continues.
+  Invited contributions follow with Android and iPhone board control.
 decisions:
   - "Share product logic across web, Android and iOS; preserve the working web client while proving native iPhone board control."
   - "Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional."
@@ -17,7 +19,7 @@ decisions:
   - "Board definitions, catalog providers, and controller protocols are independent extension points."
   - "Imports may use public or user-authorized sources; access and redistribution constraints are enforced per provider."
   - "Static/backendless remains the default, with a narrow service allowed later only where a provider or collaboration capability requires it."
-  - "Shared contributed climbs are the next major addition; community catalogs and a logbook precede longer-term grade prediction and personalized training."
+  - "Kilter community catalog access precedes invited shared contributions; its first browser uses an explicitly older offline snapshot, and native iPhone preparation continues independently, with a logbook, broader providers, grade prediction and personalized training retained afterward."
   - "The installable PWA keeps private authoring and playlists local; an invited shared library may use a narrow, research-grounded collaboration service."
   - "Invited partner and friends need Android and iPhone board control; establish the iOS path before advancing shared-library implementation."
 ---
@@ -30,12 +32,22 @@ CruxControl is a data-owning climbing-board app whose first complete target is a
 home Kilter Board Fullride 7x10. Its implemented first milestone creates, saves,
 reopens, and lights unrestricted browser-local climbs through a fast, offline-first
 client; organizes them into shareable lists; and supports locally reviewed screenshot
-imports and editable light effects. The next addition lets invited partner and friends
-contribute climbs to a shared library and receive updates independently of app releases.
-That milestone includes Android and iPhone board control; the iOS client path must
-be established before shared-service implementation advances.
-Community-catalog browsing and logging follow; grade prediction and personalized
-training extend the wall-session loop in longer-term milestones.
+imports and editable light effects. The Kilter community catalog first slice is now
+integrated in the running app: entry opens the older offline Fullride snapshot when
+available, while explicit management consent controls metadata lookup and download.
+The snapshot's source freshness is unknown and it receives no live updates; complete
+current-app coverage and public distribution permission are not established. Catalog
+work can advance on Android and the web while native iPhone work proceeds; unavailable
+iPhone hardware does not block that work. The isolated iOS prototype now compiles,
+starts, and has passed synthetic-data library preservation and complete backup/restore
+round trips in an iPhone 17 simulator; physical-device acceptance remains open.
+
+Invited partner and friends can subsequently contribute climbs to a shared library
+and receive updates independently of app releases. That milestone includes Android
+and iPhone board control; the iOS client path must be established before shared-service
+implementation advances. A local logbook follows these library milestones. Additional
+providers, grade prediction, and personalized training extend the wall-session loop
+in longer-term milestones.
 
 The longer-term north star is one app for any supported Bluetooth climbing board,
 with each board community's climbs available through source-aware catalog adapters.
@@ -81,11 +93,13 @@ multi-tenancy.
   to the Kilter API is optional, never required.
 - **Fast by default.** Offline-first, instant load, responsive browsing — the
   official app's biggest weakness is the bar to clear.
-- **Data-driven over hand-curated.** Where a data source exists (the Kilter
-  catalog, sync API), build a pipeline rather than curate by hand.
-- **Useful sessions first.** Shared climbs, reliable local ownership, and community
-  browsing take priority. Grade prediction and personalized training remain
-  longer-term capabilities supported by the architecture.
+- **Data-driven over hand-curated.** Build repeatable pipelines from verified,
+  authorized data sources rather than hand-curating catalog records. The legacy
+  Kilter sync protocol remains reference material until its current availability
+  and coverage are established.
+- **Useful sessions first.** Reliable local ownership and Kilter community browsing
+  lead, followed by shared contributions. Grade prediction and personalized training
+  remain longer-term capabilities supported by the architecture.
 - **Shared product, platform adapters.** Retain the web client's reusable behavior
   and add native device access where needed. One product does not eliminate native
   builds, permissions, persistence or device-specific acceptance.

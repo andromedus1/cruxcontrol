@@ -39,12 +39,18 @@ jobs:
       - name: Build
         run: npm run build -w @cruxcontrol/web
 
+      - name: Verify PWA and catalog build artifacts
+        run: node web/scripts/check-pwa-build.mjs
+
       - name: Install Chromium for browser tests
         working-directory: web
         run: npx playwright install --with-deps chromium
 
       - name: Test browser workflows
         run: npm -w web run test:e2e
+
+      - name: Test bundled catalog worker persistence
+        run: npm -w web run test:e2e:catalog-bootstrap
 
       - name: Upload browser failure evidence
         if: failure()

@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:catalog-bootstrap": "playwright test --config playwright.catalog-bootstrap.config.ts",
     "test:ios-prototype": "playwright test --config playwright.ios-prototype.config.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

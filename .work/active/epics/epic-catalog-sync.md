@@ -8,27 +8,29 @@ depends_on: [epic-universal-board-platform]
 release_binding: null
 gate_origin: null
 created: 2026-06-13
-updated: 2026-08-02
+updated: 2026-10-09
 research_refs:
   - docs/briefs/data-model.md
   - docs/briefs/catalog-sync-api.md
   - .research/analysis/landscapes/climbing-board-ecosystem.md
 ---
 
-# Catalog Sync: Incremental Updates from the Kilter API
+# Catalog Sync: Verified Kilter Sources and Catalog Updates
 
 ## Brief
 
-Keeps the first Kilter provider catalog fresh after the BoardLib bootstrap. This epic
-implements the universal catalog-provider contract and owns the Kilter sync engine:
-the `POST kilterboardapp.com/sync` protocol, incremental updates
-driven by `shared_syncs` timestamps, and (optionally) the authenticated paths needed
-for personal data and publishing. It is the only module that performs network I/O
-against the Kilter API.
+Owns verified acquisition and updates after the initial older-library bootstrap.
+Andrew accepted the explicitly labeled older snapshot first on 2026-10-09 and wants
+current official-app climbs next. The retained BoardLib / `POST /sync` research
+describes the legacy Aurora path; it does not establish current first-party Kilter
+coverage. Refresh source, protocol, coverage, and intended-use evidence before
+selecting the current acquisition adapter or claiming incremental freshness.
 
-When done, the local catalog can be brought up to date incrementally without a full
-re-download, and the authenticated surface needed by route-publishing and logbook-sync
-exists. It does NOT own how that data is browsed, edited, or logged.
+The eventual adapter should preserve provider-native identities and provenance and
+replace or update the local catalog without risking the personal library. Whether
+current access supports incremental reads, requires full snapshots, or needs an
+authorized account is unresolved. Personal-data and publishing authentication are
+separate evidence questions. This epic does not own browsing, editing, or logging.
 
 ## Research briefs
 
@@ -52,7 +54,8 @@ exists. It does NOT own how that data is browsed, edited, or logged.
 
 ## Anticipated child features
 
-Provisional:
-- Sync client (POST /sync + shared_syncs cursor) behind a mockable port
-- Incremental catalog reconciliation into the local SQLite DB
-- Auth flow (token acquisition; gates personal-data + publish features)
+Provisional, pending refreshed source evidence:
+- Current-source acquisition and coverage verification
+- Source-specific client behind a mockable port; legacy sync is one candidate
+- Safe catalog replacement or incremental reconciliation, according to that source
+- Authorized account flow where required, separately covering personal data/publishing

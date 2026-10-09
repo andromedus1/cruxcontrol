@@ -12,7 +12,7 @@ depends_on: [epic-route-creation, epic-playlists, epic-build-effects-hardening-l
 release_binding: null
 gate_origin: null
 created: 2026-09-12
-updated: 2026-09-27
+updated: 2026-10-09
 ---
 
 # Shared contributed climb library
@@ -28,6 +28,10 @@ locally owned and exportable.
 
 ## Strategic decisions
 
+- **Priority:** Kilter community catalog access comes before invited sharing —
+  confirmed 2026-10-09. Keep this epic's audience, publication, ownership, and
+  approved journey decisions; this is a delivery-order change, not a dependency
+  of shared contributions on manufacturer catalog data.
 - **First audience:** invited partner and friends — confirmed 2026-09-26.
 - **Board control:** include direct iPhone control alongside Android. Establish
   the [iOS path](epic-ios-controller-bridge.md) before more shared-library work —
@@ -90,7 +94,7 @@ epic. Existing portable file sharing remains useful and is not replaced by this 
 Native iPhone control belongs to the companion iOS epic and is required for this
 audience; its mobile proof precedes further shared-library work.
 
-Andrew approved this as the next major addition in the
+Andrew prioritizes Kilter community access ahead of this addition in the
 [saved milestone priorities](../../backlog/roadmap-next-milestones.md). Aim for explicit climb
 submission, library updates independent of app releases, and personal drafts and
 playlists that remain under each person's control. The main journeys are approved;
@@ -134,9 +138,11 @@ is implemented yet.
 
 ## Design handoff
 
-The rendered journeys are approved. First establish the iOS client path, then
-revise `epic-shared-climb-library-invited-access` for native sign-in before following
-the dependency chain. Inherit the confirmed audience, Android/iPhone control,
+The rendered journeys are approved. Kilter community access has delivery priority;
+its Android/web work does not wait for iPhone hardware. Before resuming this epic's
+implementation, establish the iOS client path, then revise
+`epic-shared-climb-library-invited-access` for native sign-in before following the
+dependency chain. Inherit the confirmed audience, Android/iPhone control,
 publication, saved-copy and visual-direction decisions without repeating them.
 The existing deployment path and artwork-distribution item are audience-access
 companions: invited access is not evidence of artwork redistribution permission.
@@ -207,9 +213,9 @@ test-only feature is created at scope time.
   creating a second authoring or board-control stack.
 
 This is distinct from importing manufacturers' existing community libraries.
-Andrew also reaffirmed interest in supporting Kilter, MoonBoard, Tension, and
-other boards, with regularly updated community catalogs, as a farther-out idea.
-That direction is already captured in [Multi-Board Providers](../../backlog/epic-multi-board-providers.md).
+Kilter community catalog access has priority ahead of invited sharing. Adding
+MoonBoard, Tension, and other manufacturers with regularly updated catalogs remains
+longer term, captured in [Multi-Board Providers](../../backlog/epic-multi-board-providers.md).
 
 ## Scope validation
 

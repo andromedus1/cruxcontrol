@@ -125,7 +125,7 @@
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
-  font: var(--font-size-md)/1.4 var(--font-sans);
+  font: var(--font-size-base)/1.4 var(--font-sans);
 }
 .editor-fields textarea {
   min-height: 5rem;
@@ -342,7 +342,7 @@
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  font: var(--font-size-md)/1 var(--font-mono);
+  font: var(--font-size-base)/1 var(--font-mono);
 }
 .board-zoom button:disabled {
   opacity: 0.45;

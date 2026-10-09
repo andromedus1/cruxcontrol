@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { decodeLibraryBackup, LIBRARY_BACKUP_LIMITS } from './codec.ts';
 import type { BackupReview, DecodedLibraryBackup } from './types.ts';
+import { browserLibraryBackupDelivery, type LibraryBackupDelivery } from './delivery.ts';
 import { LibraryBackupService, type LibraryRestoreOutcome } from './service.ts';
 import './library-backup.css';
 
@@ -9,31 +10,28 @@ export interface LibraryBackupDialogProps {
   readonly onClose: () => void;
   readonly onRestored: () => Promise<void>;
   readonly readFileText?: (file: File) => Promise<string>;
-  readonly createObjectUrl?: (blob: Blob) => string;
-  readonly revokeObjectUrl?: (url: string) => void;
+  readonly delivery?: LibraryBackupDelivery;
 }
 
-type Phase = 'idle' | 'exporting' | 'reading' | 'review' | 'restoring' | 'complete' | 'blocked' | 'failed' | 'refresh-failed' | 'refreshing';
+type Phase = 'idle' | 'exporting' | 'export-failed' | 'reading' | 'review' | 'restoring' | 'complete' | 'blocked' | 'failed' | 'refresh-failed' | 'refreshing';
 
 function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
 const readBrowserFile = (file: File) => file.text();
-const createBrowserObjectUrl = (blob: Blob) => URL.createObjectURL(blob);
-const revokeBrowserObjectUrl = (url: string) => URL.revokeObjectURL(url);
 
 export function LibraryBackupDialog({
   service,
   onClose,
   onRestored,
   readFileText = readBrowserFile,
-  createObjectUrl = createBrowserObjectUrl,
-  revokeObjectUrl = revokeBrowserObjectUrl,
+  delivery = browserLibraryBackupDelivery,
 }: LibraryBackupDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const generation = useRef(0);
   const operationPending = useRef(false);
+  const deliveryAbort = useRef<AbortController | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [backup, setBackup] = useState<DecodedLibraryBackup | null>(null);
   const [review, setReview] = useState<BackupReview | null>(null);
@@ -48,6 +46,7 @@ export function LibraryBackupDialog({
     if (dialog && !dialog.open) dialog.showModal();
     return () => {
       generation.current += 1;
+      deliveryAbort.current?.abort();
     };
   }, []);
 
@@ -181,32 +180,34 @@ export function LibraryBackupDialog({
     const currentGeneration = ++generation.current;
     setPhase('exporting');
     setError('');
-    setStatus('Preparing backup…');
+    setStatus(delivery.kind === 'share' ? 'Preparing backup and opening share options…' : 'Preparing backup…');
     try {
-      const { filename, text } = await service.exportFile();
+      const file = await service.exportFile();
       if (currentGeneration !== generation.current) return;
-      const url = createObjectUrl(new Blob([text], { type: 'application/json' }));
-      try {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.click();
-        setPhase('idle');
-        setStatus('Backup download started');
-      } finally {
-        revokeObjectUrl(url);
-      }
-    } catch (cause) {
+      const controller = new AbortController();
+      deliveryAbort.current = controller;
+      const outcome = await delivery.deliver(file, controller.signal);
       if (currentGeneration !== generation.current) return;
       setPhase('idle');
+      const message = outcome.status === 'shared'
+        ? 'Backup export completed. Check your chosen destination.'
+        : outcome.status === 'cancelled'
+          ? 'Backup export canceled.'
+          : 'Backup download started';
+      setStatus(outcome.warning ? `${message} ${outcome.warning}` : message);
+    } catch (cause) {
+      if (currentGeneration !== generation.current) return;
+      setPhase('export-failed');
       setStatus('');
       setError(errorMessage(cause));
     } finally {
+      deliveryAbort.current = null;
       operationPending.current = false;
     }
   }
 
   const busy = phase === 'exporting' || phase === 'restoring' || phase === 'refreshing';
+  const nativeDelivery = delivery.kind === 'share';
 
   const noOp = Boolean(review && review.add.climbs === 0 && review.add.playlists === 0 && review.conflicts.length === 0);
 
@@ -229,9 +230,10 @@ export function LibraryBackupDialog({
         <button type="button" aria-label="Close backup and restore" onClick={close} disabled={busy}>×</button>
       </header>
       <section className="library-backup-section">
-        <h3>Download a backup</h3>
+        <h3>{nativeDelivery ? 'Save a backup' : 'Download a backup'}</h3>
         <p>Keep an independent copy of saved climbs, Trash, playlists, memberships and animation settings.</p>
-        <button className="button button--primary" type="button" disabled={busy || phase === 'reading' || Boolean(backup)} onClick={() => void download()}>Download library backup</button>
+        {nativeDelivery && <p className="library-backup-help">Choose Save to Files or another destination in the iOS share sheet.</p>}
+        <button className="button button--primary" type="button" disabled={busy || phase === 'reading' || Boolean(backup)} onClick={() => void download()}>{nativeDelivery ? 'Save or share library backup' : 'Download library backup'}</button>
       </section>
       <section className="library-backup-section">
         <h3>Recover from a file</h3>
@@ -251,7 +253,9 @@ export function LibraryBackupDialog({
         <p className="library-backup-help">Up to 25 MiB. Finish edits in other tabs before downloading. Only saved library contents are included.</p>
       </section>
       {status && <p className="library-backup-status" role="status" aria-live="polite">{status}</p>}
-      {error && phase !== 'refresh-failed' && phase !== 'failed' && <div className="library-backup-error" role="alert"><strong>Backup and restore needs attention.</strong><p>{error}</p><button type="button" disabled={busy} onClick={() => { generation.current += 1; setError(''); setStatus(''); setReview(null); setResult(null); setBackup(null); setPhase('idle'); }}>Choose another file</button></div>}
+      {error && phase !== 'refresh-failed' && phase !== 'failed' && <div className="library-backup-error" role="alert"><strong>Backup and restore needs attention.</strong><p>{error}</p>{phase === 'export-failed'
+        ? <button type="button" disabled={busy} onClick={() => void download()}>Try export again</button>
+        : <button type="button" disabled={busy} onClick={() => { generation.current += 1; setError(''); setStatus(''); setReview(null); setResult(null); setBackup(null); setPhase('idle'); }}>Choose another file</button>}</div>}
       {review && (phase === 'review' || phase === 'blocked' || phase === 'restoring') && (
         <section className="library-backup-review" aria-labelledby="library-backup-review-heading">
           <h3 id="library-backup-review-heading">Review recovery</h3>

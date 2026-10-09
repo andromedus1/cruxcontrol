@@ -8,9 +8,10 @@
  */
 
 import type { Row, SqlValue } from '../port.ts';
+import type { CatalogBootstrapPort } from '../catalog/bootstrap-port.ts';
 
 /** Comlink-exposed catalog API, backed by {@link ./catalog-db.ts} in a Worker. */
-export interface CatalogDbApi {
+export interface CatalogDbApi extends CatalogBootstrapPort {
   /** Run a read-only query; see `CatalogPort.query`. */
   query<T extends Row = Row>(sql: string, params?: readonly SqlValue[]): Promise<T[]>;
 

@@ -9,6 +9,9 @@ const native = vi.hoisted(() => ({
   disableQueue: vi.fn(),
   initialize: vi.fn(),
   addListener: vi.fn(),
+  writeFile: vi.fn(),
+  rmdir: vi.fn(),
+  share: vi.fn(),
 }));
 vi.mock('@capacitor/core', () => ({
   Capacitor: { getPlatform: native.platform },
@@ -20,6 +23,12 @@ vi.mock('@capacitor-community/bluetooth-le', () => ({
   },
 }));
 vi.mock('@capacitor/app', () => ({ App: { addListener: native.addListener } }));
+vi.mock('@capacitor/filesystem', () => ({
+  Directory: { Cache: 'CACHE' },
+  Encoding: { UTF8: 'utf8' },
+  Filesystem: { writeFile: native.writeFile, rmdir: native.rmdir },
+}));
+vi.mock('@capacitor/share', () => ({ Share: { share: native.share } }));
 
 const callbacks = new Map<string, () => void>();
 const removals: ReturnType<typeof vi.fn>[] = [];
@@ -34,6 +43,9 @@ beforeEach(() => {
     removals.push(remove);
     return { remove };
   });
+  native.writeFile.mockResolvedValue({ uri: 'file:///tmp/backup.json' });
+  native.rmdir.mockResolvedValue(undefined);
+  native.share.mockResolvedValue({ activityType: '' });
 });
 
 describe('prototype runtime composition and lifetime', () => {
@@ -41,8 +53,12 @@ describe('prototype runtime composition and lifetime', () => {
     const runtime = await createPrototypeRuntime();
     expect(runtime.controller?.getState().transport.status).toBe('disconnected');
     expect(runtime.backup).toBeDefined();
+    expect(runtime.backupDelivery?.kind).toBe('share');
     expect(native.disableQueue).toHaveBeenCalledOnce();
     expect(native.initialize).not.toHaveBeenCalled();
+    expect(native.writeFile).not.toHaveBeenCalled();
+    expect(native.rmdir).not.toHaveBeenCalled();
+    expect(native.share).not.toHaveBeenCalled();
     expect([...callbacks.keys()]).toEqual(['pause', 'resume']);
     runtime.close();
     for (const remove of removals) expect(remove).toHaveBeenCalledOnce();
@@ -52,8 +68,12 @@ describe('prototype runtime composition and lifetime', () => {
     native.platform.mockReturnValue('web');
     const runtime = await createPrototypeRuntime();
     expect(runtime.controller?.getState().transport.status).toBe('unsupported');
+    expect(runtime.backupDelivery?.kind).toBe('download');
     expect(native.disableQueue).not.toHaveBeenCalled();
     expect(native.initialize).not.toHaveBeenCalled();
+    expect(native.writeFile).not.toHaveBeenCalled();
+    expect(native.rmdir).not.toHaveBeenCalled();
+    expect(native.share).not.toHaveBeenCalled();
     expect(native.addListener).not.toHaveBeenCalled();
     runtime.close();
   });

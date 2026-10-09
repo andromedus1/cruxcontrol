@@ -2,23 +2,31 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-09-28
+updated: 2026-10-09
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
   definitions and namespaced identities, independent catalog providers and
   controller profiles, on-demand local catalogs, and a Fullride 7x10 first slice.
+  The first consented Kilter community catalog browser is integrated for an older
+  offline snapshot, with explicit download consent and offline query support.
+  Current-source coverage, freshness, and public binary distribution remain unproven.
+  Catalog work advances on Android/web independently of native iPhone acceptance.
   An invited contribution library is intended; approved journeys and a verified
   access/storage comparison guide its bounded collaboration service and retained local copies.
   An iPhone client proof now precedes further shared-service implementation.
   An isolated experimental Capacitor shell injects native BLE into the shared screens
-  and controller; native compilation and device acceptance are pending.
+  and controller; it compiles, starts, and has passed synthetic-data preservation and
+  whole-library backup/restore round trips in an iPhone 17 simulator. Physical-device
+  acceptance remains pending.
 decisions:
-  - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; local SQLite through wa-sqlite AccessHandlePoolVFS in a Web Worker is the catalog read path."
+  - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; an optional lazy runtime service opens the local SQLite catalog through a serialized wa-sqlite AccessHandlePoolVFS worker."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
   - "Provider-native records and provenance are retained beside the normalized read model; catalogs install per provider/layout rather than as one universal bundled database."
   - "BLE byte I/O is isolated behind Web Bluetooth in the PWA and an experimental native adapter in the iOS shell; both reuse API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
-  - "The required iPhone path reuses the controller transport boundary; shell, durable storage and native authentication need proof before service implementation resumes."
+  - "The required iPhone path reuses the controller transport boundary; simulator backup round-trip is proven, while real-board BLE, real-device storage pressure and native authentication remain unverified before service implementation resumes."
+  - "Catalog acquisition and local browsing compose existing provider, storage, renderer and controller boundaries without depending on invited access or native iPhone proof."
+  - "The first browser explicitly installs and reads an older Fullride snapshot; two OPFS slots and IndexedDB receipt metadata provide bounded recovery, with no automatic source refresh or claim of current coverage."
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
@@ -45,18 +53,29 @@ feature item bodies in `.work/`, not here. Capabilities are in
    controllable Fullride 7x10 placements, source geometry, semantic role presets,
    supported angles, and placement-to-LED identities.
 2. **Data Layer** — on-demand local SQLite catalogs via `wa-sqlite`
-   (`AccessHandlePoolVFS`) in a Web Worker, behind domain query ports. Native records
-   and provenance sit beside a normalized read model. A catalog-storage IndexedDB
-   fallback is deferred. Small locally authored climb and playlist aggregates use
+   (`AccessHandlePoolVFS`) in a runtime-owned Web Worker, behind domain query ports.
+   The app does no catalog storage I/O at ordinary startup; first catalog entry opens
+   the service. A serialized worker owns the pool across navigation, and an origin
+   Web Lock coordinates access. Installation stages a validated candidate in one of
+   two OPFS slots, then commits IndexedDB receipt metadata as the slot authority. The
+   previous slot remains available for bounded recovery; OPFS and IndexedDB do not
+   share an atomic transaction. Unsupported OPFS/worker environments report the
+   catalog unavailable. Native records and provenance sit beside a normalized read
+   model. Small locally authored climb and playlist aggregates use
    independent native IndexedDB repositories with versioned codecs and atomic
    optimistic updates; climb storage additionally owns explicit lifecycle commands.
    Library backup reads both stores through their codecs and restores saved records with
    stable IDs in separate per-store transactions; it is a bounded local file workflow,
-   not a schema migration or cloud service. Catalog bootstrap remains a separate
-   incomplete boundary.
+   not a schema migration or cloud service.
 3. **Catalog Providers** — source-specific import/sync adapters. Kilter is first;
    later Aurora-family and MoonBoard providers are separately researched. Network,
    auth, reconciliation, and policy metadata remain outside domain and UI code.
+   The browser currently consumes the approved older offline Fullride snapshot with
+   explicit download consent; the catalog binary remains private and public
+   distribution approval is unresolved. Source freshness is unknown, there is no live
+   refresh, and the adapter's supported query surface does not establish current or
+   complete official-app coverage. Kilter catalog work proceeds independently of the
+   invited contribution service and native iPhone proof.
 4. **Controller Profiles & Transports** — profiles own discovery and command
    encoding; transports own platform I/O. The first pair is Aurora API level 2/3 over
    Web Bluetooth: deterministic framing/checksum/multi-packet encoding, serialized
@@ -72,7 +91,9 @@ feature item bodies in `.work/`, not here. Capabilities are in
    are forbidden. Refused playback never rewrites saved assignments. The isolated
    iOS prototype supplies `NativeBleByteTransport` behind the same port. Its own
    composition root injects native I/O into the shared controller and library runtime;
-   browser inspection of prototype assets exposes unsupported control. Device
+   browser inspection of prototype assets exposes unsupported control. A storyboard-
+   backed scene delegate forwards cold and warm URLs through Capacitor's existing
+   application delegate proxy. Device
    selection is explicit and session-only. Native backgrounding disconnects and
    invalidates pending work; return requires explicit reconnect before effects resume.
    Copied buffers, FIFO batches, generation checks, discovered write modes, and native
@@ -94,8 +115,13 @@ feature item bodies in `.work/`, not here. Capabilities are in
    modal; desktop detail and playlist play-through use the workspace header without a
    duplicate row. Climb detail and editing share automatic scene lighting
    through `useEditorLighting`; view changes never request a Bluetooth chooser.
-   Fast community-catalog filtering and shareable provider URLs remain downstream of
-   catalog bootstrap.
+   The Kilter catalog surface opens its runtime service on first entry,
+   shows explicit Manage/download consent, and filters complete Fullride-compatible
+   snapshot rows by name, exact grade and angle in bounded 25-row cursor pages.
+   Catalog results reuse read-only detail and lighting. The broader quality, ascent,
+   setter, hold-count and grade-consensus filter set and provider-climb URLs remain
+   future capabilities; this first slice has neither auto-refresh nor total-result
+   claims.
 7. **Route Editor** — a reducer-driven responsive workspace edits unrestricted local
    climbs, coalesces lifecycle-aware autosaves, exposes conflict/failure recovery, and
    composes the renderer with `useEditorLighting`. Connected-board scene changes are
@@ -214,12 +240,20 @@ An isolated [experimental Capacitor shell](../prototypes/ios/README.md) packages
 existing screens under a separate app identity. Its dedicated entry point composes
 native BLE and lifecycle plugins, disables PWA generation, and omits service-worker
 registration and the update coordinator. The normal browser entry retains update admission.
-No production framework is selected, and native compilation, simulator behavior,
-real-board BLE, storage/backup durability, and authentication remain unverified. Access design
+No production framework is selected. Native compilation and startup are verified on
+the iPhone 17 / iOS 27.0 simulator. Synthetic-data startup, scene/lifecycle, safe-area,
+focus, and application-update preservation checks passed. A complete backup was
+exported through Save to Files, restored from an empty simulator library, and re-exported
+to a canonically equal snapshot after relaunch. Real-board BLE, real-device storage
+pressure, and authentication remain unverified. The observed startup screenshot showed
+status-bar and app-control safe areas without overlap.
+Access design
 must account for the native origin and session return path; its existing same-origin
-web units are held for revision. Native persistence/backup and bootstrap/update
-behavior require explicit adapters or proof, rather than assuming all browser
-facilities carry over.
+web units are held for revision. Native backup delivery encodes UTF-8 JSON into the
+app cache and passes a Filesystem URI to Share. Successful sharing removes the cache
+copy; cancellation or rejection retains it until the next export preflight because
+a nested OS destination may still need the file. Native bootstrap/update integration
+still requires explicit adapters or proof, rather than assuming all browser facilities carry over.
 The intended boundary uses current membership authorization, explicit retry-safe
 publication, stable contribution identities, and immutable source revisions.
 Locally retained copies record source provenance without surrendering local ownership;
@@ -268,10 +302,12 @@ App runtime ──▶ update coordinator ──▶ prompt-mode Workbox registrat
   └──▶ shared admission lock ──▶ workspace safety gates ──▶ exclusive apply ──▶ requester reload
 ```
 
-Local climb reads and writes are fully offline. Installed catalog reads are likewise
-designed to stay local once catalog bootstrap ships. Only provider adapters and
-controller transports cross network/device boundaries, so domain, rendering,
-browsing, editing, and logging remain testable without hardware or network.
+Local climb reads and writes are fully offline. Installed catalog reads are local;
+manifest metadata and snapshot download require network only after opening Manage and
+choosing the explicit download action. No background or automatic source refresh runs.
+Only provider adapters and controller transports cross network/device boundaries, so
+domain, rendering, browsing, editing, and logging remain testable without hardware
+or network.
 
 ## Conventions
 
@@ -333,8 +369,8 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
 | Capacitor 8.4.3 + BLE 8.3.0 + App 8.1.1      | Isolated iOS prototype only: bundled shared UI, native byte transport, foreground lifecycle; no background BLE mode                                                                                             |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |
-| BoardLib (Python)                           | Bootstrap the SQLite catalog; sync-protocol reference                                                                                                                                                          |
-| Kilter sync API                             | Incremental catalog + optional logbook sync                                                                                                                                                                    |
+| BoardLib (Python)                           | Legacy bootstrap and sync-protocol reference; not a verified current catalog source                                                                                                                            |
+| Kilter sync API                             | Legacy protocol reference; current availability and coverage are unverified                                                                                                                                   |
 | ONNX Runtime Web (WASM)                     | In-browser grade-prediction inference (GBT→ONNX export)                                                                                                                                                        |
 | Cloudflare Workers (Static Assets)          | Distribute the installable PWA to friends; no app server. Deployed via GitHub Actions + `cloudflare/wrangler-action`, CI-gated. See [cloudflare-deploy brief](../.research/briefs/cloudflare-deploy/parent.md) |
 | Climbdex / Grip Connect / fake_kilter_board | Reference implementations (search, BLE, protocol)                                                                                                                                                              |

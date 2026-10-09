@@ -8,6 +8,7 @@ import { FIRST_DRAFT_ID } from '../drafts/test-fixtures';
 import { activeInstallationId, createAppInstallationRegistry } from '../app/installations';
 import type { CruxControlRuntime } from '../app/create-runtime';
 import { CruxControlWorkspace } from '../app/CruxControlWorkspace';
+import { unopenedCatalogService } from '../catalog/test-service.ts';
 
 describe('create-save-light integration', () => {
   it('persists and lights unrestricted semantic/custom assignments through the real seams', async () => {
@@ -31,6 +32,7 @@ describe('create-save-light integration', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
+      catalog: unopenedCatalogService(),
       controller: installation.createController(),
       close: vi.fn(),
     };

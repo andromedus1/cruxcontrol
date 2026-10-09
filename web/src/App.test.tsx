@@ -4,6 +4,7 @@ import { App } from './App.tsx';
 import { createAppInstallationRegistry, activeInstallationId } from './app/installations';
 import type { CruxControlRuntime } from './app/create-runtime';
 import { createAppUpdateService } from './pwa/update-service.ts';
+import { unopenedCatalogService } from './catalog/test-service.ts';
 
 class TestRegistration extends EventTarget {
   active: ServiceWorker | null = null;
@@ -35,6 +36,7 @@ function testRuntime(): CruxControlRuntime {
       update: vi.fn(),
       delete: vi.fn(),
     },
+    catalog: unopenedCatalogService(),
     controller: null,
     close: vi.fn(),
   };
@@ -60,6 +62,7 @@ describe('App', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
+      catalog: unopenedCatalogService(),
       controller: null,
       close: vi.fn(),
     };

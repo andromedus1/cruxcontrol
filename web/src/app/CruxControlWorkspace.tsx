@@ -17,9 +17,11 @@ import type { BoardLightState } from '../board-control/light-controller.ts';
 import { BoardControlBar } from '../climb-browser/BoardControlBar';
 import { ScreenAwakeControl } from '../pwa/ScreenAwakeControl';
 import './CruxControlWorkspace.css';
+import { CatalogBrowser } from '../catalog/CatalogBrowser.tsx';
+import type { CatalogServiceSnapshot } from '../catalog/service.ts';
 
 export type LocalClimbCollection = 'finished' | 'drafts' | 'trash';
-export type WorkspaceDestination = LocalClimbCollection | 'lists';
+export type WorkspaceDestination = LocalClimbCollection | 'lists' | 'kilter';
 
 const collectionCopy: Record<
   LocalClimbCollection,
@@ -42,7 +44,7 @@ const collectionCopy: Record<
   },
 };
 
-const destinations: readonly WorkspaceDestination[] = ['finished', 'drafts', 'trash', 'lists'];
+const destinations: readonly WorkspaceDestination[] = ['finished', 'drafts', 'trash', 'lists', 'kilter'];
 
 function draftCompatibilityIssue(
   draft: LocalClimbDraft,
@@ -139,6 +141,8 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const operationCount = useRef(0);
   const [pendingOperations, setPendingOperations] = useState(0);
   const [updateSnapshot, setUpdateSnapshot] = useState<AppUpdateSnapshot | null>(() => updateService?.getSnapshot() ?? null);
+  const [catalogSnapshot, setCatalogSnapshot] = useState<CatalogServiceSnapshot>(() => runtime.catalog.getSnapshot());
+  const [catalogManageOpen, setCatalogManageOpen] = useState(false);
   const updateBlocksWorkspace = updateSnapshot?.status === 'applying' || updateSnapshot?.status === 'reload-required';
 
   useEffect(() => {
@@ -158,6 +162,11 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
     }
     return updateService.subscribe(setUpdateSnapshot);
   }, [updateService]);
+
+  useEffect(() => {
+    setCatalogSnapshot(runtime.catalog.getSnapshot());
+    return runtime.catalog.subscribe(() => setCatalogSnapshot(runtime.catalog.getSnapshot()));
+  }, [runtime.catalog]);
 
   const beginOperation = useCallback(() => {
     operationCount.current += 1;
@@ -269,9 +278,13 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
               ? 'Save your list changes before updating.'
               : playlistSafety.playing
                 ? 'Finish the list play-through before updating.'
-                : playlistSafety.modalOpen
+              : playlistSafety.modalOpen
                   ? 'Finish the open list task before updating.'
-                  : boardBlockReason;
+                  : catalogManageOpen
+                    ? 'Finish managing the catalog before updating.'
+                    : catalogSnapshot.operation === 'downloading' || catalogSnapshot.operation === 'installing'
+                      ? 'Wait for the catalog download or installation to finish before updating.'
+                      : boardBlockReason;
 
   useEffect(() => {
     updateService?.setBlocked(workspaceBlockReason);
@@ -341,6 +354,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const visibleDrafts = useMemo(
     () =>
       collection === 'lists'
+        || collection === 'kilter'
         ? []
         : drafts.filter(
             (draft) =>
@@ -376,12 +390,14 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const selectedDraft = compatibleDrafts.find(
     (draft) => toClimbViewRecord(draft).key === selectedKey,
   );
-  const copy = collection === 'lists' ? null : collectionCopy[collection];
+  const copy = collection === 'lists' || collection === 'kilter' ? null : collectionCopy[collection];
 
   const adoptDraftIdentity = useCallback(
     (draft: LocalClimbDraft) => {
       replaceDraft(draft);
-      setCollection((current) => current === 'lists' ? current : draft.status === 'draft' ? 'drafts' : 'finished');
+      setCollection((current) => current === 'lists' || current === 'kilter'
+        ? current
+        : draft.status === 'draft' ? 'drafts' : 'finished');
       setEditing(draft.id);
     },
     [replaceDraft],
@@ -452,8 +468,8 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
               setMembershipDraft(null);
             }}
           >
-            <span>{value === 'lists' ? 'Lists' : collectionCopy[value].label}</span>
-            <span
+            <span>{value === 'lists' ? 'Lists' : value === 'kilter' ? 'Kilter' : collectionCopy[value].label}</span>
+            {value !== 'kilter' && <span
               className="collection-switch__count"
               aria-label={`${counts[value]} ${
                 value === 'lists'
@@ -464,9 +480,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
                     ? 'climb'
                     : 'climbs'
               }`}
-            >
-              {counts[value]}
-            </span>
+            >{counts[value]}</span>}
           </button>
         ))}
       </nav>
@@ -503,7 +517,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           <button type="button" onClick={() => void refreshPlaylists(false)}>Retry loading lists</button>
         </div>
       )}
-      {collection !== 'lists' && incompatibleDrafts.length > 0 && (
+      {collection !== 'lists' && collection !== 'kilter' && incompatibleDrafts.length > 0 && (
         <section
           className="incompatible-climbs"
           role="region"
@@ -539,7 +553,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           </ul>
         </section>
       )}
-      {collection !== 'lists' && collection !== 'trash' && (
+      {collection !== 'lists' && collection !== 'trash' && collection !== 'kilter' && (
         <div className="workspace-import-actions">
           <button
             className="button button--secondary"
@@ -550,7 +564,15 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           </button>
         </div>
       )}
-      {collection === 'lists' ? (
+      {collection === 'kilter' ? (
+        <CatalogBrowser
+          service={runtime.catalog}
+          definition={runtime.installation.definition}
+          defaultAngle={runtime.installation.config.angle}
+          controller={runtime.controller}
+          onManageOpenChange={setCatalogManageOpen}
+        />
+      ) : collection === 'lists' ? (
         playlistsLoaded ? <PlaylistLibrary
           playlists={playlists}
           localClimbs={drafts}
@@ -670,6 +692,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
       {backingUp && runtime.backup && (
         <LibraryBackupDialog
           service={runtime.backup}
+          delivery={runtime.backupDelivery}
           onClose={() => {
             setBackingUp(false);
             queueMicrotask(() => backupButtonRef.current?.focus());

@@ -1,10 +1,14 @@
 # iOS shell prototype
 
 This experiment packages the existing React screens with Capacitor 8.4.3 and a
-native BLE adapter to prepare for iPhone testing. Native compilation and real-board
-operation remain unverified; Capacitor has not been selected as the production
-framework. The isolated package pins `@capacitor-community/bluetooth-le` 8.3.0 and
-`@capacitor/app` 8.1.1.
+native BLE adapter to prepare for iPhone testing. Xcode 27 / iOS 27 build and
+startup pass, and the isolated simulator has verified synthetic library editing,
+save/relaunch, import, ordered lists, update preservation, and native backup file
+delivery. Physical-board operation, storage-pressure durability, native sign-in,
+and production distribution remain unverified. Capacitor has not been selected as
+the production framework. The isolated package pins
+`@capacitor-community/bluetooth-le` 8.3.0, `@capacitor/app` 8.1.1,
+`@capacitor/filesystem` 8.1.4, and `@capacitor/share` 8.0.3.
 
 The separate app uses bundle ID `io.github.andromedus1.cruxcontrol.prototype` and
 display name **CruxControl Prototype**. It loads bundled assets, with no remote
@@ -55,30 +59,34 @@ npm run sync
 `sync` typechecks the adapter, builds the shared web code in prototype mode, copies
 its assets, and synchronizes the native plugins into the committed Swift Package
 Manager project, `ios/App/App.xcodeproj`. Re-run it after web, adapter, or plugin
-changes. Generated bundles and installed packages are ignored by Git.
+changes. The privacy manifest declares the file-timestamp API reason required by
+the Filesystem plugin for app-container file access. Generated bundles and
+installed packages are ignored by Git.
 
-A native build needs full Xcode 26 or newer and an installed iOS simulator runtime.
-Standalone Command Line Tools are insufficient. Capacitor's requirements are in
-its [environment setup guide](https://capacitorjs.com/docs/getting-started/environment-setup).
-As checked on 2026-09-28, the development Mac has macOS 26.3, selects standalone
-Command Line Tools, and has no installed Xcode app. Xcode 26.6 supports that macOS
-version; Xcode 27 requires macOS 26.6 or newer,
-according to [Apple's compatibility table](https://developer.apple.com/xcode/system-requirements/).
-An OS upgrade is therefore not required to try this prototype with compatible Xcode.
+A native build needs full Xcode and an installed iOS simulator runtime; standalone
+Command Line Tools are insufficient. Capacitor's requirements are in its
+[environment setup guide](https://capacitorjs.com/docs/getting-started/environment-setup).
+The verified development host is macOS 26.6 arm64 with Xcode 27.0 (27A266a),
+the iOS 27.0 simulator runtime (24A434), and Node 20.20.2 / 22.23.3 installed
+through nvm. The shell's global Node selection and developer directory remain
+unchanged. Apple's [Device Hub documentation](https://developer.apple.com/documentation/xcode/device-hub)
+covers simulator management in this Xcode version.
 
-After installing compatible Xcode, completing its first-launch setup, and adding
-an iOS simulator runtime, use these commands from the repository root:
+From the repository root, open the project or run the repeatable isolated startup
+check with an explicitly selected simulator ID:
 
 ```bash
 npm --prefix prototypes/ios run open
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer npm --prefix prototypes/ios run run
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer prototypes/ios/scripts/smoke-simulator.sh YOUR_SIMULATOR_ID
 ```
 
-Adjust `DEVELOPER_DIR` if Xcode has a different name or location. This selects the
-tools for that command without changing the global developer directory. `open`
-opens the project in Xcode; `run` rebuilds/syncs and asks for a run target. Select
-an iPhone simulator. No signing team is committed; physical-device signing remains
-to be configured when a test phone is available.
+Adjust `DEVELOPER_DIR` if Xcode has a different name or location. The script builds,
+installs, launches, checks that the process remains alive after five seconds, and
+saves a startup screenshot and logs to a temporary evidence directory (or the
+optional second argument). Inspect the screenshot manually. The verified isolated
+target was an iPhone 17 simulator. No signing team or simulator identifier is
+committed; physical-device signing remains to be configured when a test phone is
+available.
 
 ## Synthetic library
 
@@ -93,9 +101,12 @@ file picker first. Keep experiments in this separate app; do not import personal
 backups or alter the established browser/PWA origin to perform these checks.
 
 The shell currently uses the existing IndexedDB repositories. Their availability
-here is not a durable native-storage decision. Backup file selection, download,
-and recovery through WKWebView also remain unproved. A successful reload or
-relaunch does not establish preservation under storage pressure or across updates.
+here is not a durable native-storage decision. In the isolated iPhone 17 / iOS 27
+simulator, the synthetic fixture imported through the normal picker, a created V4
+draft survived save and relaunch, and the fixture's ordered list contents remained
+intact. A native app update also retained the synthetic records and list order.
+These checks do not establish preservation under storage pressure or on physical
+devices.
 
 ## Checks and evidence boundaries
 
@@ -118,34 +129,53 @@ The transport tests exercise a fake native client, including explicit connection
 write ordering/modes, copied buffers, cancellation, stale completions, failures,
 and shared Fullride light/clear packets. They do not execute CoreBluetooth. The
 browser smoke checks startup, fixture restore/export, and preservation through
-browser reload in Chromium. It cannot establish that the Xcode project compiles or
-that these operations work in WKWebView. Native compile and simulator checks have
-not yet run.
+browser reload in Chromium. It cannot establish that these operations work in
+WKWebView. Native compilation, isolated simulator launch, and the interactions
+recorded below pass; startup shows no Bluetooth permission prompt. Scene safe-area
+layout keeps controls clear of the status bar, and focusing Name or Grade does not
+cause horizontal page zoom.
 
-Once Xcode is available, record simulator results against the commit, Xcode version,
-simulator model, and iOS runtime in the owning work item:
+Record further simulator results against the commit, Xcode version, simulator model,
+and iOS runtime in the owning work item:
 
 - Launch the packaged app and navigate Drafts, Finished, Trash, Lists, and the editor.
   Check board rendering, scrolling, text input, and navigation back to the library.
 - Restore the fixture through the normal UI. Confirm four climbs, both lists,
   membership order, the missing-climb reference, and the saved effect recipe.
+  The actual simulator check restored four climbs and two playlists; the ordered
+  list check preserved fixture order and the missing-reference position.
 - Edit a synthetic climb, finish saving, terminate and relaunch the app, and confirm
   the edit and list order remain. Record the original fixture and intentional edit
   separately so preservation comparisons are meaningful.
-- Export through **Download library backup** and inspect the actual saved file.
-  Verify IDs, revisions, lifecycle states, list ordering/membership, and recipes;
-  restore into a separate empty test simulator and compare. If file selection or
-  download fails, record the native gap instead of counting the dialog as a pass.
+- Export through **Save or share library backup**, cancel once, then retry and
+  choose **Save to Files** in the iOS share sheet. Cancellation leaves the dialog
+  usable and retains the app-owned cache copy until the next export preflight,
+  because a nested share destination may still need it. The successful path saves
+  an actual JSON file; the app reports that export completed and asks users to check the chosen destination. The simulator's saved JSON was decoded
+  with the production codec and matched all four fixture records, both ordered
+  playlists, Trash, missing-reference membership and effect recipe, plus the
+  separately created V4 draft. The owned cache copy is removed after successful
+  share completion. A separate empty simulator reviewed and restored the saved file
+  through the normal picker, retained its five climbs and two playlists after
+  relaunch, and re-exported a canonical snapshot matching the first export in
+  every record and ordered membership (ignoring the export timestamp). Its owned
+  cache copy was also removed after the share sheet completed. The corrected
+  cancellation/retry path was then verified with a distinct OS destination name
+  and another exact canonical comparison. Include repeated exports to an existing
+  filename in physical-device picker acceptance.
 - Press **Connect** and confirm unsupported Bluetooth is reported: the native BLE
   plugin does not support the iOS simulator. Library startup should not initialize
   Bluetooth or open a permission prompt. No simulated board success is added.
 
-All simulator checks above are pending. A real iPhone and Fullride board are required
-for light/clear, permission denial, interruption/reconnect, foreground recovery,
+The interactive simulator checks above establish behavior only for the isolated
+synthetic dataset and the exercised simulator paths. A real iPhone and Fullride
+board are required for light/clear, permission denial,
+interruption/reconnect, foreground recovery,
 and actual-device responsiveness. Check that backgrounding ends the session and
 returning requires explicit reconnect before lighting or effects can resume.
-Synthetic-data preservation across an app update, an explicit durable-storage
-strategy, and native sign-in/API behavior also remain acceptance gates.
+Synthetic-data preservation across an app update passed on the simulator.
+Physical-device update preservation, an explicit durable-storage strategy, and
+native sign-in/API behavior remain acceptance gates.
 
 The [native BLE feature](../../.work/active/features/epic-ios-controller-bridge-native-ble.md)
 owns adapter preparation and its review/CI evidence. The

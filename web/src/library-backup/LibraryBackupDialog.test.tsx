@@ -8,6 +8,7 @@ import { playlistId, playlistRevision } from '../playlists/codec.ts';
 import type { LocalPlaylist } from '../playlists/types.ts';
 import { LibraryBackupDialog } from './LibraryBackupDialog.tsx';
 import { LibraryBackupService } from './service.ts';
+import type { LibraryBackupDelivery, LibraryBackupDeliveryResult } from './delivery.ts';
 import type { LibraryBackupStore } from './types.ts';
 
 const id = localDraftId('00000000-0000-4000-8000-000000000501');
@@ -134,14 +135,102 @@ describe('recovery failure and async boundaries', () => {
     const pending = deferred<{ filename: string; text: string }>();
     const service = new LibraryBackupService(store());
     vi.spyOn(service, 'exportFile').mockReturnValue(pending.promise);
-    const onClose = vi.fn(), createUrl = vi.fn(() => 'blob:test');
-    const { unmount } = render(<LibraryBackupDialog service={service} onClose={onClose} onRestored={vi.fn()} createObjectUrl={createUrl} revokeObjectUrl={vi.fn()} />);
+    const onClose = vi.fn();
+    const delivery: LibraryBackupDelivery = { kind: 'download', deliver: vi.fn(async () => ({ status: 'download-started' as const })) };
+    const { unmount } = render(<LibraryBackupDialog service={service} onClose={onClose} onRestored={vi.fn()} delivery={delivery} />);
     fireEvent.click(screen.getByRole('button', { name: 'Download library backup' }));
     fireEvent(screen.getByRole('dialog'), new Event('cancel', { bubbles: true, cancelable: true }));
     expect(onClose).not.toHaveBeenCalled();
     unmount();
     await act(async () => pending.resolve({ filename: 'library.json', text: fileText() }));
-    expect(createUrl).not.toHaveBeenCalled();
+    expect(delivery.deliver).not.toHaveBeenCalled();
+  });
+
+  it('keeps the dialog guarded through native delivery and reports a completed share', async () => {
+    const pending = deferred<LibraryBackupDeliveryResult>();
+    const delivery: LibraryBackupDelivery = { kind: 'share', deliver: vi.fn(() => pending.promise) };
+    const onClose = vi.fn();
+    render(<LibraryBackupDialog service={new LibraryBackupService(store())} onClose={onClose} onRestored={vi.fn()} delivery={delivery} />);
+    expect(screen.getByRole('heading', { name: 'Save a backup' })).toBeInTheDocument();
+    expect(screen.getByText('Choose Save to Files or another destination in the iOS share sheet.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save or share library backup' }));
+    await waitFor(() => expect(delivery.deliver).toHaveBeenCalledOnce());
+    expect(screen.getByText('Preparing backup and opening share options…')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save or share library backup' })).toBeDisabled();
+    expect(screen.getByLabelText('Library backup file')).toBeDisabled();
+    fireEvent(screen.getByRole('dialog'), new Event('cancel', { bubbles: true, cancelable: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save or share library backup' }));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(delivery.deliver).toHaveBeenCalledOnce();
+
+    await act(async () => pending.resolve({ status: 'shared' }));
+    expect(await screen.findByText('Backup export completed. Check your chosen destination.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeEnabled();
+  });
+
+  it('reports cancellation without an error and offers a fresh export attempt', async () => {
+    const delivery: LibraryBackupDelivery = {
+      kind: 'share',
+      deliver: vi.fn()
+        .mockResolvedValueOnce({ status: 'cancelled' })
+        .mockResolvedValueOnce({ status: 'shared' }),
+    };
+    render(<LibraryBackupDialog service={new LibraryBackupService(store())} onClose={vi.fn()} onRestored={vi.fn()} delivery={delivery} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save or share library backup' }));
+    expect(await screen.findByText('Backup export canceled.')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save or share library backup' }));
+    expect(await screen.findByText('Backup export completed. Check your chosen destination.')).toBeInTheDocument();
+    expect(delivery.deliver).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows an export-specific retry after a delivery failure', async () => {
+    const delivery: LibraryBackupDelivery = {
+      kind: 'share',
+      deliver: vi.fn()
+        .mockRejectedValueOnce(new Error('Unable to write the backup file.'))
+        .mockResolvedValueOnce({ status: 'shared' }),
+    };
+    render(<LibraryBackupDialog service={new LibraryBackupService(store())} onClose={vi.fn()} onRestored={vi.fn()} delivery={delivery} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save or share library backup' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to write the backup file.');
+    expect(screen.getByRole('button', { name: 'Try export again' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Choose another file' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Try export again' }));
+    expect(await screen.findByText('Backup export completed. Check your chosen destination.')).toBeInTheDocument();
+  });
+
+  it('aborts an in-flight delivery when unmounted and ignores its eventual result', async () => {
+    const pending = deferred<LibraryBackupDeliveryResult>();
+    let signal: AbortSignal | undefined;
+    const delivery: LibraryBackupDelivery = {
+      kind: 'share',
+      deliver: vi.fn((_file, nextSignal) => {
+        signal = nextSignal;
+        return pending.promise;
+      }),
+    };
+    const view = render(<LibraryBackupDialog service={new LibraryBackupService(store())} onClose={vi.fn()} onRestored={vi.fn()} delivery={delivery} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save or share library backup' }));
+    await waitFor(() => expect(delivery.deliver).toHaveBeenCalledOnce());
+    expect(signal?.aborted).toBe(false);
+    view.unmount();
+    expect(signal?.aborted).toBe(true);
+    await act(async () => pending.resolve({ status: 'shared' }));
+  });
+
+  it('shows a temporary-copy cleanup warning without changing the completed outcome', async () => {
+    const delivery: LibraryBackupDelivery = {
+      kind: 'share',
+      deliver: vi.fn(async () => ({
+        status: 'shared' as const,
+        warning: "The temporary backup copy could not be removed from this app's storage.",
+      })),
+    };
+    render(<LibraryBackupDialog service={new LibraryBackupService(store())} onClose={vi.fn()} onRestored={vi.fn()} delivery={delivery} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save or share library backup' }));
+    expect(await screen.findByText("Backup export completed. Check your chosen destination. The temporary backup copy could not be removed from this app's storage.")).toBeInTheDocument();
   });
 });
 

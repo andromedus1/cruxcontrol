@@ -23,4 +23,5 @@ export interface ClimbViewRecord {
   readonly grade?: string;
   readonly setter?: string;
   readonly description?: string;
+  readonly sourceLabel?: string;
 }

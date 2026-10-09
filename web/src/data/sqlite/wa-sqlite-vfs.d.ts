@@ -15,5 +15,15 @@ declare module 'wa-sqlite/src/examples/AccessHandlePoolVFS.js' {
     readonly isReady: Promise<unknown>;
     /** Fixed VFS name ('AccessHandlePool'); pass as `open_v2`'s zVfs. */
     readonly name: string;
+    xOpen(name: string | null, fileId: number, flags: number, pOutFlags: DataView): number;
+    xClose(fileId: number): number;
+    xRead(fileId: number, pData: Uint8Array, iOffset: number): number;
+    xWrite(fileId: number, pData: Uint8Array, iOffset: number): number;
+    xTruncate(fileId: number, iSize: number): number;
+    xSync(fileId: number, flags: number): number;
+    xFileSize(fileId: number, pSize64: DataView): number;
+    xAccess(name: string, flags: number, pResOut: DataView): number;
+    xDelete(name: string, syncDir: number): number;
+    close(): Promise<void>;
   }
 }

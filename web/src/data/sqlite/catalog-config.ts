@@ -1,16 +1,12 @@
-/**
- * Shared configuration for the SQLite catalog read path.
- *
- * The filename is the single seam between this feature (which opens the DB
- * READONLY) and the future catalog-bootstrap feature (which writes it). Both
- * must agree on the OPFS path, so it lives here as the single source of truth.
- */
+/** Shared OPFS and receipt names for catalog bootstrap and its read adapter. */
+export const CATALOG_OPFS_DIRECTORY = 'cruxcontrol-catalog';
+export const CATALOG_SLOT_FILENAMES = {
+  a: 'catalog-a.sqlite3',
+  b: 'catalog-b.sqlite3',
+} as const;
+export type CatalogSlot = keyof typeof CATALOG_SLOT_FILENAMES;
 
-/**
- * Name of the catalog database file inside OPFS.
- *
- * The catalog-bootstrap feature writes the synced Kilter catalog to this path;
- * this feature opens it READONLY. Keep it stable — changing it orphans any
- * already-downloaded catalog.
- */
-export const CATALOG_DB_FILENAME = 'catalog.sqlite3';
+export const CATALOG_RECEIPT_DATABASE = 'cruxcontrol-catalog-metadata';
+export const CATALOG_RECEIPT_STORE = 'active';
+export const CATALOG_RECEIPT_KEY = 'kilter-fullride-7x10';
+export const CATALOG_OWNER_LOCK = 'cruxcontrol-catalog-owner';
