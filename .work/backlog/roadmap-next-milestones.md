@@ -15,6 +15,15 @@ schedule, service architecture, or new feature decomposition is selected here.
 
 ## Agreed order
 
+Andrew confirmed the immediate sequence after PR #31 merged (2026-10-09):
+update and dogfood the older catalog on the connected Android phone, then pursue
+current Kilter coverage, then partner sharing. Physical iPhone testing waits for
+hardware; retain the native-client proof gate for production sharing. Logbook,
+additional board manufacturers, grade prediction and recommendations are explicitly
+deferred for now. USB debugging enables phone maintenance but does not itself
+establish current catalog acquisition. Preserve and validate a fresh whole-library
+backup before updating the phone.
+
 1. **Reliable everyday sessions.** The six selected fixes are implemented and
    verified in [PR #20](https://github.com/andromedus1/cruxcontrol/pull/20):
    [corrupt-climb recovery](../archive/idea-corrupt-climb-list-recovery.md),
