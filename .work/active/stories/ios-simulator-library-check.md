@@ -1,7 +1,7 @@
 ---
 id: ios-simulator-library-check
 kind: story
-stage: review
+stage: done
 tags: [infra, ui]
 parent: null
 depends_on: [ios-simulator-build-smoke]
@@ -107,5 +107,6 @@ acceptance gaps; this bounded simulator-check story did not promise those outcom
 Approve the scoped synthetic verification after real native interaction and saved
 file comparison. The evidence distinguishes simulator proof, browser tests and
 physical-device requirements, and concrete encountered app bugs were separately
-parked/scoped before repair. No independent story reviewer ran. Keep at review
-until the updated prototype documentation and required aggregate CI are complete.
+parked/scoped before repair. No independent story reviewer ran. Prototype documentation is aligned in `9b009c7`. Required aggregate CI passed
+at `b10cd97` (run 37975046470: web, iOS prototype, ML; deploy skipped), covering
+the tested native implementation. No unresolved findings remain for this story.
