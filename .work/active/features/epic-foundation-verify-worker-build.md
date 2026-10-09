@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-verify-worker-build
 kind: feature
-stage: implementing
+stage: review
 tags: [infra]
 parent: epic-foundation
 depends_on: [kilter-community-browser]
@@ -21,19 +21,20 @@ the worker while leaving the application import missing. `kilter-community-brows
 wires the lazy catalog service into the real application runtime; this feature checks
 that resulting production graph through the existing PWA artifact checker.
 
-Design is complete; implementation is pending the unmet `kilter-community-browser`
-dependency. No production artifact verification is claimed by this design pass.
+Design is complete, and `kilter-community-browser` reached `stage: review` at
+`90881f3`. The implementation and fresh production artifact verification are
+recorded below.
 
 ## Acceptance criteria
-- [ ] The normal production build emits a catalog worker reachable from the application
+- [x] The normal production build emits a catalog worker reachable from the application
       entry and the hashed `wa-sqlite-*.wasm` referenced by that worker's module graph.
-- [ ] The existing PWA checker fails on missing or unreferenced worker/WASM assets,
+- [x] The existing PWA checker fails on missing or unreferenced worker/WASM assets,
       even if matching orphan files from a test harness exist in the output directory.
-- [ ] The catalog worker and referenced WASM are precached as app code; catalog database
+- [x] The catalog worker and referenced WASM are precached as app code; catalog database
       exclusion, private artwork, manifest, and icon checks remain effective.
-- [ ] CI runs the checker unconditionally after its normal production build. Unit tests
+- [x] CI runs the checker unconditionally after its normal production build. Unit tests
       use isolated filesystem fixtures and never reuse or implicitly build shared `dist/`.
-- [ ] Verification needs no legacy catalog snapshot, new test entry, separate build
+- [x] Verification needs no legacy catalog snapshot, new test entry, separate build
       harness, public data commit, or deployment.
 
 ## Design decisions
@@ -124,9 +125,10 @@ here; do not add a test entry to force asset emission.
 
 ## Implementation order
 
-After `kilter-community-browser` satisfies its dependency, implement the reference
-check and isolated tests, then add the CI step and verify the fresh normal build. One
-owner can complete this in one stride; no child stories are needed.
+After `kilter-community-browser` reached review, implementation followed the planned
+sequence: inspect the emitted graph, add the app-rooted checker and isolated fixture
+tests, add the post-build CI step, then verify a fresh normal build. No child stories
+were needed.
 
 ## Testing
 
@@ -165,6 +167,16 @@ runtime, OPFS, physical-device, source coverage, or download-consent proof from 
 - **Emission is narrower than execution:** valid files and references can still fail
   at runtime. The owning bootstrap/browser suites retain that responsibility; this
   feature must not broaden into a duplicate installation harness.
+
+## Implementation notes
+- Execution capability: Codex, one-owner inline implementation; the bounded scope is a static build checker, fixture contract tests, and one post-build CI step.
+- Review weight: standard (project convention in `.work/CONVENTIONS.md`).
+- Files changed: `web/scripts/check-pwa-build.mjs`, `web/scripts/check-pwa-build.d.mts`, `web/src/pwa/check-pwa-build.test.ts`, `.github/workflows/ci.yml`, and this feature item.
+- Tests added: 16 fixture cases cover relative and root-relative app/worker/WASM references, actual app graph reachability, missing/empty targets, WASM magic, exact precache paths, orphan assets, and existing PWA prerequisites. Fixtures use temporary directories and do not build or inspect shared `web/dist/`.
+- Simplification: removed the companion test's implicit Vite build and stale shared-`dist` reuse; kept the existing checker as the single production artifact assertion.
+- Discrepancies from design: none.
+- Adjacent issues parked: none.
+- Verification: Node `20.20.2`; focused Vitest file passed (16/16); web lint and typecheck passed; fresh `npm run build -w @cruxcontrol/web` passed; `node web/scripts/check-pwa-build.mjs` passed for `assets/catalog.worker-DL1uQ-GU.js` and `assets/wa-sqlite-Bkv7CwRB.wasm`, with both paths in the generated service worker precache.
 
 ## Foundation references
 - `epic-foundation-sqlite-readpath` — the read path whose build graph this verifies.
