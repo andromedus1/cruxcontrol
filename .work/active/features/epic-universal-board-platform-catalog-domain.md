@@ -443,8 +443,13 @@ independent review and green required CI through the parent delivery workflow.
 - Execution capability: GPT-6 Luna (high), selected by the orchestrator for this bounded adapter and projection delivery.
 - Review weight: standard, from `.work/CONVENTIONS.md`.
 - Files changed: `web/src/catalog/types.ts`; `web/src/data/catalog/kilter-catalog.ts`; `web/src/data/catalog/kilter-projection.ts`; their two tests and the synthetic SQL fixture.
-- Tests added: 25 tests covering complete-frame mapping, rejection of incompatible rows, real-SQLite filters/details/grades, literal search input, cursor invalidation and traversal beyond 250 rejected candidates, identity isolation, readiness and read errors, and row immutability.
+- Tests added: 28 tests covering complete-frame mapping, rejection of incompatible rows, real-SQLite filters/details/grades, literal search input, cursor invalidation and traversal beyond 250 rejected candidates, identity isolation, readiness and read errors, and row immutability.
 - Simplification: no additional database model, worker, cache, query framework, or runtime dependency was introduced.
 - Discrepancies from design: none. The adapter selects the documented `climb_stats.difficulty_average` source column and aliases it at the boundary.
 - Adjacent issues parked: none.
-- Verification: Node 20.20.2; focused catalog tests 25/25 pass after final test edits; full web unit suite 689/689 pass; full web ESLint passes; TypeScript `--noEmit` passes; Vite production build passes.
+- Verification: Node 20.20.2; focused catalog tests 28/28 pass after review test fixes; full web unit suite 689/689 pass; full web ESLint passes; TypeScript `--noEmit` passes; Vite production build passes.
+
+### Review adjudication
+- Independent review: Claude, standard weight; functional review passed. The reviewer also exercised the ignored local snapshot: 6,037 valid 40° climbs traversed in 61 pages at the 251-row query bound without loss or duplicates, and 43,740 statistics projections matched a separate Python parser across 9,781 distinct climbs.
+- Accepted assurance gaps: added mixed frames with a valid hold followed by an unsupported placement, unknown role, and legacy role 12; added stale, malformed, overlong, wrong-version, blank-ID, and snapshot-mismatched cursor checks that each prove rejection before SQL; wrong-provider/revision details now assert no SQL.
+- No production defect was identified. The standard review is one pass; no re-review is requested. Keep the feature at `stage: review` until the parent workflow's required CI checks pass.

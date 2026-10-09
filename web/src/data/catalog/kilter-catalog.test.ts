@@ -8,7 +8,7 @@ import type { CatalogPort, Row, SqlValue } from '../port.ts';
 import { CatalogDb, configureSqliteWasm, type VfsBinding } from '../sqlite/catalog-db.ts';
 import { kilterFullride7x10Definition as definition } from '../../domain/boards/definitions/kilter-fullride-7x10.ts';
 import { providerId, providerSourceId } from '../../domain/boards/identity.ts';
-import type { CatalogClimbQuery } from '../../catalog/types.ts';
+import type { CatalogClimbQuery, CatalogCursor } from '../../catalog/types.ts';
 import { CatalogReadError } from '../../catalog/types.ts';
 import { createKilterCatalog } from './kilter-catalog.ts';
 
@@ -38,6 +38,27 @@ function portFor(db: CatalogDb): CatalogPort {
 const provenance = Object.freeze({
   source: 'synthetic fixture', snapshotId: 'fullride-fixture-v1', retrievedAt: null, coverage: null,
 });
+
+function validQueryRow(uuid: string): Row {
+  return {
+    source_uuid: uuid,
+    source_name: 'Synthetic row',
+    source_frames: 'p4117r42',
+    source_setter: 'fixture',
+    source_description: '',
+    source_layout_id: 8,
+    source_frames_count: 1,
+    source_is_draft: 0,
+    source_is_listed: 1,
+    stat_angle: 40,
+    stat_display_difficulty: 12,
+    stat_difficulty_average: 12,
+    stat_benchmark_difficulty: null,
+    stat_ascensionist_count: 1,
+    stat_quality_average: 2,
+    grade_label: 'V1',
+  };
+}
 
 beforeAll(async () => {
   const require = createRequire(import.meta.url);
@@ -155,7 +176,7 @@ describe('Kilter catalog queries', () => {
       async query<T extends Row = Row>(sql: string, params: readonly SqlValue[] = []): Promise<T[]> {
         calls += 1;
         queries.push({ sql, params });
-        return [];
+        return [validQueryRow('synthetic-a'), validQueryRow('synthetic-b')] as unknown as T[];
       },
       async isReady() { return true; },
       async close() {},
@@ -168,7 +189,21 @@ describe('Kilter catalog queries', () => {
     const page = await adapter.query({ angle: 40, limit: 1 });
     if (page.status !== 'ready') throw new Error('expected ready result');
     const cursor = page.value.nextCursor;
-    if (cursor) await expect(adapter.query({ angle: 40, name: 'changed', cursor })).rejects.toBeInstanceOf(TypeError);
+    expect(cursor).toBeTruthy();
+    const validCursor = cursor!;
+    await expect(adapter.query({ angle: 40, name: 'changed', cursor: validCursor })).rejects.toBeInstanceOf(TypeError);
+    const cursorData = JSON.parse(validCursor) as Record<string, unknown>;
+    const malformedCursors = [
+      'not-json',
+      'x'.repeat(4097),
+      JSON.stringify({ ...cursorData, version: 2 }),
+      JSON.stringify({ ...cursorData, lastId: ' ' }),
+    ];
+    for (const malformed of malformedCursors) {
+      await expect(adapter.query({ angle: 40, cursor: malformed as CatalogCursor })).rejects.toBeInstanceOf(TypeError);
+    }
+    const replacement = createKilterCatalog(recording, definition, { ...provenance, snapshotId: 'fixture-v2' });
+    await expect(replacement.query({ angle: 40, cursor: validCursor })).rejects.toBeInstanceOf(TypeError);
     expect(calls).toBe(1);
     expect(queries[0]!.sql).toContain('LIMIT ?');
     expect(queries[0]!.params.at(-1)).toBe(251);
@@ -196,6 +231,7 @@ describe('Kilter catalog queries', () => {
       layoutRevision: 'old-layout' as never,
     }, 40);
     expect(wrongRevision).toEqual({ status: 'ready', value: null });
+    expect(calls).toBe(0);
 
     const broken: CatalogPort = {
       async query() { throw new Error('schema missing'); },

@@ -58,7 +58,10 @@ describe('projectKilterClimb', () => {
 
   it.each([
     ['unknown role', { source_frames: 'p4117r99' }],
+    ['unknown role after a valid hold', { source_frames: 'p4117r42p4118r99' }],
+    ['legacy Original role after a valid hold', { source_frames: 'p4117r42p4118r12' }],
     ['unsupported placement', { source_frames: 'p999999r42' }],
+    ['unsupported placement after a valid hold', { source_frames: 'p4117r42p999999r43' }],
     ['duplicate placement', { source_frames: 'p4117r42p4117r43' }],
     ['partial token', { source_frames: 'p4117r42x' }],
     ['leading zero', { source_frames: 'p04117r42' }],
