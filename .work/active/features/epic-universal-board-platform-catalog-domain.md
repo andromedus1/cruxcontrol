@@ -1,7 +1,7 @@
 ---
 id: epic-universal-board-platform-catalog-domain
 kind: feature
-stage: review
+stage: done
 tags: [data]
 parent: null
 depends_on: [epic-universal-board-platform-domain-definition]
@@ -453,3 +453,12 @@ independent review and green required CI through the parent delivery workflow.
 - Independent review: Claude, standard weight; functional review passed. The reviewer also exercised the ignored local snapshot: 6,037 valid 40° climbs traversed in 61 pages at the 251-row query bound without loss or duplicates, and 43,740 statistics projections matched a separate Python parser across 9,781 distinct climbs.
 - Accepted assurance gaps: added mixed frames with a valid hold followed by an unsupported placement, unknown role, and legacy role 12; added stale, malformed, overlong, wrong-version, blank-ID, and snapshot-mismatched cursor checks that each prove rejection before SQL; wrong-provider/revision details now assert no SQL.
 - No production defect was identified. The standard review is one pass; no re-review is requested. Keep the feature at `stage: review` until the parent workflow's required CI checks pass.
+
+## Closure (2026-10-09)
+
+Approved after the recorded review and verified corrections. Required PR31 CI
+passed for commit39210d7: web lint/typecheck/tests/build/browser workflows and the
+prototype adapter/assets/browser lane; deployment was skipped.
+Evidence: https://github.com/andromedus1/cruxcontrol/actions/runs/37971170037 .
+Standard review closed after one independent Claude pass and verification of
+the accepted projection/cursor assurance fixes; no second review was run.
