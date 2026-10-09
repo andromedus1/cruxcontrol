@@ -179,11 +179,17 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 
 ### 6. Data Acquisition & Training Pipeline
 
-- Sync the Kilter catalog via the documented sync API (`POST /sync`),
-  bootstrapped with BoardLib (`boardlib database kilter kilter.db`).
-- Collect climbs + frames, `climb_stats` per angle, hold coordinates
-  (`holes`), and placement→hole→LED mappings.
-- Incremental sync via `shared_syncs` timestamps.
+- Treat the legacy Kilter sync protocol (`POST /sync`) and BoardLib bootstrap as
+  research/reference material, not as a verified current catalog source. The current
+  acquisition slice uses the supported catalog query adapter and safely reads
+  Fullride roles 42–45; complete official catalog coverage and a repeatable
+  acquisition pipeline remain future work.
+- The intended catalog model includes climbs + frames, `climb_stats` per angle,
+  hold coordinates (`holes`), and placement→hole→LED mappings. The current safe
+  query slice covers only Fullride roles 42–45.
+- Add incremental acquisition only after a supported current source and its change
+  semantics are established; the legacy `shared_syncs` timestamps are protocol
+  reference material.
 - Pipeline: SQLite → feature extraction → training dataset → model.
 - Add providers independently through import/sync adapters. Each import records
   source, retrieval time, provider-native identity, layout revision, and policy

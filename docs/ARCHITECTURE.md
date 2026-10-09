@@ -14,7 +14,8 @@ summary: >
   access/storage comparison guide its bounded collaboration service and retained local copies.
   An iPhone client proof now precedes further shared-service implementation.
   An isolated experimental Capacitor shell injects native BLE into the shared screens
-  and controller; native compilation and device acceptance are pending.
+  and controller; it now compiles and starts in an iPhone 17 simulator. Interactive
+  library checks and physical-device acceptance are pending.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; local SQLite through wa-sqlite AccessHandlePoolVFS in a Web Worker is the catalog read path."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
@@ -78,7 +79,9 @@ feature item bodies in `.work/`, not here. Capabilities are in
    are forbidden. Refused playback never rewrites saved assignments. The isolated
    iOS prototype supplies `NativeBleByteTransport` behind the same port. Its own
    composition root injects native I/O into the shared controller and library runtime;
-   browser inspection of prototype assets exposes unsupported control. Device
+   browser inspection of prototype assets exposes unsupported control. A storyboard-
+   backed scene delegate forwards cold and warm URLs through Capacitor's existing
+   application delegate proxy. Device
    selection is explicit and session-only. Native backgrounding disconnects and
    invalidates pending work; return requires explicit reconnect before effects resume.
    Copied buffers, FIFO batches, generation checks, discovered write modes, and native
@@ -220,8 +223,11 @@ An isolated [experimental Capacitor shell](../prototypes/ios/README.md) packages
 existing screens under a separate app identity. Its dedicated entry point composes
 native BLE and lifecycle plugins, disables PWA generation, and omits service-worker
 registration and the update coordinator. The normal browser entry retains update admission.
-No production framework is selected, and native compilation, simulator behavior,
-real-board BLE, storage/backup durability, and authentication remain unverified. Access design
+No production framework is selected. Native compilation and startup are verified on
+the iPhone 17 / iOS 27.0 simulator; interactive simulator behavior, real-board BLE,
+storage/backup durability, and authentication remain unverified. The observed
+startup screenshot showed status-bar and app-control safe areas without overlap.
+Access design
 must account for the native origin and session return path; its existing same-origin
 web units are held for revision. Native persistence/backup and bootstrap/update
 behavior require explicit adapters or proof, rather than assuming all browser
@@ -339,8 +345,8 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
 | Capacitor 8.4.3 + BLE 8.3.0 + App 8.1.1      | Isolated iOS prototype only: bundled shared UI, native byte transport, foreground lifecycle; no background BLE mode                                                                                             |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |
-| BoardLib (Python)                           | Bootstrap the SQLite catalog; sync-protocol reference                                                                                                                                                          |
-| Kilter sync API                             | Incremental catalog + optional logbook sync                                                                                                                                                                    |
+| BoardLib (Python)                           | Legacy bootstrap and sync-protocol reference; not a verified current catalog source                                                                                                                            |
+| Kilter sync API                             | Legacy protocol reference; current availability and coverage are unverified                                                                                                                                   |
 | ONNX Runtime Web (WASM)                     | In-browser grade-prediction inference (GBT→ONNX export)                                                                                                                                                        |
 | Cloudflare Workers (Static Assets)          | Distribute the installable PWA to friends; no app server. Deployed via GitHub Actions + `cloudflare/wrangler-action`, CI-gated. See [cloudflare-deploy brief](../.research/briefs/cloudflare-deploy/parent.md) |
 | Climbdex / Grip Connect / fake_kilter_board | Reference implementations (search, BLE, protocol)                                                                                                                                                              |

@@ -12,7 +12,7 @@ research_refs:
   - .research/analysis/briefs/ios-shared-client.md
   - .research/analysis/landscapes/ios-board-client-prior-art.md
 created: 2026-08-02
-updated: 2026-09-28
+updated: 2026-10-09
 ---
 
 # iOS Controller Bridge
@@ -83,23 +83,23 @@ the requirement for iPhone board control or the production framework decision.
   iPhone acceptance gate or make a production framework selection from simulator
   or Android results.
 
-Local tooling preflight on 2026-09-28: `xcode-select -p` selects Apple's standalone
-Command Line Tools; `xcodebuild -version` cannot run with that selection and
-`xcrun simctl list runtimes --json` cannot find `simctl`. No Xcode app was found in
-the standard application folders or Spotlight bundle search. Full Xcode and an
-iOS simulator runtime are prerequisites for local simulator checks; consult the
-[current Capacitor setup requirements](https://capacitorjs.com/docs/ios) when
-installing. No tooling was installed or global developer-directory setting changed
-during this preflight. The absent phone blocks physical acceptance, not preparation.
+The laptop migration is complete. The verified host is macOS 26.6 arm64 with Xcode
+27.0 (27A266a), iOS 27.0 simulator runtime (24A434), and an isolated iPhone 17
+simulator. Node 20.20.2 and 22.23.3 are installed through nvm; the shell's global
+Node and developer-directory selection remain unchanged. The owning
+[`ios-simulator-build-smoke`](../stories/ios-simulator-build-smoke.md) story records
+tooling and startup evidence.
 
 ## Preparation checkpoint
 
 The initial isolated shell preparation is tracked by
 [`ios-prototype-shell`](../../archive/ios-prototype-shell.md). It packages the current
 screens in `prototypes/ios`, with a separate bundle identity and synthetic backup
-fixture. The native project's assets can be built and synchronized without Xcode;
-this is not a compiled or simulator-tested iPhone app. Its guide owns setup commands
-and the manual checklist.
+fixture. The package now builds, installs, and launches in the simulator. A
+storyboard-backed scene delegate and manifest forward cold and warm URLs through the
+existing Capacitor `ApplicationDelegateProxy`. The observed startup screenshot shows
+the controls clear of the status bar, and startup does not request Bluetooth access.
+The prototype guide owns repeatable setup commands and the remaining manual checklist.
 
 [`epic-ios-controller-bridge-native-ble`](../features/epic-ios-controller-bridge-native-ble.md)
 owns native adapter preparation, required review, CI, and merge. It adds a dedicated
@@ -111,10 +111,11 @@ Browser inspection exposes unsupported control instead of selecting Web Bluetoot
 The native simulator also reports unsupported on Connect. Deterministic adapter
 tests and Chromium library checks cannot establish CoreBluetooth behavior.
 
-No native compile, simulator run, real iPhone/board acceptance, storage durability,
-WKWebView backup round trip, native authentication, or distribution acceptance is
-implied by this preparation. Full Xcode remains absent, and physical testing still
-depends on a test phone. Capacitor remains a proof candidate.
+The simulator has not yet exercised synthetic backup restore/export, climb editing,
+relaunch preservation, or Connect behavior. No real iPhone/board acceptance, storage
+durability, WKWebView backup round trip, native authentication, or distribution
+acceptance is implied by the startup proof. Physical testing still depends on a test
+phone. Capacitor remains a proof candidate.
 
 ## Simplification opportunity
 
@@ -134,7 +135,7 @@ or a generic framework abstraction during the proof.
 - `web/src/main.tsx` starts the update coordinator before the browser workspace.
   Explicit `ios-prototype` builds select `prototypes/ios/src/main.tsx` instead,
   inject the native runtime, and omit the service worker and update coordinator.
-  Native binary-update preservation still needs simulator/device evidence.
+  Native binary-update preservation still needs interactive simulator/device evidence.
 - Prove light/clear, interruption/reconnect, permission denial and foreground/resume
   on a real iPhone and Fullride. Then test a synthetic climb and ordered playlist
   across relaunch/update, plus whole-library export/restore of IDs, order and recipes.

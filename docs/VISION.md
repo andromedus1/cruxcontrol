@@ -33,8 +33,10 @@ reopens, and lights unrestricted browser-local climbs through a fast, offline-fi
 client; organizes them into shareable lists; and supports locally reviewed screenshot
 imports and editable light effects. The next major addition makes the Kilter community
 catalog accessible for the active board. Catalog work can advance on Android and the
-web while native iPhone tooling, compilation, and simulator preparation continue;
-unavailable iPhone hardware does not block that catalog milestone.
+web while native iPhone work proceeds; unavailable iPhone hardware does not block
+that catalog milestone. The isolated iOS prototype now compiles and launches in an
+iPhone 17 simulator, while interactive library checks and physical-device acceptance
+remain open.
 
 Invited partner and friends can subsequently contribute climbs to a shared library
 and receive updates independently of app releases. That milestone includes Android
@@ -87,8 +89,10 @@ multi-tenancy.
   to the Kilter API is optional, never required.
 - **Fast by default.** Offline-first, instant load, responsive browsing — the
   official app's biggest weakness is the bar to clear.
-- **Data-driven over hand-curated.** Where a data source exists (the Kilter
-  catalog, sync API), build a pipeline rather than curate by hand.
+- **Data-driven over hand-curated.** Build repeatable pipelines from verified,
+  authorized data sources rather than hand-curating catalog records. The legacy
+  Kilter sync protocol remains reference material until its current availability
+  and coverage are established.
 - **Useful sessions first.** Reliable local ownership and Kilter community browsing
   lead, followed by shared contributions. Grade prediction and personalized training
   remain longer-term capabilities supported by the architecture.
