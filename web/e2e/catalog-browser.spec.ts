@@ -76,9 +76,14 @@ test('installs only with consent, browses offline, and preserves the authored li
   const fixture = createSyntheticCatalogSnapshots();
   const snapshot = fixture.snapshots[0]!;
   const catalogRequests: string[] = [];
+  const catalogWorkers: string[] = [];
   page.on('request', (request) => {
     const pathname = new URL(request.url()).pathname;
     if (pathname.startsWith('/catalog/')) catalogRequests.push(pathname);
+  });
+  page.on('worker', (worker) => {
+    const pathname = new URL(worker.url()).pathname;
+    if (pathname.includes('catalog.worker')) catalogWorkers.push(pathname);
   });
   await page.route('**/catalog/**', async (route) => {
     const pathname = new URL(route.request().url()).pathname;
@@ -154,8 +159,10 @@ test('installs only with consent, browses offline, and preserves the authored li
     expect(authoredBefore.playlists[0]?.entries).toHaveLength(2);
     const orderedMembership = authoredBefore.playlists[0]?.entries;
 
+    expect(catalogWorkers).toEqual([]);
     await page.getByRole('navigation', { name: 'Workspace destinations' }).getByRole('button', { name: 'Kilter', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Install the catalog to browse', exact: true }).first()).toBeVisible();
+    await expect.poll(() => catalogWorkers.length).toBe(1);
     expect(catalogRequests).toEqual([]);
     await page.getByRole('button', { name: 'Manage' }).click();
     await expect(page.getByRole('heading', { name: 'Legacy Kilter catalog' })).toBeFocused();

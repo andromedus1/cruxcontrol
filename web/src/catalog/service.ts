@@ -139,13 +139,12 @@ export function createCatalogService(
     return lastQueries;
   };
 
-  const start = (): Promise<void> => {
+  const open = (): Promise<void> => {
     if (disposed || snapshot.storage !== null) return Promise.resolve();
     if (startPromise) return startPromise;
 
     const currentGeneration = generation;
-    update({ operation: 'opening', error: null });
-    const pending = (async () => {
+    const pending = Promise.resolve().then(async () => {
       let activePort: CatalogPort & CatalogBootstrapPort;
       try {
         activePort = port ?? dependencies.createPort();
@@ -185,12 +184,25 @@ export function createCatalogService(
           queries: null,
         });
       }
-    })();
+    });
     startPromise = pending.finally(() => {
       if (startPromise === wrapped) startPromise = null;
     });
     const wrapped = startPromise;
+    update({ operation: 'opening', error: null });
     return wrapped;
+  };
+
+  const start = (): Promise<void> => {
+    if (disposed || snapshot.storage !== null) return Promise.resolve();
+    const activeRetry = retryPromise;
+    if (activeRetry) {
+      return activeRetry.then(() => {
+        if (disposed || snapshot.storage !== null) return;
+        return start();
+      });
+    }
+    return open();
   };
 
   const loadOffer = async (): Promise<void> => {
@@ -267,6 +279,26 @@ export function createCatalogService(
             error: null,
             queries: queriesFor(activePort, result.receipt),
           });
+        } else if (result.code === 'closed' || result.code === 'busy') {
+          const error = installError(result);
+          if (port === activePort) port = null;
+          lastQueries = null;
+          lastReceipt = null;
+          await activePort.close().catch(() => undefined);
+          if (disposed || currentGeneration !== generation) return;
+          const storage: CatalogStorageStatus = {
+            status: 'unavailable',
+            code: result.code,
+            message: result.message,
+          };
+          update({
+            storage,
+            operation: 'idle',
+            progress: null,
+            error,
+            offer: null,
+            queries: null,
+          });
         } else {
           const storage: CatalogStorageStatus = result.retained
             ? { status: 'ready', receipt: result.retained }
@@ -323,25 +355,25 @@ export function createCatalogService(
     lastQueries = null;
     lastReceipt = null;
     const currentGeneration = ++generation;
-    update({ storage: null, operation: 'idle', error: null, queries: null, progress: null });
-    const pending = (async () => {
+    const pending = Promise.resolve().then(async () => {
       if (oldPort) {
         try {
           await oldPort.close();
         } catch (cause) {
           if (!disposed && currentGeneration === generation) {
             const error = failureOf(cause, 'closed', 'The previous catalog worker could not be closed.');
-            update({ storage: { status: 'unavailable', ...error }, error });
+            update({ storage: { status: 'unavailable', ...error }, operation: 'idle', error });
           }
           return;
         }
       }
-      if (!disposed && currentGeneration === generation) await start();
-    })();
+      if (!disposed && currentGeneration === generation) await open();
+    });
     retryPromise = pending.finally(() => {
       if (retryPromise === wrapped) retryPromise = null;
     });
     const wrapped = retryPromise;
+    update({ storage: null, operation: 'opening', error: null, offer: null, queries: null, progress: null });
     return wrapped;
   };
 

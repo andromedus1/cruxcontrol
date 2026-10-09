@@ -27,13 +27,6 @@ interface PageHistory {
 
 const EMPTY_ROWS: readonly CatalogClimb[] = Object.freeze([]);
 
-function formatSize(bytes: number): string {
-  const formatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
-  if (bytes < 1_000) return `${formatter.format(bytes)} B`;
-  if (bytes < 1_000_000) return `${formatter.format(bytes / 1_000)} KB`;
-  return `${formatter.format(bytes / 1_000_000)} MB`;
-}
-
 export function CatalogBrowser({
   service,
   definition,
@@ -64,6 +57,8 @@ export function CatalogBrowser({
   const gradeGeneration = useRef(0);
   const pageHistory = useRef<PageHistory>({ adapter: queries, cursors: [null] });
   const manageTrigger = useRef<HTMLButtonElement | null>(null);
+  const manageButton = useRef<HTMLButtonElement | null>(null);
+  const wasManageOpen = useRef(false);
   const openFrame = useRef<number | null>(null);
   const mounted = useRef(true);
 
@@ -97,9 +92,14 @@ export function CatalogBrowser({
 
   useEffect(() => {
     onManageOpenChange(manageOpen);
-    if (!manageOpen) {
-      requestAnimationFrame(() => manageTrigger.current?.focus());
+    if (wasManageOpen.current && !manageOpen) {
+      requestAnimationFrame(() => {
+        const trigger = manageTrigger.current;
+        if (trigger?.isConnected) trigger.focus();
+        else manageButton.current?.focus();
+      });
     }
+    wasManageOpen.current = manageOpen;
   }, [manageOpen, onManageOpenChange]);
 
   useEffect(() => {
@@ -248,6 +248,26 @@ export function CatalogBrowser({
     return 'Not installed';
   })();
 
+  const progressPercent = snapshot.progress && snapshot.progress.totalBytes > 0
+    ? Math.min(100, Math.floor(snapshot.progress.receivedBytes / snapshot.progress.totalBytes * 100))
+    : null;
+  const progressAnnouncement = progressPercent === null
+    ? 'Catalog download started.'
+    : `Catalog download ${Math.floor(progressPercent / 10) * 10}% received.`;
+  const statusAnnouncement = snapshot.operation === 'opening'
+    ? 'Checking for an installed catalog.'
+    : snapshot.operation === 'checking-offer'
+      ? 'Checking catalog details.'
+      : snapshot.operation === 'downloading'
+        ? progressAnnouncement
+        : snapshot.operation === 'installing'
+          ? 'Verifying and installing the catalog.'
+          : queryStatus === 'loading'
+            ? 'Loading catalog climbs.'
+            : queryStatus === 'ready'
+              ? `${visibleRows.length} ${visibleRows.length === 1 ? 'climb' : 'climbs'} loaded on page ${activePageNumber}.`
+              : queryStatus === 'error' ? queryError : '';
+
   let emptyTitle = 'Loading catalog';
   let emptyDescription = 'Checking whether the offline catalog is available on this device.';
   if (snapshot.operation === 'installing') {
@@ -292,7 +312,7 @@ export function CatalogBrowser({
           </div>
           <p>Older offline snapshot · no live updates</p>
         </div>
-        <button className="catalog-button catalog-button--secondary" type="button" onClick={openManage}>
+        <button ref={manageButton} className="catalog-button catalog-button--secondary" type="button" onClick={openManage}>
           Manage
         </button>
       </section>
@@ -383,7 +403,7 @@ export function CatalogBrowser({
             </p>
           )}
           <nav className="catalog-pagination" aria-label="Catalog pages">
-            <span aria-live="polite">Page {activePageNumber} · {visibleRows.length} {visibleRows.length === 1 ? 'climb' : 'climbs'} on this page</span>
+            <span>Page {activePageNumber} · {visibleRows.length} {visibleRows.length === 1 ? 'climb' : 'climbs'} on this page</span>
             <div>
               <button className="catalog-button catalog-button--secondary" type="button" disabled={activePageNumber <= 1} onClick={() => {
                 invalidateQuery();
@@ -409,13 +429,11 @@ export function CatalogBrowser({
           </button>
         </section>
       )}
-      <p className="catalog-announcement" role="status" aria-live="polite">
-        {snapshot.operation === 'downloading' && snapshot.progress
-          ? `Catalog download ${formatSize(snapshot.progress.receivedBytes)} of ${formatSize(snapshot.progress.totalBytes)} received.`
-          : queryStatus === 'ready'
-            ? `${visibleRows.length} ${visibleRows.length === 1 ? 'climb' : 'climbs'} loaded on page ${activePageNumber}.`
-            : queryStatus === 'error' ? queryError : ''}
-      </p>
+      {!manageOpen && (
+        <p className="catalog-announcement" role="status" aria-live="polite" aria-atomic="true">
+          {statusAnnouncement}
+        </p>
+      )}
     </>
   );
 
@@ -436,7 +454,13 @@ export function CatalogBrowser({
         listHeader={sourceHeader}
         listFooter={pageFooter}
       />
-      {manageOpen && <CatalogManageDialog service={service} onClose={() => setManageOpen(false)} />}
+      {manageOpen && (
+        <CatalogManageDialog
+          service={service}
+          onClose={() => setManageOpen(false)}
+          statusAnnouncement={statusAnnouncement}
+        />
+      )}
     </>
   );
 }

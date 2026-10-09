@@ -97,6 +97,7 @@ describe('createCatalogService', () => {
     expect(createPort).not.toHaveBeenCalled();
     const first = service.start();
     const second = service.start();
+    await vi.waitFor(() => expect(createPort).toHaveBeenCalledOnce());
     expect(createPort).toHaveBeenCalledOnce();
     expect(service.getSnapshot().operation).toBe('opening');
     opened.resolve({ status: 'empty' });
@@ -219,6 +220,43 @@ describe('createCatalogService', () => {
     await service.close();
   });
 
+  it.each(['closed', 'busy'] as const)(
+    'retires an install worker and reopens its durable receipt after a %s result',
+    async (code) => {
+      const reportedRetained = receipt({ ...manifest, sha256: 'b'.repeat(64) }, 'a');
+      const committed = receipt({ ...manifest, sha256: 'c'.repeat(64) }, 'b');
+      const first = portFor({
+        install: async () => ({
+          ok: false,
+          code,
+          message: `Install returned ${code}`,
+          retained: reportedRetained,
+        }),
+      });
+      const reopened = portFor({ status: async () => statusReady(committed) });
+      const createPort = vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(reopened);
+      const service = serviceFor({ createPort });
+      await service.start();
+      await service.loadOffer();
+      await service.installOffer();
+
+      expect(service.getSnapshot()).toMatchObject({
+        storage: { status: 'unavailable', code, message: `Install returned ${code}` },
+        error: { code, message: `Install returned ${code}` },
+        queries: null,
+        offer: null,
+      });
+      expect(first.close).toHaveBeenCalledOnce();
+      await service.retryOpen();
+
+      expect(createPort).toHaveBeenCalledTimes(2);
+      expect(reopened.catalogStatus).toHaveBeenCalledOnce();
+      expect(service.getSnapshot().storage).toEqual({ status: 'ready', receipt: committed });
+      expect(service.getSnapshot().queries?.provenance.snapshotId).toBe(committed.manifest.sha256);
+      await service.close();
+    },
+  );
+
   it('discards an unexpectedly failed install worker and reopens from the persisted receipt', async () => {
     const error = new Error('RPC stopped after activation');
     const broken = portFor({ install: async () => { throw error; } });
@@ -252,6 +290,25 @@ describe('createCatalogService', () => {
     await service.close();
   });
 
+  it('restores an actionable unavailable state when retry cannot close the old port', async () => {
+    const busy = portFor({
+      status: async () => ({ status: 'unavailable', code: 'busy', message: 'Another tab owns the catalog.' }),
+      close: async () => { throw new Error('Worker termination failed'); },
+    });
+    const createPort = vi.fn(() => busy);
+    const service = serviceFor({ createPort });
+    await service.start();
+    await service.retryOpen();
+
+    expect(service.getSnapshot()).toMatchObject({
+      storage: { status: 'unavailable', code: 'closed' },
+      operation: 'idle',
+      error: { code: 'closed', message: 'Worker termination failed' },
+    });
+    expect(createPort).toHaveBeenCalledOnce();
+    await service.close();
+  });
+
   it('waits for a worker already closing during retry before completing disposal', async () => {
     const closing = deferred<void>();
     const busy = portFor({
@@ -273,6 +330,40 @@ describe('createCatalogService', () => {
     expect(disposed).toBe(true);
     expect(createPort).toHaveBeenCalledOnce();
     expect(busy.catalogStatus).toHaveBeenCalledOnce();
+  });
+
+  it('makes remounted startup await retry shutdown and receipt recovery', async () => {
+    const closing = deferred<void>();
+    const reopenedStatus = deferred<CatalogStorageStatus>();
+    const busy = portFor({
+      status: async () => ({ status: 'unavailable', code: 'busy', message: 'Another tab owns the catalog.' }),
+      close: () => closing.promise,
+    });
+    const reopened = portFor({ status: () => reopenedStatus.promise });
+    const createPort = vi.fn().mockReturnValueOnce(busy).mockReturnValueOnce(reopened);
+    const service = serviceFor({ createPort });
+    await service.start();
+
+    const retry = service.retryOpen();
+    expect(service.getSnapshot().operation).toBe('opening');
+    await vi.waitFor(() => expect(busy.close).toHaveBeenCalledOnce());
+    let remounted = false;
+    const startup = service.start().then(() => { remounted = true; });
+    expect(createPort).toHaveBeenCalledOnce();
+    expect(remounted).toBe(false);
+    expect(service.getSnapshot().operation).toBe('opening');
+
+    closing.resolve();
+    await vi.waitFor(() => expect(reopened.catalogStatus).toHaveBeenCalledOnce());
+    expect(createPort).toHaveBeenCalledTimes(2);
+    expect(remounted).toBe(false);
+    expect(service.getSnapshot().operation).toBe('opening');
+    reopenedStatus.resolve({ status: 'empty' });
+    await Promise.all([retry, startup]);
+
+    expect(remounted).toBe(true);
+    expect(service.getSnapshot().storage).toEqual({ status: 'empty' });
+    await service.close();
   });
 
   it('waits for begun activation during disposal and publishes no obsolete state', async () => {

@@ -531,3 +531,31 @@ public deployment is part of this feature's tests.
   remain unproven. Vite reports the main app bundle at about 509 kB minified (about
   154 kB gzip), over its 500 kB advisory threshold; no code-splitting change was
   included in this feature.
+
+## Standard review follow-up
+
+- The independent standard review found that `closed` and `busy` install results
+  cannot establish whether activation committed. The service now retires that
+  worker, publishes unavailable/unknown state, drops its prior offer and query
+  adapter, and makes Retry reopen catalog status from a fresh port so a persisted
+  receipt is recovered instead of guessed from the install result.
+- Retry shutdown is now a shared lifecycle promise: a remounted browser's `start()`
+  waits for the retry and its receipt read instead of creating another port while
+  the old worker closes. The service stays in `opening` through shutdown and status
+  recovery, then returns to an actionable unavailable state if close fails.
+  Setup-dialog focus returns to the surviving Manage button if the setup trigger
+  disappeared. Manage no longer makes its entire content a live region; the browser
+  moves its single polite status region into the open dialog, with phase announcements
+  and progress rounded to ten-percent steps.
+- Added service contracts for both uncertain install results and the close/remount
+  race, a browser focus-restoration test for the removed setup trigger, and a
+  production E2E assertion that no catalog worker starts before first Kilter entry
+  and exactly one starts on entry.
+- Root's isolated real-snapshot preview verified the exact consent request
+  sequence, successful install, 25 compatible first-page rows, detail rendering,
+  name and native-grade filtering, offline reload with no catalog network requests,
+  and no page errors. This result covers the snapshot checked; it does not establish
+  current source coverage or all routes.
+- Follow-up verification: full Vitest (96 files, 804 tests), lint, production build,
+  focused synthetic catalog E2E (1/1), and normal app E2E (14/14) passed. The build
+  retains the existing advisory about the 509 kB main JavaScript chunk.

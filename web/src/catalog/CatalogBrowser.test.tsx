@@ -267,4 +267,37 @@ describe('CatalogBrowser', () => {
     expect(query).toHaveBeenCalledOnce();
     expect(manageChanged).toHaveBeenLastCalledWith(false);
   });
+
+  it('returns setup focus to Manage when installation removes the setup trigger', async () => {
+    const adapter = queryPort();
+    const service = serviceFor(adapter, {
+      storage: { status: 'empty' },
+      queries: null,
+    });
+    render(
+      <CatalogBrowser
+        service={service.service}
+        definition={definition}
+        defaultAngle={40}
+        controller={null}
+        onManageOpenChange={() => undefined}
+      />,
+    );
+
+    const setup = screen.getByRole('button', { name: 'Set up offline catalog' });
+    fireEvent.click(setup);
+    const dialog = await screen.findByRole('dialog', { name: 'Legacy Kilter catalog' });
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    act(() => service.publish({
+      ...service.service.getSnapshot(),
+      storage: { status: 'ready', receipt },
+      offer: null,
+      queries: adapter,
+    }));
+    expect(screen.queryByRole('button', { name: 'Set up offline catalog' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Manage' })).toHaveFocus());
+  });
 });

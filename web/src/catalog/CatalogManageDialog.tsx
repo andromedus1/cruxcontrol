@@ -5,6 +5,7 @@ import './catalog.css';
 export interface CatalogManageDialogProps {
   readonly service: CatalogService;
   readonly onClose: () => void;
+  readonly statusAnnouncement: string;
 }
 
 function formatSize(bytes: number): string {
@@ -23,7 +24,7 @@ function formatInstalledDate(value: string): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
 }
 
-export function CatalogManageDialog({ service, onClose }: CatalogManageDialogProps): React.JSX.Element {
+export function CatalogManageDialog({ service, onClose, statusAnnouncement }: CatalogManageDialogProps): React.JSX.Element {
   const snapshot = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closing = useRef(false);
@@ -90,9 +91,13 @@ export function CatalogManageDialog({ service, onClose }: CatalogManageDialogPro
         >×</button>
       </header>
 
-      <section className="catalog-manage-dialog__content" aria-live="polite">
-        {loading && <p role="status">Opening the offline catalog…</p>}
-        {checking && <p role="status">Checking for catalog details…</p>}
+      <p className="catalog-announcement" role="status" aria-live="polite" aria-atomic="true">
+        {statusAnnouncement}
+      </p>
+
+      <section className="catalog-manage-dialog__content">
+        {loading && <p>Opening the offline catalog…</p>}
+        {checking && <p>Checking for catalog details…</p>}
         {downloading && (
           <div className="catalog-operation">
             <div className="catalog-operation__line">
@@ -114,7 +119,7 @@ export function CatalogManageDialog({ service, onClose }: CatalogManageDialogPro
             </button>
           </div>
         )}
-        {installing && <p role="status">Verifying and installing the catalog…</p>}
+        {installing && <p>Verifying and installing the catalog…</p>}
 
         {!downloading && !installing && snapshot.error && (
           <p className="catalog-alert" role="alert">{snapshot.error.message}</p>
@@ -137,7 +142,7 @@ export function CatalogManageDialog({ service, onClose }: CatalogManageDialogPro
           {receipt && <p>Installed on this device: {formatInstalledDate(receipt.installedAt)}.</p>}
         </div>
 
-        {receipt && <p className="catalog-ready-message" role="status">Available offline on this device.</p>}
+        {receipt && <p className="catalog-ready-message">Available offline on this device.</p>}
         {snapshot.storage?.status === 'empty' && snapshot.offer && !snapshot.error && !downloading && !installing && (
           <div className="catalog-consent">
             <h3>Download for offline climbing</h3>

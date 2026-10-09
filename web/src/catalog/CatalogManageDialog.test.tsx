@@ -69,7 +69,7 @@ describe('CatalogManageDialog', () => {
   it('loads metadata only, then requires explicit consent to fetch and install the displayed offer', async () => {
     const value = serviceFor(snapshot());
     const onClose = vi.fn();
-    render(<CatalogManageDialog service={value.service} onClose={onClose} />);
+    render(<CatalogManageDialog service={value.service} onClose={onClose} statusAnnouncement="Checking catalog details." />);
     await waitFor(() => expect(value.service.loadOffer).toHaveBeenCalledOnce());
     expect(value.service.installOffer).not.toHaveBeenCalled();
     expect(screen.getByText(/Source freshness: unknown/)).toBeInTheDocument();
@@ -91,7 +91,10 @@ describe('CatalogManageDialog', () => {
       offer,
       progress,
     }));
-    render(<CatalogManageDialog service={value.service} onClose={() => undefined} />);
+    render(<CatalogManageDialog service={value.service} onClose={() => undefined} statusAnnouncement="Catalog download 50% received." />);
+    const content = screen.getByRole('dialog').querySelector('.catalog-manage-dialog__content');
+    expect(content).not.toHaveAttribute('aria-live');
+    expect(screen.getByRole('status')).toHaveTextContent('Catalog download 50% received.');
     expect(screen.getByRole('progressbar', { name: 'Legacy Kilter catalog download' })).toHaveAttribute('aria-valuenow', '50');
     expect(screen.getByText('Downloading Legacy Kilter…')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel download' }));
@@ -104,7 +107,7 @@ describe('CatalogManageDialog', () => {
 
   it('shows receipt dates and sizes without inferring source freshness or offering replacement', () => {
     const value = serviceFor(snapshot({ status: 'ready', receipt: installedReceipt }));
-    render(<CatalogManageDialog service={value.service} onClose={() => undefined} />);
+    render(<CatalogManageDialog service={value.service} onClose={() => undefined} statusAnnouncement="1 climb loaded on page 1." />);
     expect(screen.getByText('Available offline on this device.')).toBeInTheDocument();
     expect(screen.getByText(/Snapshot generated:/)).toBeInTheDocument();
     expect(screen.getByText(/Installed on this device:/)).toBeInTheDocument();
@@ -117,7 +120,7 @@ describe('CatalogManageDialog', () => {
     const failedCheck = serviceFor(snapshot({ status: 'empty' }, {
       error: { code: 'manifest', message: 'Catalog details could not be loaded.' },
     }));
-    const first = render(<CatalogManageDialog service={failedCheck.service} onClose={() => undefined} />);
+    const first = render(<CatalogManageDialog service={failedCheck.service} onClose={() => undefined} statusAnnouncement="" />);
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
     expect(failedCheck.service.loadOffer).toHaveBeenCalledOnce();
     first.unmount();
@@ -126,7 +129,7 @@ describe('CatalogManageDialog', () => {
       offer,
       error: { code: 'network', message: 'The catalog download failed.' },
     }));
-    render(<CatalogManageDialog service={failedDownload.service} onClose={() => undefined} />);
+    render(<CatalogManageDialog service={failedDownload.service} onClose={() => undefined} statusAnnouncement="" />);
     fireEvent.click(screen.getByRole('button', { name: 'Retry download' }));
     expect(failedDownload.service.installOffer).toHaveBeenCalledOnce();
     expect(screen.queryByRole('button', { name: 'Check again' })).not.toBeInTheDocument();
