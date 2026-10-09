@@ -1,8 +1,11 @@
 # Doc Review Report
 
-**Project:** CruxControl  
-**Date:** 2026-10-09  
-**Documents:** 5 current system planning documents, no module planning sets  
+**Project:** CruxControl
+
+**Date:** 2026-10-09
+
+**Documents:** 5 current system planning documents, no module planning sets
+
 **Accepted findings:** 0 Critical, 0 High, 0 Medium, 0 Low
 
 ## Method and adjudication
