@@ -1,81 +1,93 @@
 # Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
+# Navigator layer — auto-loaded at session start (capped at 10KB by harness).
+# Provides corpus situational awareness only. Read knowledge-index.yaml for full index.
+
 schema_version: 3
-generated_at: '2026-09-28T19:14:37Z'
+generated_at: 2026-10-09T19:29:05Z
 generated_from: frontmatter
 total_docs: 27
+
 by_kind:
   planning: 5
   research: 21
   historical: 1
+
+# Substrate items (.work/) by tier. Query via .work/bin/work-view.
 substrate_summary:
   active:
     epic: 5
-    feature: 11
+    feature: 12
     story: 4
     release: 0
-  backlog: 13
+  backlog: 12
   releases: {}
-  archive: 94
+  archive: 103
+
+# Top 15 most-recently-updated docs (planning + research only).
 recent:
-- path: docs/ARCHITECTURE.md
-  title: CruxControl — Architecture
-  kind: planning
-  updated: 2026-09-28
-- path: docs/SPEC.md
-  title: CruxControl — Specification
-  kind: planning
-  updated: 2026-09-27
-- path: docs/VISION.md
-  title: CruxControl — Vision
-  kind: planning
-  updated: 2026-09-27
-- path: docs/DEPLOY.md
-  title: Deploy
-  kind: planning
-  updated: 2026-08-02
-- path: docs/PRINCIPLES.md
-  title: CruxControl — Principles
-  kind: planning
-  updated: 2026-08-02
+  - path: docs/ARCHITECTURE.md
+    title: "CruxControl — Architecture"
+    kind: planning
+    updated: 2026-10-09
+  - path: docs/SPEC.md
+    title: "CruxControl — Specification"
+    kind: planning
+    updated: 2026-10-09
+  - path: docs/VISION.md
+    title: "CruxControl — Vision"
+    kind: planning
+    updated: 2026-10-09
+  - path: docs/DEPLOY.md
+    title: "Deploy"
+    kind: planning
+    updated: 2026-08-02
+  - path: docs/PRINCIPLES.md
+    title: "CruxControl — Principles"
+    kind: planning
+    updated: 2026-08-02
+
+# Docs flagged with nav_priority: high in frontmatter — read at session start.
 load_bearing:
-- path: docs/ARCHITECTURE.md
-  title: CruxControl — Architecture
-  kind: planning
-- path: docs/PRINCIPLES.md
-  title: CruxControl — Principles
-  kind: planning
-- path: docs/SPEC.md
-  title: CruxControl — Specification
-  kind: planning
-- path: docs/VISION.md
-  title: CruxControl — Vision
-  kind: planning
-- path: .research/briefs/cloudflare-deploy/parent.md
-  title: 'Research: Cloudflare Deploy Path for CruxControl'
-  kind: research
-- path: .research/briefs/kilter-grade-prediction/parent.md
-  title: Kilter Grade Prediction — Campaign Synthesis
-  kind: research
-- path: docs/briefs/board-control-web-bluetooth.md
-  title: 'Brief: Board Control over Web Bluetooth (Integration Layer)'
-  kind: research
-- path: docs/briefs/board-rendering-and-filtering.md
-  title: 'Brief: Board Rendering & Catalog Filtering (Climb Browser)'
-  kind: research
-- path: docs/briefs/catalog-sync-api.md
-  title: 'Brief: Catalog Sync & the Kilter API (Sync Engine)'
-  kind: research
-- path: docs/briefs/data-model.md
-  title: 'Kilter Board Data Model: A Technical Primer'
-  kind: research
-- path: docs/briefs/foundation-pwa-sqlite.md
-  title: 'Brief: Distributable Offline-First PWA + In-Browser SQLite (Foundation)'
-  kind: research
-- path: docs/briefs/hardware-and-protocol.md
-  title: Kilter Board Fullride 7x10 -- Technical Primer
-  kind: research
-- path: docs/briefs/recommendations-and-training.md
-  title: 'Brief: Recommendations & Training Methodology'
-  kind: research
+  - path: docs/ARCHITECTURE.md
+    title: "CruxControl — Architecture"
+    kind: planning
+  - path: docs/PRINCIPLES.md
+    title: "CruxControl — Principles"
+    kind: planning
+  - path: docs/SPEC.md
+    title: "CruxControl — Specification"
+    kind: planning
+  - path: docs/VISION.md
+    title: "CruxControl — Vision"
+    kind: planning
+  - path: .research/briefs/cloudflare-deploy/parent.md
+    title: "Research: Cloudflare Deploy Path for CruxControl"
+    kind: research
+  - path: .research/briefs/kilter-grade-prediction/parent.md
+    title: "Kilter Grade Prediction — Campaign Synthesis"
+    kind: research
+  - path: docs/briefs/board-control-web-bluetooth.md
+    title: "Brief: Board Control over Web Bluetooth (Integration Layer)"
+    kind: research
+  - path: docs/briefs/board-rendering-and-filtering.md
+    title: "Brief: Board Rendering & Catalog Filtering (Climb Browser)"
+    kind: research
+  - path: docs/briefs/catalog-sync-api.md
+    title: "Brief: Catalog Sync & the Kilter API (Sync Engine)"
+    kind: research
+  - path: docs/briefs/data-model.md
+    title: "Kilter Board Data Model: A Technical Primer"
+    kind: research
+  - path: docs/briefs/foundation-pwa-sqlite.md
+    title: "Brief: Distributable Offline-First PWA + In-Browser SQLite (Foundation)"
+    kind: research
+  - path: docs/briefs/hardware-and-protocol.md
+    title: "Kilter Board Fullride 7x10 -- Technical Primer"
+    kind: research
+  - path: docs/briefs/recommendations-and-training.md
+    title: "Brief: Recommendations & Training Methodology"
+    kind: research
+
+# On-demand layers (Read tool):
 full_index_path: docs/knowledge-index.yaml
 detail_index_path: docs/knowledge-index-detail.yaml

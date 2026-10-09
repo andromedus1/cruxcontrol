@@ -1,21 +1,27 @@
-# Auto-generated. DO NOT EDIT BY HAND. Run /knowledge-index to regenerate.
-generated_at: '2026-09-28T18:06:43Z'
+# Auto-generated. DO NOT EDIT BY HAND.
+# On-demand layer — load when surfacing a specific doc's full context.
+generated_at: '2026-10-09T19:29:05Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
   docs/ARCHITECTURE.md:
     summary: 'High-level architecture for a Kilter-first climbing-board platform: typed board definitions
       and namespaced identities, independent catalog providers and controller profiles, on-demand local
-      catalogs, and a Fullride 7x10 first slice. An invited contribution library is intended; approved
-      journeys and a verified access/storage comparison guide its bounded collaboration service and retained
-      local copies. An iPhone client proof now precedes further shared-service implementation. An isolated
-      experimental Capacitor shell injects native BLE into the shared screens and controller; native compilation
-      and device acceptance are pending.
+      catalogs, and a Fullride 7x10 first slice. The first consented Kilter community catalog browser
+      is integrated for an older offline snapshot, with explicit download consent and offline query support.
+      Current-source coverage, freshness, and public binary distribution remain unproven. Catalog work
+      advances on Android/web independently of native iPhone acceptance. An invited contribution library
+      is intended; approved journeys and a verified access/storage comparison guide its bounded collaboration
+      service and retained local copies. An iPhone client proof now precedes further shared-service implementation.
+      An isolated experimental Capacitor shell injects native BLE into the shared screens and controller;
+      it compiles, starts, and has passed synthetic-data preservation and whole-library backup/restore
+      round trips in an iPhone 17 simulator. Physical-device acceptance remains pending.
 
       '
     decisions:
     - CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable
-      PWA; local SQLite through wa-sqlite AccessHandlePoolVFS in a Web Worker is the catalog read path.
+      PWA; an optional lazy runtime service opens the local SQLite catalog through a serialized wa-sqlite
+      AccessHandlePoolVFS worker.
     - Board definition, catalog provider, and controller profile are independent boundaries connected
       by an installation registry.
     - Provider-native records and provenance are retained beside the normalized read model; catalogs install
@@ -23,8 +29,14 @@ documents:
     - BLE byte I/O is isolated behind Web Bluetooth in the PWA and an experimental native adapter in the
       iOS shell; both reuse API-level-2 and API-level-3 Aurora codecs selected from the connected controller
       identity.
-    - The required iPhone path reuses the controller transport boundary; shell, durable storage and native
-      authentication need proof before service implementation resumes.
+    - The required iPhone path reuses the controller transport boundary; simulator backup round-trip is
+      proven, while real-board BLE, real-device storage pressure and native authentication remain unverified
+      before service implementation resumes.
+    - Catalog acquisition and local browsing compose existing provider, storage, renderer and controller
+      boundaries without depending on invited access or native iPhone proof.
+    - The first browser explicitly installs and reads an older Fullride snapshot; two OPFS slots and IndexedDB
+      receipt metadata provide bounded recovery, with no automatic source refresh or claim of current
+      coverage.
     - The generated immutable Fullride definition is the shared geometry, placement identity, role, and
       LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while
       schematics remain the distributable fallback.
@@ -91,6 +103,11 @@ documents:
       on demand.
     - Establish iPhone board control and native storage/authentication contracts before further shared-library
       implementation.
+    - The first Kilter community catalog slice is a consented, read-only Fullride browser over an explicitly
+      older offline snapshot; current coverage, source freshness, and public binary distribution remain
+      unproven.
+    - Kilter community catalog access precedes invited sharing and can ship on Android/web independently
+      of native iPhone hardware acceptance.
     - Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status
       and recoverable Trash; provider publication validation is a separate future boundary.
     - Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary
@@ -104,8 +121,9 @@ documents:
     summary: 'CruxControl is a Kilter-first, eventually universal climbing-board app. Its first complete
       vertical slice controls a home Fullride 7x10, while its domain, catalog, and controller boundaries
       allow other boards to be added without surrendering offline use, data ownership, or source fidelity.
-      The next milestone establishes iPhone board control and shares explicit contributions within an
-      invited circle.
+      The first older-snapshot Kilter catalog browser is integrated with explicit consent and offline
+      access while native iPhone preparation continues. Invited contributions follow with Android and
+      iPhone board control.
 
       '
     decisions:
@@ -119,19 +137,18 @@ documents:
       per provider.
     - Static/backendless remains the default, with a narrow service allowed later only where a provider
       or collaboration capability requires it.
-    - Shared contributed climbs are the next major addition; community catalogs and a logbook precede
-      longer-term grade prediction and personalized training.
+    - Kilter community catalog access precedes invited shared contributions; its first browser uses an
+      explicitly older offline snapshot, and native iPhone preparation continues independently, with a
+      logbook, broader providers, grade prediction and personalized training retained afterward.
     - The installable PWA keeps private authoring and playlists local; an invited shared library may use
       a narrow, research-grounded collaboration service.
     - Invited partner and friends need Android and iPhone board control; establish the iOS path before
       advancing shared-library implementation.
   docs/architecture/history/north-star.md:
-    summary: 'The original north-star document that combined vision, capabilities, proposed architecture,
+    summary: The original north-star document that combined vision, capabilities, proposed architecture,
       and a phased roadmap. Its content has been split into the rolling-foundation docs (VISION.md, SPEC.md,
       ARCHITECTURE.md) and its Phase 0–3 roadmap migrated to epic items in .work/. Retained for provenance;
       do not edit.
-
-      '
     supersession_note: 'Split into docs/VISION.md (vision, problem, principles, non-goals), docs/SPEC.md
       (capabilities, domain model, constraints), and docs/ARCHITECTURE.md (modules, data flow, dependencies,
       risks). The Phase 0–3 roadmap is superseded by epic items in .work/. Retained for provenance.
@@ -288,6 +305,18 @@ documents:
       means 'no single movement pattern receives consistent progressive overload'.
     - A board + grade model is a structured 'reduced-variability' progression tool — the training rationale
       for circuits, progressive-overload suggestions, and weakness targeting.
+  .research/analysis/briefs/invited-library-hosting-costs.md:
+    summary: Cloudflare remains a conditional fit for a small private hobby library starting from scratch;
+      supplied hostnames and Access email delivery reduce setup, while Supabase's separate email delivery
+      setup and free-project pausing change its operating tradeoffs.
+  .research/analysis/briefs/invited-offline-library.md:
+    summary: A minimal Access-protected Worker with D1 is a conditional fit for one invited circle; Supabase
+      provides an alternative with admin invitations, database policies, and separately configured email
+      delivery. Local-copy and publication semantics remain explicit product decisions.
+  .research/analysis/briefs/ios-shared-client.md:
+    summary: Test a Capacitor native shell and BLE transport before considering a React Native UI migration.
+      Electron targets desktop; native storage, lifecycle, authentication and actual-device behavior remain
+      proof obligations for either mobile path.
   .research/analysis/landscapes/climbing-board-ecosystem.md:
     summary: 'Multi-board control is technically demonstrated by Boardsesh and CruxCoach, while
 
@@ -298,6 +327,20 @@ documents:
       catalog-provider, and controller-protocol adapters with provenance-preserving data.
 
       '
+  .research/analysis/landscapes/ios-board-client-prior-art.md:
+    summary: Grip Connect provides a Capacitor Aurora BLE implementation and a React Native alternative.
+      Boardsesh moved from Capacitor to React Native and reports responsiveness improvements, but retains
+      custom iOS BLE and distinct storage/auth paths. These examples justify a broader device proof, not
+      a framework commitment.
+    key_findings:
+    - Boardsesh's native rewrite is counterevidence to assuming that web UI reuse guarantees satisfactory
+      mobile responsiveness; its release notes are not a controlled framework benchmark.
+    - Grip Connect implements Aurora writes with the proposed Capacitor BLE plugin, while also supplying
+      a React Native adapter; source availability does not prove Fullride acceptance.
+    - Bluetooth write semantics, persistence, credentials and native releases remain explicit platform
+      work in concrete prior art.
+    - A Safari extension offers another path to investigate, with installation and compatibility obligations
+      that remain untested for this application.
   .research/briefs/cloudflare-deploy/parent.md:
     summary: 'Resolves how CruxControl deploys: target Cloudflare Workers Static Assets (the
 
@@ -600,29 +643,3 @@ documents:
     - Crowd-sourced Kilter labels are biased — the "Quick Log Ascent" flash mechanism inflates the assigned-grade
       bin; kilterbench mitigates by truncating that bin to ≤50% of repeats and dropping climbs with <500
       repeats [github-kilterbench]{5}.
-  .research/analysis/briefs/invited-offline-library.md:
-    summary: A minimal Access-protected Worker with D1 is a conditional fit for one invited circle; Supabase
-      provides an alternative with admin invitations, database policies, and separately configured email
-      delivery. Local-copy and publication semantics remain explicit product decisions.
-  .research/analysis/briefs/invited-library-hosting-costs.md:
-    summary: Cloudflare remains a conditional fit for a small private hobby library starting from scratch;
-      supplied hostnames and Access email delivery reduce setup, while Supabase's separate email delivery
-      setup and free-project pausing change its operating tradeoffs.
-  .research/analysis/briefs/ios-shared-client.md:
-    summary: Test a Capacitor native shell and BLE transport before considering a React Native UI migration.
-      Electron targets desktop; native storage, lifecycle, authentication and actual-device behavior remain
-      proof obligations for either mobile path.
-  .research/analysis/landscapes/ios-board-client-prior-art.md:
-    summary: Grip Connect provides a Capacitor Aurora BLE implementation and a React Native alternative.
-      Boardsesh moved from Capacitor to React Native and reports responsiveness improvements, but retains
-      custom iOS BLE and distinct storage/auth paths. These examples justify a broader device proof, not
-      a framework commitment.
-    key_findings:
-    - Boardsesh's native rewrite is counterevidence to assuming that web UI reuse guarantees satisfactory
-      mobile responsiveness; its release notes are not a controlled framework benchmark.
-    - Grip Connect implements Aurora writes with the proposed Capacitor BLE plugin, while also supplying
-      a React Native adapter; source availability does not prove Fullride acceptance.
-    - Bluetooth write semantics, persistence, credentials and native releases remain explicit platform
-      work in concrete prior art.
-    - A Safari extension offers another path to investigate, with installation and compatibility obligations
-      that remain untested for this application.

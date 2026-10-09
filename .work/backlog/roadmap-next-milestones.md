@@ -55,7 +55,7 @@ schedule, service architecture, or new feature decomposition is selected here.
    neither invited-service implementation nor native iPhone acceptance is its gate.
    Andrew approved an explicitly labeled older Kilter library first on 2026-10-09,
    followed by current official-app coverage. The
-   [community browser](../active/features/kilter-community-browser.md) owns that
+   [community browser](../archive/kilter-community-browser.md) owns that
    first usable slice; an older snapshot must not be presented as current coverage.
 4. **Shared contributed climbs: after Kilter community access and the mobile proof.** Continue the
    [shared-library epic](../active/epics/epic-shared-climb-library.md) so Andrew's partner and
