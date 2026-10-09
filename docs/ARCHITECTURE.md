@@ -18,7 +18,8 @@ summary: >
   An isolated experimental Capacitor shell injects native BLE into the shared screens
   and controller; it compiles, starts, and has passed synthetic-data preservation and
   whole-library backup/restore round trips in an iPhone 17 simulator. Physical-device
-  acceptance remains pending.
+  acceptance remains pending. Independent private library preservation is intended
+  through online backup and portable files; its service and recovery design are open.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; an optional lazy runtime service opens the local SQLite catalog through a serialized wa-sqlite AccessHandlePoolVFS worker."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
@@ -30,7 +31,7 @@ decisions:
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
-  - "Whole-library backup uses a bounded local JSON file and missing-only, identity-preserving restore with conflict blocking and one transaction per IndexedDB store; the two stores are never treated as one atomic snapshot."
+  - "Current backup is a manual bounded file with missing-only per-store restore; intended independent preservation adds owner-private versioned backup without treating two stores as one atomic snapshot."
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
   - "PWA updates use an app-owned prompt-mode Workbox registration, shared Web Locks admission, and explicit safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes."
   - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
@@ -222,6 +223,23 @@ feature item bodies in `.work/`, not here. Capabilities are in
     inference (ONNX Runtime Web / WASM); feeds prediction + recommendation features back
     into the app.
 
+## Intended independent preservation boundary
+
+The [preservation epic](../.work/active/epics/epic-library-preservation.md) owns an
+independent recovery boundary for private authored libraries. It must reuse the
+versioned whole-library contracts where sound, support automatic private online
+backup and portable files, retain prior versions and verify recovery after local
+origin/device loss. Snapshot consistency across the independent stores, version
+acknowledgement, retention, identity and key recovery require explicit design.
+An empty installation cannot supply deletion authority over retained backups.
+
+This boundary is separate from group publication and provider catalogs. Local
+authoring remains authoritative for offline work; backup availability and sign-in
+cannot gate local reads or saves. Acknowledged protection must identify the saved
+revision represented in an independently verified copy. No service, account system
+or automatic-backup implementation is selected or provisioned yet. Browser/native
+file-delivery and scheduling limits need proof before promising automatic file copies.
+
 ## Data Flow
 
 ### Intended shared-library boundary
@@ -350,8 +368,10 @@ or network.
   server, account system, or shared database, and each friend's client is independent
   with browser-local storage. The current hardware edge is the board over BLE. A
   future provider adapter may connect to the Kilter sync API, and a narrowly scoped
-  service is allowed for the intended invited contribution library or a provider
-  constraint demonstrated by research. Any collaboration service owns explicit
+  service is allowed for independent private recovery, the intended invited
+  contribution library or a provider constraint demonstrated by research. A private
+  backup service holds owner-private recovery copies; group access never grants
+  access to them. Any collaboration service owns explicit
   group contributions and necessary access data, not private drafts or playlists.
 
 ## Key Dependencies
@@ -381,6 +401,12 @@ Web Bluetooth + in-browser SQLite + ONNX inference). No SSR is used (Web Bluetoo
 requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundation-pwa-sqlite.md).
 
 ## Biggest Risks
+
+- **Loss of irreplaceable local work.** Browser-local repositories and manual exports
+  do not guarantee recovery after origin eviction, device loss or failed migration.
+  Intended protection combines independent versioned online backup, portable files,
+  honest pending/offline status and verified restore drills. Local persistence
+  permission alone is insufficient, and these protections are not yet implemented.
 
 - **Web Bluetooth reliability** across OS/browser versions — deterministic transport and
   renderer coverage exercises mapping, light/clear, animation, and the existing API-2

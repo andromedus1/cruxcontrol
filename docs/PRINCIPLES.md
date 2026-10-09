@@ -2,7 +2,7 @@
 description: Product and engineering principles governing CruxControl decisions
 type: planning
 kind: planning
-updated: 2026-08-02
+updated: 2026-10-09
 nav_priority: high
 summary: >
   Durable decision rules for building CruxControl as a Kilter-first,
@@ -11,7 +11,8 @@ decisions:
   - "Complete a Fullride 7x10 vertical slice before expanding implementation breadth."
   - "Keep board definitions, catalog providers, and controller protocols independent."
   - "Preserve native data and provenance; normalized fields are a read model, not a replacement source of truth."
-  - "Prefer local and static operation, earning backend and native-shell complexity only when a capability requires it."
+  - "Prefer local and static operation, earning backend and native-shell complexity only when a capability requires it; independent private recovery is such a capability."
+  - "Local saving is not independent protection: preserve recoverable versions outside the origin and device, retain portable copies, and verify restoration."
   - "Treat measured board capacity, protected climb roles, and foreground-only browser animation as safety contracts rather than presentation details."
 ---
 
@@ -36,7 +37,11 @@ must justify that friction.
 
 Drafts, playlists, attempts, ascents, and notes remain locally available and
 exportable. Provider sync is optional and must never be the sole copy of user-created
-data.
+data. Browser-local saving alone does not establish durability across origin or
+device loss. Keep independently recoverable versions and portable copies; verify
+restoration rather than inferring it from export success. Clearly distinguish locally
+saved changes from changes included in a verified independent backup. Offline edits
+remain usable while awaiting protection, with that exposure made explicit.
 
 ### Native communities remain legible
 
@@ -64,7 +69,8 @@ show the right generalization.
 Static distribution, browser-local catalogs, and local user data are the default.
 CI-generated provider snapshots are acceptable. Add a narrowly scoped service only
 for a demonstrated constraint such as protected credentials, browser-incompatible
-access, or live multi-user coordination.
+access, independent private backup/recovery, or live multi-user coordination. Private
+backup and group publication are distinct capabilities and authorization boundaries.
 
 ### Preserve before normalizing
 

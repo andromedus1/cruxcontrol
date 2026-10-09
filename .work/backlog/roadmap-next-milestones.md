@@ -15,7 +15,15 @@ schedule, service architecture, or new feature decomposition is selected here.
 
 ## Agreed order
 
-**Incident priority (2026-10-09):** [phone-library recovery](../active/stories/story-phone-library-recovery.md) supersedes the sequence below. Exhaust safe recovery, diagnose, then design stronger preservation before resuming catalog or sharing work.
+**Preservation priority (2026-10-09):** Andrew has closed further recovery escalation
+and chosen to proceed assuming the missing post-migration climbs are lost. The
+[incident record](../active/stories/story-phone-library-recovery.md) preserves the qualified
+diagnosis; physical unrecoverability and the deletion trigger remain unproven.
+[Independent library preservation](../active/epics/epic-library-preservation.md) is now the
+immediate priority: both automatic private online backups and owner-controlled
+portable files, with verified restoration. Resume the sequence below after this
+protection work; do not treat closing the recovery attempt as permission to reset
+the phone or as evidence that safeguards already ship.
 
 Andrew confirmed the immediate sequence after PR #31 merged (2026-10-09):
 update and dogfood the older catalog on the connected Android phone, then pursue

@@ -11,6 +11,8 @@ summary: >
   surrendering offline use, data ownership, or source fidelity. The first
   older-snapshot Kilter catalog browser is integrated with explicit consent and
   offline access while native iPhone preparation continues.
+  Private library preservation now takes priority: independent online backups and
+  portable owner-controlled files must complement offline local authoring.
   Invited contributions follow with Android and iPhone board control.
 decisions:
   - "Share product logic across web, Android and iOS; preserve the working web client while proving native iPhone board control."
@@ -18,9 +20,9 @@ decisions:
   - "The Fullride 7x10 is the first complete milestone; one app for any supported climbing board is the long-term north star."
   - "Board definitions, catalog providers, and controller protocols are independent extension points."
   - "Imports may use public or user-authorized sources; access and redistribution constraints are enforced per provider."
-  - "Static/backendless remains the default, with a narrow service allowed later only where a provider or collaboration capability requires it."
+  - "Static delivery and offline local use remain the default; a narrow service may support independent private backups, provider access or invited collaboration."
   - "Kilter community catalog access precedes invited shared contributions; its first browser uses an explicitly older offline snapshot, and native iPhone preparation continues independently, with a logbook, broader providers, grade prediction and personalized training retained afterward."
-  - "The installable PWA keeps private authoring and playlists local; an invited shared library may use a narrow, research-grounded collaboration service."
+  - "Private authoring and playlists stay locally usable; preservation requires automatic private online backups plus portable owner-controlled files, separate from invited sharing."
   - "Invited partner and friends need Android and iPhone board control; establish the iOS path before advancing shared-library implementation."
 ---
 
@@ -32,7 +34,12 @@ CruxControl is a data-owning climbing-board app whose first complete target is a
 home Kilter Board Fullride 7x10. Its implemented first milestone creates, saves,
 reopens, and lights unrestricted browser-local climbs through a fast, offline-first
 client; organizes them into shareable lists; and supports locally reviewed screenshot
-imports and editable light effects. The Kilter community catalog first slice is now
+imports and editable light effects. The immediate priority is independent library
+preservation: automatic private online backups, retained versions, portable files,
+and verified restoration after browser or device loss. These protections are intended
+work, not shipped guarantees; current whole-library exports are manual. Local saving
+and offline access must remain available while backup is pending or unavailable.
+The Kilter community catalog first slice is now
 integrated in the running app: entry opens the older offline Fullride snapshot when
 available, while explicit management consent controls metadata lookup and download.
 The snapshot's source freshness is unknown and it receives no live updates; complete
@@ -81,16 +88,18 @@ each submission. Android and iPhone board control are required. Local playlists 
 already portable by bounded URL or lossless file; provider climb URLs remain future
 catalog work. The design begins with this
 "distribute to friends" case: an installable PWA built for static hosting once the
-deployment setup and acceptance checks are complete. The shared library permits a
-narrow collaboration service where research establishes the need; it does not make
-local authoring depend on a service. Supporting more board types broadens the
+deployment setup and acceptance checks are complete. Narrow private-backup and
+collaboration services are permitted where research establishes the need; local
+authoring does not depend on either service. Private backup is independent of
+contributing a climb to the group. Supporting more board types broadens the
 hardware and catalog surface without requiring public registration or commercial
 multi-tenancy.
 
 ## Principles
 
-- **Data ownership first.** The climber's logbook is local and portable; syncing
-  to the Kilter API is optional, never required.
+- **Data ownership first.** Authored work stays local and portable, with independent
+  recoverable copies. Local saving and independently verified backup are distinct
+  states. Syncing to the Kilter API is optional, never required.
 - **Fast by default.** Offline-first, instant load, responsive browsing — the
   official app's biggest weakness is the bar to clear.
 - **Data-driven over hand-curated.** Build repeatable pipelines from verified,
@@ -123,7 +132,8 @@ multi-tenancy.
   library serves one invited circle. Billing, public discovery, and hosting or
   remotely controlling other people's boards are outside its scope. A collaboration
   service may hold explicit contributions and the access data needed for the group;
-  private drafts, playlists, and future logbook data stay locally owned.
+  private drafts, playlists, and future logbook data stay locally owned. Owner-private
+  backups do not become group contributions or grant members access to that work.
 - **Not simultaneous board rollout.** The Fullride 7x10 remains the first complete
   product milestone. Other Aurora boards and MoonBoard follow through separately
   researched adapters rather than delaying the Kilter path.

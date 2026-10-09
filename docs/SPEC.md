@@ -23,7 +23,7 @@ decisions:
   - "Kilter community catalog access precedes invited sharing and can ship on Android/web independently of native iPhone hardware acceptance."
   - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
-  - "Whole-library backup is a bounded local file of saved records; restore is missing-only, identity-preserving, conflict-blocking, and transactional per IndexedDB store."
+  - "Current whole-library export is manual and restore is missing-only per store; intended preservation adds automatic private online backups and portable files with verified recovery."
   - "PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs, and workspace, mutation, play-through, and BLE session gates protect local work before activation."
 ---
 
@@ -274,6 +274,29 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   capability is not yet delivered. The hosting/session proof must include the chosen
   native iPhone client; a web-only same-origin proof is insufficient.
 
+### 10. Private Library Preservation (Intended)
+
+- Preserve offline local creation and board use while protecting saved authored work
+  through automatic private online backups and portable owner-controlled files.
+  Current exports remain manual; automatic protection is not implemented.
+- Include Draft/Finished/Trash, metadata including grade and angle, holds/roles,
+  effect recipes, stable identities and revisions, playlists and exact membership
+  order. Catalog downloads are separately reacquirable and are not authored backups.
+- Show local save state separately from independently verified protection, including
+  pending offline edits, failed backups and the last protected version. State the
+  remaining loss window; offline writes cannot be called independently protected
+  before an external copy has been verified.
+- Retain prior versions. A new, empty, unreadable or partial local library must not
+  silently replace a good recovery point or be interpreted as authorized deletion.
+- Recover on a clean client without relying on credentials or keys kept only inside
+  the lost browser origin. Preserve private access isolation from invited sharing.
+- Verify restoration after complete loss of a synthetic test library's local storage,
+  and verify portable-file restoration without the online service. Preserve IDs,
+  content and list order; report conflicts and partial outcomes without destructive
+  fallback. Never erase the owner's phone as a test fixture.
+- Request stronger local persistence where supported after capability validation;
+  it supplements independent backups and does not establish permanent retention.
+
 ## Domain Model
 
 The model mirrors the official Kilter SQLite schema (see
@@ -407,12 +430,14 @@ The model mirrors the official Kilter SQLite schema (see
   distribution so a friend can open it from a URL after deployment is configured,
   with browser-local private data. The running app has no shared service or accounts;
   the intended invited library may add a narrowly scoped collaboration service and
-  access mechanism after research. Local use must not require that service.
+  access mechanism after research. Intended private preservation may likewise use a
+  narrowly scoped backup service; local use must not require either service.
   Distribution robustness — stable across mainstream Chromium browsers/devices,
   installable, trivially hostable on static infra (Cloudflare Workers Static Assets) — is a hard
   requirement; it was the criterion by which the framework (React + Vite) was chosen.
 - **Per-user isolation.** Private drafts, playlists, and future logbook data remain
-  local unless the user explicitly shares chosen content. Current playlist sharing
+  locally usable; configured private backups remain accessible only to their owner.
+  Private backup does not publish content to the invited group. Current playlist sharing
   uses bounded URL fragments or lossless files; the intended shared library publishes
   explicit contributions to invited members. Shared access must not expose the rest
   of a member's local library.

@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-09T21:59:12Z'
+generated_at: '2026-10-09T22:23:28Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -15,7 +15,9 @@ documents:
       service and retained local copies. An iPhone client proof now precedes further shared-service implementation.
       An isolated experimental Capacitor shell injects native BLE into the shared screens and controller;
       it compiles, starts, and has passed synthetic-data preservation and whole-library backup/restore
-      round trips in an iPhone 17 simulator. Physical-device acceptance remains pending.
+      round trips in an iPhone 17 simulator. Physical-device acceptance remains pending. Independent private
+      library preservation is intended through online backup and portable files; its service and recovery
+      design are open.
 
       '
     decisions:
@@ -44,9 +46,8 @@ documents:
       owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs.
     - Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports
       preview before creating fresh local records and compensate partial failures.
-    - Whole-library backup uses a bounded local JSON file and missing-only, identity-preserving restore
-      with conflict blocking and one transaction per IndexedDB store; the two stores are never treated
-      as one atomic snapshot.
+    - Current backup is a manual bounded file with missing-only per-store restore; intended independent
+      preservation adds owner-private versioned backup without treating two stores as one atomic snapshot.
     - Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped
       holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active
       climbs and Trash.
@@ -77,7 +78,9 @@ documents:
     - Preserve native data and provenance; normalized fields are a read model, not a replacement source
       of truth.
     - Prefer local and static operation, earning backend and native-shell complexity only when a capability
-      requires it.
+      requires it; independent private recovery is such a capability.
+    - 'Local saving is not independent protection: preserve recoverable versions outside the origin and
+      device, retain portable copies, and verify restoration.'
     - Treat measured board capacity, protected climb roles, and foreground-only browser animation as safety
       contracts rather than presentation details.
   docs/SPEC.md:
@@ -113,8 +116,8 @@ documents:
     - Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary
       40-degree drafts without persisting or uploading source images; exact duplicates, including Trash,
       are skipped.
-    - Whole-library backup is a bounded local file of saved records; restore is missing-only, identity-preserving,
-      conflict-blocking, and transactional per IndexedDB store.
+    - Current whole-library export is manual and restore is missing-only per store; intended preservation
+      adds automatic private online backups and portable files with verified recovery.
     - PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs,
       and workspace, mutation, play-through, and BLE session gates protect local work before activation.
   docs/VISION.md:
@@ -122,8 +125,9 @@ documents:
       vertical slice controls a home Fullride 7x10, while its domain, catalog, and controller boundaries
       allow other boards to be added without surrendering offline use, data ownership, or source fidelity.
       The first older-snapshot Kilter catalog browser is integrated with explicit consent and offline
-      access while native iPhone preparation continues. Invited contributions follow with Android and
-      iPhone board control.
+      access while native iPhone preparation continues. Private library preservation now takes priority:
+      independent online backups and portable owner-controlled files must complement offline local authoring.
+      Invited contributions follow with Android and iPhone board control.
 
       '
     decisions:
@@ -135,13 +139,13 @@ documents:
     - Board definitions, catalog providers, and controller protocols are independent extension points.
     - Imports may use public or user-authorized sources; access and redistribution constraints are enforced
       per provider.
-    - Static/backendless remains the default, with a narrow service allowed later only where a provider
-      or collaboration capability requires it.
+    - Static delivery and offline local use remain the default; a narrow service may support independent
+      private backups, provider access or invited collaboration.
     - Kilter community catalog access precedes invited shared contributions; its first browser uses an
       explicitly older offline snapshot, and native iPhone preparation continues independently, with a
       logbook, broader providers, grade prediction and personalized training retained afterward.
-    - The installable PWA keeps private authoring and playlists local; an invited shared library may use
-      a narrow, research-grounded collaboration service.
+    - Private authoring and playlists stay locally usable; preservation requires automatic private online
+      backups plus portable owner-controlled files, separate from invited sharing.
     - Invited partner and friends need Android and iPhone board control; establish the iOS path before
       advancing shared-library implementation.
   docs/architecture/history/north-star.md:
