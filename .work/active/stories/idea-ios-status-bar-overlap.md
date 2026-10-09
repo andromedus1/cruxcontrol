@@ -1,7 +1,7 @@
 ---
 id: idea-ios-status-bar-overlap
 kind: story
-stage: implementing
+stage: review
 parent: null
 depends_on: [idea-ios-scene-launch]
 release_binding: null
@@ -34,3 +34,20 @@ in view when performing the remaining interactive native checklist.
 Inline fix, standard standalone review. Dependency has verified native launch at
 review. No phone or personal library update. Native screenshot is the meaningful
 regression evidence here; jsdom cannot reproduce UIKit safe-area geometry.
+
+## Implementation and verification
+
+Set `ios.contentInset` to `automatic` in the isolated Capacitor config. The pinned
+CAPInstanceDescriptor maps this to UIKit's contentInsetAdjustmentBehavior, which
+CAPBridgeViewController applies to the WKWebView scroll view. No shared web CSS changed.
+After asset/plugin sync and native rebuild, the same simulator smoke passed and its
+screenshot shows Keep screen awake and Connect fully below the status bar. Before
+image showed both under the overlay. Screenshot: `/tmp/cruxcontrol-ios-safe-area/startup.png`.
+Native editor/keyboard/landscape inspection remains on the broader checklist; this
+repair specifically verifies the reproduced startup overlap.
+
+## Review (2026-10-09)
+
+Bounded inline review approves the focused configuration change: supported pinned
+API, same native origin, no library migration or transport change. No independent
+story reviewer ran. Aggregate required CI remains to be completed on this branch.
