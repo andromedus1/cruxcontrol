@@ -1,7 +1,7 @@
 ---
 id: idea-catalog-preview-gzip
 kind: story
-stage: implementing
+stage: review
 parent: null
 depends_on: []
 release_binding: null
@@ -39,3 +39,25 @@ Regression coverage starts actual isolated Vite dev and preview servers with a t
 synthetic gzip file. Fetch must receive the exact gzip bytes and MIME type while
 normal assets keep their usual handling. Tests need no real snapshot. Verify red
 before the fix, green after, then repeat the original real-snapshot browser flow.
+
+## Verification and implementation notes
+
+- Root (quality-first, bounded infrastructure correction) implemented only a narrow
+  pre-static-serving header middleware in `web/vite.config.ts`, reused by dev and
+  preview; no application installer or byte/hash validation changed.
+- `web/src/pwa/catalog-static-serving.test.ts` starts isolated real Vite servers
+  with a tiny synthetic gzip. Both tests failed before the fix because Fetch
+  received decoded raw bytes; both pass after it and ordinary-file behavior remains
+  unchanged. Red/green logs: `/tmp/cruxcontrol-catalog-serving-{red,green}.log`.
+- Web lint, typecheck, and the full unit suite pass (96 files, 798 tests).
+- Original production reproduction now passes against the privately restored real
+  snapshot on isolated port 4178: explicit manifest/download consent, 25 visible
+  first-page compatible climbs, detail rendering, name/native-grade filtering, and
+  reopening through the service worker offline without another catalog request.
+  No page errors. Scratch result `/tmp/cruxcontrol-real-catalog-result.json`; real
+  catalog contents/screenshots and test browser data remain outside Git.
+- One scratch verification selector was corrected from exact `Grade`/`V4` to the
+  rendered grade control and native label `6b+/V4`; this was test harness debt,
+  not a product defect. No production assertions were weakened.
+- README records the HTTP representation contract. No public deployment, catalog
+  binary commit, phone update, or personal-library access occurred.

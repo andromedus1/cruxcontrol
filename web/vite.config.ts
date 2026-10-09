@@ -2,6 +2,24 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath } from 'node:url';
+import type { Connect, Plugin } from 'vite';
+
+// These are downloadable gzip files, not HTTP-compressed representations.
+// sirv otherwise labels .gz paths as Content-Encoding: gzip, which Fetch decodes.
+function catalogFileEncoding(): Plugin {
+  const middleware: Connect.NextHandleFunction = (request, response, next) => {
+    if (/^\/catalog\/[^/?]+\.db\.gz(?:\?|$)/.test(request.url ?? '')) {
+      response.setHeader('Content-Type', 'application/gzip');
+      response.setHeader('Content-Encoding', 'identity');
+    }
+    next();
+  };
+  return {
+    name: 'catalog-file-encoding',
+    configureServer: (server) => { server.middlewares.use(middleware); },
+    configurePreviewServer: (server) => { server.middlewares.use(middleware); },
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -23,6 +41,7 @@ export default defineConfig(({ mode }) => ({
     outDir: mode === 'ios-prototype' ? 'dist-ios-prototype' : 'dist',
   },
   plugins: [
+    catalogFileEncoding(),
     react(),
     VitePWA({
       // Packaged prototype assets update with the native binary, not Workbox.

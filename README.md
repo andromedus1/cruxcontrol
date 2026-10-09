@@ -67,13 +67,21 @@ definition-driven schematic renderer remains the distributable fallback. The ori
 Kilter reference documents and screenshot sources are also private inputs and are not
 application assets.
 
-Kilter community-catalog installation and browsing are being integrated, but that work
-has not completed production-browser acceptance or release review. The first slice uses
+Kilter community-catalog installation and browsing are implemented and pass the
+production-browser checks; review corrections and final CI acceptance remain open.
+The first slice uses
 an explicitly older offline snapshot with unknown source freshness and no live updates;
 public distribution of its catalog binary remains gated. Publication to Kilter,
 logbook/session tracking, grade prediction, recommendations, iOS board control, and
 other board models remain future work. See [docs/VISION.md](docs/VISION.md) for the
 broader direction.
+
+Catalog `.db.gz` files are gzip download artifacts. Hosts must serve the gzip bytes
+as `application/gzip`, with absent or `identity` HTTP `Content-Encoding`; a transport
+compression layer must encode that representation again rather than merely label
+its existing gzip bytes. The Vite development and preview servers enforce identity
+for these paths. The installer checks compressed and raw sizes and the raw SHA-256;
+do not bypass those checks to accommodate an incorrectly configured host.
 
 ## Development
 
