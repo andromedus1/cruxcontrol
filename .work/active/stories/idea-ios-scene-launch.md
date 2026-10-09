@@ -1,7 +1,7 @@
 ---
 id: idea-ios-scene-launch
 kind: story
-stage: implementing
+stage: review
 parent: null
 depends_on: []
 release_binding: null
@@ -51,3 +51,18 @@ The broader build/startup story records tool versions and guide updates separate
 
 Host inline focused repair via fix/implement; standard standalone bounded review.
 No personal library or phone maintenance, no identity/signing data in Git.
+
+## Implementation and verification
+
+- Added one storyboard-backed scene manifest and scene delegate; retained the
+  existing Capacitor bridge and forwarded warm/cold URL and user-activity events.
+- Added `prototypes/ios/scripts/smoke-simulator.sh`, a real native build/install/
+  liveness/screenshot check accepting an explicit isolated simulator ID.
+- Before fix: script native build succeeded, then failed because the app exited.
+  After fix: native build and process-survival check passed; inspected screenshot
+  shows the empty My Climbs workspace and no Bluetooth permission dialog.
+- Prototype lint, typecheck, all30 adapter/runtime tests pass after the change.
+- Inspection also shows status-bar overlap of top controls, which is a separate
+  layout defect to capture; startup success is not a full native UX acceptance.
+- Logs/screenshots are outside Git under `/tmp/cruxcontrol-ios-scene-{before,after}`.
+  No simulator identifiers or personal content are committed.
