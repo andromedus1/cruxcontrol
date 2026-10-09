@@ -39,7 +39,7 @@ schedule, service architecture, or new feature decomposition is selected here.
    the active Fullride board. Existing work includes
    [bootstrap](../active/features/epic-foundation-catalog-bootstrap.md),
    [worker/WASM verification](../active/features/epic-foundation-verify-worker-build.md),
-   [provider-neutral queries](epic-universal-board-platform-catalog-domain.md),
+   [provider-neutral queries](../active/features/epic-universal-board-platform-catalog-domain.md),
    [sync](../active/epics/epic-catalog-sync.md), and
    [storage fallback](epic-foundation-sqlite-idb-fallback.md).
    SQLite catalog infrastructure is present but not wired into the running app;
@@ -47,6 +47,10 @@ schedule, service architecture, or new feature decomposition is selected here.
    provider acquisition and policy evidence before selecting the current source.
    Android/web catalog work can proceed while iPhone hardware is unavailable;
    neither invited-service implementation nor native iPhone acceptance is its gate.
+   Andrew approved an explicitly labeled older Kilter library first on 2026-10-09,
+   followed by current official-app coverage. The
+   [community browser](../active/features/kilter-community-browser.md) owns that
+   first usable slice; an older snapshot must not be presented as current coverage.
 4. **Shared contributed climbs: after Kilter community access and the mobile proof.** Continue the
    [shared-library epic](../active/epics/epic-shared-climb-library.md) so Andrew's partner and
    friends can contribute climbs, receive library updates, control the board, and
