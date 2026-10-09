@@ -1,7 +1,7 @@
 ---
 id: custom-climb-grade-visibility
 kind: story
-stage: implementing
+stage: review
 tags: [ui]
 parent: null
 depends_on: []
@@ -48,3 +48,13 @@ Reuse the existing grade input, reducer and metadata path. No second grade prope
 
 Host owns this small, independent editor change while catalog work continues. No
 catalog/app/runtime files are needed. Review weight standard, standalone inline lane.
+
+## Verification
+
+- Focused editor/reducer/view-record suite: 3 files, 24 tests passed.
+- Isolated Chromium phone viewport (390×844): Grade visible while Optional details
+  stays collapsed; entered V4 with separate synthetic name, autosaved, finished,
+  verified list grade, reloaded and verified detail grade. Passed.
+- Inline review: existing optional metadata/reducer preserved; no authored-data
+  conversion, schema or storage change. Existing read/share/backup codecs already
+  preserve `metadata.grade`. Required aggregate CI still runs on the branch.

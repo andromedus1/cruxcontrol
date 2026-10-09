@@ -143,17 +143,18 @@ export function RouteEditorWorkspace({
                 ))}
               </select>
             </label>
+            <label>
+              Grade (optional)
+              <input
+                placeholder="e.g. V4 or 6B"
+                value={state.content.metadata?.grade ?? ''}
+                onChange={(event) =>
+                  dispatch({ type: 'set-metadata', field: 'grade', value: event.target.value })
+                }
+              />
+            </label>
             <details>
               <summary>Optional details</summary>
-              <label>
-                Grade
-                <input
-                  value={state.content.metadata?.grade ?? ''}
-                  onChange={(event) =>
-                    dispatch({ type: 'set-metadata', field: 'grade', value: event.target.value })
-                  }
-                />
-              </label>
               <label>
                 Description
                 <textarea
