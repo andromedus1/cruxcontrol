@@ -1,7 +1,7 @@
 ---
 id: story-fix-ios-editor-focus-zoom
 kind: story
-stage: implementing
+stage: review
 tags: [ui, bug]
 parent: null
 depends_on: []
@@ -46,13 +46,22 @@ Playwright test. The Name, Angle, and Grade controls must compute to 16px.
 
 ## Acceptance criteria
 
-- [ ] Editable Name, Angle, and Grade controls compute to 16px in the phone-width
+- [x] Editable Name, Angle, and Grade controls compute to 16px in the phone-width
       browser test.
-- [ ] Route-editor CSS no longer references the undefined `--font-size-md` token.
-- [ ] Existing phone pinch zoom remains available and layout constraints are not
+- [x] Route-editor CSS no longer references the undefined `--font-size-md` token.
+- [x] Existing phone pinch zoom remains available and layout constraints are not
       used to mask the focus behavior.
 
 ## Simplification opportunity
 
 No broader typography or viewport cleanup is included; replacing the invalid token
 with the existing canonical base token removes the broken fallback path.
+
+## Implementation notes
+
+- Execution capability: bounded CSS correction with the existing Playwright editor workflow; project default review weight is standard.
+- Files changed: `web/src/route-editor/RouteEditorWorkspace.css`, `web/e2e/local-route-editor.spec.ts`.
+- Regression test: the existing phone-viewport e2e now checks computed font size for Name, Angle, and Grade. Before the CSS fix it failed with Name at `12px`; after the fix all three compute to `16px`.
+- Confirmation: `vite build` passed; all four tests in `web/e2e/local-route-editor.spec.ts` passed, including the new assertion. The existing viewport meta remains `width=device-width, initial-scale=1.0`, which leaves pinch zoom enabled.
+- Native confirmation: pending parent-owned iOS simulator relaunch and before/after check. The original native report is backed by the screenshots and interaction log listed above.
+- Adjacent issues parked: none.

@@ -113,6 +113,14 @@ test('keeps the complete editor and persistent actions usable on a phone viewpor
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Create climb' }).click();
+  const editorFields = page.locator('.editor-fields');
+  for (const field of [
+    editorFields.getByLabel('Name'),
+    editorFields.getByLabel('Angle'),
+    editorFields.getByLabel('Grade (optional)'),
+  ]) {
+    await expect(field).toHaveCSS('font-size', '16px');
+  }
   await expect(page.locator('.board-renderer__viewport')).toHaveAttribute('data-scale', '1');
   await expect(page.getByRole('button', { name: 'Mark finished' })).toBeVisible();
   await expect(page.getByRole('status', { name: 'Board connection' })).toBeVisible();
