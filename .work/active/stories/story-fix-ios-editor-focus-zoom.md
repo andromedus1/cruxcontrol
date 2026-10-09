@@ -63,5 +63,21 @@ with the existing canonical base token removes the broken fallback path.
 - Files changed: `web/src/route-editor/RouteEditorWorkspace.css`, `web/e2e/local-route-editor.spec.ts`.
 - Regression test: the existing phone-viewport e2e now checks computed font size for Name, Angle, and Grade. Before the CSS fix it failed with Name at `12px`; after the fix all three compute to `16px`.
 - Confirmation: `vite build` passed; all four tests in `web/e2e/local-route-editor.spec.ts` passed, including the new assertion. The existing viewport meta remains `width=device-width, initial-scale=1.0`, which leaves pinch zoom enabled.
-- Native confirmation: pending parent-owned iOS simulator relaunch and before/after check. The original native report is backed by the screenshots and interaction log listed above.
+- Native confirmation: parent rebuilt/synchronized the prototype, compiled and
+  installed it over the isolated app without clearing data, then focused Name and
+  Grade. Both now fit the 402-point viewport without horizontal zoom/clipping;
+  the Name-focused hierarchy proves the document remains402points wide (before:
+  536). Screenshots: `/tmp/cruxcontrol-native-font-focused.png` and the
+  `native-grade-focused.png` artifact under `/tmp/cruxcontrol-native-maestro-font-grade-after/`.
+  Normal keyboard-driven vertical scrolling remains; Back returns to the selected
+  climb's detail dialog, where the saved V4 grade is intact.
 - Adjacent issues parked: none.
+
+## Bounded inline review (2026-10-09)
+
+Approve the two-token correction after browser red/green evidence and actual native
+focus inspection. It restores the declared design-system font without restricting
+user zoom, changing persistence, or introducing platform branches. No independent
+story reviewer ran. Latest CI is pending a timing correction to the existing
+sparse-effects save test; the prototype lane passed. Keep at review until required
+aggregate CI succeeds.
