@@ -1,7 +1,7 @@
 ---
 id: ios-simulator-build-smoke
 kind: story
-stage: implementing
+stage: review
 tags: [infra, ble]
 parent: null
 depends_on: [epic-ios-controller-bridge-native-ble]
@@ -54,7 +54,44 @@ Bluetooth success to compensate for unavailable hardware.
   both npm packages with `npm ci`. Existing global Node and shell profile are
   unchanged; commands explicitly source the nvm loader.
 
+## Verification checkpoint
+
+- Root lint, typecheck, 664 web tests, and production build passed on Node20.
+- Prototype lint, typecheck, 30 native-adapter contract tests, asset build and
+  Capacitor plugin sync passed on Node22. Packaged Chromium synthetic-library
+  restore/export/reload smoke passed (1 test). These are browser/contract checks.
+- Xcode27.0 (27A266a) installed; Andrew completed its first-launch license and
+  components. Installed iOS27.0 arm64 runtime (24A434) through `xcodebuild
+  -downloadPlatform iOS`. Created an isolated iPhone17 simulator for synthetic work.
+- Native project scheme App compiled successfully with `CODE_SIGNING_ALLOWED=NO`.
+  Resolved Swift package8.4.3 at89e0d8ec2321025f549ddb19259a717467943b97; committed
+  the generated Package.resolved to make native package resolution reproducible.
+- First launch exposed UIKit's enforced scene lifecycle; the focused
+  [scene repair](idea-ios-scene-launch.md) now passes the real native startup check.
+  The [safe-area repair](idea-ios-status-bar-overlap.md) then resolved observed
+  status-bar overlap using native content insets. No global xcode-select change.
+- `prototypes/ios/scripts/smoke-simulator.sh` compiles, installs, launches, requires
+  process survival, and captures a screenshot. On the same isolated simulator,
+  inspected final screenshot shows My Climbs, empty local collections, backup,
+  screenshot import, visible Connect/Screen awake, and no startup Bluetooth prompt.
+  Evidence lives outsideGit under `/tmp/cruxcontrol-ios-safe-area/`; no simulator
+  identifiers or raw logs/screenshots enter this commit.
+- Compiler warnings remain in pinned plugin dependencies (unused manufacturer-data
+  filter cast and optional language coercion), plus skipped AppIntents metadata.
+  Neither path is exercised by this startup proof; physical/plugin behavior stays
+  subject to its real acceptance gates.
+
 ## Pending evidence
 
-Native compile and simulator launch have not run. Xcode installation and a runtime
-are prerequisites. The iOS epic remains open regardless of this story's result.
+Interactive WKWebView fixture restore/export, editing and ordered-list preservation
+across relaunch/update have not run. No physical iPhone/BLE, native sign-in, durable
+storage-pressure or distribution acceptance is implied. Those remain in the iOS epic.
+The guide owns repeatable setup and the remaining checklist; this bounded story owns
+native compile/install/startup evidence only.
+
+## Review (2026-10-09)
+
+Bounded inline review: setup used pinned packages, command-scoped developer tools,
+isolated simulator and synthetic empty library. Confirmed native build and visual
+startup evidence, repeatable commands, no identifiers/secrets/personal data staged.
+No independent story reviewer ran. Required aggregate CI remains to be completed.
