@@ -2,12 +2,14 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-09-28
+updated: 2026-10-09
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
   definitions and namespaced identities, independent catalog providers and
   controller profiles, on-demand local catalogs, and a Fullride 7x10 first slice.
+  Kilter community catalog access is prioritized ahead of invited contributions
+  and can advance on Android/web independently of native iPhone acceptance.
   An invited contribution library is intended; approved journeys and a verified
   access/storage comparison guide its bounded collaboration service and retained local copies.
   An iPhone client proof now precedes further shared-service implementation.
@@ -19,6 +21,7 @@ decisions:
   - "Provider-native records and provenance are retained beside the normalized read model; catalogs install per provider/layout rather than as one universal bundled database."
   - "BLE byte I/O is isolated behind Web Bluetooth in the PWA and an experimental native adapter in the iOS shell; both reuse API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
   - "The required iPhone path reuses the controller transport boundary; shell, durable storage and native authentication need proof before service implementation resumes."
+  - "Catalog acquisition and local browsing compose existing provider, storage, renderer and controller boundaries without depending on invited access or native iPhone proof."
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
@@ -57,6 +60,9 @@ feature item bodies in `.work/`, not here. Capabilities are in
 3. **Catalog Providers** — source-specific import/sync adapters. Kilter is first;
    later Aurora-family and MoonBoard providers are separately researched. Network,
    auth, reconciliation, and policy metadata remain outside domain and UI code.
+   Kilter catalog acquisition and Android/web browsing proceed independently of
+   the invited contribution service and native iPhone proof. Current acquisition
+   and usage constraints must be verified before selecting the provider path.
 4. **Controller Profiles & Transports** — profiles own discovery and command
    encoding; transports own platform I/O. The first pair is Aurora API level 2/3 over
    Web Bluetooth: deterministic framing/checksum/multi-packet encoding, serialized

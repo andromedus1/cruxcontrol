@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-09-27
+updated: 2026-10-09
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
@@ -19,6 +19,7 @@ decisions:
   - "Every climb and layout identity is namespaced by provider and immutable board/layout revision; bare vendor IDs never cross domain boundaries."
   - "The Fullride 7x10 is the acceptance board for the first milestone; additional providers are installed on demand."
   - "Establish iPhone board control and native storage/authentication contracts before further shared-library implementation."
+  - "Kilter community catalog access precedes invited sharing and can ship on Android/web independently of native iPhone hardware acceptance."
   - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
   - "Whole-library backup is a bounded local file of saved records; restore is missing-only, identity-preserving, conflict-blocking, and transactional per IndexedDB store."
@@ -78,6 +79,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 
 ### 2. Climb Browser
 
+- Kilter community catalog access is the next major addition, ahead of invited
+  sharing. Its Android/web delivery does not depend on physical iPhone acceptance;
+  native iPhone support keeps its own capability and preservation gates.
 - Fast, responsive browsing of the active board's installed community catalog.
 - Filtering: grade range, angle, quality, ascent count, setter, hold count,
   grade-consensus accuracy.

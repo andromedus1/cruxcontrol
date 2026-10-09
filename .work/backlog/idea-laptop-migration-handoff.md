@@ -1,16 +1,22 @@
 ---
 id: idea-laptop-migration-handoff
 created: 2026-09-28
-updated: 2026-09-28
+updated: 2026-10-09
 tags: []
 ---
 
-# Project paused for laptop migration
+# Laptop migration complete; preparation resumed
 
-Andrew requested a pause on 2026-09-28 while moving to a new laptop and setting
-up the work environment. Preserve this checkpoint; do not continue implementation
-or treat dependency-ready items as permission to resume. Wait for Andrew to say
-the new environment is ready and ask to continue.
+Andrew confirmed on 2026-10-09 that migration is complete, work is running from
+the new laptop, and the required tooling installations and project work may proceed.
+The 2026-09-28 pause is resolved. The checkpoint below preserves the starting state;
+current scope and validation belong to the linked work items.
+
+Kilter community catalog access now precedes invited partner/friend sharing, as
+recorded in the [priority capture](roadmap-next-milestones.md). Continue iOS tooling,
+native compilation and simulator preparation without waiting for an iPhone. Physical
+BLE acceptance still requires one; that requirement does not block Android/web
+catalog work or establish the native contracts required by the sharing milestone.
 
 ## Saved stopping point
 
@@ -35,11 +41,12 @@ the new environment is ready and ask to continue.
   [owning epic](../active/epics/epic-shared-climb-library.md) and
   [priority capture](roadmap-next-milestones.md). Do not restart those decisions.
 
-## Preserve outside Git before retiring the old laptop
+## Library and private-file preservation
 
 A clone preserves committed code, research, mockups and `.work/`; it does not
 preserve browser databases, private backups, local credentials, or untracked files.
-This handoff has not performed a device backup, file transfer, or migration.
+Andrew's migration confirmation resolves the work pause; this handoff does not attest
+to a device backup, file transfer, or validation of personal library contents.
 
 - Local private inputs exist in `docs/kilter_docs/` and `docs/set_boulders/`.
   They were intentionally left untracked; copy them privately if retaining those
@@ -61,7 +68,7 @@ This handoff has not performed a device backup, file transfer, or migration.
   maintenance and follow [the preservation rules](../../AGENTS.md#phone-updates-and-library-preservation).
   Do not reset, uninstall, clear site data, or change origin to simplify migration.
 
-## Resume after Andrew confirms readiness
+## Authorized resumption checks
 
 1. Restore/clone `andromedus1/cruxcontrol`, verify `andromedus1` GitHub access, and
    read `AGENTS.md`, `.agents/rules/*.md`, the knowledge navigator, and the priority
