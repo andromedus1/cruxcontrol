@@ -3,6 +3,7 @@ id: story-phone-library-recovery
 kind: story
 stage: implementing
 tags: [data, prose]
+research_refs: [android-chrome-recovery-access]
 parent: null
 depends_on: []
 release_binding: null
@@ -69,12 +70,16 @@ story review or a substitute for host verification.
   prematurely described that entry as a surviving database and corrected the claim.
   Inspection itself may have created empty bookkeeping; verify this before inference.
 - Other browser buckets are nonempty. Direct filesystem access to Chrome app storage
-  is denied to the ordinary Android shell. No forensic image has been acquired.
+  is denied to the ordinary Android shell. Later authorized debugging file reads and
+  directory inventories succeeded (see native-file checkpoint); no forensic disk
+  image has been acquired.
 - Chrome reports an October 8 update. Temporal proximity alone is not causality.
 - Historical Git and migration records name real phone backups from September 5–12.
   Actual backup payloads have not been located in transferred archives/ordinary
   searched paths. Andrew confirms the old laptop was erased and is unavailable.
-- Sixteen original PNGs remain locally. A private second copy was made and every
+- Sixteen original PNGs remain locally. Andrew confirms these are pre-CruxControl
+  climbs imported during migration, not the new climbs this incident seeks to recover.
+  A private second copy was made and every
   SHA-256 matches. The existing full PNG decoding/ring-manifest verification test
   passes for all sixteen. Both copies are on this laptop, not independent hardware.
 - Synthetic iOS simulator exports are excluded as recovery sources for Andrew's data.
@@ -86,7 +91,7 @@ Recovery assessment and diagnosis remain open.
 ## Host re-audit and additional evidence
 
 - Andrew requested a higher-effort review of prior work. An out-of-band, fresh-context
-  Claude Opus review is running through peeragent; no phone access or edits delegated.
+  Claude Opus review completed through peeragent; no phone access or edits delegated.
 - Source-level PNG verification passed: `npm -w web run test --
   src/screenshot-import/private-source-verification.test.ts`. It decodes and verifies
   all sixteen private images against the checksum-linked hold manifest. A ZIP of the
@@ -129,12 +134,13 @@ Recovery assessment and diagnosis remain open.
 
 ## Recovery limits still open
 
-- No raw image/copy of Chrome's protected internal data has been acquired. Android
-  denies ordinary shell access; browser API results cannot establish physical erasure.
+- No forensic disk image has been acquired. Native debugging access has now preserved
+  quota metadata and directory inventories. These live reads cannot establish physical
+  erasure of deleted/untracked remnants.
 - Diagnostic ZIP acquisition did not succeed; a zero-byte canceled transfer is not
   a disk-level absence proof. Do not root, unlock, reset or reinstall to bypass this.
-- Independent backup locations and the user's timeline of low-storage/cleanup events
-  are awaiting clarification. Old laptop is confirmed erased and unavailable.
+- Andrew reports a recent low-storage warning and knows of no independent export
+  backup. Old laptop is confirmed erased and unavailable.
 - Cause remains unestablished. Browser-level origin loss/cleanup, eviction, corruption,
   browser regression, historical application/maintenance fault, and context mismatch
   must be evaluated against evidence rather than selected by intuition.
@@ -200,18 +206,23 @@ Rejected or qualified reviewer claims:
 - No archived project task was available from the connected task server. No September
   Codex sessions were migrated locally. Project Git JSON history and migrated artifacts
   provide no whole-library payload; synthetic exports remain excluded.
-- The committed sixteen-climb source manifest is an independent reconstruction asset
-  with reviewed names/hold layouts. It is not the latest library and cannot recover
-  later custom climbs, authored changes, playlist ordering, identities or recipes.
+- The committed sixteen-climb source manifest preserves the pre-CruxControl imported
+  climbs. Andrew explicitly distinguishes these from the target: climbs authored
+  since migrating to CruxControl. Neither the manifest nor the PNGs recovers that work.
+- The recovery-only server was stopped; our USB reverse and CDP forward were removed.
+  The temporary UI dump was removed. Browser download behavior was restored to default.
 
 ## Recovery disposition and next decision
 
-No original authored-library records have been recovered. The accessible browser,
+No post-migration authored-library records have been recovered. The accessible browser,
 shared files, transferred backup payloads and available project history have not
-provided a whole-library recovery source. Android's protected Chrome files remain
-unimaged and inaccessible through the available ordinary shell/export path.
-**Permanent physical loss is not proven.** A specialist assessment, if Andrew wants
-that additional avenue, must precede any phone reconstruction/reset/restore; no such
+provided a whole-library recovery source. Although ordinary shell/download access
+failed, separate authorized debugging interfaces now permit native file reads and
+directory enumeration. Live directory inventories show no project backing directory
+in the examined legacy, bucket and additional partition locations. This strengthens
+the evidence beyond an empty browser API listing; it is not a raw deleted-data image.
+**Permanent physical loss is not proven.** Andrew has now authorized the specialist
+recovery assessment. It precedes any phone reconstruction/reset/restore; no external
 service has been contacted or promised a result.
 
 The diagnosis supported now is: apparent loss/unavailability of the app origin's
@@ -226,3 +237,81 @@ versions, empty-installation recovery without overwriting a good backup, and ver
 restore drills. Persisting browser storage alone is insufficient; distinguish a
 local save from an independently recoverable copy. No cloud vendor, authentication
 scheme or new production architecture is selected by this incident record.
+
+## Specialist access assessment registration
+
+The user's authorization supplies the focused scope and the decision: whether a
+preserving acquisition path exists before considering the recovery avenue exhausted.
+Continue the already authorized investigation without another scope-approval loop.
+One inline assessment with standard verification and an independent adversarial read
+is proportionate; this is not a broad forensic-tool procurement exercise.
+
+```yaml
+intent: validate-claim
+output_kind: synthesis-brief
+consumer: calibrated-work
+verification_rigor: standard
+temporal_contract: re-engage-on-trigger
+primitives_extends: []
+primitives_opts_out: []
+decision_relevance: Determine whether diagnostic export or specialist acquisition can obtain protected Chrome files while preserving recovery options.
+scope_authority: pre-registered
+analytical_artifact_type: per-campaign-brief
+```
+
+Existing incident evidence is framing, not an external research citation. No existing
+research brief answers the protected-file acquisition question. Candidate approaches:
+one focused acquisition assessment (selected), separate source/forensic campaigns
+(unnecessary coordination for this bounded question), or a broad vendor survey
+(does not resolve device compatibility). Device facts and a reviewable lab inquiry
+stay in the private recovery folder; generic technical findings live in research.
+
+## Native-file checkpoint and specialist handoff
+
+The source review found two different access paths. The diagnostic ZIP download uses
+a source-file allowlist that excludes Android Chrome's internal cache; moving the
+destination cannot change that check. This predicts a denial under normal policy,
+but no per-download runtime failure site was captured. Separately, trusted debugging
+file inputs and file-drop events can grant native reads through Chrome itself.
+
+Bounded live checks used agent-controlled blank receiving tabs. A system-file control
+and one-byte private-profile read succeeded. Native quota database/journal copies were
+saved and hashed outside Git. They pass the applicable host-only integrity check,
+but are live, separately read files; the journal was not replayed and no atomic
+acquisition is claimed. No climb payload was recovered from this bookkeeping.
+
+The first file-chooser directory attempt canceled. A separate debugging file-drop
+path succeeded after using a valid inherited origin; its first opaque-origin attempt
+returned EncodingError. This is a correction of the earlier access limit, not recovery
+of authored content. Directory inventory found:
+- No project-origin LevelDB, blob or SQLite path among the legacy IndexedDB entries.
+- Every numbered WebStorage directory maps to another origin in the copied quota
+  database; none is unmapped or associated with the project.
+- No project match or nested IndexedDB directory in the additional Storage subtree;
+  the traversal reported no error.
+- Full-file reads report NotFoundError for the expected origin CURRENT file and the
+  previous diagnostic ZIP. A zero-length sliced read was inconclusive and superseded
+  by the full-file check; do not cite it as existence evidence.
+
+No additional ZIP was generated, no source database engine was opened, no authored
+data was written and no file was uploaded over the internet in these native-read
+checks. Browser state necessarily changed through temporary tabs and debugging
+bookkeeping. Receiving tabs were closed and the debug forward removed afterward.
+The preservation server and reverse port remain stopped.
+
+The private specialist inquiry and case sheet now request an assessment of acquired
+metadata and deleted/untracked remnants. They explicitly distinguish the lost
+post-migration creations from the sixteen preserved imports. Public service leads
+and a Pixel-family forensic-tool claim are documented, but exact software/patch
+support and recoverability are unconfirmed. No lab has been contacted or paid.
+
+Independent access-assessment review job `20261009T213758Z-89a7e497` completed with
+four accepted material corrections: default temp-directory grounding, attribution
+qualifiers, export/deleted-data distinction, and complete preservation guidance.
+They were applied. Bounded delta review `20261009T215640Z-3dd9f053` completed and
+requested one material clarification: disclose the receiving page's target origin
+and distinguish inspection-time quota timestamps from the original loss timeline.
+That correction was applied and verified by the host. No third review was run.
+Citation lint and evidence hashes were checked; the research index was regenerated.
+The story remains implementing pending the specialist recovery disposition and
+subsequent protection-design handoff. No permanent-loss finding is asserted.

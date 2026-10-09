@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-09T19:31:45Z'
+generated_at: '2026-10-09T21:59:12Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -305,6 +305,31 @@ documents:
       means 'no single movement pattern receives consistent progressive overload'.
     - A board + grade model is a structured 'reduced-variability' progression tool — the training rationale
       for circuits, progressive-overload suggestions, and weakness targeting.
+  .research/analysis/briefs/android-chrome-recovery-access.md:
+    summary: 'Android app isolation prevents ordinary shell access to Chrome''s private profile.
+
+      Separate debugging file-input and file-drop pathways can grant access to explicit
+
+      native paths. The examined Chromium revision routes diagnostic ZIP downloads through
+
+      a file loader whose Android allowlist excludes internal cache paths. A failed export
+
+      is not proof of database erasure. Specialist deleted-data recovery remains a compatibility
+
+      question requiring exact model, OS and security-patch validation; public Pixel
+
+      support claims alone do not establish deleted-record recoverability.
+
+      '
+    key_findings:
+    - USB authorization does not confer Chrome's app identity or production ADB root access.
+    - Source tracing predicts denial of internal-cache ZIP downloads; no per-download runtime attribution
+      was captured.
+    - Authorized debugging file reads are distinct from ordinary shell access and from a complete forensic
+      acquisition.
+    - Bootloader unlocking deliberately resets data and is unsuitable for preserving an existing library.
+    - Public Pixel 8 filesystem-extraction support does not establish support for every OS/security patch
+      or recovery of deleted records.
   .research/analysis/briefs/invited-library-hosting-costs.md:
     summary: Cloudflare remains a conditional fit for a small private hobby library starting from scratch;
       supplied hostnames and Access email delivery reduce setup, while Supabase's separate email delivery

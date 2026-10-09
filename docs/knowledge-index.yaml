@@ -6,9 +6,9 @@
 #   2 = enforce (missing v2 fields are errors)
 # Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-10-09T19:31:45Z
+generated_at: 2026-10-09T21:59:12Z
 generated_from: frontmatter
-total_docs: 27
+total_docs: 28
 
 documents:
   # ── planning ──────────────────────────────────────────────────────────────
@@ -49,6 +49,14 @@ documents:
     consumer_hint: CruxControl vision, problem, audience, principles, and non-goals
 
   # ── research ──────────────────────────────────────────────────────────────
+
+  - path: .research/analysis/briefs/android-chrome-recovery-access.md
+    title: Android Chrome protected-file recovery access
+    type: brief
+    kind: research
+    updated: 2026-10-09
+    status: locked
+    consumer_hint: Which access paths can preserve a missing Chrome IndexedDB library, and what must a specialist confirm before acquisition?
 
   - path: .research/analysis/briefs/invited-library-hosting-costs.md
     title: Hosting a small invited library from scratch
