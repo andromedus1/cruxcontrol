@@ -3,7 +3,7 @@
 # Provides corpus situational awareness only. Read knowledge-index.yaml for full index.
 
 schema_version: 3
-generated_at: 2026-10-09T19:29:05Z
+generated_at: 2026-10-09T19:31:45Z
 generated_from: frontmatter
 total_docs: 27
 
@@ -19,7 +19,7 @@ substrate_summary:
     feature: 12
     story: 4
     release: 0
-  backlog: 12
+  backlog: 13
   releases: {}
   archive: 103
 

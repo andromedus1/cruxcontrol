@@ -99,7 +99,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Source wording identifies an older offline snapshot with no live updates. Its
   source freshness and complete current-app coverage are unknown. Installation does
   not refresh itself. Public distribution of the real catalog binary remains gated;
-  without an available binary the app reports catalog unavailability.
+  a manifest can still present an offer when its binary is absent. After explicit
+  download consent, an unavailable binary produces an HTTP or size error with retry,
+  while authored climbs and lists remain available.
 - Add shareable URLs for individual/provider climbs with future catalog browsing;
   current portable sharing is implemented for playlists through fragments or files.
 - Visual 2D board renderer showing recognizable hold artwork, positions, semantic role

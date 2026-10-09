@@ -6,7 +6,9 @@
 
 **Documents:** 5 current system planning documents, no module planning sets
 
-**Accepted findings:** 0 Critical, 0 High, 0 Medium, 0 Low
+**Final independent findings:** 0 Critical, 0 High, 0 Medium, 2 Low
+
+**Closure:** Both Low documentation findings corrected; no unresolved blockers.
 
 ## Method and adjudication
 
@@ -20,9 +22,15 @@ migration or shared-plugin change is warranted.
 
 Root then reconciled the final implementation/review evidence, native cancellation
 lifetime, catalog serving contract, and delivery wording against current source and
-work records. The final aggregate resumption review is a separate PR completion
-gate recorded in PR #31; this report does not claim that an in-progress pass has
-already finished. No build or test success is inferred from documentation review.
+work records. The final aggregate resumption review, Claude job
+`20261009T192218Z-bf3edf1e`, approved the batch through `29596f5`. It found two Low
+documentation contradictions: README called the compressed-artifact digest a raw
+digest, and SPEC described an absent binary as immediate unavailability rather than
+an offer followed by download failure. Root checked the hash call and UI branches
+and corrected both statements here and in the owning documents. Standard review
+closes after these named fixes; no second independent pass is required. A lower-risk
+manifest/artifact pairing follow-up is captured in the unbound backlog as
+`idea-catalog-distribution-offer`, under the existing distribution milestone. No build or test success is inferred from documentation review.
 
 ## Current consistency checks
 
@@ -32,7 +40,7 @@ already finished. No build or test success is inferred from documentation review
   consent, unknown source freshness, no live refresh, compatible whole routes,
   native-grade/name/angle filtering and bounded pages. It does not claim current
   official-app coverage or public binary distribution permission.
-- The catalog installer owns bounded compressed/raw sizes, raw SHA-256, database
+- The catalog installer owns bounded compressed/raw sizes, SHA-256 of compressed gzip bytes, database
   validation and durable receipt recovery. Vite serves `.db.gz` as a downloadable
   gzip representation rather than labeling its existing bytes as HTTP compression.
   The production build checker follows the real application-to-worker-to-WASM
@@ -68,6 +76,6 @@ parts of the generic review checklist do not apply. Existing foundation/catalog,
 invited-library, iOS-client and deployment research references were present. Research
 brief internals and external-source freshness were not re-audited here.
 
-Knowledge-index regeneration reports 27 documents and 136 work items, zero errors,
+Knowledge-index regeneration reports 27 documents and 137 work items, zero errors,
 and two existing guidance warnings for 15 decision entries in ARCHITECTURE and SPEC
 (the suggested cap is 12). These are guidance, not broken references or schema errors.

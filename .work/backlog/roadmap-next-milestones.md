@@ -68,7 +68,8 @@ schedule, service architecture, or new feature decomposition is selected here.
    using the [existing deployment path](../../docs/DEPLOY.md); deployment was disabled
    at the roadmap review, so recheck configuration before planning changes. Resolve
    [artwork distribution](idea-kilter-artwork-distribution-rights.md) for the intended
-   audience. Include the [iOS controller bridge](../active/epics/epic-ios-controller-bridge.md)
+   audience and [catalog offer/artifact pairing](idea-catalog-distribution-offer.md)
+   for the chosen packaging path. Include the [iOS controller bridge](../active/epics/epic-ios-controller-bridge.md)
    and a practical native distribution path. These are audience-dependent companions
    to the shared-library milestone, rather than work to postpone until afterward.
 6. **Local logbook.** Follow the library milestones with a

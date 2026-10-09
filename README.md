@@ -78,7 +78,8 @@ Catalog `.db.gz` files are gzip download artifacts. Hosts must serve the gzip by
 as `application/gzip`, with absent or `identity` HTTP `Content-Encoding`; a transport
 compression layer must encode that representation again rather than merely label
 its existing gzip bytes. The Vite development and preview servers enforce identity
-for these paths. The installer checks compressed and raw sizes and the raw SHA-256;
+for these paths. The installer checks compressed and raw sizes and the SHA-256 of the exact
+downloaded gzip bytes;
 do not bypass those checks to accommodate an incorrectly configured host.
 
 ## Development
