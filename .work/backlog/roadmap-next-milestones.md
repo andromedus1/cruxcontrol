@@ -15,6 +15,8 @@ schedule, service architecture, or new feature decomposition is selected here.
 
 ## Agreed order
 
+**Incident priority (2026-10-09):** [phone-library recovery](../active/stories/story-phone-library-recovery.md) supersedes the sequence below. Exhaust safe recovery, diagnose, then design stronger preservation before resuming catalog or sharing work.
+
 Andrew confirmed the immediate sequence after PR #31 merged (2026-10-09):
 update and dogfood the older catalog on the connected Android phone, then pursue
 current Kilter coverage, then partner sharing. Physical iPhone testing waits for
