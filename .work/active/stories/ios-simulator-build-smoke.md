@@ -1,7 +1,7 @@
 ---
 id: ios-simulator-build-smoke
 kind: story
-stage: review
+stage: done
 tags: [infra, ble]
 parent: null
 depends_on: [epic-ios-controller-bridge-native-ble]
@@ -95,3 +95,12 @@ Bounded inline review: setup used pinned packages, command-scoped developer tool
 isolated simulator and synthetic empty library. Confirmed native build and visual
 startup evidence, repeatable commands, no identifiers/secrets/personal data staged.
 No independent story reviewer ran. Required aggregate CI remains to be completed.
+
+## Closure (2026-10-09)
+
+Approved after the recorded review and verified corrections. Required PR31 CI
+passed for commit39210d7: web lint/typecheck/tests/build/browser workflows and the
+prototype adapter/assets/browser lane; deployment was skipped.
+Evidence: https://github.com/andromedus1/cruxcontrol/actions/runs/37971170037 .
+Standalone story closed through the bounded inline lane, without an independent
+reviewer. Broader native acceptance remains owned by the iOS epic.
