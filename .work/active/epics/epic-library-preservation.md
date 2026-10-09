@@ -98,7 +98,7 @@ erase Andrew's profile to demonstrate recovery.
 
 ## Grounding and research needed
 
-Reuse the [incident record](../stories/story-phone-library-recovery.md) and the
+Reuse the [incident record](../../archive/story-phone-library-recovery.md) and the
 [recovery-access brief](../../../.research/analysis/briefs/android-chrome-recovery-access.md)
 for the loss pattern and access limits. Existing implementation entry points are
 `web/src/library-backup/{service,codec,indexeddb-store,delivery}.ts`, the climb and

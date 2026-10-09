@@ -17,7 +17,7 @@ schedule, service architecture, or new feature decomposition is selected here.
 
 **Preservation priority (2026-10-09):** Andrew has closed further recovery escalation
 and chosen to proceed assuming the missing post-migration climbs are lost. The
-[incident record](../active/stories/story-phone-library-recovery.md) preserves the qualified
+[incident record](../archive/story-phone-library-recovery.md) preserves the qualified
 diagnosis; physical unrecoverability and the deletion trigger remain unproven.
 [Independent library preservation](../active/epics/epic-library-preservation.md) is now the
 immediate priority: both automatic private online backups and owner-controlled
