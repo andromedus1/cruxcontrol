@@ -1,7 +1,7 @@
 ---
 id: idea-ios-status-bar-overlap
 kind: story
-stage: review
+stage: done
 parent: null
 depends_on: [idea-ios-scene-launch]
 release_binding: null
@@ -51,3 +51,12 @@ repair specifically verifies the reproduced startup overlap.
 Bounded inline review approves the focused configuration change: supported pinned
 API, same native origin, no library migration or transport change. No independent
 story reviewer ran. Aggregate required CI remains to be completed on this branch.
+
+## Closure (2026-10-09)
+
+Approved after the recorded review and verified corrections. Required PR31 CI
+passed for commit39210d7: web lint/typecheck/tests/build/browser workflows and the
+prototype adapter/assets/browser lane; deployment was skipped.
+Evidence: https://github.com/andromedus1/cruxcontrol/actions/runs/37971170037 .
+Standalone story closed through the bounded inline lane, without an independent
+reviewer. Broader native acceptance remains owned by the iOS epic.
