@@ -67,9 +67,7 @@ definition-driven schematic renderer remains the distributable fallback. The ori
 Kilter reference documents and screenshot sources are also private inputs and are not
 application assets.
 
-Kilter community-catalog installation and browsing are implemented and pass the
-production-browser checks; review corrections and final CI acceptance remain open.
-The first slice uses
+Kilter community-catalog installation and browsing use
 an explicitly older offline snapshot with unknown source freshness and no live updates;
 public distribution of its catalog binary remains gated. Publication to Kilter,
 logbook/session tracking, grade prediction, recommendations, iOS board control, and

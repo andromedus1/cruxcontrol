@@ -9,7 +9,7 @@ summary: >
   definitions and namespaced identities, independent catalog providers and
   controller profiles, on-demand local catalogs, and a Fullride 7x10 first slice.
   The first consented Kilter community catalog browser is integrated for an older
-  offline snapshot; its implementation and release acceptance remain in progress.
+  offline snapshot, with explicit download consent and offline query support.
   Current-source coverage, freshness, and public binary distribution remain unproven.
   Catalog work advances on Android/web independently of native iPhone acceptance.
   An invited contribution library is intended; approved journeys and a verified
@@ -115,7 +115,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    modal; desktop detail and playlist play-through use the workspace header without a
    duplicate row. Climb detail and editing share automatic scene lighting
    through `useEditorLighting`; view changes never request a Bluetooth chooser.
-   The in-progress Kilter catalog surface opens its runtime service on first entry,
+   The Kilter catalog surface opens its runtime service on first entry,
    shows explicit Manage/download consent, and filters complete Fullride-compatible
    snapshot rows by name, exact grade and angle in bounded 25-row cursor pages.
    Catalog results reuse read-only detail and lighting. The broader quality, ascent,

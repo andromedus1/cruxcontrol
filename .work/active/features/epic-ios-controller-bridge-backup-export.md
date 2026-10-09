@@ -1,7 +1,7 @@
 ---
 id: epic-ios-controller-bridge-backup-export
 kind: feature
-stage: review
+stage: done
 parent: epic-ios-controller-bridge
 depends_on: [ios-simulator-build-smoke]
 release_binding: null
@@ -425,3 +425,34 @@ V4 draft and two playlists; capture the exact baseline before the run. Then:
   reproduced for this destination on iOS 27**. The bounded retention correction is
   based on WebKit's documented broader callback-lifetime behavior, not a claim that
   this particular path failed. Evidence: `/tmp/cruxcontrol-native-after-inner-cancel.png`.
+
+
+## Named-fix native verification and closure (2026-10-09)
+
+- Fresh Node 22 sync and Xcode 27 build installed the corrected adapter from
+  `2c04e07` over the second iPhone 17 / iOS 27 simulator without resetting its data.
+  Native startup and all displayed synthetic collection counts remained correct.
+  Build evidence: `/tmp/cruxcontrol-ios-review-lifetime/`.
+- Canceling the OS share sheet returned “Backup export canceled”, enabled retry,
+  and retained exactly one complete 4,589-byte cache file. Retrying replaced that
+  export envelope and still held exactly one cache file. The simulator was also
+  restarted while the OS picker was open; the next export recovered normally.
+- Save to Files saved a fresh destination file after choosing a distinct basename
+  in the OS picker. Existing-name Save taps made no visible progress through the
+  automation, so the fresh proof uses the OS rename control; this is not evidence
+  for same-name overwrite behavior. The app reported completion and its owned cache
+  directory was absent afterward.
+- The actual new OS-saved JSON is copied to
+  `/tmp/cruxcontrol-native-review-export.json`. Production codec/canonical comparison
+  proves exact equality with the earlier baseline for every record and ordered
+  membership (except envelope export time): all five climbs, two lists, Trash,
+  revisions/dates, missing local reference, effect recipe, and native-created V4.
+  `/tmp/cruxcontrol-native-review-compare.log` records both PASS assertions.
+- Native adapter tests (24), lint and typecheck passed. Required GitHub CI for
+  `bed790b` passed in run `37977818558`, including web and prototype browser lanes.
+- Standard review closure: one independent pass (`20261009T184449Z-dba78387`),
+  root-adjudicated bounded lifetime correction, unit and native verification above,
+  then approve without a second independent review. No material findings remain in
+  this feature's simulator file-delivery scope. Physical-device storage, same-name
+  OS overwrite interaction, authentication, BLE and distribution remain outside its
+  acceptance claim and are owned by the iOS epic.

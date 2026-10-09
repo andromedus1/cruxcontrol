@@ -83,7 +83,7 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Kilter community catalog access is the next major addition, ahead of invited
   sharing. Its Android/web delivery does not depend on physical iPhone acceptance;
   native iPhone support keeps its own capability and preservation gates.
-- The in-progress first slice lazily opens the installed legacy Kilter Fullride
+- The first slice lazily opens the installed legacy Kilter Fullride
   snapshot on first catalog entry. Ordinary local startup does not read catalog
   storage or fetch metadata. The Manage dialog describes the source and size; a
   download starts only after explicit user consent. Installed catalog reads work
