@@ -42,9 +42,13 @@ schedule, service architecture, or new feature decomposition is selected here.
    [provider-neutral queries](../archive/epic-universal-board-platform-catalog-domain.md),
    [sync](../active/epics/epic-catalog-sync.md), and
    [storage fallback](epic-foundation-sqlite-idb-fallback.md).
-   SQLite catalog infrastructure is present but not wired into the running app;
-   these capabilities must not be mistaken for delivered catalog access. Refresh
-   provider acquisition and policy evidence before selecting the current source.
+   The lazy SQLite catalog service and first browser are now wired into the running
+   app. Implementation and production-browser acceptance remain in progress; the
+   integration does not make the catalog a completed or released capability. The
+   approved older snapshot is explicitly labeled, has unknown source freshness, and
+   receives no automatic refresh. Current official-app coverage and permission for
+   public binary distribution remain unresolved; retain the existing provider and
+   distribution gates before broadening this slice.
    Android/web catalog work can proceed while iPhone hardware is unavailable;
    neither invited-service implementation nor native iPhone acceptance is its gate.
    Andrew approved an explicitly labeled older Kilter library first on 2026-10-09,

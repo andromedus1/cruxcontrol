@@ -8,8 +8,9 @@ summary: >
   CruxControl is a Kilter-first, eventually universal climbing-board app. Its
   first complete vertical slice controls a home Fullride 7x10, while its domain,
   catalog, and controller boundaries allow other boards to be added without
-  surrendering offline use, data ownership, or source fidelity. Kilter community
-  catalog access is the next major addition, while native iPhone preparation continues.
+  surrendering offline use, data ownership, or source fidelity. The first
+  older-snapshot Kilter catalog browser is being integrated while native iPhone
+  preparation continues.
   Invited contributions follow with Android and iPhone board control.
 decisions:
   - "Share product logic across web, Android and iOS; preserve the working web client while proving native iPhone board control."
@@ -18,7 +19,7 @@ decisions:
   - "Board definitions, catalog providers, and controller protocols are independent extension points."
   - "Imports may use public or user-authorized sources; access and redistribution constraints are enforced per provider."
   - "Static/backendless remains the default, with a narrow service allowed later only where a provider or collaboration capability requires it."
-  - "Kilter community catalog access precedes invited shared contributions; native iPhone preparation continues independently, with a logbook, broader providers, grade prediction and personalized training retained afterward."
+  - "Kilter community catalog access precedes invited shared contributions; its first older-snapshot browser remains in progress, and native iPhone preparation continues independently, with a logbook, broader providers, grade prediction and personalized training retained afterward."
   - "The installable PWA keeps private authoring and playlists local; an invited shared library may use a narrow, research-grounded collaboration service."
   - "Invited partner and friends need Android and iPhone board control; establish the iOS path before advancing shared-library implementation."
 ---
@@ -31,12 +32,16 @@ CruxControl is a data-owning climbing-board app whose first complete target is a
 home Kilter Board Fullride 7x10. Its implemented first milestone creates, saves,
 reopens, and lights unrestricted browser-local climbs through a fast, offline-first
 client; organizes them into shareable lists; and supports locally reviewed screenshot
-imports and editable light effects. The next major addition makes the Kilter community
-catalog accessible for the active board. Catalog work can advance on Android and the
-web while native iPhone work proceeds; unavailable iPhone hardware does not block
-that catalog milestone. The isolated iOS prototype now compiles and launches in an
-iPhone 17 simulator, while interactive library checks and physical-device acceptance
-remain open.
+imports and editable light effects. The Kilter community catalog first slice is now
+integrated in the running app: entry opens the older offline Fullride snapshot when
+available, while explicit management consent controls metadata lookup and download.
+The implementation and production-browser acceptance are still in progress. The
+snapshot's source freshness is unknown and it receives no live updates; complete
+current-app coverage and public distribution permission are not established. Catalog
+work can advance on Android and the web while native iPhone work proceeds; unavailable
+iPhone hardware does not block that work. The isolated iOS prototype now compiles,
+starts, and has passed synthetic-data library preservation and complete backup/restore
+round trips in an iPhone 17 simulator; physical-device acceptance remains open.
 
 Invited partner and friends can subsequently contribute climbs to a shared library
 and receive updates independently of app releases. That milestone includes Android

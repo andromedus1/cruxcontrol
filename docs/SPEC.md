@@ -19,6 +19,7 @@ decisions:
   - "Every climb and layout identity is namespaced by provider and immutable board/layout revision; bare vendor IDs never cross domain boundaries."
   - "The Fullride 7x10 is the acceptance board for the first milestone; additional providers are installed on demand."
   - "Establish iPhone board control and native storage/authentication contracts before further shared-library implementation."
+  - "The first Kilter community catalog slice is a consented, read-only Fullride browser over an explicitly older offline snapshot; current coverage, source freshness, and public binary distribution remain unproven."
   - "Kilter community catalog access precedes invited sharing and can ship on Android/web independently of native iPhone hardware acceptance."
   - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
@@ -82,9 +83,23 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Kilter community catalog access is the next major addition, ahead of invited
   sharing. Its Android/web delivery does not depend on physical iPhone acceptance;
   native iPhone support keeps its own capability and preservation gates.
-- Fast, responsive browsing of the active board's installed community catalog.
-- Filtering: grade range, angle, quality, ascent count, setter, hold count,
-  grade-consensus accuracy.
+- The in-progress first slice lazily opens the installed legacy Kilter Fullride
+  snapshot on first catalog entry. Ordinary local startup does not read catalog
+  storage or fetch metadata. The Manage dialog describes the source and size; a
+  download starts only after explicit user consent. Installed catalog reads work
+  offline, and catalog absence or failure leaves authored climbs and lists available.
+- Browse complete routes compatible with the configured Fullride placements through
+  a read-only detail and lighting surface. The first slice supports name, exact grade,
+  and angle filters with bounded 25-row cursor pages. It does not claim a full result
+  count or display incompatible/partial routes. Quality, ascent count, setter, hold
+  count, grade-consensus accuracy, broader grade ranges, and provider-climb URLs remain
+  intended future filters or navigation.
+- Climb detail shows the source grade when one is available, alongside the climb's
+  name and angle; missing grades remain omitted rather than fabricated.
+- Source wording identifies an older offline snapshot with no live updates. Its
+  source freshness and complete current-app coverage are unknown. Installation does
+  not refresh itself. Public distribution of the real catalog binary remains gated;
+  without an available binary the app reports catalog unavailability.
 - Add shareable URLs for individual/provider climbs with future catalog browsing;
   current portable sharing is implemented for playlists through fragments or files.
 - Visual 2D board renderer showing recognizable hold artwork, positions, semantic role
@@ -182,7 +197,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Treat the legacy Kilter sync protocol (`POST /sync`) and BoardLib bootstrap as
   research/reference material, not as a verified current catalog source. The current
   acquisition slice uses the supported catalog query adapter and safely reads
-  Fullride roles 42–45; complete official catalog coverage and a repeatable
+  Fullride roles 42–45; the first browser is integrated over the explicitly older
+  snapshot, while complete official catalog coverage and a repeatable current-source
   acquisition pipeline remain future work.
 - The intended catalog model includes climbs + frames, `climb_stats` per angle,
   hold coordinates (`holes`), and placement→hole→LED mappings. The current safe
