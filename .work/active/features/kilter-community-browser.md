@@ -559,3 +559,21 @@ public deployment is part of this feature's tests.
 - Follow-up verification: full Vitest (96 files, 804 tests), lint, production build,
   focused synthetic catalog E2E (1/1), and normal app E2E (14/14) passed. The build
   retains the existing advisory about the 509 kB main JavaScript chunk.
+
+## Root review adjudication
+
+Standard weight, one independent Claude pass: `20261009T185739Z-71429156`.
+Root accepted the unknown-outcome recovery defect, retry/close serialization gap,
+removed-trigger focus issue, duplicate/noisy live-region feedback, and the missing
+actual lazy-worker assertion. Correction `7fb3b26` and the focused/full verification
+above address these. Root additionally checked that modal Manage retains its own
+bounded announcements and retry reports opening until shutdown/recovery settle.
+
+The proposed unchanged-digest replacement selection case has no current UI path:
+installation is exposed only for an empty catalog, and this slice intentionally has
+no replacement/refresh control. Do not expand scope to a speculative consumer.
+Existing viewer/controller tests and browser stale-result/selection tests cover the
+composed lighting boundary; no separate physical-board claim is made. General test
+wishlist and minor copy/disabled-versus-hidden differences did not establish a
+current correctness failure. No material finding remains beyond final CI closure,
+and no second independent feature pass is requested at standard weight.
