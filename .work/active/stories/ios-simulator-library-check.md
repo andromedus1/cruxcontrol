@@ -59,8 +59,8 @@ checked 2026-10-09. This selects a local verification tool only.
   still displays its exact name,40degree angle andV4 grade. Normal startup showed
   disconnected; explicit Connect changed to Bluetooth unavailable on the simulator.
 - Found and parked editor focus zoom. The scoped
-  [font repair](story-fix-ios-editor-focus-zoom.md) corrects an undefined typography
-  token; its actual native after-update check is pending.
+  [font repair](../../archive/story-fix-ios-editor-focus-zoom.md) corrects an undefined typography
+  token; its actual native after-update check passed.
 - Download library backup reports started but creates no file/sheet. Native log
   proves LaunchServices rejects its blob URL with Code115. The scoped
   [native export feature](../features/epic-ios-controller-bridge-backup-export.md)
@@ -85,6 +85,12 @@ checked 2026-10-09. This selects a local verification tool only.
   and `/tmp/cruxcontrol-ios-font-fix/`. This is one synthetic native update check;
   it does not establish storage-pressure durability or physical-device behavior.
 
+- Native mixed playlist play-through passed in original order: finished A, draft,
+  Trash, then missing local reference. The final position explains that the missing
+  climb retains its list position until removed. Evidence: scratch flow and log
+  `/tmp/cruxcontrol-native-mixed-next.yaml` and `.log`, plus its screenshot under
+  `/tmp/cruxcontrol-native-maestro-mixed-next/`.
+
 Not yet established: full native exported-record comparison, restore into a second
-simulator, mixed-list missing reference/effect interaction, landscape, physical BLE,
-durable storage pressure or authentication.
+simulator, effect interaction, landscape, physical BLE, durable storage pressure
+or authentication.
