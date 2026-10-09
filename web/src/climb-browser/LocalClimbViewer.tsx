@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BoardLightController } from '../board-control/light-controller';
 import type { BoardDefinition } from '../domain/boards/definition';
 import { ClimbDetail } from './ClimbDetail';
@@ -14,6 +14,8 @@ export interface LocalClimbViewerProps {
   readonly heading: string;
   readonly emptyTitle: string;
   readonly emptyDescription: string;
+  readonly listHeader?: ReactNode;
+  readonly listFooter?: ReactNode;
   readonly onCreateClimb?: () => void;
   readonly onEditClimb?: (key: ClimbViewKey) => void;
   readonly onManageLists?: (key: ClimbViewKey) => void;
@@ -47,6 +49,8 @@ export function LocalClimbViewer({
   heading,
   emptyTitle,
   emptyDescription,
+  listHeader,
+  listFooter,
   onCreateClimb,
   onEditClimb,
   onManageLists,
@@ -110,6 +114,7 @@ export function LocalClimbViewer({
             </button>
           )}
         </header>
+        {listHeader}
         {climbs.length === 0 ? (
           <section className="climb-empty">
             <p className="climb-empty__symbol" aria-hidden="true">
@@ -151,11 +156,12 @@ export function LocalClimbViewer({
             ))}
           </ul>
         )}
+        {listFooter}
       </aside>
       <main className="climb-detail-pane">
         {!selected && (
           <section className="no-selection">
-            <p>Select a saved climb to inspect its holds and light the board.</p>
+            <p>Select a climb to inspect its holds and light the board.</p>
           </section>
         )}
         <dialog

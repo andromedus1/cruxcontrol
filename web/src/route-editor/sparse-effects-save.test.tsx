@@ -8,6 +8,7 @@ import { IndexedDbLocalDraftRepository } from '../drafts/indexeddb-repository';
 import { openDraftDatabase } from '../drafts/open-draft-database';
 import { FIRST_DRAFT_ID } from '../drafts/test-fixtures';
 import { RouteEditorWorkspace } from './RouteEditorWorkspace';
+import { unopenedCatalogService } from '../catalog/test-service.ts';
 
 const presets = [
   ['Fireflies', 'fireflies', 8], ['Shooting stars', 'shooting-stars', 6],
@@ -32,6 +33,7 @@ describe('sparse effect editing and persistence', () => {
         create: vi.fn(), get: vi.fn(), list: vi.fn().mockResolvedValue([]),
         update: vi.fn(), delete: vi.fn(),
       },
+      catalog: unopenedCatalogService(),
     };
 
     const view = render(<CruxControlWorkspace runtime={runtime} />);

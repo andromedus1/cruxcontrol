@@ -79,7 +79,7 @@ export function ClimbDetail({
       {showBoardControls && <BoardControlBar controller={controller} />}
       <header className="climb-detail__header">
         <div>
-          <p className="eyebrow">{climb.origin === 'local-draft' ? 'Local climb' : 'Climb'}</p>
+          <p className="eyebrow">{climb.sourceLabel ?? (climb.origin === 'local-draft' ? 'Local climb' : 'Climb')}</p>
           <Heading id={boardHeadingId}>{climb.name}</Heading>
         </div>
         <span className="angle-badge">{climb.angle}°</span>

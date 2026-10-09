@@ -56,6 +56,24 @@ describe('LocalClimbViewer', () => {
     expect(create).toHaveBeenCalledOnce();
   });
 
+  it('renders optional composition slots around the existing climb list', () => {
+    render(
+      <LocalClimbViewer
+        {...copy}
+        definition={definition}
+        climbs={[first]}
+        selectedKey={null}
+        onSelectedKeyChange={() => undefined}
+        listHeader={<label>Catalog name <input aria-label="Catalog name" /></label>}
+        listFooter={<button type="button">Next catalog page</button>}
+      />,
+    );
+
+    expect(screen.getByLabelText('Catalog name')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Garage Circuit/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next catalog page' })).toBeInTheDocument();
+  });
+
   it('binds contextual primary and destructive actions to the selected climb', () => {
     const primary = vi.fn();
     const destructive = vi.fn();
@@ -96,7 +114,7 @@ describe('LocalClimbViewer', () => {
         onSelectedKeyChange={() => undefined}
       />,
     );
-    expect(screen.getByText(/Select a saved climb/)).toBeInTheDocument();
+    expect(screen.getByText(/Select a climb/)).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Garage Circuit' })).not.toBeInTheDocument();
   });
 

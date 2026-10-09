@@ -1,7 +1,7 @@
 ---
 id: kilter-community-browser
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, data]
 parent: null
 depends_on: [epic-universal-board-platform-catalog-domain, epic-foundation-catalog-bootstrap]
@@ -262,14 +262,14 @@ export function createCatalogService(
   visible. Do not forcibly kill a worker midway through successful activation.
 
 **Acceptance:**
-- [ ] Construction and local startup perform no catalog I/O; first Kilter entry
+- [x] Construction and local startup perform no catalog I/O; first Kilter entry
       creates at most one worker and ready reopen makes no network request.
-- [ ] A binary is requested only after explicit confirmation of the displayed offer.
-- [ ] Cancellation, duplicate clicks, late responses and retry cannot start an
+- [x] A binary is requested only after explicit confirmation of the displayed offer.
+- [x] Cancellation, duplicate clicks, late responses and retry cannot start an
       unapproved install or overwrite the service's current generation.
-- [ ] Progress remains owned and update-blocking across destination changes;
+- [x] Progress remains owned and update-blocking across destination changes;
       teardown closes one worker without interrupting an accepted install.
-- [ ] Provenance represents the installed digest and preserves unknown freshness.
+- [x] Provenance represents the installed digest and preserves unknown freshness.
 
 ### Unit 2: Runtime and update-admission integration
 
@@ -313,13 +313,13 @@ interface CruxControlRuntimeDependencies {
   until the service settles. Passive query/open reads need no new update blocker.
 
 **Acceptance:**
-- [ ] Unsupported/busy/failed catalog state leaves My Climbs, Drafts, Trash, Lists,
+- [x] Unsupported/busy/failed catalog state leaves My Climbs, Drafts, Trash, Lists,
       backup/restore and board controls usable.
-- [ ] Pending catalog work still blocks update after switching destinations or
+- [x] Pending catalog work still blocks update after switching destinations or
       entering the local editor; finishing it does not clear another active blocker.
-- [ ] App/runtime teardown does not create an unhandled rejection or leave a worker
+- [x] App/runtime teardown does not create an unhandled rejection or leave a worker
       lease permanently held.
-- [ ] Production build includes the actual catalog worker/WASM via normal app imports.
+- [x] Production build includes the actual catalog worker/WASM via normal app imports.
 
 ### Unit 3: Approved browser and Manage dialog
 
@@ -395,15 +395,15 @@ export function CatalogManageDialog(props: CatalogManageDialogProps): React.JSX.
   and query results through a bounded polite status region, not every raw byte.
 
 **Acceptance:**
-- [ ] Option 2 works at phone and desktop sizes, with keyboard-accessible Manage,
+- [x] Option 2 works at phone and desktop sizes, with keyboard-accessible Manage,
       filters, pages and detail focus restoration.
-- [ ] Source labels, sizes, availability and generation/freshness wording derive
+- [x] Source labels, sizes, availability and generation/freshness wording derive
       from the correct offer or installed receipt without current-library claims.
-- [ ] Rapid search/angle/page changes and snapshot replacement cannot reveal/light
+- [x] Rapid search/angle/page changes and snapshot replacement cannot reveal/light
       a stale selection; connecting a board lights only the currently selected route.
-- [ ] Empty continuable pages retain Next, exhausted pages disable it, and all
+- [x] Empty continuable pages retain Next, exhausted pages disable it, and all
       pagination remains bounded without invented counts or infinite refill.
-- [ ] Browsing, selecting and lighting create no authored climb or playlist record.
+- [x] Browsing, selecting and lighting create no authored climb or playlist record.
 
 ## Implementation order and checkpoints
 
@@ -490,3 +490,44 @@ public deployment is part of this feature's tests.
   useful browsing now. Source acquisition, licensing/public redistribution and
   current first-party coverage remain separately owned; no current-data promise or
   raw binary enters this PR.
+
+## Implementation notes
+
+- Execution capability: Codex inline, one feature owner. The service lifetime,
+  update admission and browser selection form one cohesive contract and share a
+  production integration test.
+- Review weight: `standard`, from `.work/CONVENTIONS.md`.
+- Files changed: `web/src/catalog/{service.ts,service.test.ts,test-service.ts,CatalogBrowser.tsx,CatalogBrowser.test.tsx,CatalogManageDialog.tsx,CatalogManageDialog.test.tsx,catalog.css}`;
+  `web/src/app/{create-runtime.ts,create-runtime.test.ts,CruxControlWorkspace.tsx,CruxControlWorkspace.test.tsx,CruxControlWorkspace.css}`;
+  `web/src/climb-browser/{LocalClimbViewer.tsx,LocalClimbViewer.test.tsx,ClimbDetail.tsx,types.ts}`;
+  runtime-fixture updates in `web/src/{App.test.tsx,route-editor/create-save-light.test.tsx,route-editor/sparse-effects-save.test.tsx}`;
+  and `web/e2e/catalog-browser.spec.ts`.
+- Tests added: typed service lifecycle and race tests; browser query/debounce,
+  pagination, selection and real controller scene tests; Manage consent/progress/
+  freshness tests; runtime composition and overlapping update-blocker tests; and a
+  production Playwright test that installs the shared synthetic SQLite fixture and
+  compares authored IndexedDB rows and ordered playlist membership through reload.
+- Simplification: reuse the installed typed query adapter, runtime-owned SQLite
+  port, existing Fullride viewer/detail and lighting controller. No route copy,
+  parallel lighting effect, catalog worker lifetime in React, or second list UI.
+- Implementation refinements: production e2e caught and fixed a split-pane filter
+  overflow; grade controls now fit the default label, setup copy appears once, and
+  small artifact sizes use B/KB units. Manage distinguishes compressed download,
+  raw data per snapshot and the two-slot retention allowance.
+- Discrepancies from design: none. The test fixture is deliberately much smaller
+  than the ignored bundled catalog, so consent and size assertions derive from its
+  exact validated manifest.
+- Adjacent issues parked: none.
+- Verification: `npm test -- --reporter=dot` (95 files, 781 tests); `npm run lint`;
+  `npm run build -w web` (catalog worker and wa-sqlite WASM emitted); normal app
+  Playwright (14/14); iOS prototype Playwright (1/1). The catalog e2e used the real
+  production app, worker, WASM, OPFS and service worker, confirmed no binary request
+  before consent, offline receipt reopen without catalog requests, and absence of a
+  `.db`/`.gz` artifact from CacheStorage. Bootstrap's separate Chromium harness was
+  reported green by its owner (5/5).
+- Review artifacts: isolated synthetic screenshots are under
+  `/tmp/cruxcontrol-kilter-community-browser/` and are not part of the repository.
+- Limitations: physical iPhone catalog storage and live/current Kilter coverage
+  remain unproven. Vite reports the main app bundle at about 509 kB minified (about
+  154 kB gzip), over its 500 kB advisory threshold; no code-splitting change was
+  included in this feature.

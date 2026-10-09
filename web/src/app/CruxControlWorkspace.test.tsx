@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { draftRevision, localDraftId } from '../drafts/codec';
 import { DraftConflictError } from '../drafts/errors';
@@ -20,6 +20,7 @@ import { MockBoardByteTransport } from '../board-control/mock-byte-transport';
 import { createFullrideLightController } from '../board-control/light-controller';
 import { LibraryBackupService } from '../library-backup/service';
 import type { LibraryBackupDelivery } from '../library-backup/delivery';
+import type { CatalogService, CatalogServiceSnapshot } from '../catalog/service.ts';
 
 const original: LocalClimbDraft = {
   ...draftContent({ name: 'Original', installationId: activeInstallationId }),
@@ -82,6 +83,7 @@ function runtimeWith(
       delete: vi.fn(),
       ...playlistOverrides,
     },
+    catalog: catalogServiceFor().service,
     controller: null,
     close: vi.fn(),
   };
@@ -115,6 +117,38 @@ function updateServiceFor(snapshot: AppUpdateSnapshot): AppUpdateService {
     setBlocked: vi.fn(),
     reload: vi.fn(),
     dispose: vi.fn(),
+  };
+}
+
+function catalogServiceFor(initial: CatalogServiceSnapshot = {
+  storage: null,
+  operation: 'idle',
+  offer: null,
+  progress: null,
+  error: null,
+  queries: null,
+}) {
+  let snapshot = initial;
+  const listeners = new Set<() => void>();
+  const service: CatalogService = {
+    getSnapshot: () => snapshot,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    start: vi.fn(async () => undefined),
+    loadOffer: vi.fn(async () => undefined),
+    installOffer: vi.fn(async () => undefined),
+    cancelDownload: vi.fn(),
+    retryOpen: vi.fn(async () => undefined),
+    close: vi.fn(async () => undefined),
+  };
+  return {
+    service,
+    publish(next: CatalogServiceSnapshot) {
+      snapshot = next;
+      for (const listener of [...listeners]) listener();
+    },
   };
 }
 
@@ -467,6 +501,93 @@ describe('CruxControlWorkspace', () => {
         'Wait for the current library change to finish before updating.',
       ),
     );
+
+    resolveUpdate({ ...stored, entries: [], revision: playlistRevision(2) });
+    await waitFor(() => expect(blocked).toHaveBeenLastCalledWith(null));
+  });
+
+  it('keeps catalog and local-write update blockers independent across navigation', async () => {
+    const stored = playlist('Projects', [{ kind: 'local', id: original.id }]);
+    let resolveUpdate!: (value: LocalPlaylist) => void;
+    const pendingUpdate = new Promise<LocalPlaylist>((resolve) => {
+      resolveUpdate = resolve;
+    });
+    const update = vi.fn<LocalPlaylistRepository['update']>(async () => pendingUpdate);
+    const catalog = catalogServiceFor({
+      storage: { status: 'empty' },
+      operation: 'idle',
+      offer: null,
+      progress: null,
+      error: null,
+      queries: null,
+    });
+    const runtime = {
+      ...runtimeWith({ list: listCollections([original], []) }, {
+        list: vi.fn().mockResolvedValue([stored]),
+        update,
+      }),
+      catalog: catalog.service,
+    };
+    const updateService = updateServiceFor({
+      status: 'current',
+      phase: 'current',
+      message: 'CruxControl is up to date.',
+      updateAvailable: false,
+      blockedReason: null,
+      canApply: false,
+      dismissed: false,
+    });
+    const blocked = vi.mocked(updateService.setBlocked);
+
+    render(<CruxControlWorkspace runtime={runtime} updateService={updateService} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Kilter' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Manage' }));
+    await waitFor(() => expect(blocked).toHaveBeenLastCalledWith('Finish managing the catalog before updating.'));
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+
+    act(() => catalog.publish({
+      storage: { status: 'empty' },
+      operation: 'downloading',
+      offer: null,
+      progress: { receivedBytes: 1, totalBytes: 2 },
+      error: null,
+      queries: null,
+    }));
+    await waitFor(() => expect(blocked).toHaveBeenLastCalledWith('Wait for the catalog download or installation to finish before updating.'));
+    fireEvent.click(screen.getByRole('button', { name: /Lists/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Projects.*1 climb/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Original from list' }));
+    await waitFor(() => expect(update).toHaveBeenCalledOnce());
+    await waitFor(() => expect(blocked).toHaveBeenLastCalledWith('Wait for the current library change to finish before updating.'));
+
+    act(() => catalog.publish({
+      storage: { status: 'ready', receipt: {
+        schemaVersion: 1,
+        slot: 'a',
+        manifest: {
+          schemaVersion: 2,
+          version: 1,
+          board: 'kilter-fullride-7x10',
+          file: 'kilter-7x10.v1.db.gz',
+          compression: 'gzip',
+          sha256: 'a'.repeat(64),
+          bytesGzipped: 4,
+          bytesRaw: 64,
+          generatedOn: '2026-10-09',
+          source: 'legacy-aurora-kilter',
+          sourceDataThrough: null,
+          generatedFrom: 'test fixture',
+          filter: 'layout_id=8',
+        },
+        installedAt: '2026-10-09T00:00:00.000Z',
+      } },
+      operation: 'idle',
+      offer: null,
+      progress: null,
+      error: null,
+      queries: null,
+    }));
+    await waitFor(() => expect(blocked).toHaveBeenLastCalledWith('Wait for the current library change to finish before updating.'));
 
     resolveUpdate({ ...stored, entries: [], revision: playlistRevision(2) });
     await waitFor(() => expect(blocked).toHaveBeenLastCalledWith(null));

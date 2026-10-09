@@ -43,9 +43,9 @@
 }
 
 .collection-switch {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
   gap: var(--space-2);
+  overflow-x: auto;
   padding: max(var(--space-3), env(safe-area-inset-top)) var(--space-4) var(--space-2);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
@@ -53,6 +53,7 @@
 
 .collection-switch button {
   display: flex;
+  flex: 1 0 auto;
   min-height: 44px;
   align-items: center;
   justify-content: center;

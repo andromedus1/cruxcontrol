@@ -17,6 +17,9 @@ import {
   type LibraryBackupDelivery,
 } from '../library-backup';
 import { activeInstallationId, createAppInstallationRegistry } from './installations';
+import { createCatalogService, type CatalogService } from '../catalog/service.ts';
+import { SqliteCatalogPort } from '../data/sqlite/sqlite-catalog-port.ts';
+import type { BoardDefinition } from '../domain/boards/definition.ts';
 
 export interface CruxControlRuntime {
   readonly installation: ConfiguredBoardInstallation;
@@ -24,6 +27,7 @@ export interface CruxControlRuntime {
   readonly playlists: LocalPlaylistRepository;
   readonly backup?: LibraryBackupService;
   readonly backupDelivery?: LibraryBackupDelivery;
+  readonly catalog: CatalogService;
   readonly controller: BoardLightController | null;
   close(): void;
 }
@@ -33,6 +37,7 @@ export interface CruxControlRuntimeDependencies {
   readonly openPlaylists?: () => Promise<IDBDatabase>;
   readonly getInstallation?: () => ConfiguredBoardInstallation;
   readonly backupDelivery?: LibraryBackupDelivery;
+  readonly createCatalog?: (definition: BoardDefinition) => CatalogService;
 }
 
 export async function createCruxControlRuntime(
@@ -52,14 +57,20 @@ export async function createCruxControlRuntime(
       dependencies.getInstallation ??
       (() => createAppInstallationRegistry().require(activeInstallationId))
     )();
+    const catalog = (dependencies.createCatalog ?? ((definition) => createCatalogService(definition, {
+      createPort: () => SqliteCatalogPort.create(),
+      fetcher: globalThis.fetch.bind(globalThis),
+    })))(installation.definition);
     return Object.freeze({
       installation,
       drafts,
       playlists,
       backup,
       backupDelivery: dependencies.backupDelivery ?? browserLibraryBackupDelivery,
+      catalog,
       controller: installation.createController(),
       close: () => {
+        void catalog.close().catch(() => undefined);
         playlistDatabase?.close();
         draftDatabase?.close();
       },
