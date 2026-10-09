@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CruxControl — Recovery complete preview</title>
+    <link rel="stylesheet" href="../../design-system/tokens.css" />
+    <link rel="stylesheet" href="../../design-system/components.css" />
+    <link rel="stylesheet" href="../../design-system/motion.css" />
+    <style>
+      .flow-hybrid {
+        padding: 12px 20px;
+        background: var(--color-bg-inverse);
+        color: var(--color-text-inverse);
+        font: 12px/1.5 var(--font-mono);
+      }
+      .flow-hybrid a {
+        color: inherit;
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .review-heading,
+      .review-links,
+      .review-controls {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .review-links {
+        gap: 4px 16px;
+        margin-top: 8px;
+      }
+      .review-links [aria-current="page"] {
+        font-weight: 700;
+        text-decoration-thickness: 3px;
+      }
+      .review-controls {
+        margin-top: 8px;
+      }
+      .review-controls select {
+        font: inherit;
+        padding: 8px;
+        border-radius: 4px;
+        max-width: 100%;
+      }
+      .review-controls label {
+        font-weight: 600;
+      }
+      .shell {
+        max-width: 920px;
+        margin: auto;
+        padding: 24px 16px 64px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 24px;
+      }
+      .brand > a {
+        font-size: 22px;
+        font-weight: 700;
+        text-decoration: none;
+        color: var(--color-text-primary);
+      }
+      .brand small {
+        white-space: nowrap;
+        font: 12px var(--font-mono);
+        color: var(--color-text-secondary);
+      }
+      .panel {
+        max-width: 560px;
+        margin: 16px auto;
+        padding: 24px;
+      }
+      .eyebrow {
+        font: 12px/1.5 var(--font-mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-secondary);
+      }
+      h1 {
+        font-size: 28px;
+        line-height: 1.2;
+        margin: 8px 0 16px;
+      }
+      h2 {
+        font-size: 18px;
+        line-height: 1.4;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 8px 0 16px;
+      }
+      .muted,
+      .small {
+        color: var(--color-text-secondary);
+      }
+      .small {
+        font-size: 14px;
+      }
+      .mono {
+        font-family: var(--font-mono);
+      }
+      .section {
+        padding: 24px 0;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .section:first-of-type {
+        padding-top: 8px;
+      }
+      .section:last-of-type {
+        border-bottom: 0;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 24px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        line-height: 1.35;
+      }
+      .actions .btn {
+        flex: 1 1 150px;
+      }
+      .back {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+      .status-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 16px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-bg-secondary);
+        margin: 20px 0;
+      }
+      .status-line strong {
+        display: block;
+        font-size: 14px;
+      }
+      .status-line small {
+        display: block;
+        color: var(--color-text-secondary);
+        font-size: 12px;
+      }
+      .good {
+        color: var(--color-success);
+      }
+      .warn {
+        color: var(--color-warning);
+      }
+      .danger {
+        color: var(--color-danger);
+      }
+      .counts {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 20px 0;
+      }
+      .counts div {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: 12px 8px;
+      }
+      .counts strong {
+        display: block;
+        font: 600 24px/1.4 var(--font-mono);
+      }
+      .counts span {
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
+      .facts {
+        margin: 16px 0;
+      }
+      .facts > div {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .facts dt {
+        font-size: 14px;
+        color: var(--color-text-secondary);
+      }
+      .facts dd {
+        margin: 0;
+        text-align: right;
+        font-size: 14px;
+      }
+      .file-name {
+        overflow-wrap: anywhere;
+        font: 14px/1.6 var(--font-mono);
+      }
+      .version {
+        padding: 16px 0;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .version-title {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .version p {
+        margin: 8px 0;
+      }
+      .version .btn {
+        margin-top: 8px;
+      }
+      .flow-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 24px 0;
+      }
+      .flow-grid a {
+        color: var(--color-text-primary);
+        text-decoration: none;
+      }
+      .flow-grid a:hover {
+        border-color: var(--color-accent);
+      }
+      .flow-grid .number {
+        font: 12px var(--font-mono);
+        color: var(--color-text-secondary);
+      }
+      .flow-grid h2 {
+        margin: 8px 0;
+      }
+      .flow-grid p {
+        font-size: 14px;
+        color: var(--color-text-secondary);
+        margin: 0;
+      }
+      .path {
+        padding: 16px;
+        border-left: 3px solid var(--color-accent);
+        background: var(--color-bg-secondary);
+        font-size: 14px;
+        margin: 16px 0;
+      }
+      .path a {
+        display: inline-block;
+        min-height: 36px;
+        line-height: 36px;
+      }
+      .flow-grid .span {
+        grid-column: 1/-1;
+      }
+      .preview-note {
+        border-top: 1px solid var(--color-border);
+        margin-top: 32px;
+        padding-top: 16px;
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
+      .library-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .library-header h1 {
+        margin: 8px 0;
+      }
+      .climb-list {
+        padding: 0 16px;
+      }
+      .climb-row:last-child {
+        border-bottom: 0;
+      }
+      .check-list {
+        padding-left: 20px;
+        color: var(--color-text-secondary);
+        font-size: 14px;
+      }
+      .check-list li {
+        margin: 8px 0;
+      }
+      .alert p:last-child {
+        margin-bottom: 0;
+      }
+      .alert strong {
+        display: block;
+      }
+      .alert {
+        margin: 16px 0;
+      }
+      .info-line {
+        padding: 12px 0;
+        font-size: 14px;
+        color: var(--color-text-secondary);
+      }
+      [hidden] {
+        display: none !important;
+      }
+      @media (max-width: 560px) {
+        .shell {
+          padding: 16px 12px 40px;
+        }
+        .panel {
+          padding: 20px 16px;
+          margin: 8px auto;
+        }
+        .brand {
+          padding-bottom: 12px;
+        }
+        .brand small {
+          max-width: 120px;
+          text-align: right;
+        }
+        .flow-hybrid {
+          padding: 12px;
+        }
+        .review-heading {
+          gap: 8px;
+        }
+        .review-links {
+          gap: 0 12px;
+        }
+        h1 {
+          font-size: 24px;
+        }
+        .flow-grid {
+          grid-template-columns: 1fr;
+        }
+        .flow-grid .span {
+          grid-column: auto;
+        }
+        .status-line {
+          padding: 12px;
+          align-items: flex-start;
+        }
+        .status-line .btn {
+          padding: 8px 12px;
+        }
+        .library-header {
+          align-items: flex-start;
+        }
+        .facts > div {
+          gap: 8px;
+        }
+        .facts dd {
+          max-width: 65%;
+        }
+        .counts strong {
+          font-size: 22px;
+        }
+        .climb-list {
+          padding: 0 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="flow-hybrid">
+      <div class="review-heading">
+        <strong>Native app · design preview</strong
+        ><a href="index.html">Overview</a
+        ><span>Synthetic data · no uploads or library writes</span>
+      </div>
+      <nav class="review-links" aria-label="Preview pages">
+        <a href="01-library.html">Library</a><a href="02-manage.html">Backups</a
+        ><a href="03-connect.html">Connect</a
+        ><a href="04-versions.html">Versions</a
+        ><a href="05-review.html">Review</a
+        ><a href="06-restored.html" aria-current="page">Recovered</a
+        ><a href="07-file.html">Backup file</a>
+      </nav>
+    </header>
+    <main class="shell">
+      <div class="brand">
+        <a href="01-library.html">CruxControl</a
+        ><small>Fullride · 7 × 10</small>
+      </div>
+      <section class="panel card card--raised">
+        <div class="eyebrow">Recovery complete</div>
+        <h1>Your library is back</h1>
+        <div class="alert alert--success">
+          <strong>Restored and checked on this phone</strong>
+          <p class="small" id="result">
+            4 climbs and 2 playlists match the selected backup.
+          </p>
+        </div>
+        <p class="muted">You can open your climbs and use the board offline.</p>
+        <dl class="facts">
+          <div>
+            <dt>Climbs and saved details</dt>
+            <dd>Checked</dd>
+          </div>
+          <div>
+            <dt>Playlist membership and order</dt>
+            <dd>Checked</dd>
+          </div>
+          <div>
+            <dt>Source backup</dt>
+            <dd id="source">Today · 3:18 PM</dd>
+          </div>
+        </dl>
+        <div class="alert" id="next-backup">
+          <strong id="next-title">Automatic backups are resuming</strong>
+          <p class="small" id="next-message">
+            The library is saved locally. Its backup status will update once
+            this phone has checked in.
+          </p>
+        </div>
+        <div class="actions">
+          <a
+            class="btn btn-primary"
+            id="return"
+            href="01-library.html?state=checking"
+            >Open my climbs</a
+          ><a class="btn btn-secondary" href="02-manage.html">Manage backups</a>
+        </div>
+      </section>
+    </main>
+    <script>
+      const query = new URLSearchParams(location.search);
+      if (query.get("version") === "earlier") {
+        document.querySelector("#result").textContent =
+          "3 climbs and 2 playlists match the selected backup.";
+        document.querySelector("#source").textContent = "Yesterday · 6:42 PM";
+      }
+      if (query.get("source") === "file") {
+        document.querySelector("#source").textContent = "Portable backup file";
+        document.querySelector("#next-title").textContent =
+          "Recovered without the online service";
+        document.querySelector("#next-message").textContent =
+          "Keep the original file. Connect private online backups when you are ready.";
+        document.querySelector("#return").href = "01-library.html?state=setup";
+      }
+    </script>
+  </body>
+</html>

@@ -36,6 +36,9 @@ edits and must not promise that every possible loss can be prevented.
   offline. No sign-in or backup outage may prevent access to already-local work.
 - **Private recovery:** a backup is not a contribution to the invited shared library.
   Existing future sharing membership must not grant access to private backups.
+- **Account protection (Andrew, 2026-10-09):** service-managed encryption and
+  recovery through a normal account are acceptable. Operator-blind end-to-end
+  encryption and a separate user-managed recovery key are not required.
 - **Recovery disposition:** assume the missing post-migration creations are lost for
   planning. Retain incident evidence; no lab escalation, reset or reconstruction is
   required to begin this work. The sixteen imported climbs are not the lost creations.
@@ -260,3 +263,75 @@ applies his clarification: focus new preservation work on the app he will resume
 using. Reuse existing domain logic, UI and portable-backup contracts where sound.
 Keep both requested backup forms and verified recovery as readiness requirements;
 there is no separate interim-PWA protection milestone.
+
+## Design decisions
+
+Directional `--only-questions` preparation, 2026-10-09. Keep this epic at drafting
+until visual alignment completes; no child features have been created by this pass.
+
+- **Privacy and recovery:** Andrew selected account-protected backups, encrypted
+  by the service, with account recovery. Prove owner-only authorization and recovery
+  without the old device; do not introduce a phone-only secret or imply that the
+  service operator cannot decrypt the content. This selects the trust boundary,
+  not a hosting vendor or paid account.
+- **Native persistence first:** begin with an installed Android client using real
+  native storage behind the existing library ports and shared UI. Extend the
+  existing shell rather than building a second domain implementation. A single
+  native library database is the candidate for coherent capture; its exact adapter
+  and transactional behavior need the native proof. The current browser Worker/OPFS
+  catalog SQLite implementation does not supply native authored-library persistence.
+- **Ownership across epics:** this epic owns native authored-data storage, Android
+  packaging, private backup/recovery and everyday Android acceptance. The iOS epic
+  retains its physical-iPhone BLE, permissions, authentication, file-delivery and
+  distribution gates. Share implementation where practical; an Android pass cannot
+  close untested iPhone acceptance.
+- **Protection semantics:** separately show committed local saves and a verified
+  independent copy. An offline edit, expired session, full backup store or failed
+  local save cannot inherit a misleading success state from an older snapshot.
+  On a new or restored installation, discover retained backups and verify status
+  before admitting uploads from possibly empty or stale local state.
+- **Portable copies:** offer a complete validated file through the platform's save
+  or share mechanism. A completed handoff alone does not prove off-device delivery.
+  Automated repeated file copies remain conditional on platform proof; they do not
+  replace either automatic online backup or owner-controlled export.
+- **Retention proposal:** retain immutable earlier copies for the first release;
+  stop new uploads and surface capacity exhaustion instead of silently pruning.
+  Size limits, cost and any later explicit pruning policy belong in the concrete
+  service proposal, before provisioning. The mock demonstrates this conservative
+  default without promising unlimited storage.
+
+The light code-mapping pass verified that Android packaging, native repository
+composition and a coherent backup boundary are all missing today. Scope the next
+full design around useful capabilities rather than storage/API/UI layers. Preserve
+real-board control, update/signing usability and full recovery as named acceptance
+within those capabilities; do not lose them inside a database-only milestone.
+
+## Mockups
+
+- Flow: [library preservation preview](../../../.mockups/flows/library-preservation/index.html).
+- Status: **awaiting Andrew's review**, not approved for production UI.
+- Everyday path: compact library status → Back up & restore hub → portable file.
+- Recovery path: connect an account → retained versions → review → checked recovery.
+  Portable files enter at review without sign-in. These are branches around a hub,
+  not a seven-step setup wizard.
+- Inherits the existing design tokens, components and compact-status/Manage pattern;
+  all sample names, account details and counts are synthetic.
+- State previews cover offline pending writes, renewed installation verification,
+  expired sign-in, full backup storage, failed local saves, nonempty/conflicting
+  restore targets and cancelled file delivery. Existing
+  [file-recovery states](../../../.mockups/flows/library-backup/index.html) remain
+  references for detailed conflict/partial-result presentation.
+- Provider sign-in and OS file delivery are simulated handoffs. The mock does not
+  establish authentication, storage, upload or restoration correctness.
+- Validation: eight HTML files (seven surfaces plus navigator), working internal
+  links, mobile light/dark layouts, desktop overview and browser-driven navigation
+  through online recovery, conflicts and portable-file cancellation/recovery.
+
+## Next design entry
+
+Finish visual alignment, then run full epic decomposition and design the native
+offline-authoring capability first. Its proof must exercise actual native storage,
+strict saved-library codecs, termination/relaunch/update preservation and failures
+that remain failures. No current-PWA hardening, provider provisioning or phone
+maintenance is needed to begin that design. Account access must be proven on the
+actual native client before choosing a service for automatic protection.

@@ -23,7 +23,7 @@ decisions:
   - "Kilter community catalog access precedes invited sharing and can ship on Android/web independently of native iPhone hardware acceptance."
   - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
-  - "Current whole-library export is manual and restore is missing-only per store; intended preservation adds automatic private online backups and portable files with verified recovery."
+  - "Current whole-library export is manual and restore is missing-only per store; intended preservation adds automatic account-protected private backups, service-managed encryption, and portable files with verified recovery."
   - "PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs, and workspace, mutation, play-through, and BLE session gates protect local work before activation."
 ---
 
@@ -290,6 +290,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   silently replace a good recovery point or be interpreted as authorized deletion.
 - Recover on a clean client without relying on credentials or keys kept only inside
   the lost browser origin. Preserve private access isolation from invited sharing.
+- Private backups may use service-managed encryption and recovery through the
+  owner's account. End-to-end encryption that excludes the service operator is
+  not required; account recovery must work without the old device.
 - Verify restoration after complete loss of a synthetic test library's local storage,
   and verify portable-file restoration without the online service. Preserve IDs,
   content and list order; report conflicts and partial outcomes without destructive

@@ -18,8 +18,9 @@ summary: >
   An isolated experimental Capacitor shell injects native BLE into the shared screens
   and controller; it compiles, starts, and has passed synthetic-data preservation and
   whole-library backup/restore round trips in an iPhone 17 simulator. Physical-device
-  acceptance remains pending. Independent private library preservation is intended
-  through online backup and portable files; its service and recovery design are open.
+  acceptance remains pending. Independent private library preservation targets a native
+  Android client first, with actual native storage, account-protected online backups
+  and portable files. Service selection and recovery implementation remain open.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; an optional lazy runtime service opens the local SQLite catalog through a serialized wa-sqlite AccessHandlePoolVFS worker."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
@@ -31,7 +32,7 @@ decisions:
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
-  - "Current backup is a manual bounded file with missing-only per-store restore; intended independent preservation adds owner-private versioned backup without treating two stores as one atomic snapshot."
+  - "Current backup is a manual bounded file with missing-only per-store restore; intended independent preservation adds account-protected versioned backup with service-managed encryption, without treating two stores as one atomic snapshot."
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
   - "PWA updates use an app-owned prompt-mode Workbox registration, shared Web Locks admission, and explicit safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes."
   - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
@@ -230,8 +231,11 @@ independent recovery boundary for private authored libraries. It must reuse the
 versioned whole-library contracts where sound, support automatic private online
 backup and portable files, retain prior versions and verify recovery after local
 origin/device loss. Snapshot consistency across the independent stores, version
-acknowledgement, retention, identity and key recovery require explicit design.
+acknowledgement, retention and account recovery require explicit design.
 An empty installation cannot supply deletion authority over retained backups.
+The intended trust boundary permits service-managed encryption with recoverable
+owner accounts; it does not require operator-blind encryption or a separate
+user-managed decryption key. Account recovery must not depend on the lost device.
 
 This boundary is separate from group publication and provider catalogs. Local
 authoring remains authoritative for offline work; backup availability and sign-in

@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-09T22:58:59Z'
+generated_at: '2026-10-09T23:08:46Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -16,8 +16,8 @@ documents:
       An isolated experimental Capacitor shell injects native BLE into the shared screens and controller;
       it compiles, starts, and has passed synthetic-data preservation and whole-library backup/restore
       round trips in an iPhone 17 simulator. Physical-device acceptance remains pending. Independent private
-      library preservation is intended through online backup and portable files; its service and recovery
-      design are open.
+      library preservation targets a native Android client first, with actual native storage, account-protected
+      online backups and portable files. Service selection and recovery implementation remain open.
 
       '
     decisions:
@@ -47,7 +47,8 @@ documents:
     - Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports
       preview before creating fresh local records and compensate partial failures.
     - Current backup is a manual bounded file with missing-only per-store restore; intended independent
-      preservation adds owner-private versioned backup without treating two stores as one atomic snapshot.
+      preservation adds account-protected versioned backup with service-managed encryption, without treating
+      two stores as one atomic snapshot.
     - Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped
       holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active
       climbs and Trash.
@@ -117,7 +118,8 @@ documents:
       40-degree drafts without persisting or uploading source images; exact duplicates, including Trash,
       are skipped.
     - Current whole-library export is manual and restore is missing-only per store; intended preservation
-      adds automatic private online backups and portable files with verified recovery.
+      adds automatic account-protected private backups, service-managed encryption, and portable files
+      with verified recovery.
     - PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs,
       and workspace, mutation, play-through, and BLE session gates protect local work before activation.
   docs/VISION.md:
