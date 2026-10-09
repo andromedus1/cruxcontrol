@@ -312,3 +312,33 @@ V4 draft and two playlists; capture the exact baseline before the run. Then:
 - **Version-specific cancellation:** the plugin offers no typed cancellation code on
   iOS 8.0.3. Pin and test the exact source-observed message; all unknown failures stay
   errors. Recheck that behavior before any plugin upgrade.
+
+## Implementation notes
+
+- Execution capability: Luna xhigh per the active autopilot instruction; one cohesive
+  delivery seam with a bounded native plugin adapter.
+- Review weight: standard, from `.work/CONVENTIONS.md`.
+- Files changed: `web/src/library-backup/delivery.ts` and `delivery.test.ts`;
+  `web/src/library-backup/index.ts`; `LibraryBackupDialog.tsx` and its tests;
+  `web/src/app/create-runtime.ts` and its tests; `CruxControlWorkspace.tsx` and its
+  tests; `prototypes/ios/src/native-backup-delivery.ts` and its tests; native runtime
+  composition and tests; pinned prototype package dependencies and lockfile; generated
+  `CapApp-SPM/Package.swift`; Xcode privacy-manifest membership and
+  `PrivacyInfo.xcprivacy`.
+- Tests added: browser delivery URL/content cleanup and pre-abort checks; native adapter
+  UTF-8/cache/share lifetime, cancellation, URI validation, abort, cleanup, retry, and
+  overlap cases; dialog admission and outcome copy; runtime/workspace delivery
+  composition. These protect the new file-delivery boundary and the observed native
+  export failure.
+- Simplification: moved Blob/anchor/object-URL handling out of the dialog into the
+  browser delivery adapter and removed dialog-only URL factory props.
+- Discrepancies from design: none in code. Actual iOS share-sheet/export/restore proof
+  remains parent-operated; update the prototype README after that proof records the
+  observed scope and outcomes.
+- Adjacent issues parked: none.
+- Verification: web 48 focused unit/integration tests, typecheck, and lint pass; iOS
+  prototype 25 focused tests, typecheck, and lint pass. `npm run sync` regenerated the
+  plugin SPM list with Filesystem 8.1.4 and Share 8.0.3 and built `dist-ios-prototype`.
+  The packaged-browser Playwright smoke passed 1/1; privacy plist and Xcode project
+  parse checks pass. Native build/install and OS round trip are intentionally still
+  open for the parent-operated acceptance step.

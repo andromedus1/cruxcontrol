@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createCruxControlRuntime } from './create-runtime.ts';
 import { activeInstallationId, createAppInstallationRegistry } from './installations.ts';
+import { browserLibraryBackupDelivery, type LibraryBackupDelivery } from '../library-backup/delivery.ts';
 
 function database() {
   return { close: vi.fn() } as unknown as IDBDatabase;
@@ -48,5 +49,20 @@ describe('createCruxControlRuntime', () => {
     runtime.close();
     expect(playlists.close).toHaveBeenCalledOnce();
     expect(drafts.close).toHaveBeenCalledOnce();
+    expect(runtime.backupDelivery).toBe(browserLibraryBackupDelivery);
+  });
+
+  it('returns an injected backup delivery through runtime composition', async () => {
+    const drafts = database();
+    const playlists = database();
+    const delivery: LibraryBackupDelivery = { kind: 'share', deliver: vi.fn(async () => ({ status: 'shared' as const })) };
+    const runtime = await createCruxControlRuntime({
+      openDrafts: async () => drafts,
+      openPlaylists: async () => playlists,
+      getInstallation: () => createAppInstallationRegistry().require(activeInstallationId),
+      backupDelivery: delivery,
+    });
+    expect(runtime.backupDelivery).toBe(delivery);
+    runtime.close();
   });
 });

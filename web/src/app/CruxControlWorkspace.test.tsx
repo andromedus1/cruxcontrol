@@ -18,6 +18,8 @@ import { activeInstallationId, createAppInstallationRegistry } from './installat
 import type { AppUpdateService, AppUpdateSnapshot } from '../pwa/update-service.ts';
 import { MockBoardByteTransport } from '../board-control/mock-byte-transport';
 import { createFullrideLightController } from '../board-control/light-controller';
+import { LibraryBackupService } from '../library-backup/service';
+import type { LibraryBackupDelivery } from '../library-backup/delivery';
 
 const original: LocalClimbDraft = {
   ...draftContent({ name: 'Original', installationId: activeInstallationId }),
@@ -117,6 +119,23 @@ function updateServiceFor(snapshot: AppUpdateSnapshot): AppUpdateService {
 }
 
 describe('CruxControlWorkspace', () => {
+  it('passes the runtime backup delivery into the backup dialog', async () => {
+    const runtime = runtimeWith();
+    const delivery: LibraryBackupDelivery = { kind: 'share', deliver: vi.fn(async () => ({ status: 'shared' as const })) };
+    const backup = new LibraryBackupService({
+      readDrafts: async () => [],
+      readPlaylists: async () => [],
+      restoreMissingDrafts: async () => ({ added: 0, unchanged: 0 }),
+      restoreMissingPlaylists: async () => ({ added: 0, unchanged: 0 }),
+    });
+    const service = updateServiceFor({ status: 'current', phase: 'current', message: '', updateAvailable: false, blockedReason: null, canApply: false, dismissed: false });
+    render(<CruxControlWorkspace runtime={{ ...runtime, backup, backupDelivery: delivery }} updateService={service} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back up & restore' }));
+    expect(await screen.findByRole('heading', { name: 'Save a backup' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save or share library backup' })).toBeInTheDocument();
+  });
+
   it('preserves an unsaved new-list name and its update blocker after an empty snapshot fails to refresh', async () => {
     const runtime = runtimeWith();
     const service = updateServiceFor({ status: 'current', phase: 'current', message: '', updateAvailable: false, blockedReason: null, canApply: false, dismissed: false });

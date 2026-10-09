@@ -670,6 +670,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
       {backingUp && runtime.backup && (
         <LibraryBackupDialog
           service={runtime.backup}
+          delivery={runtime.backupDelivery}
           onClose={() => {
             setBackingUp(false);
             queueMicrotask(() => backupButtonRef.current?.focus());

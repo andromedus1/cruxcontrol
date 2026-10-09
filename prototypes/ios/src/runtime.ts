@@ -1,6 +1,8 @@
 import { Capacitor } from '@capacitor/core';
 import { BleClient } from '@capacitor-community/bluetooth-le';
 import { App, type AppPlugin } from '@capacitor/app';
+import { Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { createCruxControlRuntime } from '../../../web/src/app/create-runtime.ts';
 import {
@@ -8,6 +10,7 @@ import {
   createAppInstallationRegistry,
 } from '../../../web/src/app/installations.ts';
 import { NativeBleByteTransport } from './native-ble-transport.ts';
+import { createNativeBackupDelivery } from './native-backup-delivery.ts';
 
 export async function bindNativeLifecycle(
   transport: NativeBleByteTransport,
@@ -53,6 +56,7 @@ export async function createPrototypeRuntime() {
         createAppInstallationRegistry({
           createTransport: () => transport,
         }).require(activeInstallationId),
+      ...(native ? { backupDelivery: createNativeBackupDelivery({ filesystem: Filesystem, share: Share }) } : {}),
     });
     return {
       ...runtime,

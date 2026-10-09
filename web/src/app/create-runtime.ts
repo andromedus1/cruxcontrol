@@ -10,7 +10,12 @@ import {
   openPlaylistDatabase,
   type LocalPlaylistRepository,
 } from '../playlists';
-import { IndexedDbLibraryBackupStore, LibraryBackupService } from '../library-backup';
+import {
+  browserLibraryBackupDelivery,
+  IndexedDbLibraryBackupStore,
+  LibraryBackupService,
+  type LibraryBackupDelivery,
+} from '../library-backup';
 import { activeInstallationId, createAppInstallationRegistry } from './installations';
 
 export interface CruxControlRuntime {
@@ -18,6 +23,7 @@ export interface CruxControlRuntime {
   readonly drafts: LocalDraftRepository;
   readonly playlists: LocalPlaylistRepository;
   readonly backup?: LibraryBackupService;
+  readonly backupDelivery?: LibraryBackupDelivery;
   readonly controller: BoardLightController | null;
   close(): void;
 }
@@ -26,6 +32,7 @@ export interface CruxControlRuntimeDependencies {
   readonly openDrafts?: () => Promise<IDBDatabase>;
   readonly openPlaylists?: () => Promise<IDBDatabase>;
   readonly getInstallation?: () => ConfiguredBoardInstallation;
+  readonly backupDelivery?: LibraryBackupDelivery;
 }
 
 export async function createCruxControlRuntime(
@@ -50,6 +57,7 @@ export async function createCruxControlRuntime(
       drafts,
       playlists,
       backup,
+      backupDelivery: dependencies.backupDelivery ?? browserLibraryBackupDelivery,
       controller: installation.createController(),
       close: () => {
         playlistDatabase?.close();
