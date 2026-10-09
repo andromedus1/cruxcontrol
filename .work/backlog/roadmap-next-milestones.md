@@ -25,6 +25,13 @@ portable files, with verified restoration. Resume the sequence below after this
 protection work; do not treat closing the recovery attempt as permission to reset
 the phone or as evidence that safeguards already ship.
 
+Andrew subsequently clarified that he does not plan to create climbs in the current
+PWA while the new app is built. Focus preservation delivery on the native-client
+path, with actual native storage, both backup forms and verified recovery before
+normal authoring resumes. Retrofitting protection into the unused PWA is not a
+prerequisite. The preservation epic owns this sequencing; retain existing evidence
+and any available files without assuming a live library migration is necessary.
+
 Andrew confirmed the immediate sequence after PR #31 merged (2026-10-09):
 update and dogfood the older catalog on the connected Android phone, then pursue
 current Kilter coverage, then partner sharing. Physical iPhone testing waits for

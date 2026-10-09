@@ -42,11 +42,18 @@ edits and must not promise that every possible loss can be prevented.
 - **No stack selected:** online backup is authorized as a capability. No provider,
   paid plan, account, upload, public deployment or destructive restore is selected by
   this scope. Choose technology after the focused research and concrete review.
-- **Platform sequencing:** protect the current Android/browser client first. A
-  bounded native-database experiment can proceed alongside it; request and observe
-  browser persistence as the comparison baseline. Physical iPhone availability does
-  not block Android protection. Real migration requires a verified backup/restore
-  bridge, and native guarantees require their own validation.
+- **No interim PWA authoring (Andrew, 2026-10-09):** Andrew does not plan to keep
+  creating climbs in the current app during the build. Do not assume an active
+  library needs new PWA protection features in the meantime.
+- **Platform sequencing:** proceed with the native-client storage and recovery path.
+  Prove actual native persistence, automatic private online backup, portable files
+  and complete restoration before treating the new client as ready for everyday
+  authoring. Current-PWA hardening is not a prerequisite. Android remains the first
+  phone acceptance target; unavailable iPhone hardware does not block preparation.
+  Browser persistence remains a technical comparison, not a required PWA release.
+- **Existing material:** retain the recovery evidence and available files. If any
+  surviving library is transferred, validate its export and target restoration;
+  that conditional handoff does not require building automatic backups for the PWA.
 
 ## Required outcomes
 
@@ -181,8 +188,8 @@ review checks the composed recommendation. No specialist authoring fan-out neede
 Andrew additionally asked whether CruxControl should become an installed native app.
 Extend this same assessment to compare actual native persistence with a WebView
 wrapper. The proposed native experiment compares a shared-UI SQLite adapter against browser
-persistence while current Android/browser protection leads. Existing iOS simulator
-tooling can exercise the stronger documented iOS storage case; Android native
+persistence, with the new client's preservation capabilities as the delivery target.
+Existing iOS simulator tooling can exercise the stronger documented iOS storage case; Android native
 validation remains necessary before a phone-client migration. This is a proof recommendation, not
 authorization to discard the PWA or a claim that the existing iOS shell uses native
 library storage. The existing prototype explicitly reuses IndexedDB.
@@ -212,19 +219,19 @@ remain intact during that handoff. New setup/status/recovery UI still needs the
 mockup alignment already required above.
 
 Keep the native experiment bounded to persistence and complete recovery through the
-existing interface. A failed native proof must lead to a revised adapter or the
-browser backup path, rather than postponing independent protection behind a broad
-mobile rewrite. Choosing the production client, distribution path and hosting account
-remains separate from validating these reversible technical candidates.
+existing interface. A failed native proof should trigger a revised storage/framework
+choice, not automatically create a current-PWA hardening project. Andrew is not
+planning interim PWA authoring. Choosing the production client, distribution path
+and hosting account remains separate from validating these reversible technical candidates.
 
 ## Research outcome and review adjudication
 
 The verified comparison covers browser/native persistence, coherent capture,
 portable-file execution limits, private vault primitives and recoverable sessions.
 One independent Claude Opus pass identified three material corrections, all accepted:
-Android persistent IndexedDB must be the baseline; current-client protection precedes
-real migration; and service authentication must be compared evenly rather than
-ranking Cloudflare storage primitives as proof of native session suitability.
+Android persistent IndexedDB must be a comparison baseline; surviving data needs a
+verified transfer before real migration; and service authentication must be compared
+evenly rather than ranking Cloudflare storage primitives as proof of native session suitability.
 The lead verified the corrections against primary sources. The review's stronger
 claim that every migration requires completed automatic backup was narrowed: an
 independently retained, validated portable export can bridge migration, and synthetic
@@ -232,14 +239,24 @@ native experiments do not migrate personal data. The CORS cookie warning was als
 kept in its documented Incognito context rather than generalized to every browser.
 
 No service, account, production framework or phone rollout was selected. The next
-design pass should turn current-client protection, complete portable recovery and
-private versioned backup into capability-owned work, with a bounded native-storage
-proof alongside them. Current implementation never calls `navigator.storage.persist()`;
-requesting and reporting its actual result is a concrete initial safeguard, not an
-independent backup and not evidence that it would have prevented this incident.
+design pass should turn native local persistence, complete portable recovery and
+private versioned backup into capability-owned work for the new client. The current
+implementation's missing `navigator.storage.persist()` call remains a diagnostic
+finding; it is not a required implementation task under the no-interim-use decision
+and does not establish that a persistence grant would have prevented this incident.
 
 Research was acquired inline and checked with one independent reader; no authoring
 fan-out or repeated review loop. Output: the linked brief and its source attestations.
 Verification includes citation resolution, primary-source spot checks, local links,
 knowledge-index lint and whitespace checks. The exact data-loss trigger remains
 unproven; the native recommendation must not silently recast it as confirmed eviction.
+
+## Owner clarification: delivery target
+
+Andrew rejected the assumption of continued PWA use during the build. The earlier
+current-client-first recommendation depended on that assumption, not on a technical
+requirement to retrofit the PWA before building a native app. The sequencing above
+applies his clarification: focus new preservation work on the app he will resume
+using. Reuse existing domain logic, UI and portable-backup contracts where sound.
+Keep both requested backup forms and verified recovery as readiness requirements;
+there is no separate interim-PWA protection milestone.

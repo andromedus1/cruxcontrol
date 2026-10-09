@@ -8,8 +8,8 @@ status: locked
 provenance: agent-synthesis
 verification_status: reviewed-corrections-verified
 summary: >
-  Protect the current client with persistence, versioned independent backups and
-  portable files while comparing a shared-UI native database. Android persistence
+  Continued authoring warrants protecting the current client during a transition;
+  paused authoring permits focusing preservation on its replacement. Android persistence
   grants narrow the storage difference; the documented WebView warning is stronger
   on iOS. Recoverable identity, coherent capture and verified restoration define
   protection, and authentication viability remains a service-selection gate.
@@ -27,10 +27,12 @@ key_findings:
 ## Decision and position
 
 For a small offline authoring application, choose local persistence separately from
-independent recovery. `extends`: Protect the current client first with requested
-persistence, coherent capture, versioned independent backups and portable files.
-Run a bounded shared-UI native database proof alongside this work; do not make an
-app migration a prerequisite for protection.
+independent recovery. `extends`: If authoring continues in the current client during
+transition, protect that client while proving a replacement. If authoring is paused
+and no active library needs interim protection, focus new preservation work on the
+replacement; retrofitting the old client is not a prerequisite. In either case,
+require coherent capture, versioned independent backups, portable files and verified
+restoration in the client intended for continued use.
 
 Capacitor warns about WebView LocalStorage and IndexedDB on at least iOS, while
 explicitly noting Android's persisted-storage API for IndexedDB.
@@ -225,11 +227,12 @@ Google's browser token restriction does not reject its other OAuth models.
 
 ## Evidence limits and proof order
 
-`extends`: Lead with protection of the currently used browser client: request and
-observe persistence, prove coherent complete capture, owner-controlled files,
-authenticated versioned backup and exact recovery into an isolated empty client.
-An isolated native-storage experiment can run alongside this work. Before moving
-real data to a native app or a different web origin, independently retain and
+`extends`: Choose the implementation target from actual continued use. Protect an
+actively used browser client during transition; when authoring is paused, the native
+storage and recovery proof can lead without an interim browser release. In the target
+client, prove coherent complete capture, owner-controlled files, authenticated
+versioned backup and exact recovery into an isolated empty client. Before moving
+any surviving data to a native app or another web origin, independently retain and
 validate a complete source export and prove target restoration without deleting
 the source. A verified portable-file bridge can satisfy that migration check;
 completed automatic online backup is not a prerequisite for a synthetic experiment.
@@ -277,8 +280,8 @@ compatibility or provider pricing/retention contradict the documented assumption
 
 One independent Claude Opus adversarial pass returned NEEDS-REVISION. The lead
 corrected the three material findings: retained the Android persistence exception,
-put current-client protection before real migration, and removed the uneven
-Cloudflare authentication preference. Source attestations were corrected first;
+required verified preservation of surviving data before real migration, and removed
+the uneven Cloudflare authentication preference. Source attestations were corrected first;
 new session/deep-link and SQLite evidence was fetched directly. Analysis and project
 guidance were removed from the new attestation records. Native OS restore staleness,
 file permission renewal and simpler object-only retention were incorporated.
@@ -295,3 +298,8 @@ Version-pattern flags refer to the directly fetched, pinned SQLite package/API.
 The knowledge index reports zero errors; its two foundation decision-count warnings
 pre-date this brief. Local document links and whitespace checks pass. Android's
 restore-order source was rechecked by direct HTTP fetch after browser fetch timeouts.
+
+Applicability clarification: current-client-first implementation assumes continued
+authoring in that client. The decision and proof order now make that assumption
+explicit and cover paused authoring. Source findings and recovery requirements are
+unchanged; this clarification does not establish any additional runtime capability.

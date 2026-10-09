@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-09T22:55:34Z'
+generated_at: '2026-10-09T22:58:59Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -335,8 +335,8 @@ documents:
     - Public Pixel 8 filesystem-extraction support does not establish support for every OS/security patch
       or recovery of deleted records.
   .research/analysis/briefs/independent-library-preservation.md:
-    summary: 'Protect the current client with persistence, versioned independent backups and portable
-      files while comparing a shared-UI native database. Android persistence grants narrow the storage
+    summary: 'Continued authoring warrants protecting the current client during a transition; paused authoring
+      permits focusing preservation on its replacement. Android persistence grants narrow the storage
       difference; the documented WebView warning is stronger on iOS. Recoverable identity, coherent capture
       and verified restoration define protection, and authentication viability remains a service-selection
       gate.
