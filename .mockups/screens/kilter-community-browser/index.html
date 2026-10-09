@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Legacy Kilter — compare catalog refinements</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.5 system-ui, sans-serif; background: #111; color: #eee; }
+    header { padding: 18px 24px 12px; }
+    h1 { margin: 0 0 6px; font-size: 24px; font-weight: 600; }
+    header p { margin: 4px 0; max-width: 960px; color: #b8bec7; }
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 8px 24px 16px; }
+    .controls label { display: flex; align-items: center; gap: 8px; }
+    select { min-height: 40px; padding: 6px 10px; border: 1px solid #58616e; border-radius: 4px; background: #222; color: #eee; font: inherit; }
+    a { color: #8fc7ff; }
+    .grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; padding: 0 12px 12px; }
+    .cell { min-width: 0; background: #191919; border: 1px solid #444; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; }
+    .cell h2 { margin: 0; padding: 10px 12px 4px; font-size: 15px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; }
+    .cell > p { margin: 0; padding: 0 12px 12px; color: #bbc1ca; font-size: 13px; min-height: 52px; }
+    .viewport { overflow: auto; display: flex; justify-content: center; padding: 0; min-height: 780px; background: #080808; }
+    iframe { border: 0; width: 100%; height: 880px; background: #1f1f28; flex: none; }
+    body[data-size="phone"] iframe { width: min(390px,100%); }
+    body[data-size="desktop"] .grid { grid-template-columns: 1fr; }
+    body[data-size="desktop"] iframe { width: min(1200px,100%); }
+    :focus-visible { outline: 3px solid #8fc7ff; outline-offset: 3px; }
+    @media(max-width:800px) { .grid { grid-template-columns: 1fr; } header { padding-inline: 16px; } .controls { padding-inline: 16px; } }
+  </style>
+</head>
+<body data-size="phone">
+  <header><h1>Legacy Kilter · catalog setup and availability</h1><p>Two refinements of the approved list-first phone / split desktop browser. Colors, typography and climb detail stay aligned with CruxControl.</p><p>Both clearly label the older snapshot, require an explicit download, and preserve access to your local library. Pick the source-management approach you prefer.</p></header>
+  <div class="controls">
+    <label for="state">Compare state <select id="state"><option value="not-installed">Not installed</option><option value="installed">Installed / offline</option><option value="downloading">Downloading</option><option value="error">Download failed</option><option value="unavailable">Download unavailable</option></select></label>
+    <label for="size">Preview width <select id="size"><option value="phone">Phone · 390 px</option><option value="desktop">Desktop · up to 1200 px</option><option value="fluid">Side by side · fluid</option></select></label>
+    <span>Use “Installed / offline” to try filters, paging and climb details.</span>
+  </div>
+  <main class="grid">
+    <section class="cell"><h2>1 · Source in view <a href="option-1.html" target="_blank" rel="noopener">Open full screen ↗</a></h2><p>Setup, progress and retry live in a persistent source strip. More context on the page; less digging for controls.</p><div class="viewport"><iframe title="Option 1 — Source in view" src="option-1.html"></iframe></div></section>
+    <section class="cell"><h2>2 · Catalog on demand <a href="option-2.html" target="_blank" rel="noopener">Open full screen ↗</a></h2><p>A compact status row leaves more room for climbs. Source information and download controls open in a dialog.</p><div class="viewport"><iframe title="Option 2 — Catalog on demand" src="option-2.html"></iframe></div></section>
+  </main>
+  <script>
+    document.getElementById('state').addEventListener('change',event=>{
+      document.querySelectorAll('iframe').forEach((frame,index)=>{frame.src=`option-${index+1}.html?state=${encodeURIComponent(event.target.value)}`;});
+    });
+    document.getElementById('size').addEventListener('change',event=>{document.body.dataset.size=event.target.value;});
+  </script>
+</body>
+</html>

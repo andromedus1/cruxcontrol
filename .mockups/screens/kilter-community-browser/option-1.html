@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Legacy Kilter — Option 1: Source in view</title>
+  <link rel="stylesheet" href="../../design-system/tokens.css">
+  <link rel="stylesheet" href="../../design-system/components.css">
+  <link rel="stylesheet" href="../../design-system/motion.css">
+  <style>
+    [hidden] { display: none !important; }
+    .mock-meta { padding: 8px 16px; background: #0d1117; color: #c9d1d9; display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: baseline; font: 13px/1.4 system-ui, sans-serif; border-bottom: 1px solid #30363d; }
+    .mock-meta span { color: #aab4c0; }
+    .mock-tools { display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; padding: 8px 16px; background: #161b22; color: #c9d1d9; font: 12px/1.4 system-ui, sans-serif; }
+    .mock-tools label { display: flex; align-items: center; gap: 8px; }
+    .mock-tools select { min-height: 36px; border-radius: 4px; font: inherit; padding: 4px 8px; }
+    .mock-tools a { color: #8fc7ff; }
+    .app { max-width: 1440px; margin: auto; }
+    .session { gap: var(--space-3); flex-wrap: wrap; }
+    .session-group, .inline-actions, .heading-line { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+    .session-group { margin-left: auto; }
+    .destination-bar { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-border); background: var(--color-bg-secondary); }
+    .destinations { display: flex; gap: var(--space-1); flex: 1; overflow: auto; }
+    .destinations .btn { white-space: nowrap; flex: none; }
+    .source-wrap { padding: var(--space-4) var(--space-4) 0; }
+    .source-strip { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: var(--space-3) var(--space-6); align-items: center; }
+    .source-text { display: grid; gap: var(--space-1); }
+    .source-text p { margin: 0; }
+    .source-copy { color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+    .eyebrow { margin: 0 0 var(--space-1); font: var(--font-weight-semibold) var(--font-size-xs)/1.5 var(--font-mono); color: var(--color-text-secondary); letter-spacing: .04em; text-transform: uppercase; }
+    .source-strip h2 { margin: 0; font-size: var(--font-size-lg); }
+    .source-progress { display: grid; gap: var(--space-2); margin-top: var(--space-2); max-width: 440px; }
+    .source-compact { display: flex; align-items: center; gap: var(--space-3); justify-content: space-between; padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
+    .source-compact p { margin: 2px 0 0; }
+    .workspace { display: grid; grid-template-columns: minmax(330px, 37%) minmax(0, 1fr); min-height: 640px; padding-top: var(--space-4); }
+    .list-pane { border-right: 1px solid var(--color-border); min-width: 0; }
+    .list-heading { padding: 0 var(--space-4) var(--space-3); }
+    h1 { font-size: var(--font-size-2xl); line-height: var(--line-height-tight); margin: 0 0 var(--space-2); }
+    .list-heading p { margin: 0; }
+    .filters { padding: 0 var(--space-4) var(--space-3); display: grid; gap: var(--space-3); }
+    .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+    .result-heading { padding: var(--space-2) var(--space-4); display: flex; align-items: center; gap: var(--space-2); justify-content: space-between; border-top: 1px solid var(--color-border); font-size: var(--font-size-sm); }
+    .route-list { padding: 0; margin: 0; list-style: none; }
+    .route-hit { display: block; width: 100%; border: 0; border-radius: 0; padding: 0; text-align: left; font: inherit; color: inherit; background: transparent; cursor: pointer; }
+    .route-hit:hover { background: var(--color-bg-secondary); }
+    .route-hit[aria-current="true"] { background: var(--color-accent-muted); }
+    .route-hit > .climb-row { grid-template-columns: minmax(0,1fr) auto; padding-inline: var(--space-4); }
+    .route-hit .climb-row__name, .route-hit .climb-row__meta { display: block; }
+    .pagination { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-3) var(--space-4); font-size: var(--font-size-sm); }
+    .blank { padding: var(--space-8) var(--space-4); text-align: center; color: var(--color-text-secondary); }
+    .blank h2 { font-size: var(--font-size-lg); color: var(--color-text-primary); margin: 0 0 var(--space-2); }
+    .blank p { margin: var(--space-2) 0 var(--space-4); }
+    .detail-pane { display: grid; align-items: start; padding: 0 var(--space-6) var(--space-6); min-width: 0; }
+    .detail-placeholder { align-self: center; justify-self: center; max-width: 330px; text-align: center; color: var(--color-text-secondary); }
+    .detail-placeholder .symbol { font-size: 52px; line-height: 1; color: var(--color-border-strong); margin-bottom: var(--space-4); }
+    .detail-placeholder h2 { font-size: var(--font-size-xl); color: var(--color-text-primary); }
+    .detail-sheet { position: static; width: 100%; max-width: none; margin: 0; border: 0; padding: 0; background: transparent; color: inherit; }
+    .detail-sheet::backdrop, .catalog-modal::backdrop { background: #0008; }
+    .detail-heading { display: flex; align-items: start; justify-content: space-between; gap: var(--space-3); }
+    .detail-heading h2 { font-size: var(--font-size-2xl); line-height: var(--line-height-tight); margin: 0 0 var(--space-2); }
+    .detail-heading p { margin: 0; }
+    .detail-meta { display: flex; gap: var(--space-4); flex-wrap: wrap; font-size: var(--font-size-sm); margin: var(--space-3) 0; }
+    .detail-meta div { display: flex; gap: var(--space-2); }
+    .detail-meta dt { color: var(--color-text-secondary); }
+    .detail-meta dd { margin: 0; font-weight: var(--font-weight-semibold); }
+    .board-preview { max-width: 400px; margin: var(--space-3) auto; }
+    .board-preview svg { width: 100%; max-height: 390px; display: block; }
+    .board-preview figcaption { margin-top: var(--space-1); text-align: center; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+    .detail-actions { display: grid; gap: var(--space-3); }
+    .detail-actions p { margin: 0; }
+    .detail-legend { justify-content: center; margin: var(--space-4) 0; }
+    .catalog-modal { width: min(520px, calc(100% - 32px)); color: var(--color-text-primary); }
+    .catalog-modal h2 { font-size: var(--font-size-xl); margin: 0; }
+    .catalog-modal .modal-heading { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+    .catalog-modal .source-strip { display: block; }
+    .catalog-modal .source-strip .inline-actions { margin-top: var(--space-4); }
+    .catalog-modal .source-text { gap: var(--space-2); }
+    .source-facts { border-top: 1px solid var(--color-border); margin: var(--space-4) 0 0; padding-top: var(--space-3); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+    .source-facts p { margin: var(--space-2) 0; }
+    .local-view { padding: var(--space-6) var(--space-4); max-width: 650px; }
+    .local-view p { color: var(--color-text-secondary); }
+    .announcement { margin: var(--space-3) var(--space-4) 0; }
+    @media (max-width: 899px) {
+      .workspace { display: block; min-height: 480px; }
+      .list-pane { border: 0; }
+      .detail-pane { padding: 0; }
+      .detail-placeholder { display: none; }
+      .detail-sheet { position: fixed; inset: auto 0 0; width: 100%; max-height: 90dvh; padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--color-bg-secondary); overflow: auto; }
+      .detail-heading { position: sticky; top: -16px; padding-block: var(--space-2); z-index: 1; background: var(--color-bg-secondary); }
+      .board-preview svg { max-height: 320px; }
+      .source-strip { grid-template-columns: 1fr; }
+      .source-strip .inline-actions .btn { flex: 1; }
+      .source-compact { align-items: start; }
+      .source-compact > .btn { flex: none; }
+      .source-wrap { padding: var(--space-3) var(--space-3) 0; }
+      .destination-bar { display: block; padding-inline: var(--space-2); }
+      .destinations { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .destinations .btn { padding-inline: var(--space-1); }
+      .backup { margin-top: var(--space-2); width: 100%; }
+      .session { padding-inline: var(--space-3); }
+      .session-group { margin-left: 0; }
+      .session > strong { flex: 1; }
+      .mock-meta span { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="mock-meta"><strong>Option 1 — Source in view</strong><span>Download and recovery controls stay beside the source label.</span><a href="index.html">Compare options</a></header>
+  <div class="mock-tools" aria-label="Mock controls">
+    <label for="mock-state">Preview state <select id="mock-state"><option value="not-installed">Not installed</option><option value="downloading">Downloading</option><option value="installed">Installed / offline</option><option value="error">Download failed</option><option value="unavailable">Download unavailable</option></select></label>
+    <span>Static mock · synthetic climbs · no catalog downloads or Bluetooth</span>
+  </div>
+  <div class="app">
+    <header class="top-bar session"><strong>CruxControl</strong><div class="session-group"><span id="board-status" class="board-status">BOARD DISCONNECTED</span><button type="button" id="connect" class="btn btn-secondary">Connect</button></div></header>
+    <div class="destination-bar">
+      <nav class="destinations" aria-label="Workspace destinations"><button type="button" class="btn btn-ghost" data-destination="Finished">Finished</button><button type="button" class="btn btn-ghost" data-destination="Drafts">Drafts</button><button type="button" class="btn btn-ghost" data-destination="Trash">Trash</button><button type="button" class="btn btn-ghost" data-destination="Lists">Lists</button><button type="button" class="btn btn-primary" data-destination="Kilter" aria-current="page">Kilter</button></nav>
+      <button type="button" class="btn btn-secondary backup" id="backup">Back up &amp; restore</button>
+    </div>
+    <p class="alert announcement" id="announcement" role="status" hidden></p>
+    <main id="catalog-view">
+      <div class="source-wrap" id="source-wrap"></div>
+      <div class="workspace">
+        <section class="list-pane" aria-labelledby="library-heading">
+          <header class="list-heading"><p class="eyebrow">Fullride 7×10</p><h1 id="library-heading">Kilter library</h1><p class="source-copy">Only climbs that fit your whole board.</p></header>
+          <form class="filters" id="filters" role="search" aria-label="Filter catalog">
+            <div class="field"><label for="search">Climb name</label><input class="input" id="search" type="search" placeholder="Search climbs" autocomplete="off"></div>
+            <div class="filter-grid"><div class="field"><label for="grade">Grade</label><select class="select" id="grade"><option value="all">All grades</option><option value="2">V2</option><option value="3">V3</option><option value="4">V4</option><option value="5">V5</option><option value="6">V6</option></select></div><div class="field"><label for="angle">Angle</label><select class="select" id="angle"><option value="40">40°</option><option value="30">30°</option><option value="20">20°</option></select></div></div>
+          </form>
+          <div id="list-content"></div>
+        </section>
+        <section class="detail-pane" aria-label="Selected climb">
+          <div class="detail-placeholder" id="detail-placeholder"><div class="symbol" aria-hidden="true">◇</div><h2>A climb for your next session</h2><p>Choose a climb to inspect its holds. Connect your board to light a selection.</p></div>
+          <dialog class="detail-sheet" id="detail-sheet" aria-labelledby="detail-name"></dialog>
+        </section>
+      </div>
+    </main>
+    <main id="local-view" class="local-view" hidden><p class="eyebrow">Your library · on this device</p><h1 id="local-heading">Finished</h1><p>Your local climbs and lists remain available while the catalog is downloading or unavailable.</p><div class="empty-state">This mock contains no personal library data.</div><p><button type="button" class="btn btn-secondary" data-destination="Kilter">Return to Kilter library</button></p></main>
+    <dialog class="modal catalog-modal" id="catalog-modal" aria-labelledby="catalog-modal-title"><div class="modal-heading"><h2 id="catalog-modal-title">Legacy Kilter catalog</h2><button type="button" class="btn btn-icon btn-ghost" id="close-manage" aria-label="Close catalog details">×</button></div><div id="manage-content"></div><div class="source-facts"><p><strong>Older offline snapshot.</strong> This is not the current Kilter library, and it receives no live updates. Snapshot date is not established.</p><p>5.1 MB download · 12.4 MB catalog data.</p><p>Your own climbs, drafts, Trash and lists are stored separately.</p></div><div class="modal__footer"><button type="button" class="btn btn-secondary" id="done-manage">Done</button></div></dialog>
+  </div>
+  <script>
+    // Fixtures only: no fetch, storage API, device access, timer or simulated network work.
+    const option = 1;
+    const rows = [
+      {id:1,name:'Copper Traverse',setter:'Demo setter A',grade:3,angle:40,holds:10},
+      {id:2,name:'Quiet Corner',setter:'Demo setter B',grade:4,angle:40,holds:9},
+      {id:3,name:'Blue Hour',setter:'Demo setter C',grade:5,angle:40,holds:11},
+      {id:4,name:'Pocket Weather',setter:'Demo setter D',grade:2,angle:40,holds:8},
+      {id:5,name:'Stone Radio',setter:'Demo setter E',grade:6,angle:40,holds:12},
+      {id:6,name:'Evening Line',setter:'Demo setter F',grade:4,angle:40,holds:10},
+      {id:7,name:'Slow Orbit',setter:'Demo setter G',grade:3,angle:30,holds:9},
+      {id:8,name:'Plywood Picnic',setter:'Demo setter H',grade:2,angle:20,holds:8}
+    ];
+    const $ = (id) => document.getElementById(id);
+    const states = {
+      'not-installed': {label:'Not installed',title:'Download for offline climbing',copy:'Get the older Kilter snapshot on this device. Your own climbs and lists stay separate.',action:'Download · 5.1 MB'},
+      downloading: {label:'Downloading · 46%',title:'Downloading Legacy Kilter…',copy:'You can keep using your local climbs and lists.',action:'Cancel download'},
+      installed: {label:'Available offline',title:'Ready on this device',copy:'Browse this older snapshot without an internet connection.'},
+      error: {label:'Download failed',title:'Download didn’t finish',copy:'The connection was interrupted. Your climbs and lists are unchanged.',action:'Retry download'},
+      unavailable: {label:'Download unavailable',title:'Catalog download unavailable',copy:'This copy of CruxControl has no downloadable snapshot. Your local library still works.',action:'Check again'}
+    };
+    let state = 'not-installed', destination = 'Kilter', page = 0, selected = null, connected = false;
+    const params = new URLSearchParams(location.search);
+    if (states[params.get('state')]) state = params.get('state');
+    function announce(message) { $('announcement').textContent = message; $('announcement').hidden = !message; }
+    function stateContent() {
+      const s = states[state];
+      return `<div class="source-strip"><div class="source-text"><p class="eyebrow">Legacy Kilter</p><h2>${s.title}</h2><p class="source-copy">${s.copy}</p>${state==='not-installed'?'<p class="source-copy">5.1 MB download · 12.4 MB catalog data</p>':''}${state==='downloading'?'<div class="source-progress"><div class="heading-line"><strong>46%</strong><span class="source-copy">of 5.1 MB</span></div><div class="progress" role="progressbar" aria-label="Catalog download" aria-valuemin="0" aria-valuemax="100" aria-valuenow="46"><i style="width:46%"></i></div></div>':''}<p class="source-copy">Older offline snapshot · no live updates</p></div><div class="inline-actions">${s.action?`<button type="button" class="btn ${state==='not-installed'||state==='error'?'btn-primary':'btn-secondary'}" data-action="catalog">${s.action}</button>`:'<span class="badge badge--success">Available offline</span>'}${option===1?'<button type="button" class="btn btn-ghost" data-action="manage">Source details</button>':''}</div></div>`;
+    }
+    function renderSource() {
+      const s = states[state];
+      $('source-wrap').innerHTML = option===1 ? `<section class="alert ${state==='error'?'alert--danger':state==='unavailable'?'alert--warning':''}" aria-label="Catalog source">${stateContent()}</section>` : `<section class="source-compact" aria-label="Catalog source"><div><div class="heading-line"><strong>Legacy Kilter</strong><span class="badge ${state==='installed'?'badge--success':state==='error'?'badge--danger':''}">${s.label}</span></div><p class="source-copy">Older offline snapshot · no live updates</p></div><button type="button" class="btn btn-secondary" data-action="manage">Manage</button></section>`;
+      $('manage-content').innerHTML = stateContent();
+      // Avoid a nested “Source details” link within its own dialog.
+      $('manage-content').querySelector('[data-action="manage"]')?.remove();
+    }
+    function filtered() {
+      const query = $('search').value.trim().toLowerCase();
+      return rows.filter(r => r.name.toLowerCase().includes(query) && ($('grade').value==='all'||String(r.grade)===$('grade').value) && String(r.angle)===$('angle').value);
+    }
+    function renderList() {
+      [...$('filters').elements].forEach(el=>el.disabled=state!=='installed');
+      if (state!=='installed') {
+        const prompts = {'not-installed':['Install the catalog to browse','Search, filter and preview climbs once the download is complete.'],downloading:['Your catalog is on its way','The library will be ready after the complete snapshot is installed.'],error:['Climbs aren’t available yet','Retry the catalog download to start browsing.'],unavailable:['Local climbing is still available','Use Finished, Drafts or Lists while the catalog is unavailable.']};
+        $('list-content').innerHTML = `<section class="blank"><h2>${prompts[state][0]}</h2><p>${prompts[state][1]}</p>${option===2?`<button type="button" class="btn ${state==='not-installed'?'btn-primary':'btn-secondary'}" data-action="manage">${state==='not-installed'?'Set up offline catalog':state==='downloading'?'View download':'Catalog details'}</button>`:''}</section>`;
+        return;
+      }
+      const found = filtered(); const pages = Math.max(1,Math.ceil(found.length/4)); page=Math.min(page,pages-1);
+      const shown=found.slice(page*4,page*4+4);
+      $('list-content').innerHTML = `<div class="result-heading"><span role="status">${found.length} sample ${found.length===1?'climb':'climbs'} · ${$('angle').value}°</span><button type="button" class="btn btn-ghost" data-action="reset">Reset filters</button></div>${shown.length?`<ul class="route-list">${shown.map(r=>`<li><button type="button" class="route-hit" data-route="${r.id}" ${selected===r.id?'aria-current="true"':''}><span class="climb-row"><span><span class="climb-row__name">${r.name}</span><span class="climb-row__meta">${r.setter} · ${r.holds} holds</span></span><span class="metric">V${r.grade}<br>${r.angle}°</span></span></button></li>`).join('')}</ul><nav class="pagination" aria-label="Catalog pages"><button type="button" class="btn btn-secondary" data-action="previous" ${page===0?'disabled':''}>Previous</button><span>Page ${page+1} of ${pages}</span><button type="button" class="btn btn-secondary" data-action="next" ${page===pages-1?'disabled':''}>Next</button></nav>`:'<section class="blank"><h2>No climbs match</h2><p>Try another name, grade or angle.</p><button type="button" class="btn btn-secondary" data-action="reset">Reset filters</button></section>'}`;
+    }
+    function boardSvg() {
+      return `<figure class="board-preview"><svg viewBox="0 0 280 330" role="img" aria-label="Schematic example of a climbing board with start, middle, finish and foot holds"><defs><pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse"><circle cx="12.5" cy="12.5" r="3.5" fill="var(--color-border-strong)"/></pattern></defs><rect x="1" y="1" width="278" height="328" rx="8" fill="var(--color-bg-secondary)" stroke="var(--color-border)"/><rect x="15" y="15" width="250" height="300" fill="url(#grid)"/><g stroke="var(--color-bg-primary)" stroke-width="2"><g fill="var(--color-role-start)"><circle cx="103" cy="253" r="9"/><circle cx="153" cy="228" r="9"/></g><g fill="var(--color-role-middle)"><circle cx="78" cy="203" r="9"/><circle cx="178" cy="178" r="9"/><circle cx="128" cy="128" r="9"/><circle cx="203" cy="103" r="9"/></g><g fill="var(--color-role-finish)"><circle cx="153" cy="53" r="9"/></g><g fill="var(--color-role-foot)"><circle cx="78" cy="303" r="9"/><circle cx="203" cy="278" r="9"/></g></g></svg><figcaption>Schematic preview · synthetic fixture</figcaption></figure>`;
+    }
+    function renderDetail() {
+      const dialog=$('detail-sheet');
+      if (!selected) { if(dialog.open)dialog.close(); dialog.innerHTML=''; $('detail-placeholder').hidden=false; return; }
+      const r=rows.find(r=>r.id===selected); $('detail-placeholder').hidden=true;
+      dialog.innerHTML=`<div class="detail-heading"><div><p class="eyebrow">Legacy Kilter · read only</p><h2 id="detail-name">${r.name}</h2><p class="source-copy">${r.setter}</p></div><button type="button" class="btn btn-icon btn-ghost" data-action="close-detail" aria-label="Close climb details">×</button></div><dl class="detail-meta"><div><dt>Grade</dt><dd>V${r.grade}</dd></div><div><dt>Angle</dt><dd>${r.angle}°</dd></div><div><dt>Holds</dt><dd>${r.holds}</dd></div></dl>${boardSvg()}<div class="role-legend detail-legend"><span class="role role--start">Start</span><span class="role role--middle">Middle</span><span class="role role--finish">Finish</span><span class="role role--foot">Foot only</span></div><div class="detail-actions"><p class="source-copy" role="status">${connected?'Selected climb lights automatically.':'Connect a board to light this climb automatically.'}</p>${connected?'': '<button type="button" class="btn btn-primary" data-action="connect">Connect board</button>'}<p class="source-copy">Older offline snapshot · no live updates</p></div>`;
+      if (matchMedia('(min-width:900px)').matches) { if(dialog.open)dialog.close(); dialog.show(); }
+      else if(!dialog.open)dialog.showModal();
+    }
+    function closeDetail(restoreFocus=true) { const id=selected; selected=null; renderDetail(); renderList(); if(restoreFocus&&id)document.querySelector(`[data-route="${id}"]`)?.focus(); }
+    function setState(next) { state=next; $('mock-state').value=next; closeDetail(false); renderSource(); renderList(); }
+    function catalogAction() {
+      if (state==='downloading') { setState('not-installed'); announce('Download canceled. Your climbs and lists are unchanged.'); }
+      else if (state==='unavailable') announce('Mock preview: no download is available. Choose another preview state above to inspect it.');
+      else { setState('downloading'); announce('Mock preview: progress is fixed at 46%. Choose “Installed / offline” above to browse the sample climbs.'); }
+    }
+    function connect() { connected=!connected; $('connect').textContent=connected?'Disconnect':'Connect'; $('board-status').textContent=connected?'BOARD CONNECTED':'BOARD DISCONNECTED'; $('board-status').classList.toggle('board-status--connected',connected); if(selected)renderDetail(); announce(connected?'Mock board connection enabled. No Bluetooth request or lighting command was sent.':'Mock board disconnected.'); }
+    document.addEventListener('click',e=>{
+      const button=e.target.closest('button'); if(!button)return;
+      if(button.dataset.destination) { destination=button.dataset.destination; closeDetail(false); $('catalog-view').hidden=destination!=='Kilter'; $('local-view').hidden=destination==='Kilter'; $('local-heading').textContent=destination; document.querySelectorAll('.destinations button').forEach(b=>{const active=b.dataset.destination===destination;b.classList.toggle('btn-primary',active);b.classList.toggle('btn-ghost',!active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}); return; }
+      if(button.dataset.route) { selected=Number(button.dataset.route); renderList(); renderDetail(); return; }
+      switch(button.dataset.action) {
+        case 'catalog': catalogAction(); break;
+        case 'manage': renderSource(); $('catalog-modal').showModal(); break;
+        case 'reset': $('filters').reset(); page=0; closeDetail(false); renderList(); break;
+        case 'previous': page--; closeDetail(false); renderList(); break;
+        case 'next': page++; closeDetail(false); renderList(); break;
+        case 'close-detail': closeDetail(); break;
+        case 'connect': connect(); break;
+      }
+    });
+    $('mock-state').addEventListener('change',e=>{announce('');setState(e.target.value);});
+    $('filters').addEventListener('submit',e=>e.preventDefault());
+    ['search','grade','angle'].forEach(id=>$(id).addEventListener(id==='search'?'input':'change',()=>{page=0;closeDetail(false);renderList();}));
+    $('detail-sheet').addEventListener('cancel',e=>{e.preventDefault();closeDetail();});
+    ['close-manage','done-manage'].forEach(id=>$(id).addEventListener('click',()=>$('catalog-modal').close()));
+    $('connect').addEventListener('click',connect);
+    $('backup').addEventListener('click',()=>announce('The existing backup and restore tool stays available. This mock does not read or change your library.'));
+    matchMedia('(min-width:900px)').addEventListener('change',()=>{if(selected){$('detail-sheet').close();renderDetail();}});
+    setState(state);
+  </script>
+</body>
+</html>

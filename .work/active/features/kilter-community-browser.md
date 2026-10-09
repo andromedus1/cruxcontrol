@@ -46,7 +46,21 @@ Avoid another route editor or copying catalog rows into authored climb storage.
 
 - Existing direction: `.mockups/screens/epic-climb-browser/option-hybrid.html`.
 - Installation/filter refinement: `.mockups/screens/kilter-community-browser/index.html`
-  (pending generation and selection).
+  (two options generated; selection pending).
+- Option 1 — **Source in view**: `.mockups/screens/kilter-community-browser/option-1.html`.
+  A persistent source strip keeps installation, progress, cancellation and recovery
+  visible beside the older-snapshot label.
+- Option 2 — **Catalog on demand**: `.mockups/screens/kilter-community-browser/option-2.html`.
+  A compact source/status row opens catalog management in a dialog, leaving more
+  room for browsing after installation.
+- Both refine the approved list-first phone / split desktop direction with the
+  existing design-system tokens, components and motion. A mock toolbar exposes
+  not-installed, downloading, installed/offline, failed and unavailable states;
+  no mock performs catalog downloads, storage or Bluetooth operations. Synthetic rows
+  exercise name/grade/angle filters, pagination and accessible climb details.
+- Source wording is **Legacy Kilter / older offline snapshot / no live updates**.
+  No freshness date or production route count is asserted. The explicit download
+  invitation uses the manifest's rounded 5.1 MB download and 12.4 MB catalog data.
 
 ## Acceptance boundary
 
