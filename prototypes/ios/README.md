@@ -1,11 +1,14 @@
 # iOS shell prototype
 
 This experiment packages the existing React screens with Capacitor 8.4.3 and a
-native BLE adapter to prepare for iPhone testing. Native compilation and simulator
-startup pass; interactive library behavior and real-board operation remain
-unverified. Capacitor has not been selected as the production framework. The
-isolated package pins `@capacitor-community/bluetooth-le` 8.3.0 and
-`@capacitor/app` 8.1.1.
+native BLE adapter to prepare for iPhone testing. Xcode 27 / iOS 27 build and
+startup pass, and the isolated simulator has verified synthetic library editing,
+save/relaunch, import, ordered lists, update preservation, and native backup file
+delivery. Physical-board operation, storage-pressure durability, native sign-in,
+and production distribution remain unverified. Capacitor has not been selected as
+the production framework. The isolated package pins
+`@capacitor-community/bluetooth-le` 8.3.0, `@capacitor/app` 8.1.1,
+`@capacitor/filesystem` 8.1.4, and `@capacitor/share` 8.0.3.
 
 The separate app uses bundle ID `io.github.andromedus1.cruxcontrol.prototype` and
 display name **CruxControl Prototype**. It loads bundled assets, with no remote
@@ -56,7 +59,9 @@ npm run sync
 `sync` typechecks the adapter, builds the shared web code in prototype mode, copies
 its assets, and synchronizes the native plugins into the committed Swift Package
 Manager project, `ios/App/App.xcodeproj`. Re-run it after web, adapter, or plugin
-changes. Generated bundles and installed packages are ignored by Git.
+changes. The privacy manifest declares the file-timestamp API reason required by
+the Filesystem plugin for app-container file access. Generated bundles and
+installed packages are ignored by Git.
 
 A native build needs full Xcode and an installed iOS simulator runtime; standalone
 Command Line Tools are insufficient. Capacitor's requirements are in its
@@ -96,9 +101,12 @@ file picker first. Keep experiments in this separate app; do not import personal
 backups or alter the established browser/PWA origin to perform these checks.
 
 The shell currently uses the existing IndexedDB repositories. Their availability
-here is not a durable native-storage decision. Backup file selection, download,
-and recovery through WKWebView also remain unproved. A successful reload or
-relaunch does not establish preservation under storage pressure or across updates.
+here is not a durable native-storage decision. In the isolated iPhone 17 / iOS 27
+simulator, the synthetic fixture imported through the normal picker, a created V4
+draft survived save and relaunch, and the fixture's ordered list contents remained
+intact. A native app update also retained the synthetic records and list order.
+These checks do not establish preservation under storage pressure or on physical
+devices.
 
 ## Checks and evidence boundaries
 
@@ -122,10 +130,10 @@ write ordering/modes, copied buffers, cancellation, stale completions, failures,
 and shared Fullride light/clear packets. They do not execute CoreBluetooth. The
 browser smoke checks startup, fixture restore/export, and preservation through
 browser reload in Chromium. It cannot establish that these operations work in
-WKWebView. Native compilation and an isolated simulator launch now pass; startup
-shows no Bluetooth permission prompt. The observed iPhone 17 screenshot also places
-the status bar and app controls without overlap. These checks do not exercise the
-interactive synthetic-library checklist below.
+WKWebView. Native compilation, isolated simulator launch, and the interactions
+recorded below pass; startup shows no Bluetooth permission prompt. Scene safe-area
+layout keeps controls clear of the status bar, and focusing Name or Grade does not
+cause horizontal page zoom.
 
 Record further simulator results against the commit, Xcode version, simulator model,
 and iOS runtime in the owning work item:
@@ -134,19 +142,31 @@ and iOS runtime in the owning work item:
   Check board rendering, scrolling, text input, and navigation back to the library.
 - Restore the fixture through the normal UI. Confirm four climbs, both lists,
   membership order, the missing-climb reference, and the saved effect recipe.
+  The actual simulator check restored four climbs and two playlists; the ordered
+  list check preserved fixture order and the missing-reference position.
 - Edit a synthetic climb, finish saving, terminate and relaunch the app, and confirm
   the edit and list order remain. Record the original fixture and intentional edit
   separately so preservation comparisons are meaningful.
-- Export through **Download library backup** and inspect the actual saved file.
-  Verify IDs, revisions, lifecycle states, list ordering/membership, and recipes;
-  restore into a separate empty test simulator and compare. If file selection or
-  download fails, record the native gap instead of counting the dialog as a pass.
+- Export through **Save or share library backup**, cancel once, then retry and
+  choose **Save to Files** in the iOS share sheet. Cancellation leaves the dialog
+  usable and removes the app-owned cache copy after the OS completes. The successful
+  path saves an actual JSON file; the app reports that export completed and asks
+  users to check the chosen destination. The simulator's saved JSON was decoded
+  with the production codec and matched all four fixture records, both ordered
+  playlists, Trash, missing-reference membership and effect recipe, plus the
+  separately created V4 draft. The owned cache copy is removed after the sheet
+  completes. A separate empty simulator reviewed and restored the saved file
+  through the normal picker, retained its five climbs and two playlists after
+  relaunch, and re-exported a canonical snapshot matching the first export in
+  every record and ordered membership (ignoring the export timestamp). Its owned
+  cache copy was also removed after the share sheet completed.
 - Press **Connect** and confirm unsupported Bluetooth is reported: the native BLE
   plugin does not support the iOS simulator. Library startup should not initialize
   Bluetooth or open a permission prompt. No simulated board success is added.
 
-The interactive synthetic-library simulator checks above are still pending. A real
-iPhone and Fullride board are required for light/clear, permission denial,
+The interactive simulator checks above establish behavior only for the isolated
+synthetic dataset and the exercised simulator paths. A real iPhone and Fullride
+board are required for light/clear, permission denial,
 interruption/reconnect, foreground recovery,
 and actual-device responsiveness. Check that backgrounding ends the session and
 returning requires explicit reconnect before lighting or effects can resume.

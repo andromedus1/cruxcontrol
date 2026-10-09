@@ -111,11 +111,32 @@ Browser inspection exposes unsupported control instead of selecting Web Bluetoot
 The native simulator also reports unsupported on Connect. Deterministic adapter
 tests and Chromium library checks cannot establish CoreBluetooth behavior.
 
-The simulator has not yet exercised synthetic backup restore/export, climb editing,
-relaunch preservation, or Connect behavior. No real iPhone/board acceptance, storage
-durability, WKWebView backup round trip, native authentication, or distribution
-acceptance is implied by the startup proof. Physical testing still depends on a test
-phone. Capacitor remains a proof candidate.
+The iPhone 17 / iOS 27 simulator has since exercised synthetic library operations:
+fixture import through the native picker, create/save/relaunch of a V4 draft,
+ordered-list inspection, and preservation of records and order after a native app
+update. The Name and optional Grade fields use a 16px input size, and simulator
+focus no longer causes horizontal page zoom. The scene's safe-area layout keeps
+controls clear of the status bar.
+
+The [backup export feature](../features/epic-ios-controller-bridge-backup-export.md)
+adds Filesystem 8.1.4 and Share 8.0.3, with the native path writing the unchanged
+UTF-8 backup JSON to app cache and passing its file URI to the iOS share sheet.
+Simulator cancellation returned to a usable dialog and cleaned up the app-owned
+cache; Save to Files produced a destination file that the production codec decoded
+and compared against the fixture: four fixture climbs plus the separately created
+V4 draft, two ordered playlists, Trash and missing-reference membership, and the
+effect recipe matched. The sheet completion was followed by cache cleanup. A second
+empty iPhone 17 / iOS 27 simulator then reviewed and restored that actual file through
+the normal picker, retained five climbs and two playlists after relaunch, and
+re-exported a canonical snapshot matching every record and ordered membership from
+the first export (ignoring the envelope export timestamp). Its cache copy was also
+removed after OS share completion. This establishes the exercised simulator backup
+round trip; it does not establish physical-device behavior or storage-pressure
+durability.
+
+These simulator checks do not establish physical iPhone/board acceptance, storage-
+pressure durability, native authentication, or distribution. Physical testing still
+depends on a test phone. Capacitor remains a proof candidate.
 
 ## Simplification opportunity
 
