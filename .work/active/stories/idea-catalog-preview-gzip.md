@@ -1,7 +1,7 @@
 ---
 id: idea-catalog-preview-gzip
 kind: story
-stage: review
+stage: done
 parent: null
 depends_on: []
 release_binding: null
@@ -68,3 +68,12 @@ Root approves the focused correction: exact catalog gzip paths only, both Vite
 serving modes, preserved original bytes and MIME, normal static files unaffected,
 no app validation relaxation, and original failing flow now verified. No independent
 or cross-model story reviewer ran. Required CI remains the final closure gate.
+
+
+## Completion
+
+Required GitHub CI passed at `b15dd46` in run `37979207432`: web lint,
+typecheck, unit tests, normal build and unconditional artifact checker, application
+browser tests, dedicated bundled-worker persistence, and prototype browser smoke.
+The named review corrections are verified; approve and advance to done. No second
+independent review pass was run.

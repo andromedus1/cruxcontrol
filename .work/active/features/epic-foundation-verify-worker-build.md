@@ -1,7 +1,7 @@
 ---
 id: epic-foundation-verify-worker-build
 kind: feature
-stage: review
+stage: done
 tags: [infra]
 parent: epic-foundation
 depends_on: [kilter-community-browser]
@@ -202,3 +202,12 @@ module's precache membership would broaden this narrowly specified build contrac
 normal JS precaching and the real offline browser test cover that runtime boundary.
 No independent re-review is required at standard weight. Final CI remains required
 before advancing to done.
+
+
+## Completion
+
+Required GitHub CI passed at `b15dd46` in run `37979207432`: web lint,
+typecheck, unit tests, normal build and unconditional artifact checker, application
+browser tests, dedicated bundled-worker persistence, and prototype browser smoke.
+The named review corrections are verified; approve and advance to done. No second
+independent review pass was run.
