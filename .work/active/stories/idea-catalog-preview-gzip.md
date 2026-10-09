@@ -61,3 +61,10 @@ before the fix, green after, then repeat the original real-snapshot browser flow
   not a product defect. No production assertions were weakened.
 - README records the HTTP representation contract. No public deployment, catalog
   binary commit, phone update, or personal-library access occurred.
+
+## Bounded inline review (2026-10-09)
+
+Root approves the focused correction: exact catalog gzip paths only, both Vite
+serving modes, preserved original bytes and MIME, normal static files unaffected,
+no app validation relaxation, and original failing flow now verified. No independent
+or cross-model story reviewer ran. Required CI remains the final closure gate.

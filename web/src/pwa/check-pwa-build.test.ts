@@ -70,12 +70,12 @@ function createBuildFixture({
   write('icons/icon-512-maskable.png', 'icon');
   write(
     'index.html',
-    '<script type="module" src="/assets/index-entry.js"></script>' +
-      '<script>navigator.serviceWorker.register("/sw.js")</script>',
+    '<script type="module" src="/assets/index-entry.js"></script>',
   );
   write(
     'assets/index-entry.js',
-    'import { shellReady } from "./app-shell.js";import("./catalog-route.js");void shellReady;',
+    'import { shellReady } from "./app-shell.js";import("./catalog-route.js");void shellReady;' +
+      'navigator.serviceWorker.register(new URL("/sw.js", import.meta.url));',
   );
   write('assets/app-shell.js', 'export const shellReady = true;');
   write(
@@ -151,6 +151,12 @@ describe('PWA build artifacts', () => {
   it('does not accept orphan worker and WASM files or their precache entries', () => {
     withBuildFixture({ workerReference: null }, ({ dist }) => {
       expect(() => checkPwaBuild(dist)).toThrow(/no catalog worker reference/);
+    });
+  });
+
+  it('does not accept a precached orphan WASM when the reachable glue has no WASM reference', () => {
+    withBuildFixture({ glueSource: 'export const ready = true;' }, ({ dist }) => {
+      expect(() => checkPwaBuild(dist)).toThrow(/WASM/);
     });
   });
 

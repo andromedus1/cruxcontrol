@@ -183,3 +183,22 @@ runtime, OPFS, physical-device, source coverage, or download-consent proof from 
 - `epic-foundation-catalog-bootstrap` — nonvisual storage and real-worker test owner.
 - `kilter-community-browser` — real application consumer and offline integration owner.
 - `web/vite.config.ts` — ES-module worker output and app-code precache configuration.
+
+## Standard review and adjudication (2026-10-09)
+
+One independent Claude Opus pass, job `20261009T190820Z-4d7526b7`, approved with
+no current-cycle implementation blockers. It checked the actual emitted app,
+worker, glue, WASM and precache graph and ran 18 negative probes on temporary
+copies. Focused tests, lint and typecheck passed; the peer did not rebuild or
+modify the shared dist.
+
+Root accepted two bounded coverage improvements: the fixture's service-worker URL
+now lives in the app module, where incorrect quoted-filename traversal could
+follow it, and a separate orphan-WASM case proves a precached binary cannot replace
+a missing reference from reachable glue. All 17 fixture tests pass afterward.
+A symlinked CLI invocation is not a supported current caller (CI invokes the script
+by its repository path); no compatibility mechanism is added. Checking every glue
+module's precache membership would broaden this narrowly specified build contract;
+normal JS precaching and the real offline browser test cover that runtime boundary.
+No independent re-review is required at standard weight. Final CI remains required
+before advancing to done.
