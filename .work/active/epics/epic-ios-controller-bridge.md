@@ -142,7 +142,8 @@ or a generic framework abstraction during the proof.
 - Before resuming access, prove native sign-in and authenticated API calls; reconsider
   the auth provider if needed. Do not relax origin/CSRF checks to make requests pass.
 - Confirm device/OS support, build/signing, and a suitable distribution path before
-  calling iOS shippable. No native build, physical test or data migration has occurred.
+  calling iOS shippable. Native build and simulator startup are verified; physical
+  testing and data migration remain pending.
 
 ## Proposed framework decision gate
 
