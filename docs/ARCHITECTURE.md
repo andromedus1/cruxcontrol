@@ -32,7 +32,7 @@ decisions:
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use the platform library adapter: independent versioned IndexedDB repositories on web and iOS, and one native SQLite database on Android; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
-  - "Current backup is a manual bounded file with missing-only per-store restore; intended independent preservation adds account-protected versioned backup with service-managed encryption, without treating two stores as one atomic snapshot."
+  - "Current backup is a manual bounded file with missing-only per-store restore; real authored climbs require verified account-protected online backup and clean-install recovery, with portable files as a separate second path."
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
   - "PWA updates use an app-owned prompt-mode Workbox registration, shared Web Locks admission, and explicit safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes."
   - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
@@ -75,12 +75,16 @@ feature item bodies in `.work/`, not here. Capabilities are in
 3. **Catalog Providers** — source-specific import/sync adapters. Kilter is first;
    later Aurora-family and MoonBoard providers are separately researched. Network,
    auth, reconciliation, and policy metadata remain outside domain and UI code.
-   The browser currently consumes the approved older offline Fullride snapshot with
-   explicit download consent; the catalog binary remains private and public
-   distribution approval is unresolved. Source freshness is unknown, there is no live
-   refresh, and the adapter's supported query surface does not establish current or
-   complete official-app coverage. Kilter catalog work proceeds independently of the
-   invited contribution service and native iPhone proof.
+   The PWA and private Android APK consume the approved older offline Fullride snapshot
+   with explicit download consent. Android packaging requires an explicit local artifact
+   input; compile-only APKs omit the catalog. An isolated Android 36 arm64 / WebView 133
+   APK passed exact-byte delivery, consented install/query through the ordinary module
+   Worker and SQLite WASM, and airplane-mode reopen/list resolution using OPFS and Web
+   Locks. This proves packaged offline catalog operation for that test stack, not general
+   Android parity or board control. The binary remains private and public distribution
+   approval is unresolved. Source freshness is unknown, there is no live refresh, and the
+   query surface does not establish current or complete official-app coverage. Kilter
+   catalog work proceeds independently of invited sharing and native iPhone proof.
 4. **Controller Profiles & Transports** — profiles own discovery and command
    encoding; transports own platform I/O. The first pair is Aurora API level 2/3 over
    Web Bluetooth: deterministic framing/checksum/multi-packet encoding, serialized
@@ -255,10 +259,17 @@ Browser/native file-delivery and scheduling limits need proof before promising a
 file copies.
 
 The Android package disables OS Auto Backup and excludes app data domains from the legacy
-backup rules and Android 12+ cloud-backup/device-transfer rules. This is an explicit app
-policy, not evidence that every OEM transfer path has been tested. Future recovery
-admission must treat any unexpected nonempty or OS-restored library as untrusted until
-deliberate account or portable-file recovery resolves it; it cannot authorize an upload.
+backup rules and Android 12+ cloud-backup/device-transfer rules. Merged-manifest and
+resource inspection of a private APK confirmed those rules are packaged. This is an
+explicit app policy, not evidence that every OEM transfer path has been tested. Future
+recovery admission must treat any unexpected nonempty or OS-restored library as untrusted
+until deliberate account or portable-file recovery resolves it; it cannot authorize an
+upload.
+
+Everyday use with real authored climbs remains gated until automatic private online
+protection and clean-install recovery from that online backup are verified. Owner-controlled
+portable-file recovery is an independent second path and does not satisfy the online gate
+by itself.
 
 ## Data Flow
 
@@ -283,22 +294,35 @@ shared runtime injects an `AppLibrary` backed by one persistent native SQLite
 database; strict codecs and revision checks are shared with the browser repositories, and
 `readSnapshot` reads both aggregates in one native transaction. The database uses WAL and
 FULL synchronization. Android emulator checks have verified synthetic restore, edit/save,
-force-stop/relaunch, and same-signature update preservation. They do not establish physical
-board behavior, complete Android parity, catalog operation, or independent recovery. The
-Capacitor configuration sets `loggingBehavior` to `none` to suppress bridge payload logs;
-final packaged-config and Logcat verification remains pending. The iOS simulator has
-separately passed synthetic-data startup, scene/lifecycle, safe-area,
-focus, application-update preservation, and a complete Save to Files backup/restore
+force-stop/relaunch, and same-signature update preservation. Separately, the private catalog
+APK passed the offline worker flow described in Catalog Providers on Android 36 / WebView
+133. These checks do not establish physical-board behavior, complete Android parity, or
+automatic online backup and recovery. The Capacitor configuration sets
+`loggingBehavior` to `none` to suppress bridge payload logs; inspection of a private APK
+confirmed the bundled setting, and fresh Logcat windows during export, recovery/edit, and
+relaunch contained neither the synthetic marker nor the full backup payload. The iOS
+simulator has separately passed
+synthetic-data startup, scene/lifecycle, safe-area, focus, application-update preservation,
+and a complete Save to Files backup/restore
 round trip. Real-board BLE, real-device storage pressure, and authentication remain
 unverified on iOS. The observed startup screenshot showed status-bar and app-control safe
 areas without overlap.
-Access design
-must account for the native origin and session return path; its existing same-origin
-web units are held for revision. Native backup delivery encodes UTF-8 JSON into the
-app cache and passes a Filesystem URI to Share. Successful sharing removes the cache
-copy; cancellation or rejection retains it until the next export preflight because
-a nested OS destination may still need the file. Native bootstrap/update integration
-still requires explicit adapters or proof, rather than assuming all browser facilities carry over.
+Access design must account for the native origin and session return path; its existing
+same-origin web units are held for revision. Backup handoff is platform-specific: iOS
+writes UTF-8 JSON in the app cache and passes the Filesystem URI to Share; successful
+sharing removes that cache copy, while cancellation or rejection retains it until the next
+export preflight for a nested destination. Android uses Storage Access Framework
+`ACTION_CREATE_DOCUMENT` and reports success only after the selected provider's UTF-8
+output stream closes. Picker cancellation is distinct from failure. If activity
+recreation interrupts a save before the output stream opens, the library remains
+unchanged, although the provider may leave an empty destination; the current-source
+Android flow passed isolated-emulator checks: exports were read back from the selected
+Downloads provider, one restored offline into a separate empty installation with an exact
+canonical comparison, and the recovered library's edit survived force-stop/relaunch. A
+same-signature update also preserved the source library. This synthetic local-provider
+proof does not establish a cloud upload, physical-phone behavior, or every OEM transfer
+path. Native bootstrap/update integration still requires explicit adapters or proof,
+rather than assuming all browser facilities carry over.
 The intended boundary uses current membership authorization, explicit retry-safe
 publication, stable contribution identities, and immutable source revisions.
 Locally retained copies record source provenance without surrendering local ownership;
@@ -422,7 +446,7 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | Web Locks API                               | Shared per-tab admission and exclusive, `ifAvailable` update apply coordination                                                                                                                               |
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
 | Capacitor 8.4.3 + BLE 8.3.0 + App 8.1.1      | Experimental iOS/Android package: bundled shared UI, native byte transport, foreground lifecycle; no background BLE mode                                                                                       |
-| Capacitor Community SQLite 8.1.1             | Android app-private library database behind `AppLibrary`, with serialized revision transactions and a coherent snapshot; physical, parity, catalog, and independent-recovery acceptance remain open             |
+| Capacitor Community SQLite 8.1.1             | Android app-private library database behind `AppLibrary`, with serialized revision transactions and a coherent snapshot; physical-board, full-parity, and automatic online recovery remain open                   |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |
 | BoardLib (Python)                           | Legacy bootstrap and sync-protocol reference; not a verified current catalog source                                                                                                                            |
 | Kilter sync API                             | Legacy protocol reference; current availability and coverage are unverified                                                                                                                                   |

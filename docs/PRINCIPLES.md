@@ -12,7 +12,7 @@ decisions:
   - "Keep board definitions, catalog providers, and controller protocols independent."
   - "Preserve native data and provenance; normalized fields are a read model, not a replacement source of truth."
   - "Prefer local and static operation, earning backend and native-shell complexity only when a capability requires it; independent private recovery is such a capability."
-  - "Local saving is not independent protection: preserve recoverable versions outside the origin and device, retain portable copies, and verify restoration."
+  - "Real authored climbs require verified automatic online protection and clean-install recovery; retain portable files as an independent second path."
   - "Treat measured board capacity, protected climb roles, and foreground-only browser animation as safety contracts rather than presentation details."
 ---
 
@@ -43,6 +43,9 @@ recoverable versions and portable copies; verify restoration rather than inferri
 from export success. Clearly distinguish locally
 saved changes from changes included in a verified independent backup. Offline edits
 remain usable while awaiting protection, with that exposure made explicit.
+Do not admit real authored climbs to everyday use until automatic online protection and
+clean-install recovery from that online backup are verified. Keep portable-file recovery
+as an independent second path; it does not waive that gate.
 
 ### Native communities remain legible
 

@@ -23,7 +23,7 @@ decisions:
   - "Kilter community catalog access precedes invited sharing and can ship on Android/web independently of native iPhone hardware acceptance."
   - "Locally authored climbs are unrestricted platform-local aggregates with Draft/Finished status and recoverable Trash; web and iOS use IndexedDB, Android uses native SQLite, and provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
-  - "Current whole-library export is manual and restore is missing-only per store; intended preservation adds automatic account-protected private backups, service-managed encryption, and portable files with verified recovery."
+  - "Current whole-library export is manual and restore is missing-only per store; everyday real authoring requires verified automatic online backup and clean-install recovery, with portable files as an independent second path."
   - "PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs, and workspace, mutation, play-through, and BLE session gates protect local work before activation."
 ---
 
@@ -102,6 +102,11 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   a manifest can still present an offer when its binary is absent. After explicit
   download consent, an unavailable binary produces an HTTP or size error with retry,
   while authored climbs and lists remain available.
+- A private Android APK has verified the bundled snapshot's exact compressed bytes
+  and normal consent/install/query flow through the module Worker, WASM, OPFS, and
+  Web Locks, followed by offline reopen/list resolution on an isolated Android 36
+  arm64 / WebView 133 emulator. This establishes packaged catalog operation for that
+  test stack, not physical-board behavior or full Android feature parity.
 - Add shareable URLs for individual/provider climbs with future catalog browsing;
   current portable sharing is implemented for playlists through fragments or files.
 - Visual 2D board renderer showing recognizable hold artwork, positions, semantic role
@@ -295,6 +300,10 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   does not claim every OEM transfer path has been verified.
 - Recover on a clean client without relying on credentials or keys kept only inside
   the lost browser origin. Preserve private access isolation from invited sharing.
+- Everyday use with real authored climbs remains gated until automatic private online
+  protection and clean-install recovery from that online backup are verified. Verified
+  owner-controlled portable-file restoration is a required independent second path; it
+  does not substitute for the online gate.
 - Private backups may use service-managed encryption and recovery through the
   owner's account. End-to-end encryption that excludes the service operator is
   not required; account recovery must work without the old device.
@@ -380,10 +389,21 @@ The model mirrors the official Kilter SQLite schema (see
   stores and asks users to finish edits in other tabs; this is not a cross-database atomic
   snapshot. Android captures both aggregates through one SQLite read transaction. The
   Android emulator has passed synthetic restore, edit/save, force-stop/relaunch, and
-  same-signature update preservation checks; physical-board behavior, full Android feature
-  parity, catalog support, and independent recovery remain unverified. Restore reviews
-  the complete file first, adds missing IDs, skips canonically identical IDs, and
-  blocks any differing ID without overwriting or allocating replacement IDs. Each store
+  same-signature update preservation checks; physical-board behavior and full Android
+  feature parity remain unverified. Automatic online backup and recovery also remain
+  unverified. The separately verified private
+  APK catalog flow covers the older snapshot through offline reopen on Android 36 / WebView
+  133, not board lighting or general Android acceptance. Android SAF delivery uses
+  `ACTION_CREATE_DOCUMENT` and reports success after the provider's UTF-8 stream closes;
+  interruption before opening the stream leaves the library unchanged but may leave an
+  empty destination. The manual Android flow passed isolated-emulator checks: actual
+  Downloads-provider files were read back, one restored offline into a separate empty
+  installation with an exact canonical comparison, and an edit to the recovered library
+  survived force-stop/relaunch. The source also survived a same-signature update. These
+  synthetic checks do not establish cloud upload or physical-device behavior.
+  The restore flow reviews the complete file first, adds missing IDs, skips canonically
+  identical IDs, and blocks any differing ID without overwriting or allocating replacement
+  IDs. Each store
   commits in its own transaction and aborts that store on error; a playlist failure can
   therefore follow a committed climb batch and is reported for honest retry with the
   retained file. The workflow uses the existing platform-local library store for saved

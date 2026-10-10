@@ -25,7 +25,7 @@ decisions:
   - "Imports may use public or user-authorized sources; access and redistribution constraints are enforced per provider."
   - "Static delivery and offline local use remain the default; a narrow service may support independent private backups, provider access or invited collaboration."
   - "Kilter community catalog access precedes invited shared contributions; its first browser uses an explicitly older offline snapshot, and native iPhone preparation continues independently, with a logbook, broader providers, grade prediction and personalized training retained afterward."
-  - "Private authoring and playlists stay locally usable; preservation requires automatic private online backups plus portable owner-controlled files, separate from invited sharing."
+  - "Private authoring and playlists stay locally usable; everyday real authoring waits for verified automatic online backup and clean-install recovery, with portable owner-controlled files as an independent second path."
   - "Invited partner and friends need Android and iPhone board control; establish the iOS path before advancing shared-library implementation."
 ---
 
@@ -44,18 +44,25 @@ for restore, edit/save, forced process termination, relaunch, and a same-signatu
 update. Physical-board behavior and full Android feature parity remain unverified.
 Native local storage is not independent recovery. The immediate priority is independent
 library preservation: automatic private online backups, retained versions, portable files,
-and verified restoration after browser or device loss. These protections are intended
-work, not shipped guarantees; current whole-library exports are manual, and no
-off-device or online recovery path has been proven. Local saving and offline access
-must remain available while backup is pending or unavailable.
+and verified restoration after browser or device loss. Real authored climbs remain
+gated until automatic private online protection and clean-install recovery from that
+online backup are verified. Owner-controlled portable-file recovery is the independent
+second path, not a substitute for that online gate. Automatic online protection and
+clean-install recovery remain intended work, not shipped guarantees. Whole-library
+exports remain manual; Android's portable-file path has passed synthetic isolated-emulator
+export and empty-install offline recovery checks. No cloud destination or online recovery
+has been proven. Local saving and offline access must remain available while automatic
+protection is pending or unavailable.
 The Kilter community catalog first slice is now
 integrated in the running app: entry opens the older offline Fullride snapshot when
 available, while explicit management consent controls metadata lookup and download.
 The snapshot's source freshness is unknown and it receives no live updates; complete
-current-app coverage and public distribution permission are not established. Catalog
-work can advance on Android and the web while native iPhone work proceeds; unavailable
-iPhone hardware does not block that work, but Android catalog support still needs its
-own packaged proof. The isolated iOS prototype now compiles,
+current-app coverage and public distribution permission are not established. A private
+Android APK has passed isolated emulator checks for consented catalog installation and
+offline worker-backed browsing of that snapshot; this does not establish physical-board
+control or full Android parity. Catalog work can advance on Android and the web while
+native iPhone work proceeds; unavailable iPhone hardware does not block that work. The
+isolated iOS prototype now compiles,
 starts, and has passed synthetic-data library preservation and complete backup/restore
 round trips in an iPhone 17 simulator; physical-device acceptance remains open.
 
