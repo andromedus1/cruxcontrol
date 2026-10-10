@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-native-library
 kind: feature
-stage: implementing
+stage: review
 tags: [data, infra]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -343,8 +343,10 @@ setup failed before compilation because setup-android v3 defaults to the removed
 API/build-tools installation. Web tests exposed an existing synchronous query for
 the list form during its legitimate asynchronous loading state; wait for the form
 before editing it. These are CI configuration and test-harness repairs, with no
-application behavior change. Repeat CI after the repairs; independent review is
-still in progress.
+application behavior change. The repaired checkpoint `03eb286` passed all PR CI
+lanes in run `38072353092` (web, Android, iOS prototype and ML; deployment skipped).
+Final-source follow-ups below still require their execution evidence and a green
+final PR checkpoint.
 
 ## Independent review and adjudication
 
@@ -352,20 +354,22 @@ Standard review: one read-only Claude Opus pass through `peeragent:peer`, job
 `20261010T171457Z-1d924cd4`. No blockers were found in transactions, schema admission,
 serialized close/lease behavior, platform injection, record validation or coherent
 snapshot capture. The reviewer ran 17 storage/opener tests; the owner retains the
-Node 22 and device proof responsibility. Accepted findings are fixed and verified
-without a second independent review under the project's standard weight.
+Node 22 and device proof responsibility. Accepted findings require fixes and
+verification without a second independent review under the project's standard weight.
 
 - **CI commit integration (blocker until committed):** the catalog test step was
   captured in `334edf8` while its owning scripts were still uncommitted. Keep the
   explicit SDK package fix and do not push until the catalog scripts/package entry
-  land together. The two-line catalog step belongs to that feature; it was not part
+  land together. Resolved by `03eb286` before pushing, with green CI above. The
+  two-line catalog step belongs to that feature; it was not part
   of the no-behavior-change CI/test repair described above.
 - **Implicit Android OS backup (blocker):** generated `allowBackup=true` allowed an
   unverified OS snapshot to reintroduce stale nonempty state. Disable OS backup and
   explicitly exclude app domains from legacy backup and Android 12+ cloud/device
   transfer. Account recovery and portable-file import are the deliberate recovery
   paths. This is a policy choice, not proof of every vendor's transfer behavior.
-  Verify the final merged manifest/rules; future recovery still treats unexpected
+  Fixed in `1de6550`; inspection of the final private APK's merged manifest and both
+  compiled exclusion resources passed. Future recovery still treats unexpected
   nonempty/OS-restored state as untrusted admission, never upload authority.
 - **Final-source execution evidence (blocker):** the final native runner resumed an
   earlier successful fixture edit. Require the portable feature's separate empty
@@ -385,3 +389,32 @@ Android's [backup configuration documentation](https://developer.android.com/ide
 and the pinned Capacitor `Bridge.java`, `CapConfig.java`, and `Logger.java` establish
 the configuration behavior. Required follow-up is final-package inspection, fresh
 synthetic native execution, updated operating docs and green PR CI.
+
+## Review follow-up verification (2026-10-10)
+
+The final private APK (version code 8) passed the separate portable-feature proof
+at `/tmp/cruxcontrol-android-portable-proof-v8-resume1-20261010/result.json`.
+Its new recovery installation had zero climbs and playlists before import. The
+actual source document-provider file was independently read onto the host, restored,
+re-exported and compared canonically in full. A single editor name change committed
+with exactly one revision/timestamp change, survived force-stop/relaunch, and left
+every other authored field and ordered reference unchanged. This closes the
+final-source native execution gap; no established installation was cleared.
+
+The recovery package install resumed after a transient emulator/ADB interruption
+in the first run; the resumed run verified the same APK version and an empty native
+library before restore. Source version 7→8 upgrade evidence and both actual SAF
+exports remain in the sibling `cruxcontrol-android-portable-proof-v8-retry2-20261010`
+directory. They and the new source export match the prior catalog fixture exactly.
+
+Final-package inspection verifies the manifest's referenced legacy and Android12+
+cloud/device exclusion resources and `loggingBehavior: none`. Fresh Logcat windows
+during source export, recovery writes, editor save and relaunch contain neither the
+unique synthetic names nor complete backup payloads. This closes the identified
+bridge-payload privacy follow-up for the tested package; it is not an all-OEM claim.
+
+The combined web suite passes 96 files /813 tests; the native package has 90 unit
+tests and 5 synthetic packaging tests, with APK8 build/policy/catalog checks green.
+No further independent pass is required under standard review. Return to `review`
+records verified implementation readiness; final administrative closure waits for
+the updated operating documentation and the final PR CI checkpoint.
