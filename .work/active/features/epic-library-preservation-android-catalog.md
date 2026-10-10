@@ -176,3 +176,17 @@ PlaylistMembershipDialog. Reuse existing modal, repository writes and operation
 safeguards; disable membership when playlists are unavailable. Verify callback row
 identity, canonical ordered append, offline provider resolution and unchanged
 local climbs/other playlist data. No new UI surface or foundation change.
+
+## Provider resolution defect absorbed (2026-10-10)
+
+`idea-catalog-list-resolution` records the second verified integration gap:
+PlaylistLibrary never passes provider rows to its existing resolver. Parent
+authorized this seam as required offline playlist acceptance. Workspace collects
+unique provider references only when Lists is open, lazily starts the catalog and
+reads existing `get(id, configuredAngle)` sequentially (one in flight). Cancel
+stale generations between reads and ignore their results; the current query port
+does not support aborting one issued read. Pass available rows to PlaylistLibrary
+and its existing play-through. Show existing loading/error presentation and retry
+for unavailable storage or lookup errors; only a successful null lookup says
+Missing. No provider refs means no catalog startup. Tests cover lazy startup,
+deduplication, errors, retry and stale results alongside offline emulator resolution.
