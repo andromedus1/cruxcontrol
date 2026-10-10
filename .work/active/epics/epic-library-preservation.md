@@ -3,7 +3,7 @@ id: epic-library-preservation
 kind: epic
 stage: implementing
 tags: [data, security]
-research_refs: [android-chrome-recovery-access, independent-library-preservation]
+research_refs: [android-chrome-recovery-access, independent-library-preservation, native-backup-service-costs]
 parent: null
 depends_on: [story-phone-library-recovery]
 release_binding: null
@@ -128,10 +128,10 @@ private-backup architecture. The completed [preservation comparison](../../../.r
 - Coherent snapshot capture across current independent stores, revision identity,
   safe acknowledgement and recovery detection without relying on erased local flags.
 
-Research verification is complete; the epic remains at drafting for directional
-design and mockup alignment. Apply the corrected comparison and settled decisions;
-do not re-ask whether online and portable-file protection are wanted. Provider
-authentication and native persistence still require implementation proofs.
+Research verification is complete and implementation is underway in the owning
+features. Apply the corrected comparison and settled decisions; do not re-ask
+whether online and portable-file protection are wanted. Native local persistence
+has passed its focused proof and review; provider authentication remains unproven.
 
 ## Scope boundaries and simplification
 
@@ -389,11 +389,14 @@ hosted-account setup. Daily-use admission remains the aggregate epic gate.
 - Close the loop on a physical Android phone and board. Emulator results cannot
   establish BLE or the owner’s installed-WebView behavior.
 
-## Next design entry
+## Current delivery entry
 
-Design and implement `epic-library-preservation-native-library` first. Run the Android
-packaged catalog smoke early alongside that proof, then complete portable copies,
-account access, automatic protection and clean-client recovery. Service selection,
-platform failures and phone/board availability determine timing; do not promise a
-fixed delivery date before those proofs. No further current-PWA preservation release
-is a prerequisite.
+Native-library and Android-catalog features have completed focused verification,
+standard independent review and required CI. Finish portable-file review corrections
+and the remaining Android interaction/signing acceptance in their existing feature
+owners. Account access, automatic protection and clean-install online recovery remain
+the admission-critical path; budget direction and an actual native account proof are
+still required before provider selection. Service setup and phone/board availability
+determine timing; do not promise a fixed delivery date before those proofs. No further
+current-PWA preservation release is a prerequisite. Query the child items for current
+stages and evidence rather than treating this sequence as completed dogfood admission.
