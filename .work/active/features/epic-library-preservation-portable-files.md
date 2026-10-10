@@ -164,7 +164,9 @@ and the final everyday-phone acceptance owner.
 - Capacitor serializes retained `PluginCall` data into activity saved state. The
   plugin removes the backup text after copying it into its in-memory buffer, before
   launching the picker. After process/activity recreation, a callback without that
-  buffer rejects before opening the output stream; a missing `PluginCall` only clears
+  buffer rejects before opening the output stream; Android may already have created
+  an empty destination, so the error says the backup was interrupted and the library
+  is unchanged, then asks the user to export again. A missing `PluginCall` only clears
   the buffer because there is no callback to reject. Capacitor also logs plugin call
   data before invoking the plugin in debug logging mode, so this removal does not
   prevent that log; the shell's committed Capacitor configuration now sets

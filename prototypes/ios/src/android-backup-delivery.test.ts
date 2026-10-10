@@ -48,7 +48,7 @@ describe('createAndroidBackupDelivery', () => {
   });
 
   it('treats a restored picker call without its in-memory export bytes as failure', async () => {
-    const failure = new Error('Backup contents were lost while the picker was open. No file was written; retry the backup.');
+    const failure = new Error('The backup save was interrupted. Your library is unchanged; please export again.');
     const { delivery } = setup(vi.fn().mockRejectedValue(failure));
     await expect(delivery.deliver(file)).rejects.toMatchObject({
       message: `Unable to save the library backup: ${failure.message}.`,
