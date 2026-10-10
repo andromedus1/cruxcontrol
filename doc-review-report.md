@@ -1,209 +1,147 @@
-# Doc Review Report
+# Documentation review — 2026-10-10
 
-**Project:** CruxControl
-**Date:** 2026-10-10
-**Workflow:** research-pipeline:doc-review; fresh Claude Sonnet pass via peeragent
-**Reviewer job:** `20261010T173302Z-bb971f17`
-**System documents:** 5; **module planning documents:** 0; **passes:** 1
-**Independent verdict:** 0 Critical / 0 High / 3 Medium / 10 Low / 8 Info
+**Project:** CruxControl · **Date:** 2026-10-10 · **Snapshot:** committed HEAD `8e85ecd` (uncommitted tree not audited; untracked `docs/kilter_docs/` and `docs/set_boulders/` excluded)
 
-The report records its reviewed snapshot. Ongoing implementation is not represented as completed acceptance. No C/H fix loop was required.
+**Documents reviewed:** 5 system docs (VISION, SPEC, ARCHITECTURE, PRINCIPLES, DEPLOY) + 0 module docs. Re-verified: the knowledge index lists 30 docs and matches disk (5 planning, 24 research, 1 historical), and every `updated` value matches frontmatter.
 
-# CruxControl documentation audit (fresh, read-only)
+**Also checked:** `AGENTS.md`/`CLAUDE.md`, `.agents/rules`, `CONVENTIONS`, `README.md`, `prototypes/ios/README.md`, the active preservation items.
 
-Scope was committed state through `4f0e81c`, the parent review record `1de6550`, and the index-regeneration commit `d963359`. I edited nothing and did not run builds, tests, the emulator, or any Git or account mutation.
+**Passes:** 1 system pass; no module passes.
 
-**Repository moved during the audit.** HEAD advanced to `03eb286` ("verify private Android catalog packaging", committed 11:35). It is outside the requested range, so I did not audit it, except where noted on M3 and L10. The uncommitted tree (CatalogBrowser, PlaylistLibrary, CruxControlWorkspace, LibraryBackupFilePlugin and other files) is not claimed by any committed document.
+**Issues found:** Critical 0 · High 0 · Medium 3 · Low 10 · Info 10
 
-## Verdict
 
-**Critical 0 / High 0.** This is the mechanical result of the single system pass. There is no roadmap document with phases and no module-level planning docs, so the roadmap-specific checks map to `.work/` items.
+## Parent adjudication
 
-- **Medium findings:** 3 remain and the host should fix them. They do not gate the verdict.
-- **Delivery caveat:** C/H-clear does not mean the native proof is complete. Final-source empty restore, merged OS-backup config proof, bridge-log/Logcat proof, and green PR CI are still pending, per the work items. No foundation document claims them as done.
+Independent Claude Opus job `20261010T175954Z-98bdbac3` supplied the read-only
+system audit below at committed snapshot `8e85ecd`. The parent consumed the
+terminal result. No Critical or High finding requires a foundation fix loop.
+This is documentation review, not acceptance of the separately reviewed portable
+feature: that feature has required code/evidence fixes in progress.
 
-## Inventory
+- DM2 is corrected in the accompanying root README update using the verified
+  catalog result; it does not claim phone/board or online-recovery acceptance.
+- DM3 and DL1 are assigned to the portable feature's current review follow-up.
+- The native import proof used actual SAF-exported bytes injected into the HTML
+  file input by the harness; actual Android chooser import belongs to parity.
+- DL3 belongs to the parity implementation. Remaining Medium/Low findings are
+  recorded as non-blocking drift; no broad documentation cleanup is implied.
+- The separate portable reviewer identified missing grade coverage in the original
+  synthetic fixture. Existing exact-equality results establish preservation of
+  that fixture, not native grade roundtrip. The portable follow-up must add this
+  proof and correct overstated evidence claims.
 
-| Item | Count |
-|---|---|
-| System planning docs | 5 (VISION, SPEC, ARCHITECTURE, PRINCIPLES, DEPLOY) |
-| Module planning docs / module passes | 0 |
-| Project rules | `AGENTS.md` (`CLAUDE.md` is a symlink to it), `.agents/rules/agile-workflow.md`, `.work/CONVENTIONS.md` |
-| READMEs checked for operational claims | `README.md`, `prototypes/ios/README.md`, `ml/README.md` |
-| Historical doc (non-authoritative) | `docs/architecture/history/north-star.md` |
-| Passes run | 1 |
+### Pass 1: System-level
 
-I excluded `docs/kilter_docs/` and `docs/set_boulders/` (untracked, private). Research briefs were checked for paths, frontmatter and provenance only.
+#### Critical (0) / High (0)
 
-## Pass 1: System-level
+None. No foundation doc claims physical-phone, Fullride, cloud or online-recovery acceptance.
 
-**Totals: Critical 0, High 0, Medium 3, Low 10, Info 8.**
+#### Medium (3)
 
-### Medium (3)
+**DM1. README preset list is stale** (carried from the prior report; still present)
+- **Files:** `README.md:45-47` vs `LightEffectsPanel.tsx:63`, `SPEC.md:134-145`
+- **What:** README lists Frogger and omits Fireflies, Shooting Stars, Jellyfish and Embers. The picker filters out Frogger.
+- **Fix:** list the 14 pickable presets and note that Frogger is kept only for saved recipes.
 
-**M1. ARCHITECTURE describes iOS backup delivery as if it were platform-neutral.**
-- **Where:** `docs/ARCHITECTURE.md:297-301` says native delivery "encodes UTF-8 JSON into the app cache and passes a Filesystem URI to Share… cancellation retains it".
-- **Contradicting code:** committed Android delivery uses a Storage Access Framework `ACTION_CREATE_DOCUMENT` plugin with no app cache.
-  - `prototypes/ios/src/runtime.ts:65-66` selects `createAndroidBackupDelivery` for Android.
-  - `prototypes/ios/src/android-backup-delivery.ts` and `LibraryBackupFilePlugin.java` implement it.
-  - `.work/active/features/epic-library-preservation-portable-files.md` ("Design decisions") records the design.
-- **Fix:** qualify the paragraph as iOS, and add the Android SAF path with "native proof pending".
+**DM2. README says the Android catalog still needs its packaged proof**
+- **Files:** `README.md:9` vs `SPEC.md:105-109`, `ARCHITECTURE.md:79-84`, `VISION.md:60-63`
+- **What:** the foundation docs say the private APK passed isolated emulator catalog checks. README predates that proof.
+- **Fix:** match the foundation wording (emulator-proven, private, not physical parity).
 
-**M2. README preset list contradicts SPEC, ARCHITECTURE and code.**
-- **Where:** `README.md:45-48` lists Frogger and omits Fireflies, Shooting Stars, Jellyfish and Embers.
-- **Evidence:** `web/src/route-editor/LightEffectsPanel.tsx:63` filters Frogger out of the picker. `web/src/light-effects/preset-library.ts:7-21` has 14 pickable presets. `docs/SPEC.md:129-146` and `docs/ARCHITECTURE.md:149-167` agree with the code.
-- **Fix:** list the 14 available presets and note that Frogger is retained only for saved recipes.
+**DM3. Prototype README describes removed behaviour of `smoke-android.mjs`**
+- **Files:** `prototypes/ios/README.md:80-89` vs `smoke-android.mjs` after `492ddf1`
+- **What:** the README says the runner captures the cache export "before dismissing the native chooser" and leaves destination delivery to portable-files. Since `492ddf1`, the runner saves through the SAF picker into Downloads and reads the provider-written file. It also injects its import with `DataTransfer` (`:279`).
+- **Fix:** describe the SAF save and readback, and state the injected import.
 
-**M3. `prototypes/ios/README.md:67` ("The Android compile also runs in CI") over-claims for the scoped commits.**
-- **At `4f0e81c` and `d963359`:**
-  - `.github/workflows/ci.yml:145-150` runs `npm --prefix prototypes/ios run test:catalog-package` before `build:android`.
-  - The committed `prototypes/ios/package.json` has no such script; the script file `prototypes/ios/scripts/android-catalog.test.mjs` did not exist in those commits.
-  - So the committed `android-prototype` lane fails before reaching compile.
-- **Tracking:** the native-library item records this as "CI commit integration (blocker until committed)" (`.work/active/features/epic-library-preservation-native-library.md:358`).
-- **At HEAD `03eb286`:** the script and package entry exist, so the missing-script cause is gone. I did not audit its README changes.
+#### Low (10)
 
-### Low (10)
+- **DL1. Portable-files item overclaims coverage.** `:164-170` and `:185-187` vs `runtime.ts` and Capacitor's restored-result routing. See feature finding F1. `SPEC.md:397-399` and `ARCHITECTURE.md:316-319` are accurate.
+- **DL2. Restore wording doesn't name the injected import.** `SPEC.md:399-402`, `ARCHITECTURE.md:319-321`, `VISION.md:52-53`, the prototype README portable section and item `:194-198` say "restored offline" without saying the import used harness `DataTransfer` injection (`smoke-android-portable.mjs:478`). The wording is accurate but imprecise. The physical import picker belongs to parity.
+- **DL3. Parity item names the wrong Android delivery path.** `epic-library-preservation-android-parity.md:95-97` says to reuse "the verified filesystem/share path from portable-files; retain its URI lifetime". On Android the verified path is the SAF `LibraryBackupFile` plugin, and Share-only delivery was rejected for Android (portable-files `:73-75`).
+- **DL4. "Sync Engine" is not a module.** `ARCHITECTURE.md:186` names it, but the module map has none. The decision at `:38` ("separate incremental shared_syncs module") also sits awkwardly with `SPEC.md:204-215`, which treats `shared_syncs` as legacy reference material. (Carried over.)
+- **DL5. Stale § numbers and tag claim in work items.** `epic-logbook.md:41,47`, `epic-catalog-sync.md:50`, `epic-foundation.md:87`, `epic-foundation-scaffold.md:44`, `epic-foundation-sqlite-readpath.md:44`, backlog `epic-grade-prediction.md:61`, `epic-recommendations.md:49`. (Carried over.)
+- **DL6. 6 of 213 relative links are broken.** `.research/briefs/cloudflare-deploy/parent.md:33`; backlog `epic-grade-prediction.md:34,44`; `epic-recommendations.md:37` (one `../` too many); historical `north-star.md:162-163`. (Carried over.)
+- **DL7. Stale stage text in the preservation epic.** `epic-library-preservation.md:131` says "remains at drafting" while frontmatter is `stage: implementing`. `native-backup-service-costs` is cited at `:194` but missing from `research_refs`. (Carried over.)
+- **DL8. Dangling path in AGENTS.md.** `AGENTS.md:24` points to `.agents/skills/patterns/`, which does not exist. (Carried over.)
+- **DL9. Wording that understates or quotes old copy.**
+  - `README.md:23` says "Download" (web wording).
+  - `README.md:124-126` says off-device recovery is not established; the portable proof now covers off-device file readback and isolated restore.
+  - `prototypes/ios/README.md:361` quotes the pre-`492ddf1` iOS success copy.
+- **DL10. Content in the wrong place or duplicated.**
+  - The SPEC backup bullet (`:383-411`) repeats the catalog-APK statement from `:105-109`.
+  - ARCHITECTURE's "Intended shared-library boundary" (`:276-332`) holds current native runtime, logging and backup-delivery facts.
+  - Module 11 (`:206-218`) omits delivery.
 
-- **L1. OS backup config stated as fact without its pending verification.** `docs/SPEC.md:291-295`, `docs/ARCHITECTURE.md:257-261` and VISION say the package "disables OS Auto Backup" and excludes backup domains.
-  - Source at HEAD supports it: `AndroidManifest.xml` has `allowBackup="false"`, and `backup_rules.xml` and `data_extraction_rules.xml` exclude the domains.
-  - The native-library item (line 363) still lists "Verify the final merged manifest/rules" as pending. Add a "source policy; merged manifest unverified" qualifier. The OEM caveat is already present.
-- **L2. System docs do not surface the pending final-source empty-emulator proof.**
-  - `docs/VISION.md:41-44`, `docs/SPEC.md:382-384`, `README.md:23-27` and `prototypes/ios/README.md:94-98` say the emulator "has passed" restore/edit/relaunch/update. This is accurate for the evidence obtained (1→2, 2→3, 3→4 with a resumed edit).
-  - The native-library item (line 370) lists a separate final-source empty-emulator run as a blocker.
-  - This is not false, but the claim is not scoped to a source revision. Note the pending run in SPEC or ARCHITECTURE.
-- **L3. The daily-use admission gate is not stated in the system docs.**
-  - It reads: automatic online backup and clean-client recovery before real authoring.
-  - It lives in `.work/active/epics/epic-library-preservation.md:355,368` and `prototypes/ios/README.md:98`. VISION and SPEC only say protections are "intended, not shipped", which does not contradict it.
-- **L4. "Sync Engine" is not a module.** `docs/ARCHITECTURE.md:182` ("via the Sync Engine") names a module that is absent from the Module Map; Catalog Providers is §3. The decision at `:38` ("separate incremental shared_syncs module") also has no map entry.
-- **L5. Stale ARCHITECTURE module-number and tag cross-references in work items.**
+#### Info (10)
 
-  | File:line | Says | Current |
-  |---|---|---|
-  | `epic-logbook.md:47` | §7 (Logbook) | §9 |
-  | `epic-logbook.md:41` | catalog-sync carries `[needs-brief]` | tags are now `[data]` |
-  | `epic-grade-prediction.md:61` | §8 (ML) | §13 |
-  | `epic-recommendations.md:49` | §8 (ML) | §13 |
-  | `epic-catalog-sync.md:50` | §2 (Sync Engine) | §3 |
-  | `epic-foundation.md:87`, `epic-foundation-scaffold.md:44`, `epic-foundation-sqlite-readpath.md:44` | §1 (Data Layer) | §2 |
+1. There is no roadmap and there are no module docs; the roadmap checks were mapped onto `.work` items.
+2. System docs use `type: planning`, which is outside the skill's example list but used consistently.
+3. `research_method` is absent from 5 ARD analyses. That is their own schema, not a defect.
+4. Landscapes are indexed as `research-analysis` (the generator normalises them). `campaign.md` is a `program-report` produced by `/deep-research`.
+5. ARCHITECTURE and SPEC each carry 15 decisions, above the guidance of 12.
+6. Key Dependencies omits Filesystem 8.1.4, Share 8.0.3 and the in-repo SAF plugin. This is an omission, not drift.
+7. DEPLOY matches `ci.yml`: the `web` check, `needs: [web]`, and `ENABLE_DEPLOY`. The other lanes are not required checks.
+8. HEAD moved to `8e85ecd` during the audit.
+9. Root `MIGRATION_REPORT.md` and the prior report are historical context only.
+10. CI and physical claims were not independently verified.
 
-- **L6. Broken relative links** (36 markdown files and 78 checked in total; 6 broken).
-  - `.work/backlog/epic-grade-prediction.md:34,44` and `.work/backlog/epic-recommendations.md:37` have an extra `../`.
-  - `.research/briefs/cloudflare-deploy/parent.md:33` points to `../foundation-pwa-sqlite/parent.md`; the real file is `docs/briefs/foundation-pwa-sqlite.md`.
-  - `docs/architecture/history/north-star.md:162-163` has two more (historical, so Info-weight).
-- **L7. Missing `research_method` on 5 `type: brief` docs** under `.research/analysis/briefs/`: android-chrome-recovery-access, independent-library-preservation, invited-library-hosting-costs, invited-offline-library, ios-shared-client. This is one grouped finding covering 5 docs. `build-process.md` says analytical artifacts keep their own schema, so it is informational in spirit.
-- **L8. Stale text in the preservation epic.** `.work/active/epics/epic-library-preservation.md:131` says "the epic remains at drafting", but the frontmatter is `stage: implementing`. The body also cites `native-backup-service-costs`, which is missing from `research_refs`.
-- **L9. `AGENTS.md:24` points to `.agents/skills/patterns/`**, which does not exist. No patterns gate has run.
-- **L10. `prototypes/ios/README.md` Android section (~lines 70-98) predates the SAF save path.** It documents only `smoke-android.mjs` and omits `smoke-android-portable.mjs`. The portable-files item defers this alignment explicitly (tracked). `03eb286` changed this README, but I did not audit it.
+**Resolved since the prior report:**
+- M1: ARCHITECTURE now separates iOS Share from Android SAF (`:311-325`).
+- L1: merged-manifest inspection is now recorded (`:261-264`).
+- L2: closed by the final-source native run; native-library is done.
+- L3: the daily-use gate is now stated in all four foundation docs.
+- M3: excluded, as instructed (fixed by `03eb286`).
+- L7: reclassified as Info.
+- L10: now DM3.
 
-### Info (8)
+### Clean areas
 
-1. **Frontmatter type:** all five planning docs use `type: planning` / `kind: planning`, outside the skill's example enum. The index generator accepts it, it is consistent, and it was adjudicated in the 2026-10-09 report. It is not counted as a finding.
-2. **No roadmap or phases:** blocking-brief and DONE-phase checks are mapped to `.work/` items.
-3. **Decision counts:** ARCHITECTURE and SPEC each carry 15 `decisions` entries (index lint guidance is 12).
-4. **Old reports:** root `doc-review-report.md` (2026-10-09, 27 docs) and `MIGRATION_REPORT.md` (bootstrap era) are stale records. The index now has 30 docs.
-5. **DEPLOY.md** (updated 2026-08-02) is accurate for the `web` lane, `needs: [web]` and the `ENABLE_DEPLOY` gate. CI has since added `ios-prototype`, `android-prototype` and `ml` lanes, which are not required checks or deploy dependencies.
-6. **Brief vs implementation:** `docs/briefs/foundation-pwa-sqlite.md` recommends OPFSCoopSyncVFS. Code and ARCHITECTURE use `AccessHandlePoolVFS` (`web/src/data/sqlite/catalog.worker.ts:4,64`), and the decision is recorded in `epic-foundation-catalog-bootstrap.md:105,565`.
-7. **Epic stage:** `epic-shared-climb-library` is `implementing` while all 4 features and 4 stories are `drafting`. The docs correctly say it is not implemented.
-8. **Uncommitted work and HEAD movement:** HEAD moved to `03eb286` during the audit, and the uncommitted tree is not claimed by any committed document (see the top note).
+- The five docs agree on Fullride-first scope, local authority, and the platform storage split.
+- They agree that native storage is not independent recovery.
+- They agree on the online gate before real authoring, with portable files as a second path.
+- No backup provider is selected (matches the private-vault item).
+- The catalog is described as an older snapshot.
+- Code checks passed: 127/20 capacity, 180 ms debounce, 25-row pages, prompt-mode PWA settings, `loggingBehavior: "none"`, `ACTION_CREATE_DOCUMENT`, WAL/FULL.
+- The work graph is clean: 145 items and 176 graph references, 0 unresolved; 10 `research_refs`, 0 unresolved.
 
-## Clean areas
+### Blocking-brief status
 
-- The five docs agree on every core claim: Fullride-first, local ownership, and separate board / catalog-provider / controller boundaries.
-- Native storage is described consistently as not independent recovery.
-- No service, account or automatic-backup implementation is claimed (matches the drafting private-vault and automatic-backup items).
-- The catalog is consistently an "older snapshot, unknown freshness, no live updates, public distribution gated".
-- No physical-phone, Fullride or iPhone acceptance is claimed anywhere.
-- Source-verified against committed code:
-  - **Library backup:** limits of 25 MiB / 10,000 / 1,000 / 100,000 (`codec.ts:18-21`); Android snapshot in one `BEGIN IMMEDIATE` transaction (`native-library.ts:530`); WAL plus `synchronous=FULL` (`open-native-library.ts:93-94`).
-  - **Controller / capacity:** 127-light static scenes and 20 lights at 2 FPS (`capacity-policy.ts:26-32`); 180 ms preview debounce (`use-editor-lighting.ts:32`); catalog page size 25 (`CatalogBrowser.tsx:169`).
-  - **PWA and catalog storage:** PWA `registerType: 'prompt'`, `skipWaiting: false`, `clientsClaim: false`, `injectRegister: false` (`vite.config.ts:52-53,97-98`); two OPFS slots with receipt metadata (`catalog-receipt.ts`).
-  - **Versions:** Capacitor 8.4.3, BLE 8.3.0, App 8.1.1, SQLite 8.1.1; React 19, Vite 6; `.nvmrc` 20, prototype 22.
-  - **Android config:** `loggingBehavior: "none"` at HEAD.
-- **DEPLOY.md** matches `ci.yml`: the job name `web (lint / typecheck / test / build)`, `needs: [web]`, the `ENABLE_DEPLOY` gate, wrangler-action v3, and Worker name `cruxcontrol`.
-- **Knowledge index:** all 30 entries exist and match frontmatter `updated`.
-- **Work graph:** every `depends_on` and `parent` id in active and backlog resolves (0 unresolved).
-
-## Blocking-brief status
-
-There is no roadmap-owned table. Briefs with `blocks_phase` all exist on disk, and none is "not yet written" (a grep of `.work` and docs found none).
-
-| Brief | Blocks | Exists | Blocked item stage |
+| Brief | Blocks | Exists on disk | Blocked item stage |
 |---|---|---|---|
 | `.research/briefs/cloudflare-deploy/parent.md` | epic-foundation-ci-deploy | Yes | done |
-| `docs/briefs/board-control-web-bluetooth.md` | epic-board-control | Yes | done (archived) |
-| `docs/briefs/board-rendering-and-filtering.md` | epic-climb-browser | Yes | done (archived) |
-| `docs/briefs/catalog-sync-api.md` | epic-catalog-sync | Yes | drafting (epic says source refresh needed) |
+| `docs/briefs/board-control-web-bluetooth.md` | epic-board-control | Yes | done |
+| `docs/briefs/board-rendering-and-filtering.md` | epic-climb-browser | Yes | done |
+| `docs/briefs/catalog-sync-api.md` | epic-catalog-sync | Yes | drafting |
 | `docs/briefs/foundation-pwa-sqlite.md` | epic-foundation | Yes | implementing |
-| `docs/briefs/recommendations-and-training.md` | epic-recommendations | Yes | backlog |
-| `.research/briefs/kilter-grade-prediction/parent.md` | epic-grade-prediction | Yes | backlog |
+| `docs/briefs/recommendations-and-training.md` | epic-recommendations | Yes | drafting (backlog) |
+| `.research/briefs/kilter-grade-prediction/parent.md` | epic-grade-prediction | Yes | drafting (backlog) |
 
-## Completed-output verification
+### DONE output verification
 
-Every output checked exists on disk at HEAD. Items marked done cite no missing file, and I found no Critical or High gaps.
+All checked outputs exist. The 9 done items:
+- **Foundation (6):** scaffold, pwa-shell, ci-deploy, verify-worker-build, sqlite-readpath, catalog-bootstrap.
+- **iOS bridge (2):** native-ble, backup-export.
+- **Preservation (1):** native-library.
 
-| Done item | Output verified |
-|---|---|
-| epic-foundation-scaffold, pwa-shell, ci-deploy, verify-worker-build | `web/package.json`, PWA config in `vite.config.ts`, `ci.yml`, `web/wrangler.jsonc`, `docs/DEPLOY.md`, `web/scripts/check-pwa-build.mjs` |
-| epic-foundation-sqlite-readpath, catalog-bootstrap | `web/src/data/sqlite/*`, `web/src/data/catalog`, `web/public/catalog/manifest.json` (`.db.gz` gitignored), `web/e2e/catalog-bootstrap.spec.ts` |
-| kilter-community-browser | `web/src/catalog/CatalogBrowser.tsx`, `web/e2e/catalog-browser.spec.ts` |
-| climb-browser children, library-backup | `web/src/board-renderer`, `web/src/library-backup/*`, generated Fullride definition |
-| ios-controller-bridge native-ble, backup-export | `prototypes/ios/src/native-ble-transport.ts`, `native-backup-delivery.ts` |
-| native-library (implementing, not done) | `native-library.ts`, `open-native-library.ts`, Android project, manifest and rules |
+Files checked include `web/package.json`, `vite.config.ts`, `ci.yml`, `wrangler.jsonc`, `check-pwa-build.mjs`, `web/src/data/{sqlite,catalog}`, `catalog/manifest.json`, `catalog-bootstrap.spec.ts`, `native-ble-transport.ts`, `native-backup-delivery.ts`, `native-library.ts`, `open-native-library.ts`, the Android manifest and backup XML, `smoke-android.mjs` and the fixture. Portable-files is at review and is not claimed as done.
 
-Not done, correctly not claimed as shipped: portable-files, android-catalog, android-parity, private-vault, automatic-backup and the shared-library features.
+### Provenance summary (22 docs: 21 briefs + 1 program report)
 
-## Frontmatter compliance
-
-- **Docs checked:** 5 planning, 1 historical, 7 `docs/briefs`, 8 `.research/analysis`, 9 `.research/briefs` (30 index-covered docs).
-- **Present with `description`, `type`, `updated`:** 30 of 30. No `updated` is older than 2026-06-13.
-- **`research_method`:** missing on 5 briefs (L7, Low). The 2 landscapes are a different `type`.
-- **Not indexable:** READMEs, `AGENTS.md` and `.research/reference/*/INDEX.md` have no frontmatter by design.
-
-## Provenance summary (22 briefs)
-
-| research_method | Briefs | Latest updated |
+| research_method | Docs | Latest updated |
 |---|---|---|
-| /research-program | 0 | none |
+| /research-program | 0 | — |
 | /deep-research | 8 | 2026-06-14 |
 | /research | 2 | 2026-10-10 |
 | /brief | 5 | 2026-06-14 |
-| hand-written | 0 | none |
+| hand-written | 0 | — |
 | migrated | 2 | 2026-08-02 |
-| (missing) | 5 | none |
+| (missing; ARD analyses) | 5 | 2026-10-09 |
 
-### Refresh candidates (informational, not findings)
+**Refresh candidates** (`/brief` docs dated before 2026-06-14, informational only): `docs/briefs/` board-control-web-bluetooth, board-rendering-and-filtering, catalog-sync-api, recommendations-and-training.
 
-The highest tier used is `/deep-research`, and its latest run is dated 2026-06-14. Lower-tier briefs older than that:
+### Limitations
 
-| Slug | research_method | Updated | Note |
-|---|---|---|---|
-| `docs/briefs/recommendations-and-training.md` | /brief | 2026-06-13 | overlaps the grade-prediction campaign topics |
-| `docs/briefs/catalog-sync-api.md` | /brief | 2026-06-13 | `epic-catalog-sync` itself calls for a source refresh |
-| `docs/briefs/board-control-web-bluetooth.md` | /brief | 2026-06-13 | |
-| `docs/briefs/board-rendering-and-filtering.md` | /brief | 2026-06-13 | |
-
-The 5 briefs without `research_method` cannot be tiered.
-
-## Delivery state (distinguished from documentation)
-
-- **Native storage:** committed. The core emulator proof exists, but the final-source empty restore is pending (native-library item).
-- **OS backup config:** policy committed in `1de6550`. The merged manifest/rules check is pending.
-- **Bridge logging:** `loggingBehavior: "none"` committed. Logcat/final-config proof is pending.
-- **CI:** the committed catalog step at scoped commits lacked its script (M3). The repair landed in `03eb286`, outside scope, and green PR CI is unconfirmed.
-- **Android portable save flow:** committed (`492ddf1`). Emulator proof is pending per the item; later hardening is uncommitted.
-- **Android catalog:** the committed docs claim nothing. Bundling is outside the scoped range (`03eb286`), and packaged WebView proof remains pending.
-- **Private account and automatic backup:** drafting, with no provider or billing selected.
-- **Physical phone/Fullride and iPhone acceptance:** none claimed.
-
-## Required fixes before the host's next review
-
-None are required to reach C/H-clear. The recommended order is M1, M2, M3 (re-check against `03eb286`), then L1-L3 for wording precision. L4-L10 are housekeeping.
-
-## Lead disposition
-
-- M1 is valid documentation drift while the portable-files implementation is in progress. Its required completion documentation will distinguish iOS Share from Android SAF and record actual proof status.
-- M2 is pre-existing README preset-list drift and is outside this preservation change; retained here, not silently treated as fixed.
-- M3 was the known transient catalog CI-step integration issue. Commit `03eb286` supplied its scripts/package entry before the next push; Android compile passed in PR run `38072353092`. This audit alone did not verify CI.
-- L1's merged-package check has subsequently passed in the catalog owner's APK7 inspection; physical OEM transfer behavior is still unproven. L2 remains a native acceptance follow-up until the separate final-source recovery proof. L3 belongs to the preservation completion wording.
-- L7 is not a required repair: current Agentic Research analytical artifacts follow their own frontmatter contract; do not impose legacy brief fields solely for audit uniformity. Other low/informational observations remain report findings, not added scope.
-- The knowledge index is regenerated from source frontmatter; two pre-existing decision-count warnings are informational. No product feature is marked complete by this documentation verdict.
+- This was a read-only, single-reviewer pass without sub-agents. There was no fix loop and no index regeneration.
+- No broad lint of research content; attestation files were not link-checked.
+- The private directories were excluded.

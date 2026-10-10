@@ -4,9 +4,11 @@ CruxControl is a local-first, installable web app for creating climbs and contro
 a home **Kilter Fullride 7x10**. The web app runs in Android and desktop Chromium,
 connects through Web Bluetooth, and stores its personal climbs and lists in browser
 storage. An experimental Capacitor package also targets Android with native BLE and
-SQLite-backed authoring; its synthetic emulator preservation check passes, while
-physical-board parity and independent recovery remain open. Local use needs no account
-or application server. Android catalog support still needs its own packaged proof.
+SQLite-backed authoring. Synthetic emulator preservation and private APK catalog
+checks pass, including offline installation and playlist use of the labeled older
+Kilter snapshot. Physical-board parity and automatic online recovery remain open;
+both are required before native daily use. Local use needs no account or application
+server.
 
 ## What works now
 

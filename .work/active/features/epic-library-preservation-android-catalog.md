@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-android-catalog
 kind: feature
-stage: review
+stage: done
 tags: [data, infra]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -340,3 +340,21 @@ Follow-up verified and committed for final parent adjudication:
   share the proven Lists-first helper and emit verified-session.json, but its
   complete install cycle was deliberately not repeated. Historical evidence stays
   unchanged. No second independent review; parent owns PR/CI and final closure.
+
+## Standard review closure (2026-10-10)
+
+Claude Opus independent job `20261010T175038Z-8ed066a7` reviewed the feature once.
+The parent accepted the angle-availability and cold Lists-startup findings;
+`c26d34a` fixes both and records the focused tests and actual APK9 proof above.
+The repeated-lookup presentation nit remains non-blocking. Private evidence must
+not be published: earlier files contain catalog names, setter text and screenshots.
+Version-code enforcement and physical Fullride acceptance remain explicitly owned
+by Android parity, not claimed complete here.
+
+[CI run 38074762655](https://github.com/andromedus1/cruxcontrol/actions/runs/38074762655)
+passed on `c26d34af7035665bc819ca6bcc47d1aec7bb12c8`: web checks and browser
+workflows, Android native compilation, iOS prototype checks and the ML stub lane.
+Deployment was skipped. The parent inspected the terminal result and accepted the
+verified fixes; standard review requires no second independent pass. This feature
+is done. Automatic online backup, phone/board parity and dogfood admission remain
+open in their owning items.
