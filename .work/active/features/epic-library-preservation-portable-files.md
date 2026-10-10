@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-portable-files
 kind: feature
-stage: review
+stage: implementing
 tags: [data, ui]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -173,18 +173,24 @@ and the final everyday-phone acceptance owner.
   `loggingBehavior: "none"` and Android backup/transfer is disabled in the source
   manifest rules. APK8's merged manifest, referenced legacy/cloud/device-transfer
   exclusions and packaged Capacitor configuration were inspected during native
-  proof; fresh Logcat windows contained no synthetic marker or full export payload.
+  proof. The old runner attempted to match full export text in Logcat, but Android
+  truncates long records; that check cannot establish that the complete payload was
+  absent.
 - Verified locally with web backup tests (32), prototype tests (90), catalog package
-  tests (5), including an adapter regression for missing restored bytes, web and
-  prototype TypeScript checks, scoped ESLint checks, `git diff --check`, and Node
-  syntax checks for the Android proof scripts and picker helper.
+  tests (5), web and prototype TypeScript checks, scoped ESLint checks,
+  `git diff --check`, and Node syntax checks for the Android proof scripts and
+  picker helper. Review follow-up adds a filtered `appRestoredResult` listener
+  regression which verifies retention and consumption of failed file-save results
+  in the existing workspace alert. The adapter's missing-buffer unit test alone did
+  not exercise Capacitor's app-restoration event.
 - The provider write now runs away from Android's UI thread, and restored activity
   results without the in-memory bytes fail before opening a provider stream. The
   current APK8 includes this repair and was installed as a same-signature v7-to-v8
   source update with `adb install -r`; the source's actual pre- and post-update
   SAF exports match each other and the catalog owner's verified canonical snapshot.
-  Native process-death callback restoration itself is covered by the adapter's
-  missing-buffer regression, not by an induced Android process kill.
+  No Android process kill was induced to exercise callback restoration; the new
+  mocked runtime test dispatches the actual Capacitor `appRestoredResult` event and
+  checks that a matching failed file-save call is retained for the workspace alert.
 - The portable runner now derives its full expected source from the committed
   synthetic fixture plus exactly the known edited-climb name/revision and the
   catalog provider append (including exact provider identity/order). Its canonical
@@ -197,15 +203,54 @@ and the final everyday-phone acceptance owner.
   actual bytes restored into the separate Android 36 recovery installation produced
   an exact canonical re-export. The recovery app was freshly installed before the
   restore; after a runner interruption, the resumed pass verified APK8 and zero
-  climbs/playlists before proceeding. A single synthetic editor name change was
-  the only canonical difference, and it remained after force-stop and relaunch.
+  climbs/playlists before proceeding. That resumed pass did not establish that the
+  recovery package was newly installed in the resumed run; it did establish that
+  its native library was empty before restore. A single synthetic editor name
+  change was the only canonical difference, and it remained after force-stop and
+  relaunch. The accepted APK8 fixture contained no grade and its edited climb was
+  still angle 40. Existing native repository tests cover saving a V4 grade, but the
+  APK8 portable round trip did not test grade persistence.
   APK8 policy inspection found `allowBackup=false`, 9 legacy exclusions, 18 cloud /
   device-transfer exclusions and `loggingBehavior: "none"`. Logcat windows around
-  source export, restore/export, editor write/export and relaunch/export checked both
-  edit names where applicable and rejected the full backup payload. Evidence is
+  source export, restore/export, editor write/export and relaunch/export checked
+  synthetic markers. The actual recovery import used a harness-injected `DataTransfer`
+  file input; Android's system file chooser import was not exercised by that run.
+  The Logcat collector truncates long records, so neither this nor the old full-text
+  match proves the complete backup payload was absent. New proof checks explicit
+  unique canary fragments and records no full-payload absence claim. Evidence is
   retained outside Git under `/tmp/cruxcontrol-android-portable-proof-v8-resume1-20261010`
   with the prior source-upgrade exports in `/tmp/cruxcontrol-android-portable-proof-v8-retry2-20261010`.
-  This verifies local provider save/readback and isolated emulator recovery; it does
-  not verify cloud-provider upload, remote retention or an owner-phone destination.
-  Native proof has been accepted by the parent; the item is at review for the
-  independent implementation pass and remaining CI/documentation alignment.
+  The retry2 directory's `source-upgrade.json` was written by an operator; no
+  original command output or source Logcat window was retained, so the retry2
+  failure cause is unknown and incomplete as machine evidence. The new runner writes
+  a machine receipt immediately after decoding and comparing the post-update SAF
+  bytes, before Logcat capture or WebView cleanup, and stores Logcat results in
+  separate files. The prior retry2 evidence remains unchanged. This verifies local
+  provider save/readback and isolated emulator recovery; it does not verify
+  cloud-provider upload, remote retention or an owner-phone destination.
+
+## Review follow-up
+
+- F1 is implemented in `bc8ef9d`: failed Android file-save results are accepted
+  only for the `LibraryBackupFile/save` plugin and retained until the runtime
+  subscriber consumes them. The existing workspace alert handles both backup and
+  playlist file failures without labeling a playlist as a library backup. Generic
+  interruption copy says the library is unchanged and an empty or partial chosen
+  file may remain.
+- F2 remains historical and unresolved: the original retry2 cause cannot be
+  recovered. The operator-written receipt is not accepted by the runner. New runs
+  produce a source comparison receipt at the exact SAF readback boundary and record
+  build provenance (commit, tracked/index dirty state, APK hash and build interval)
+  separately from Logcat checks.
+- S3 is the outstanding native acceptance gap: the APK8 source contained no grade.
+  A new isolated proof must set V4 and a different angle on emulator 5582, verify
+  the exact save after relaunch, then export via SAF and compare a fresh empty
+  recovery installation including grade and angle. It must preserve the older APK8
+  evidence and must not alter source emulator 5580 or parity emulator 5584.
+- S2 cancellation coverage now presses Android Back in the native Save picker and
+  asserts the cancellation status. It does not claim that the provider created no
+  destination; a provider may leave an empty file.
+- The runner's new `grade-roundtrip` mode records the DataTransfer restore method,
+  checks unique Logcat canary fragments, and explicitly disclaims full-payload
+  absence because Logcat truncates long records. The system chooser import is
+  covered separately by the Android parity proof.

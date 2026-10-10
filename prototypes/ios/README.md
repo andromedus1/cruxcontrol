@@ -83,10 +83,11 @@ WebView, imports only the synthetic fixture, verifies a complete native export,
 changes one synthetic name, waits for save, force-stops/relaunches, installs the
 newer binary with `adb install -r` and compares every authored field and ordered
 membership. It checks the actual native database, journaling/synchronization, no
-browser library databases and no service-worker registration. It captures the
-app's complete export file before dismissing the native chooser; this proves
-capture and native file creation, while external destination delivery is owned by
-the portable-files feature. Screenshots and JSON evidence stay outside Git. It
+browser library databases and no service-worker registration. The runner waits for
+the SAF write-success result, reads the complete JSON back from Downloads, and
+validates it with the production decoder before closing the backup dialog. This
+proves local provider save/readback; it does not prove a cloud provider uploaded or
+retained a remote copy. Screenshots and JSON evidence stay outside Git. It
 rejects unrelated existing records and can resume an interrupted synthetic proof
 only after validating its original restore evidence and exact intentional edit.
 It never clears storage, uninstalls the app or resets an existing library.
@@ -105,7 +106,10 @@ provider's UTF-8 output stream closes. The portable proof selects Downloads,
 reads those exact provider-written bytes back to the host, and restores them into
 a separate app installation. It then compares the complete canonical library,
 including Trash, effects and ordered playlist entries, makes one synthetic editor
-change, force-stops the recovery app and compares again after relaunch.
+change, force-stops the recovery app and compares again after relaunch. The current
+portable runner injects the read-back bytes into the web file input with
+`DataTransfer`; Android's system file chooser import path is covered separately by
+the parity acceptance run.
 
 Use Node 22 and two isolated API 36 emulators: a synthetic source installation
 with the prior signed APK, and a fresh recovery installation. Supply the exact
@@ -121,18 +125,42 @@ node --experimental-strip-types prototypes/ios/scripts/smoke-android-portable.mj
 The runner checks the final APK's merged backup exclusions and bridge logging
 configuration, verifies the source before upgrade, applies the same-signature
 update with `adb install -r`, and compares actual SAF exports before and after.
-If a run stops after that upgrade, pass its source-evidence directory as the
-optional final argument to resume; the runner verifies both prior source exports
-and takes a fresh export from the updated app. If the recovery APK was already
-installed by an interrupted run, resume is allowed only for that APK version and
-after the app opens with zero climbs and playlists. Use a new, empty evidence
-directory for every attempt. The runner never clears app data, uninstalls or
-resets either emulator.
+If a source-upgrade run stops after that update, pass its source-evidence directory
+as the optional final argument to resume; the runner validates its machine
+receipt, raw exports, canonical hashes and separate Logcat checks before taking a
+fresh export. The source receipt is written immediately after the updated app's
+actual SAF bytes decode and compare, before Logcat capture or dialog cleanup. The
+`grade-roundtrip` mode requires the recovery package to be absent on a separate
+fresh emulator; it refuses to reuse an installed recovery app. Use a new, empty
+evidence directory for every attempt. The runner never clears app data, uninstalls
+or resets either emulator. The cancellation check presses Android Back in the Save
+picker and checks the cancellation result; it does not assume a provider left no
+empty destination.
+
+For the grade-inclusive proof, build the final APK with the expected private
+catalog and record a build-boundary sidecar containing the source commit, tracked
+and staged dirty state, build interval, command and APK SHA-256. Then pass that
+sidecar after the `grade-roundtrip` mode. Use the accepted APK8 recovery export as
+the source baseline; it has the already-verified synthetic name edit but no grade.
+The run upgrades emulator 5582 in place, edits that synthetic climb to V4 at angle
+45, reads the resulting SAF file back, and restores it to a separately installed
+empty emulator 5586. It compares full canonical snapshots after export, restore
+and force-stop/relaunch, including grade and angle. Keep both emulators offline
+during the proof and keep all evidence outside Git.
+
+```bash
+node --experimental-strip-types prototypes/ios/scripts/smoke-android-portable.mjs \
+  emulator-5582 emulator-5586 /outside/git/final.apk \
+  /outside/git/grade-portable-evidence \
+  /tmp/cruxcontrol-android-portable-proof-v8-resume1-20261010/recovery-relaunched.json \
+  grade-roundtrip /outside/git/final-build-provenance.json
+```
 
 The 2026-10-10 APK8 run matched the catalog owner's complete synthetic source,
 read the Downloads file back from the provider, restored those bytes into the
 separate installation, and retained its single test edit across force-stop and
-relaunch. Its host-only evidence is at
+relaunch. That source fixture had no grade (angle 40); its evidence does not prove
+grade preservation at the native file boundary. Its host-only evidence is at
 `/tmp/cruxcontrol-android-portable-proof-v8-resume1-20261010/`; the prior source
 upgrade exports are at
 `/tmp/cruxcontrol-android-portable-proof-v8-retry2-20261010/`. This demonstrates

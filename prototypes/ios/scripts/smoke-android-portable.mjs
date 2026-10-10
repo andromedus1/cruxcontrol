@@ -1,9 +1,11 @@
 // Run with Node 22 --experimental-strip-types on a prepared synthetic source emulator
 // and a booted emulator without the app installed. It never clears or uninstalls data.
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   canonicalSnapshot,
   decodeLibraryBackup,
@@ -17,10 +19,20 @@ import {
   readDownload,
 } from "./android-save-picker.mjs";
 
-const [sourceSerial, recoverySerial, apk, evidenceDirectory, sourceBaselineFile, previousSourceEvidenceDirectory] = process.argv.slice(2);
+const [sourceSerial, recoverySerial, apk, evidenceDirectory, sourceBaselineFile, optionalSourceEvidenceOrMode, optionalModeOrBuildProvenance, optionalBuildProvenance] = process.argv.slice(2);
+const proofMode = ["source-upgrade", "grade-roundtrip"].includes(optionalSourceEvidenceOrMode)
+  ? optionalSourceEvidenceOrMode
+  : optionalModeOrBuildProvenance ?? "source-upgrade";
+const previousSourceEvidenceDirectory = ["source-upgrade", "grade-roundtrip"].includes(optionalSourceEvidenceOrMode)
+  ? undefined
+  : optionalSourceEvidenceOrMode;
+const buildProvenanceFile = ["source-upgrade", "grade-roundtrip"].includes(optionalSourceEvidenceOrMode)
+  ? optionalModeOrBuildProvenance
+  : optionalBuildProvenance;
 if (!/^emulator-\d+$/.test(sourceSerial ?? "") || !/^emulator-\d+$/.test(recoverySerial ?? "") || sourceSerial === recoverySerial || !apk || !evidenceDirectory || !sourceBaselineFile) {
-  throw new Error("Usage: node --experimental-strip-types smoke-android-portable.mjs SOURCE_EMULATOR RECOVERY_EMULATOR APK EVIDENCE_DIRECTORY SOURCE_BASELINE_JSON [PREVIOUS_SOURCE_EVIDENCE_DIRECTORY]");
+  throw new Error("Usage: node --experimental-strip-types smoke-android-portable.mjs SOURCE_EMULATOR RECOVERY_EMULATOR APK EVIDENCE_DIRECTORY SOURCE_BASELINE_JSON [PREVIOUS_SOURCE_EVIDENCE_DIRECTORY] [source-upgrade|grade-roundtrip] [BUILD_PROVENANCE_JSON]");
 }
+assert.ok(["source-upgrade", "grade-roundtrip"].includes(proofMode), "Proof mode must be source-upgrade or grade-roundtrip");
 
 const evidence = resolve(evidenceDirectory);
 if (existsSync(evidence)) {
@@ -49,7 +61,114 @@ const expectedProviderReference = {
     layoutRevision: "kilter:7:8:17:f0d70b3db9a6",
   },
 };
+const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+function sha256(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function gitOutput(...args) {
+  return execFileSync("git", args, { cwd: repoRoot, encoding: "utf8" }).trim();
+}
+
+function trackedDirtyState() {
+  const isDirty = (...args) => {
+    try {
+      execFileSync("git", args, { cwd: repoRoot, stdio: "ignore" });
+      return false;
+    } catch (error) {
+      if (error.status === 1) return true;
+      throw error;
+    }
+  };
+  return {
+    workingTree: isDirty("diff", "--quiet"),
+    index: isDirty("diff", "--cached", "--quiet"),
+  };
+}
+
+function makeSourceUpgradeEvidence({ before, after, versionCodeBefore, versionCodeAfter, packagePolicy }) {
+  const apkEvidence = { filename: basename(apk), sha256: sha256(readFileSync(resolve(apk))) };
+  const buildProvenance = readBuildProvenance(packagePolicy);
+  if (buildProvenance) assert.equal(buildProvenance.apk.sha256, apkEvidence.sha256, "Build-boundary provenance refers to another APK");
+  return {
+    producer: "smoke-android-portable.mjs",
+    schemaVersion: 1,
+    verification: "same-signature adb install -r; exact SAF exports and canonical library equality",
+    sourceVersionCodeBefore: versionCodeBefore,
+    sourceVersionCodeAfter: versionCodeAfter,
+    apkVersionCode: packagePolicy.versionCode,
+    sameSignatureUpgrade: versionCodeAfter > versionCodeBefore && versionCodeAfter === packagePolicy.versionCode,
+    installCommand: "adb install -r",
+    sourceBaselineSha256: sha256(sourceBaselineText),
+    sourceBeforeUpgradeFile: before.filename,
+    sourceBeforeUpgradeSha256: sha256(before.text),
+    sourceAfterUpgradeFile: after.filename,
+    sourceAfterUpgradeSha256: sha256(after.text),
+    sourceBeforeCanonicalSha256: sha256(canonicalSnapshot(before.snapshot)),
+    sourceAfterCanonicalSha256: sha256(canonicalSnapshot(after.snapshot)),
+    sourceCanonicalEqualsBaseline: canonicalSnapshot(before.snapshot) === canonicalSnapshot(sourceBaseline)
+      && canonicalSnapshot(after.snapshot) === canonicalSnapshot(sourceBaseline),
+    apk: apkEvidence,
+    buildProvenance,
+    repositoryAtVerification: {
+      commit: gitOutput("rev-parse", "HEAD"),
+      trackedDirty: trackedDirtyState(),
+    },
+  };
+}
+
+function readBuildProvenance(packagePolicy) {
+  if (!buildProvenanceFile) return undefined;
+  const provenance = JSON.parse(readFileSync(resolve(buildProvenanceFile), "utf8"));
+  assert.equal(provenance.producer, "android-portable-build-boundary", "Build provenance was not created by the documented build wrapper");
+  assert.equal(provenance.schemaVersion, 1, "Build provenance schema is unsupported");
+  assert.match(
+    provenance.command,
+    /^npm --prefix prototypes\/ios run build:android:catalog -- --catalog \S+ --version-code \d+$/,
+    "Build provenance must record the exact private catalog build command",
+  );
+  if (packagePolicy) assert.ok(provenance.command.endsWith(`--version-code ${packagePolicy.versionCode}`), "Build command version code differs from APK metadata");
+  assert.ok(provenance.startedAt && provenance.finishedAt, "Build provenance is missing its build interval");
+  assert.ok(provenance.repository?.commit, "Build provenance is missing the source commit");
+  assert.equal(typeof provenance.repository?.trackedDirty?.workingTree, "boolean");
+  assert.equal(typeof provenance.repository?.trackedDirty?.index, "boolean");
+  assert.equal(provenance.apk?.sha256, sha256(readFileSync(resolve(apk))), "Build provenance APK hash does not match the inspected artifact");
+  return provenance;
+}
+
+function verifyPriorSourceUpgrade(directory, packagePolicy) {
+  const priorDirectory = resolve(directory);
+  const beforeText = readFileSync(join(priorDirectory, "source-before-upgrade.json"), "utf8");
+  const afterText = readFileSync(join(priorDirectory, "source.json"), "utf8");
+  const before = decodeLibraryBackup(beforeText);
+  const after = decodeLibraryBackup(afterText);
+  const proof = JSON.parse(readFileSync(join(priorDirectory, "source-upgrade.json"), "utf8"));
+  assert.equal(proof.producer, "smoke-android-portable.mjs", "Prior source-upgrade receipt was not written by the committed runner");
+  assert.equal(proof.schemaVersion, 1, "Prior source-upgrade receipt schema is unsupported");
+  assert.equal(proof.sourceBaselineSha256, sha256(sourceBaselineText), "Prior source receipt refers to another source baseline");
+  assert.equal(proof.sourceBeforeUpgradeSha256, sha256(beforeText), "Prior pre-upgrade export does not match its machine receipt");
+  assert.equal(proof.sourceAfterUpgradeSha256, sha256(afterText), "Prior post-upgrade export does not match its machine receipt");
+  assert.equal(proof.apk?.sha256, sha256(readFileSync(resolve(apk))), "Prior source upgrade used a different APK");
+  assert.equal(proof.apkVersionCode, packagePolicy.versionCode, "Prior source upgrade used a different APK version");
+  assert.ok(proof.sourceVersionCodeBefore < proof.sourceVersionCodeAfter, "Prior source receipt does not prove a version upgrade");
+  assert.equal(proof.sourceVersionCodeAfter, packagePolicy.versionCode, "Prior source receipt ended at a different APK version");
+  assert.equal(proof.sameSignatureUpgrade, true, "Prior source receipt does not prove adb install -r succeeded");
+  assert.equal(proof.sourceCanonicalEqualsBaseline, true, "Prior machine receipt does not prove exact baseline equality");
+  if (proof.buildProvenance) assert.equal(proof.buildProvenance.apk.sha256, proof.apk.sha256, "Prior build provenance refers to another APK");
+  assert.equal(proof.sourceBeforeCanonicalSha256, sha256(canonicalSnapshot(sourceBaseline)), "Prior pre-upgrade canonical library differs from baseline");
+  assert.equal(proof.sourceAfterCanonicalSha256, sha256(canonicalSnapshot(sourceBaseline)), "Prior post-upgrade canonical library differs from baseline");
+  const beforeLogcat = JSON.parse(readFileSync(join(priorDirectory, "source-before-upgrade-logcat-check.json"), "utf8"));
+  const afterLogcat = JSON.parse(readFileSync(join(priorDirectory, "source-logcat-check.json"), "utf8"));
+  assert.deepEqual(beforeLogcat.foundCanaries, [], "Prior pre-upgrade Logcat contains a checked synthetic canary");
+  assert.deepEqual(afterLogcat.foundCanaries, [], "Prior post-upgrade Logcat contains a checked synthetic canary");
+  assert.equal(beforeLogcat.markersRetained, true, "Prior pre-upgrade Logcat window was incomplete");
+  assert.equal(afterLogcat.markersRetained, true, "Prior post-upgrade Logcat window was incomplete");
+  assert.equal(canonicalSnapshot(before), canonicalSnapshot(sourceBaseline), "Prior pre-upgrade export differs from source baseline");
+  assert.equal(canonicalSnapshot(after), canonicalSnapshot(sourceBaseline), "Prior post-upgrade export differs from source baseline");
+  return { beforeText, afterText, before, after, proof };
+}
 
 function compareVersions(left, right) {
   const a = left.split(".").map(Number);
@@ -118,17 +237,36 @@ function beginLogcatWindow(target, name) {
   return { begin, end };
 }
 
-function captureLogcatWindow(target, name, windowMarkers, payloads, forbiddenMarkers = [syntheticMarker]) {
-  target.adb("shell", "log", "-p", "i", "-t", "CruxBackupProof", windowMarkers.end);
-  const logcat = target.adbBytes("logcat", "-b", "main", "-d", "-v", "raw").toString("utf8");
-  const start = logcat.indexOf(windowMarkers.begin);
-  const finish = logcat.indexOf(windowMarkers.end, start + windowMarkers.begin.length);
-  assert.ok(start >= 0 && finish > start, `${name} Logcat window markers were not both retained`);
-  const window = logcat.slice(start, finish);
-  for (const marker of forbiddenMarkers) assert.ok(!window.includes(marker), `${name} Logcat contains the synthetic marker ${JSON.stringify(marker)}`);
-  for (const payload of payloads) assert.ok(!window.includes(payload), `${name} Logcat contains the full backup payload`);
-  writeFileSync(resolve(evidence, `${name}-logcat.txt`), window);
-  return { captured: true, checkedSyntheticMarkers: forbiddenMarkers, fullBackupPayloadLogged: false };
+function captureLogcatWindow(target, name, windowMarkers, forbiddenMarkers = [syntheticMarker]) {
+  try {
+    target.adb("shell", "log", "-p", "i", "-t", "CruxBackupProof", windowMarkers.end);
+    const logcat = target.adbBytes("logcat", "-b", "main", "-d", "-v", "raw").toString("utf8");
+    const start = logcat.indexOf(windowMarkers.begin);
+    const finish = logcat.indexOf(windowMarkers.end, start + windowMarkers.begin.length);
+    const markersRetained = start >= 0 && finish > start;
+    const window = markersRetained ? logcat.slice(start, finish) : logcat;
+    const foundCanaries = forbiddenMarkers.filter((marker) => window.includes(marker));
+    writeFileSync(resolve(evidence, `${name}-logcat.txt`), window);
+    const report = {
+      captured: true,
+      markersRetained,
+      checkedUniqueCanaries: forbiddenMarkers,
+      foundCanaries,
+      fullBackupPayloadAbsenceClaim: false,
+    };
+    writeFileSync(resolve(evidence, `${name}-logcat-check.json`), JSON.stringify(report, null, 2));
+    return report;
+  } catch (error) {
+    const report = { captured: false, error: error.message, checkedUniqueCanaries: forbiddenMarkers, fullBackupPayloadAbsenceClaim: false };
+    writeFileSync(resolve(evidence, `${name}-logcat-check.json`), JSON.stringify(report, null, 2));
+    return report;
+  }
+}
+
+function assertLogcatClean(report, name) {
+  assert.equal(report.captured, true, `${name} Logcat window could not be captured`);
+  assert.equal(report.markersRetained, true, `${name} Logcat window markers were not both retained`);
+  assert.deepEqual(report.foundCanaries, [], `${name} Logcat contains a synthetic backup canary`);
 }
 
 function device(serial) {
@@ -258,7 +396,7 @@ function device(serial) {
     return { climbs: Number(result.values[0].climbs), playlists: Number(result.values[0].playlists) };
   }
 
-  async function saveExport(name, { logWindow, payloads = [], forbiddenMarkers = [syntheticMarker] } = {}) {
+  async function saveExport(name, { logWindow, forbiddenMarkers = [syntheticMarker], onReadback } = {}) {
     const before = downloadNames(adb);
     const logMarkers = logWindow ?? beginLogcatWindow({ adb, adbBytes }, name);
     await click("Back up & restore");
@@ -286,9 +424,23 @@ function device(serial) {
     const expectedPrefix = `cruxcontrol-library-${snapshot.exportedAt.replace(/:/g, "-")}`;
     assert.ok(filename === `${expectedPrefix}.json` || filename.startsWith(`${expectedPrefix}-`));
     writeFileSync(resolve(evidence, `${name}.json`), text);
-    const logcat = captureLogcatWindow({ adb, adbBytes }, name, logMarkers, [...payloads, text], forbiddenMarkers);
+    onReadback?.({ filename, text, snapshot });
+    const logcat = captureLogcatWindow({ adb, adbBytes }, name, logMarkers, forbiddenMarkers);
     await click("Close");
     return { filename, text, snapshot, logcat };
+  }
+
+  async function cancelSave() {
+    const logMarkers = beginLogcatWindow({ adb, adbBytes }, "save-cancel");
+    await click("Back up & restore");
+    await click("Save library backup file");
+    adb("shell", "input", "keyevent", "KEYCODE_BACK");
+    await waitFor("document.body.innerText.includes('Backup export canceled.')", "Native document-picker cancellation was not reported");
+    const status = await evaluate("document.body.innerText");
+    assert.ok(status.includes("Backup export canceled."));
+    const logcat = captureLogcatWindow({ adb, adbBytes }, "save-cancel", logMarkers, [syntheticMarker]);
+    await click("Close");
+    return { outcome: "cancelled", status: "Backup export canceled.", logcat };
   }
 
   async function editClimbName(existingName, nextName) {
@@ -312,7 +464,31 @@ function device(serial) {
     await click("Back");
   }
 
-  return { adb, adbBytes, startup, close, counts, saveExport, attach, click, evaluate, waitFor, editClimbName, versionCode, waitForDevice };
+  async function editClimbGradeAndAngle(existingName, grade, angle) {
+    await click(existingName, true);
+    await click("Edit climb");
+    await waitFor(
+      `[...document.querySelectorAll('input')].some(input => input.value === ${JSON.stringify(existingName)})`,
+      "Restored climb editor unavailable for grade and angle edit",
+    );
+    await evaluate(`(() => {
+      const grade = document.querySelector('input[placeholder="e.g. V4 or 6B"]');
+      const angleLabel = [...document.querySelectorAll('label')].find(label => label.childNodes[0]?.textContent?.trim() === 'Angle');
+      const angleInput = angleLabel?.querySelector('select');
+      if (!grade || !angleInput) throw new Error('Restored grade or angle control missing');
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(grade, ${JSON.stringify(grade)});
+      grade.dispatchEvent(new Event('input', { bubbles: true }));
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(angleInput, ${JSON.stringify(String(angle))});
+      angleInput.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
+    await waitFor(
+      `document.querySelector('.save-chip')?.textContent === 'saved' && document.querySelector('input[placeholder="e.g. V4 or 6B"]')?.value === ${JSON.stringify(grade)} && [...document.querySelectorAll('label')].find(label => label.childNodes[0]?.textContent?.trim() === 'Angle')?.querySelector('select')?.value === ${JSON.stringify(String(angle))}`,
+      "Restored synthetic grade and angle edit did not save",
+    );
+    await click("Back");
+  }
+
+  return { adb, adbBytes, startup, close, counts, saveExport, cancelSave, attach, click, evaluate, waitFor, editClimbName, editClimbGradeAndAngle, versionCode, waitForDevice };
 }
 
 const source = device(sourceSerial);
@@ -373,6 +549,183 @@ function assertOnlyRecoveryEdit(before, after) {
   assert.equal(canonicalSnapshot(after), canonicalSnapshot(expected), "Recovery changed authored fields other than the one requested name edit");
 }
 
+function assertOnlyGradeAngleEdit(before, after) {
+  const previous = before.drafts.find((draft) => draft.id === recoveryEditId);
+  const current = after.drafts.find((draft) => draft.id === recoveryEditId);
+  assert.ok(previous && current, "Grade/angle edit target is missing");
+  assert.equal(previous.name, editedName, "The known earlier name edit must remain unchanged");
+  assert.equal(current.name, previous.name, "The grade/angle edit changed the climb name");
+  assert.equal(previous.angle, 40);
+  assert.equal(current.angle, 45);
+  assert.equal(previous.metadata.grade, undefined, "Baseline must not already have a grade");
+  assert.equal(current.metadata.grade, "V4");
+  assert.equal(current.createdAt, previous.createdAt);
+  assertUpdated(current, previous, "Grade/angle edit");
+  const expected = {
+    drafts: before.drafts.map((draft) => draft.id === current.id
+      ? { ...draft, angle: 45, metadata: { ...draft.metadata, grade: "V4" }, revision: current.revision, updatedAt: current.updatedAt }
+      : draft),
+    playlists: before.playlists,
+  };
+  assert.equal(canonicalSnapshot(after), canonicalSnapshot(expected), "Grade/angle edit changed another authored field or record");
+}
+
+async function runGradeRoundtrip(packagePolicy, recoveryAlreadyInstalled) {
+  assert.equal(recoveryAlreadyInstalled, false, "Grade roundtrip requires the separate recovery emulator to remain uninstalled and empty");
+  assert.ok(buildProvenanceFile, "Grade roundtrip requires the APK build-boundary provenance file");
+  assertSourceSnapshotForGradeBaseline(sourceBaseline);
+  writeFileSync(resolve(evidence, "source-grade-baseline.json"), sourceBaselineText);
+  const sourceVersionBeforeUpdate = source.versionCode();
+  assert.ok(packagePolicy.versionCode > sourceVersionBeforeUpdate, "Grade proof APK must be a newer same-signature source update");
+  setOffline(source);
+  setOffline(recovery);
+
+  await source.startup();
+  const sourceBeforeUpdate = await source.saveExport("source-before-upgrade");
+  assert.equal(canonicalSnapshot(sourceBeforeUpdate.snapshot), canonicalSnapshot(sourceBaseline), "Recovery 5582 differs from its accepted APK8 baseline before the final-source update");
+  assertLogcatClean(sourceBeforeUpdate.logcat, "grade source before upgrade");
+  await source.close();
+  source.adb("shell", "am", "force-stop", appId);
+  source.waitForDevice();
+  source.adb("install", "-r", resolve(apk));
+  const sourceVersionAfterUpdate = source.versionCode();
+  assert.equal(sourceVersionAfterUpdate, packagePolicy.versionCode, "Source app did not upgrade to the inspected final APK");
+
+  await source.startup();
+  let sourceUpgradeEvidence;
+  const sourceAfterUpdate = await source.saveExport("source", {
+    onReadback(after) {
+      assert.equal(canonicalSnapshot(after.snapshot), canonicalSnapshot(sourceBeforeUpdate.snapshot), "Same-signature update changed the recovery 5582 library");
+      sourceUpgradeEvidence = makeSourceUpgradeEvidence({
+        before: sourceBeforeUpdate,
+        after,
+        versionCodeBefore: sourceVersionBeforeUpdate,
+        versionCodeAfter: sourceVersionAfterUpdate,
+        packagePolicy,
+      });
+      writeFileSync(resolve(evidence, "source-upgrade.json"), JSON.stringify(sourceUpgradeEvidence, null, 2));
+    },
+  });
+  assertLogcatClean(sourceAfterUpdate.logcat, "grade source after upgrade");
+
+  const baselineDraft = sourceBaseline.drafts.find((draft) => draft.id === recoveryEditId);
+  assert.ok(baselineDraft);
+  const gradeEditLog = beginLogcatWindow(source, "grade-angle-edit");
+  await source.editClimbGradeAndAngle(editedName, "V4", 45);
+  const gradeEdited = await source.saveExport("source-grade-edited", {
+    logWindow: gradeEditLog,
+    forbiddenMarkers: [syntheticMarker, editedName],
+  });
+  assertOnlyGradeAngleEdit(sourceBaseline, gradeEdited.snapshot);
+  assertLogcatClean(gradeEdited.logcat, "native grade and angle edit");
+
+  await source.close();
+  source.adb("shell", "am", "force-stop", appId);
+  const sourceBrowserDatabases = await source.startup();
+  const sourceRelaunchLog = beginLogcatWindow(source, "source-grade-relaunch");
+  const sourceRelaunched = await source.saveExport("source-grade-relaunched", {
+    logWindow: sourceRelaunchLog,
+    forbiddenMarkers: [syntheticMarker, editedName],
+  });
+  assert.equal(canonicalSnapshot(sourceRelaunched.snapshot), canonicalSnapshot(gradeEdited.snapshot), "Native grade/angle edit did not survive force-stop and relaunch on emulator 5582");
+  assertLogcatClean(sourceRelaunched.logcat, "native grade and angle relaunch");
+
+  recovery.adb("install", resolve(apk));
+  assert.equal(recovery.versionCode(), packagePolicy.versionCode, "Fresh recovery emulator did not install the inspected APK");
+  const recoveryBrowserDatabases = await recovery.startup();
+  assert.deepEqual(await recovery.counts(), { climbs: 0, playlists: 0 }, "Fresh grade recovery emulator must start with an empty native library");
+  const cancellation = await recovery.cancelSave();
+  assertLogcatClean(cancellation.logcat, "grade proof native picker cancellation");
+
+  const recoveryLog = beginLogcatWindow(recovery, "grade-restore");
+  await recovery.click("Back up & restore");
+  const backupInput = sourceRelaunched.text;
+  const decoded = decodeLibraryBackup(backupInput);
+  await recovery.evaluate(`(() => { const input = document.querySelector('#library-backup-file'); const files = new DataTransfer(); files.items.add(new File([${JSON.stringify(backupInput)}], ${JSON.stringify(sourceRelaunched.filename)}, { type: 'application/json' })); input.files = files.files; input.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+  const addLabel = `Add ${decoded.drafts.length} climbs & ${decoded.playlists.length} playlists`;
+  await recovery.waitFor(`[...document.querySelectorAll('button')].some(b => b.innerText.trim() === ${JSON.stringify(addLabel)} && !b.disabled)`, "Actual graded SAF export could not be reviewed for restore");
+  await recovery.click(addLabel);
+  await recovery.waitFor("document.body.innerText.includes('Recovery complete')", "Actual graded SAF export did not restore into the fresh empty installation");
+  assert.deepEqual(await recovery.counts(), { climbs: decoded.drafts.length, playlists: decoded.playlists.length });
+  await recovery.click("Close");
+  const restored = await recovery.saveExport("grade-restored", { logWindow: recoveryLog, forbiddenMarkers: [syntheticMarker, editedName] });
+  assert.equal(canonicalSnapshot(restored.snapshot), canonicalSnapshot(sourceRelaunched.snapshot), "Restored file differs from the actual graded SAF bytes written on emulator 5582");
+  const restoredDraft = restored.snapshot.drafts.find((draft) => draft.id === recoveryEditId);
+  assert.equal(restoredDraft?.metadata.grade, "V4", "Grade did not survive file export and restore");
+  assert.equal(restoredDraft?.angle, 45, "Different angle did not survive file export and restore");
+  assertLogcatClean(restored.logcat, "grade restore export");
+
+  await recovery.close();
+  recovery.adb("shell", "am", "force-stop", appId);
+  const relaunchBrowserDatabases = await recovery.startup();
+  const recoveryRelaunchLog = beginLogcatWindow(recovery, "grade-recovery-relaunch");
+  const recoveryRelaunched = await recovery.saveExport("grade-recovery-relaunched", {
+    logWindow: recoveryRelaunchLog,
+    forbiddenMarkers: [syntheticMarker, editedName],
+  });
+  assert.equal(canonicalSnapshot(recoveryRelaunched.snapshot), canonicalSnapshot(sourceRelaunched.snapshot), "Graded restore changed after force-stop and relaunch on emulator 5586");
+  assertLogcatClean(recoveryRelaunched.logcat, "grade recovery relaunch export");
+  const updatedDraft = sourceRelaunched.snapshot.drafts.find((draft) => draft.id === recoveryEditId);
+
+  writeFileSync(resolve(evidence, "result.json"), JSON.stringify({
+    packagePolicy,
+    sourceUpgrade: { ...sourceUpgradeEvidence, verificationMode: "performed-in-this-run" },
+    apkProvenance: sourceUpgradeEvidence.apk,
+    buildProvenance: sourceUpgradeEvidence.buildProvenance,
+    repositoryProvenance: sourceUpgradeEvidence.repositoryAtVerification,
+    sourceBaselineSha256: sha256(sourceBaselineText),
+    sourceBaselineOrigin: "accepted APK8 recovery-relaunched.json export with the one previously verified native name edit",
+    sourceCanonicalComparison: "recovery 5582 equals its accepted APK8 export before and after same-signature install -r",
+    gradeAngleEdit: {
+      id: recoveryEditId,
+      name: updatedDraft?.name,
+      previousAngle: baselineDraft.angle,
+      angle: updatedDraft?.angle,
+      previousGrade: baselineDraft.metadata.grade ?? null,
+      grade: updatedDraft?.metadata.grade,
+      revisionBefore: baselineDraft.revision,
+      revisionAfter: updatedDraft?.revision,
+    },
+    sourceGradeExportFilename: sourceRelaunched.filename,
+    sourceGradeExportSha256: sha256(sourceRelaunched.text),
+    sourceGradeSurvivedRelaunch: true,
+    recoveryStartedEmpty: true,
+    recoveryInstallResumed: false,
+    offline: true,
+    cancellation,
+    documentProviderReadback: true,
+    recoveryImportMethod: "harness-injected-file-input (DataTransfer); Android system file chooser import was not exercised",
+    restoredFilename: restored.filename,
+    recoveredCanonicalComparison: "actual SAF-selected grade export equals the fresh independent installation's re-export",
+    recoveredGrade: { angle: restoredDraft?.angle, grade: restoredDraft?.metadata.grade },
+    recoveryRelaunchFilename: recoveryRelaunched.filename,
+    recoveredGradeSurvivedRelaunch: true,
+    browserIndexedDBNames: [...new Set([...sourceBrowserDatabases, ...recoveryBrowserDatabases, ...relaunchBrowserDatabases])],
+    browserLibraryDatabases: [],
+    logcat: {
+      sourceBeforeUpgrade: sourceBeforeUpdate.logcat,
+      sourceAfterUpgrade: sourceAfterUpdate.logcat,
+      gradeAngleEdit: gradeEdited.logcat,
+      sourceRelaunch: sourceRelaunched.logcat,
+      cancellation: cancellation.logcat,
+      restore: restored.logcat,
+      recoveryRelaunch: recoveryRelaunched.logcat,
+      fullBackupPayloadAbsenceClaim: false,
+    },
+  }, null, 2));
+  console.log(`Android native grade and portable restore passed. Evidence: ${evidence}`);
+}
+
+function assertSourceSnapshotForGradeBaseline(snapshot) {
+  const draft = snapshot.drafts.find((record) => record.id === recoveryEditId);
+  assert.ok(draft, "Accepted recovery baseline is missing its known synthetic climb");
+  assert.equal(draft.name, editedName, "Grade baseline must retain the already verified name edit");
+  assert.equal(draft.angle, 40, "Grade baseline must start at angle 40 before the new native edit");
+  assert.equal(draft.metadata.grade, undefined, "Grade baseline must not already have a grade");
+  assert.equal(snapshot.drafts.length, 4, "Grade baseline should preserve all four synthetic climbs");
+  assert.equal(snapshot.playlists.length, 2, "Grade baseline should preserve both synthetic playlists");
+}
+
 let primaryFailure;
 try {
   source.waitForDevice();
@@ -381,6 +734,13 @@ try {
   assert.equal(recovery.adb("shell", "getprop", "ro.kernel.qemu"), "1", "Recovery target must be an emulator");
   const recoveryAlreadyInstalled = recovery.adb("shell", "pm", "list", "packages", appId).includes(appId);
   const packagePolicy = inspectPackagePolicy(apk);
+  if (buildProvenanceFile) {
+    const provenance = readBuildProvenance(packagePolicy);
+    writeFileSync(resolve(evidence, "build-provenance.json"), JSON.stringify(provenance, null, 2));
+  }
+  if (proofMode === "grade-roundtrip") {
+    await runGradeRoundtrip(packagePolicy, recoveryAlreadyInstalled);
+  } else {
   assertSourceSnapshot(sourceBaseline);
   writeFileSync(resolve(evidence, "source-catalog-baseline.json"), sourceBaselineText);
   const sourceVersionBeforeUpdate = source.versionCode();
@@ -402,6 +762,7 @@ try {
       canonicalSnapshot(sourceBaseline),
       "Current source differs from the catalog owner's validated canonical snapshot before update",
     );
+    assertLogcatClean(sourceBeforeUpdate.logcat, "source before upgrade");
     await source.close();
     source.adb("shell", "am", "force-stop", appId);
     source.waitForDevice();
@@ -409,26 +770,32 @@ try {
     sourceVersionAfterUpdate = source.versionCode();
     assert.equal(sourceVersionAfterUpdate, packagePolicy.versionCode, "Source app did not upgrade to the inspected final APK");
     await source.startup();
-    captured = await source.saveExport("source");
     sourceUpgradeMode = "performed-in-this-run";
+    captured = await source.saveExport("source", {
+      onReadback(after) {
+        assertSourceSnapshot(after.snapshot);
+        assert.equal(canonicalSnapshot(after.snapshot), canonicalSnapshot(sourceBeforeUpdate.snapshot), "Same-signature update changed the source library");
+        sourceUpgradeEvidence = makeSourceUpgradeEvidence({
+          before: sourceBeforeUpdate,
+          after,
+          versionCodeBefore: sourceVersionBeforeUpdate,
+          versionCodeAfter: sourceVersionAfterUpdate,
+          packagePolicy,
+        });
+        writeFileSync(resolve(evidence, "source-upgrade.json"), JSON.stringify(sourceUpgradeEvidence, null, 2));
+      },
+    });
+    assertLogcatClean(captured.logcat, "source after upgrade");
   } else {
     assert.equal(sourceVersionBeforeUpdate, packagePolicy.versionCode, "Source version does not match the inspected final APK");
     assert.ok(previousSourceEvidenceDirectory, "A resumed proof needs the previous source-upgrade evidence directory");
-    const priorDirectory = resolve(previousSourceEvidenceDirectory);
-    const beforeText = readFileSync(join(priorDirectory, "source-before-upgrade.json"), "utf8");
-    const priorAfterText = readFileSync(join(priorDirectory, "source.json"), "utf8");
-    const beforeSnapshot = decodeLibraryBackup(beforeText);
-    const priorAfterSnapshot = decodeLibraryBackup(priorAfterText);
+    const prior = verifyPriorSourceUpgrade(previousSourceEvidenceDirectory, packagePolicy);
+    const { beforeText, afterText: priorAfterText, before: beforeSnapshot, after: priorAfterSnapshot } = prior;
     assertSourceSnapshot(beforeSnapshot);
     assertSourceSnapshot(priorAfterSnapshot);
     assert.equal(canonicalSnapshot(beforeSnapshot), canonicalSnapshot(sourceBaseline), "Prior pre-upgrade export differs from the validated source baseline");
     assert.equal(canonicalSnapshot(priorAfterSnapshot), canonicalSnapshot(sourceBaseline), "Prior post-upgrade export differs from the validated source baseline");
-    sourceUpgradeEvidence = JSON.parse(readFileSync(join(priorDirectory, "source-upgrade.json"), "utf8"));
-    assert.equal(sourceUpgradeEvidence.sameSignatureUpgrade, true, "Prior source upgrade did not use an accepted same-signature install");
-    assert.ok(sourceUpgradeEvidence.versionCodeBefore < sourceUpgradeEvidence.versionCodeAfter, "Prior source install was not an upgrade");
-    assert.equal(sourceUpgradeEvidence.versionCodeAfter, packagePolicy.versionCode, "Prior source upgrade did not install the inspected APK");
-    assert.equal(sourceUpgradeEvidence.sourceCanonicalUnchanged, true, "Prior source upgrade did not preserve the canonical library");
-    assert.equal(sourceUpgradeEvidence.sourceBeforeUpgradeMatchesCatalogBaseline, true, "Prior source upgrade began from the validated baseline");
+    sourceUpgradeEvidence = prior.proof;
     sourceBeforeUpdate = {
       filename: `cruxcontrol-library-${beforeSnapshot.exportedAt.replace(/:/g, "-")}.json`,
       text: beforeText,
@@ -436,13 +803,14 @@ try {
     };
     writeFileSync(resolve(evidence, "source-before-upgrade.json"), beforeText);
     writeFileSync(resolve(evidence, "prior-source-after-upgrade.json"), priorAfterText);
-    writeFileSync(resolve(evidence, "source-before-upgrade-logcat.txt"), readFileSync(join(priorDirectory, "source-before-upgrade-logcat.txt")));
+    writeFileSync(resolve(evidence, "source-before-upgrade-logcat.txt"), readFileSync(join(resolve(previousSourceEvidenceDirectory), "source-before-upgrade-logcat.txt")));
     await source.startup();
     captured = await source.saveExport("source");
     assert.equal(canonicalSnapshot(captured.snapshot), canonicalSnapshot(priorAfterSnapshot), "Resumed current export differs from the prior post-upgrade export");
     sourceVersionAfterUpdate = source.versionCode();
     assert.equal(sourceVersionAfterUpdate, packagePolicy.versionCode, "Resumed source is not on the inspected final APK");
     sourceUpgradeMode = "resumed-after-prior-upgrade";
+    assertLogcatClean(captured.logcat, "resumed source");
   }
   assertSourceSnapshot(captured.snapshot);
   assert.equal(
@@ -450,18 +818,6 @@ try {
     canonicalSnapshot(sourceBeforeUpdate.snapshot),
     "Same-signature update changed the source library",
   );
-  if (sourceUpgradeMode === "performed-in-this-run") {
-    sourceUpgradeEvidence = {
-      versionCodeBefore: sourceVersionBeforeUpdate,
-      versionCodeAfter: sourceVersionAfterUpdate,
-      installCommand: "adb install -r",
-      sameSignatureUpgrade: true,
-      sourceCanonicalUnchanged: true,
-      sourceBeforeUpgradeMatchesCatalogBaseline: true,
-    };
-    writeFileSync(resolve(evidence, "source-upgrade.json"), JSON.stringify(sourceUpgradeEvidence, null, 2));
-  }
-
   recovery.waitForDevice();
   if (recoveryAlreadyInstalled) {
     assert.equal(recovery.versionCode(), packagePolicy.versionCode, "Resumed recovery installation is not the inspected final APK");
@@ -471,6 +827,8 @@ try {
   assert.equal(recovery.versionCode(), packagePolicy.versionCode, "Recovery app did not install the inspected final APK");
   const recoveryBrowserDatabases = await recovery.startup();
   assert.deepEqual(await recovery.counts(), { climbs: 0, playlists: 0 }, "Recovery installation must start with an empty native library");
+  const cancellation = await recovery.cancelSave();
+  assertLogcatClean(cancellation.logcat, "native picker cancellation");
   const recoveryLog = beginLogcatWindow(recovery, "restore");
   await recovery.click("Back up & restore");
   const backupInput = captured.text;
@@ -483,27 +841,32 @@ try {
   assert.deepEqual(await recovery.counts(), { climbs: decoded.drafts.length, playlists: decoded.playlists.length });
   await recovery.click("Close");
 
-  const restored = await recovery.saveExport("restored", { logWindow: recoveryLog, payloads: [backupInput] });
+  const restored = await recovery.saveExport("restored", { logWindow: recoveryLog });
+  assertLogcatClean(restored.logcat, "restored export");
   assert.equal(canonicalSnapshot(restored.snapshot), canonicalSnapshot(captured.snapshot), "Restored export differs from the actual file delivered by Android's document picker");
   const editLog = beginLogcatWindow(recovery, "recovery-edit");
   await recovery.editClimbName(recoverySourceName, editedName);
   const edited = await recovery.saveExport("recovery-edited", {
     logWindow: editLog,
-    payloads: [backupInput, restored.text],
     forbiddenMarkers: [recoverySourceName, editedName],
   });
+  assertLogcatClean(edited.logcat, "recovery editor write");
   assertOnlyRecoveryEdit(captured.snapshot, edited.snapshot);
 
   await recovery.close();
   recovery.adb("shell", "am", "force-stop", appId);
   const relaunchedBrowserDatabases = await recovery.startup();
   const relaunchLog = beginLogcatWindow(recovery, "relaunch");
-  const relaunched = await recovery.saveExport("recovery-relaunched", { logWindow: relaunchLog, payloads: [backupInput, edited.text] });
+  const relaunched = await recovery.saveExport("recovery-relaunched", { logWindow: relaunchLog });
+  assertLogcatClean(relaunched.logcat, "recovery relaunch export");
   assert.equal(canonicalSnapshot(relaunched.snapshot), canonicalSnapshot(edited.snapshot), "Process relaunch changed the restored library after the intentional editor edit");
 
   writeFileSync(resolve(evidence, "result.json"), JSON.stringify({
     packagePolicy,
     sourceUpgrade: { ...sourceUpgradeEvidence, verificationMode: sourceUpgradeMode },
+    apkProvenance: sourceUpgradeEvidence.apk,
+    buildProvenance: sourceUpgradeEvidence.buildProvenance,
+    repositoryProvenance: sourceUpgradeEvidence.repositoryAtVerification,
     sourceBeforeUpgradeFilename: sourceBeforeUpdate.filename,
     sourceFilename: captured.filename,
     sourceCanonicalComparison: "synthetic native source equals the committed fixture plus exactly one named-climb update and one catalog-provider append",
@@ -511,8 +874,10 @@ try {
     sourcePlaylists: captured.snapshot.playlists.length,
     recoveryStartedEmpty: true,
     recoveryInstallResumed: recoveryAlreadyInstalled,
+    cancellation,
     offline: true,
     documentProviderReadback: true,
+    recoveryImportMethod: "harness-injected-file-input (DataTransfer); Android system file chooser import was not exercised",
     restoredFilename: restored.filename,
     recoveredCanonicalComparison: "actual selected-location file equals the independent empty-installation restore export",
     recoveryEditorChange: { id: recoveryEditId, previousName: recoverySourceName, name: editedName },
@@ -524,6 +889,7 @@ try {
     logcat: { source: captured.logcat, restore: restored.logcat, recoveryEdit: edited.logcat, relaunch: relaunched.logcat },
   }, null, 2));
   console.log(`Android portable restore passed. Evidence: ${evidence}`);
+  }
 } catch (error) {
   primaryFailure = error;
   throw error;
