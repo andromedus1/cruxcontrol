@@ -109,7 +109,7 @@ including Trash, effects and ordered playlist entries, makes one synthetic edito
 change, force-stops the recovery app and compares again after relaunch. The current
 portable runner injects the read-back bytes into the web file input with
 `DataTransfer`; Android's system file chooser import path is covered separately by
-the parity acceptance run.
+the parity acceptance run and is not exercised by this runner.
 
 Use Node 22 and two isolated API 36 emulators: a synthetic source installation
 with the prior signed APK, and a fresh recovery installation. Supply the exact
@@ -156,19 +156,36 @@ node --experimental-strip-types prototypes/ios/scripts/smoke-android-portable.mj
   grade-roundtrip /outside/git/final-build-provenance.json
 ```
 
-The 2026-10-10 APK8 run matched the catalog owner's complete synthetic source,
-read the Downloads file back from the provider, restored those bytes into the
-separate installation, and retained its single test edit across force-stop and
-relaunch. That source fixture had no grade (angle 40); its evidence does not prove
-grade preservation at the native file boundary. Its host-only evidence is at
-`/tmp/cruxcontrol-android-portable-proof-v8-resume1-20261010/`; the prior source
-upgrade exports are at
-`/tmp/cruxcontrol-android-portable-proof-v8-retry2-20261010/`. This demonstrates
-local file save/readback and isolated recovery. A cloud-backed picker provider
-may return after local stream close without proving remote upload or retention;
-verify a remote copy independently. Automatic online backup remains a separate
-required recovery path before real authoring, so this manual file route is not a
-manual-only dogfood bridge.
+The initial 2026-10-10 APK8 run matched the catalog owner's complete synthetic
+source, read the Downloads file back from the provider, restored those bytes into
+the separate installation, and retained its single test edit across force-stop
+and relaunch. That source fixture had no grade (angle 40), so the earlier proof did
+not establish grade preservation. Its host-only evidence is at
+`/tmp/cruxcontrol-android-portable-proof-v8-resume1-20261010/`; the original retry2
+source-upgrade cause remains unknown because its command output and Logcat were not
+retained. That operator-written receipt is superseded by the APK10 machine receipt.
+
+The grade-inclusive APK10 run upgraded the preserved synthetic source from version
+8 to 10 with `adb install -r`, verified the exact pre/post source snapshots, and
+changed only the known climb from angle 40/no grade to angle 45/V4. The source edit
+survived force-stop/relaunch and was written through the actual SAF Save picker.
+The provider file was read back, decoded, restored into a newly created empty API
+36 emulator, and compared canonically after restore and recovery relaunch. The
+recovery import in this run used `DataTransfer` injection; Android's system file
+chooser import is covered separately by parity acceptance. Android Back in the
+Save picker reported cancellation. Checked unique Logcat canaries were absent;
+Logcat truncation means the proof makes no claim that a complete backup payload
+could never appear in logs.
+
+The APK10 evidence is outside Git at
+`/tmp/cruxcontrol-android-portable-grade-proof-20261010/`; its exact binary and
+build-boundary provenance are at `/tmp/cruxcontrol-android-portable-proof-apk10/`.
+APK SHA-256 is `c3bc59761093ffd4e1743935a36383627362199a0516796d02bc75c297a055a5`,
+built from clean tracked commit `3a2e466636080582b92873bdcdf01e3fc7c32317`.
+This proves local provider save/readback and isolated offline recovery, not a
+cloud-backed provider upload, remote retention, owner-phone recovery or the
+required automatic online backup. Verify any remote copy independently; automatic
+online backup remains required before real authoring.
 
 ## Private Android catalog package
 

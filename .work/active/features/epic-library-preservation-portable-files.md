@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-portable-files
 kind: feature
-stage: implementing
+stage: review
 tags: [data, ui]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -237,16 +237,13 @@ and the final everyday-phone acceptance owner.
   playlist file failures without labeling a playlist as a library backup. Generic
   interruption copy says the library is unchanged and an empty or partial chosen
   file may remain.
-- F2 remains historical and unresolved: the original retry2 cause cannot be
-  recovered. The operator-written receipt is not accepted by the runner. New runs
-  produce a source comparison receipt at the exact SAF readback boundary and record
-  build provenance (commit, tracked/index dirty state, APK hash and build interval)
-  separately from Logcat checks.
-- S3 is the outstanding native acceptance gap: the APK8 source contained no grade.
-  A new isolated proof must set V4 and a different angle on emulator 5582, verify
-  the exact save after relaunch, then export via SAF and compare a fresh empty
-  recovery installation including grade and angle. It must preserve the older APK8
-  evidence and must not alter source emulator 5580 or parity emulator 5584.
+- F2's original retry2 failure cause remains unknown because its command output and
+  source Logcat were not retained. The operator-written retry2 receipt is not
+  accepted by the runner. The replacement APK10 proof now records the source update
+  comparison from the actual SAF bytes and includes build-boundary provenance.
+- S3 is closed by the APK10 native proof below: the source began from the accepted
+  APK8 export without a grade, received one V4/angle45 edit, and preserved it through
+  native relaunch, SAF export, independent restore and recovery relaunch.
 - S2 cancellation coverage now presses Android Back in the native Save picker and
   asserts the cancellation status. It does not claim that the provider created no
   destination; a provider may leave an empty file.
@@ -254,3 +251,38 @@ and the final everyday-phone acceptance owner.
   checks unique Logcat canary fragments, and explicitly disclaims full-payload
   absence because Logcat truncates long records. The system chooser import is
   covered separately by the Android parity proof.
+
+## APK10 native acceptance evidence (2026-10-10)
+
+- Built `/tmp/cruxcontrol-android-portable-proof-apk10/final.apk` with version code
+  10 and the validated catalog. Its SHA-256 is
+  `c3bc59761093ffd4e1743935a36383627362199a0516796d02bc75c297a055a5`. The
+  build-boundary sidecar records commit `3a2e466636080582b92873bdcdf01e3fc7c32317`,
+  clean tracked and index state, command, build interval and the same APK hash.
+- The source on emulator 5582 was APK8/version 8. The runner verified its exact
+  accepted APK8 export before updating, installed APK10 with `adb install -r`, and
+  machine-recorded matching canonical exports afterward before Logcat checks or
+  dialog cleanup. The complete source remained four climbs and two playlists.
+- On the source, the known edited synthetic climb changed only from angle 40/no
+  grade to angle 45/V4, with revision 3 to 4. Exact native SAF exports before and
+  after force-stop/relaunch matched. The exported provider file was read back to
+  the host and decoded with the production codec.
+- The separately created API 36 arm64 emulator 5586 had no app installed. APK10 was
+  installed, the native library was verified empty, and the actual SAF readback was
+  restored through the harness-injected `DataTransfer` file input. The recovery
+  re-export matched the source's complete canonical snapshot, including V4 and
+  angle 45, and still matched after force-stop/relaunch. The Android system file
+  chooser import was not exercised by this proof; parity acceptance covers it.
+- Pressing Android Back in the Save picker returned `Backup export canceled.`. The
+  runner does not infer that the provider created no destination. All scoped
+  Logcat windows retained their markers and contained none of the checked synthetic
+  canary fragments. The proof explicitly makes no complete-backup-payload absence
+  claim because Logcat truncates long records.
+- Machine evidence is retained outside Git at
+  `/tmp/cruxcontrol-android-portable-grade-proof-20261010/`; build provenance and
+  the APK are under `/tmp/cruxcontrol-android-portable-proof-apk10/`. This proves
+  local SAF save/readback and isolated offline emulator recovery, not cloud upload,
+  remote retention, owner-phone recovery or account-backed automatic backup.
+- The original retry2 failure cause remains unknown and is preserved as a historic
+  gap; the new receipt supersedes it for the current source-update proof. No
+  personal library or real phone was used.

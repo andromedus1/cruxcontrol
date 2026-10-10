@@ -334,6 +334,26 @@ capabilities. Worker must not delegate or use peeragent.
   preservation, physical-board BLE or actual-phone storage-pressure durability.
   Real authoring remains gated by the epic's required independent preservation work.
 
+## Portable proof qualification (2026-10-10)
+
+The APK8 evidence above is limited to its actual run: the synthetic source had no
+grade and the edited climb remained at angle 40; recovery imported through the
+harness-injected `DataTransfer` input rather than Android's system file chooser.
+The later APK10 portable proof is recorded in the sibling
+[portable-files feature](epic-library-preservation-portable-files.md). It made a
+native V4/angle45 edit, retained it through relaunch, saved and read back the
+actual SAF-selected file, restored it into a separate empty API36 emulator, and
+compared the complete canonical library after recovery relaunch. That later proof
+adds a grade-inclusive portable boundary; it does not change what APK8 tested.
+
+The earlier Logcat wording about the complete backup payload being absent was too
+strong: Android truncates long log records, so those windows cannot establish full
+payload absence. The APK10 runner instead checks explicit synthetic canary
+fragments and records no full-payload absence claim. Neither run proves cloud
+upload, remote retention, actual-phone recovery or the separate automatic online
+backup requirement. This feature remains closed for native storage; the portable
+destination and authoring gates remain with their owning epic/features.
+
 ## PR verification follow-up
 
 Draft [PR #32](https://github.com/andromedus1/cruxcontrol/pull/32) carries this
