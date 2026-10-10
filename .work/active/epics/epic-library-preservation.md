@@ -395,8 +395,9 @@ Native-library, portable-file recovery and Android-catalog features have complet
 focused verification, standard independent review and required CI. Finish the
 remaining Android interaction/signing and physical phone/Fullride acceptance in its
 existing feature owner. Account access, automatic protection and clean-install online recovery remain
-the admission-critical path; budget direction and an actual native account proof are
-still required before provider selection. Service setup and phone/board availability
+the admission-critical path. Budget direction is settled in the private-vault item:
+prefer cheaper, with a concrete justification required for USD 25/month. An actual
+native account proof is still required before provider selection. Service setup and phone/board availability
 determine timing; do not promise a fixed delivery date before those proofs. No further
 current-PWA preservation release is a prerequisite. Query the child items for current
 stages and evidence rather than treating this sequence as completed dogfood admission.

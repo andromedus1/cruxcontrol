@@ -39,10 +39,24 @@ Reuse the verified preservation comparison. Compare actual native authentication
 - Existing editor, library, playlist and Kilter browser reuse their current UI; mock only genuinely new structure.
 - Andrew’s 2026-10-10 instruction to proceed supplies authorization to continue this prepared direction; no new UI redesign milestone.
 
+## Owner cost direction
+
+Andrew answered the budget question on 2026-10-10: prefer cheaper options when
+otherwise comparable; an option costing as much as USD 25/month needs a concrete
+justification. This resolves the budget-direction question, not provider selection
+or paid activation. Evaluate the already-researched usage-priced Firebase candidate
+before committing to a fixed monthly plan. Compare measured storage/operation use,
+account recovery, service availability, maintenance burden and billing exposure.
+Do not present a free allowance as a guaranteed zero bill or a budget alert as a
+hard cap. A USD 25/month choice needs a demonstrated benefit for this app.
+
+Google Drive is Andrew's chosen destination for the separate Android signing-key
+backup. That answer does not select Drive as the app's automatic climb-backup service.
+
 ## Candidate proof and operating proposal
 
-Supabase is the first native authentication candidate, not a selected production
-service. Its rotating sessions and native redirect documentation address a known
+Supabase remains an alternative native authentication candidate, not a selected
+production service. Its rotating sessions and native redirect documentation address a known
 gap in the Cloudflare Access candidate. Compare actual Android sign-in, secure
 session persistence, renewal after app restart and account recovery before locking
 the architecture. No account, paid plan or service has been provisioned.
@@ -83,7 +97,7 @@ Primary documentation checked for this proposal:
 - [Production email limits](https://supabase.com/docs/guides/auth/auth-smtp) and
   [database backup scope](https://supabase.com/docs/guides/platform/backups).
 
-Budget/provider direction and a real native account proof remain open. Do not advance
+Provider selection and a real native account proof remain open. Do not advance
 this feature to implementation on the strength of storage documentation alone.
 
 ### Usage-priced candidate
@@ -98,6 +112,6 @@ backup exclusions before claiming secure recovery.
 Firebase Storage requires a Blaze billing account even within eligible no-cost
 allowances. A US-region bucket can use those allowances; overages are chargeable,
 and Storage budget alerts are not a hard cap. No billing account or project has
-been created. The pending budget question establishes an operating constraint,
-not provider selection or permission to activate billing. The source review passed
+been created. The answered budget question establishes a cheaper-first operating
+constraint, not provider selection or permission to activate billing. The source review passed
 after bounded wording/citation corrections; execution evidence remains pending.

@@ -365,3 +365,22 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
   independent off-laptop key copy/retrieval/certificate verification. Stage stays
   implementing. Automatic online backup and clean-install online recovery remain
   required before real authoring; local file and emulator results do not admit it.
+
+## Signing-key retention preparation
+
+- Andrew selected Google Drive for the off-laptop signing copy. Prepare it in a
+  private, unshared My Drive folder with Restricted general access. This is
+  separate from selecting the automatic climb-backup service.
+- Execution: inline in the driving agent for this bounded acceptance checkpoint;
+  standard feature review remains pending the existing physical acceptance.
+- Prepared `.private-signing/cruxcontrol-signing-backup-2026-10-10.zip` containing
+  the unchanged keystore and credentials plus recovery instructions. Verified all
+  archive entries exactly against their source bytes, archive integrity, private
+  local permissions and repository exclusion. No credential values enter Git.
+- The owner uploads this archive and downloads a fresh copy into the excluded
+  `.private-signing/retrieved/` directory. Upload, independent retrieval and signing
+  verification are still pending; a local archive is not accepted as an off-laptop
+  backup. The recovered credentials' keystore path must point to the retrieved
+  key during the signing proof, so the original local key cannot mask a bad copy.
+- No production behavior or tests changed. Feature remains implementing until
+  actual phone/Fullride acceptance and independent key recovery pass.
