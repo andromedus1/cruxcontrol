@@ -3,7 +3,7 @@ id: epic-library-preservation-private-vault
 kind: feature
 stage: drafting
 tags: [data, security, infra]
-research_refs: [independent-library-preservation]
+research_refs: [independent-library-preservation, native-backup-service-costs]
 parent: epic-library-preservation
 depends_on: [epic-library-preservation-native-library]
 release_binding: null
@@ -85,3 +85,19 @@ Primary documentation checked for this proposal:
 
 Budget/provider direction and a real native account proof remain open. Do not advance
 this feature to implementation on the strength of storage documentation alone.
+
+### Usage-priced candidate
+
+The focused [native service cost assessment](../../../.research/analysis/briefs/native-backup-service-costs.md)
+adds Firebase native Authentication plus Cloud Storage as another proof candidate.
+Its documented Capacitor 8 path and renewable native sessions warrant testing, but
+native sign-in does not automatically authenticate a WebView SDK. Keep identity and
+object access on the demonstrated native path; inspect token persistence and OS
+backup exclusions before claiming secure recovery.
+
+Firebase Storage requires a Blaze billing account even within eligible no-cost
+allowances. A US-region bucket can use those allowances; overages are chargeable,
+and Storage budget alerts are not a hard cap. No billing account or project has
+been created. The pending budget question establishes an operating constraint,
+not provider selection or permission to activate billing. The source review passed
+after bounded wording/citation corrections; execution evidence remains pending.

@@ -188,6 +188,15 @@ client constraints and (3) expands beyond the immediate preservation decision.
 Direct code reading plus primary sources is sufficient for acquisition; independent
 review checks the composed recommendation. No specialist authoring fan-out needed.
 
+**Re-engagement trigger (2026-10-10):** automatic online protection is required
+before real Android authoring, and the current provider proposal has a monthly
+plan cost. Under the same pre-registered authority and standard verification,
+the bounded [native service cost assessment](../../../.research/analysis/briefs/native-backup-service-costs.md)
+adds a usage-priced native authentication/storage candidate. One independent
+reader checked its source chains; the lead corrected and verified bounded wording
+and citation findings. This does not select or provision a provider. The private-vault
+feature owns native execution proof and the concrete account/cost decision.
+
 Andrew additionally asked whether CruxControl should become an installed native app.
 Extend this same assessment to compare actual native persistence with a WebView
 wrapper. The proposed native experiment compares a shared-UI SQLite adapter against browser
