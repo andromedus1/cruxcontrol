@@ -343,6 +343,38 @@ describe('CruxControlWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Save or share library backup' })).toBeInTheDocument();
   });
 
+  it('retains a restored native file-save failure in the existing workspace alert', async () => {
+    let message: string | null = null;
+    const listeners = new Set<() => void>();
+    const notice = {
+      subscribe(listener: () => void) {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+      take() {
+        const current = message;
+        message = null;
+        return current;
+      },
+    };
+    const backup = new LibraryBackupService({
+      readDrafts: async () => [],
+      readPlaylists: async () => [],
+      restoreMissingDrafts: async () => ({ added: 0, unchanged: 0 }),
+      restoreMissingPlaylists: async () => ({ added: 0, unchanged: 0 }),
+    });
+    render(<CruxControlWorkspace runtime={{ ...runtimeWith(), backup, restoredFileSaveFailure: notice }} />);
+
+    const failure = 'The file save was interrupted. Your library is unchanged; an empty or partial file may remain in the chosen location. Please try saving again.';
+    act(() => {
+      message = failure;
+      for (const listener of [...listeners]) listener();
+    });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(failure);
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeEnabled();
+  });
+
   it('preserves an unsaved new-list name and its update blocker after an empty snapshot fails to refresh', async () => {
     const runtime = runtimeWith();
     const service = updateServiceFor({ status: 'current', phase: 'current', message: '', updateAvailable: false, blockedReason: null, canApply: false, dismissed: false });

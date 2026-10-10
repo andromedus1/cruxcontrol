@@ -80,7 +80,7 @@ public class LibraryBackupFilePlugin extends Plugin {
         try {
             String text = pendingText;
             if (text == null) {
-                call.reject("The backup save was interrupted. Your library is unchanged; please export again.", "FILE_SAVE_INTERRUPTED");
+                call.reject("The file save was interrupted. Your library is unchanged; an empty or partial file may remain in the chosen location. Please try saving again.", "FILE_SAVE_INTERRUPTED");
                 return;
             }
             if (uri == null || !ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {

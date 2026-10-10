@@ -13,12 +13,18 @@ import { createCatalogService, type CatalogService } from '../catalog/service.ts
 import { SqliteCatalogPort } from '../data/sqlite/sqlite-catalog-port.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
 
+export interface RestoredFileSaveFailureNotice {
+  subscribe(listener: () => void): () => void;
+  take(): string | null;
+}
+
 export interface CruxControlRuntime {
   readonly installation: ConfiguredBoardInstallation;
   readonly drafts: LocalDraftRepository;
   readonly playlists: LocalPlaylistRepository;
   readonly backup?: LibraryBackupService;
   readonly backupDelivery?: LibraryBackupDelivery;
+  readonly restoredFileSaveFailure?: RestoredFileSaveFailureNotice;
   readonly catalog: CatalogService;
   readonly controller: BoardLightController | null;
   close(): void;
@@ -30,6 +36,7 @@ export interface CruxControlRuntimeDependencies {
   readonly openPlaylists?: () => Promise<IDBDatabase>;
   readonly getInstallation?: () => ConfiguredBoardInstallation;
   readonly backupDelivery?: LibraryBackupDelivery;
+  readonly restoredFileSaveFailure?: RestoredFileSaveFailureNotice;
   readonly createCatalog?: (definition: BoardDefinition) => CatalogService;
 }
 
@@ -61,6 +68,9 @@ export async function createCruxControlRuntime(
       playlists,
       backup,
       backupDelivery: dependencies.backupDelivery ?? browserLibraryBackupDelivery,
+      ...(dependencies.restoredFileSaveFailure
+        ? { restoredFileSaveFailure: dependencies.restoredFileSaveFailure }
+        : {}),
       catalog,
       controller: installation.createController(),
       close: () => {

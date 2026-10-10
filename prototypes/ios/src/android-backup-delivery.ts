@@ -9,9 +9,24 @@ function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
+function errorCode(cause: unknown): unknown {
+  return cause && typeof cause === 'object' && 'code' in cause
+    ? (cause as { code?: unknown }).code
+    : undefined;
+}
+
 function isSaveCancellation(cause: unknown): boolean {
-  // The bundled LibraryBackupFile plugin emits this exact message for an Android picker cancel.
-  return cause instanceof Error ? cause.message === 'Save canceled' : cause === 'Save canceled';
+  // Match the plugin's stable error code rather than Android/Capacitor error wording.
+  return errorCode(cause) === 'FILE_SAVE_CANCELED';
+}
+
+function deliveryFailureMessage(cause: unknown): string {
+  const message = errorMessage(cause).trim();
+  const punctuation = /[.!?]$/.test(message) ? '' : '.';
+  const partialFileCaveat = errorCode(cause) === 'FILE_SAVE_FAILED'
+    ? ' An empty or partial file may remain in the chosen location.'
+    : '';
+  return `Unable to save the library backup: ${message}${punctuation}${partialFileCaveat}`;
 }
 
 function validateFilename(filename: string): void {
@@ -53,7 +68,7 @@ export function createAndroidBackupDelivery(
         return { status: 'saved' };
       } catch (cause) {
         if (isSaveCancellation(cause)) return { status: 'cancelled' };
-        throw new Error(`Unable to save the library backup: ${errorMessage(cause)}.`, { cause });
+        throw new Error(deliveryFailureMessage(cause), { cause });
       } finally {
         inFlight = false;
       }

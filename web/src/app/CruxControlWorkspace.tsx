@@ -138,6 +138,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   } | null>(null);
   const [importingScreenshots, setImportingScreenshots] = useState(false);
   const [backingUp, setBackingUp] = useState(false);
+  const [restoredFileSaveFailure, setRestoredFileSaveFailure] = useState<string | null>(null);
   const backupButtonRef = useRef<HTMLButtonElement>(null);
   const [error, setError] = useState('');
   const [retryAction, setRetryAction] = useState<RetryAction | null>(null);
@@ -165,6 +166,19 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const needsProviderRows = collection === 'lists' && providerReferences.length > 0;
   const providerLookupCurrent = providerLookup?.references === providerReferences
     && providerLookup.queries === catalogSnapshot.queries;
+
+  useEffect(() => {
+    const notice = runtime.restoredFileSaveFailure;
+    if (!notice) return;
+    const consume = () => {
+      const message = notice.take();
+      if (!message) return;
+      setRestoredFileSaveFailure(message);
+    };
+    const unsubscribe = notice.subscribe(consume);
+    consume();
+    return unsubscribe;
+  }, [runtime.restoredFileSaveFailure]);
 
   useEffect(() => {
     if (!needsProviderRows) return;
@@ -563,6 +577,12 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           <button type="button" onClick={() => void refresh()}>
             Refresh workspace
           </button>
+        </div>
+      )}
+      {restoredFileSaveFailure && (
+        <div className="workspace-error" role="alert">
+          <p>{restoredFileSaveFailure}</p>
+          <button type="button" onClick={() => setRestoredFileSaveFailure(null)}>Dismiss</button>
         </div>
       )}
       {readIssues.length > 0 && (

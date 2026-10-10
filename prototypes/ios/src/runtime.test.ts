@@ -38,7 +38,7 @@ vi.mock("./library-backup-file-plugin.ts", () => ({
   LibraryBackupFile: { save: native.saveFile },
 }));
 
-const callbacks = new Map<string, () => void>();
+const callbacks = new Map<string, (...args: unknown[]) => void>();
 const removals: ReturnType<typeof vi.fn>[] = [];
 beforeEach(() => {
   vi.clearAllMocks();
@@ -46,7 +46,7 @@ beforeEach(() => {
   callbacks.clear();
   removals.length = 0;
   native.addListener.mockImplementation(
-    async (event: string, callback: () => void) => {
+    async (event: string, callback: (...args: unknown[]) => void) => {
       callbacks.set(event, callback);
       const remove = vi.fn().mockResolvedValue(undefined);
       removals.push(remove);
@@ -82,6 +82,33 @@ describe("prototype runtime composition and lifetime", () => {
     runtime.close();
     expect(library.close).toHaveBeenCalledOnce();
     browserOpen.mockRestore();
+  });
+
+  it("retains only failed LibraryBackupFile save results from Android app restoration", async () => {
+    native.platform.mockReturnValue("android");
+    native.openLibrary.mockResolvedValueOnce({ drafts: {}, playlists: {}, backupStore: {}, close: vi.fn() });
+    const runtime = await createPrototypeRuntime();
+    const notice = runtime.restoredFileSaveFailure;
+    expect(notice).toBeDefined();
+    const listener = vi.fn();
+    const unsubscribe = notice!.subscribe(listener);
+    const restored = callbacks.get("appRestoredResult")!;
+
+    restored({ pluginId: "Camera", methodName: "save", success: false, error: { message: "ignored" } });
+    restored({ pluginId: "LibraryBackupFile", methodName: "other", success: false, error: { message: "ignored" } });
+    restored({ pluginId: "LibraryBackupFile", methodName: "save", success: true });
+    expect(listener).not.toHaveBeenCalled();
+    expect(notice!.take()).toBeNull();
+
+    const failure = "The file save was interrupted. Your library is unchanged; an empty or partial file may remain in the chosen location. Please try saving again.";
+    restored({ pluginId: "LibraryBackupFile", methodName: "save", success: false, error: { message: failure } });
+    expect(listener).toHaveBeenCalledOnce();
+    expect(notice!.take()).toBe(failure);
+    expect(notice!.take()).toBeNull();
+    unsubscribe();
+    runtime.close();
+    expect([...callbacks.keys()]).toEqual(["pause", "resume", "appRestoredResult"]);
+    for (const remove of removals) expect(remove).toHaveBeenCalledOnce();
   });
 
   it("propagates Android native storage failure and disposes lifecycle without browser fallback", async () => {

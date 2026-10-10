@@ -33,25 +33,26 @@ describe('createAndroidBackupDelivery', () => {
   });
 
   it('reports exact picker cancellation without treating it as a storage failure', async () => {
-    const { save, delivery } = setup(vi.fn().mockRejectedValue(new Error('Save canceled')));
+    const cancellation = Object.assign(new Error('different platform wording'), { code: 'FILE_SAVE_CANCELED' });
+    const { save, delivery } = setup(vi.fn().mockRejectedValue(cancellation));
     await expect(delivery.deliver(file)).resolves.toEqual({ status: 'cancelled' });
     expect(save).toHaveBeenCalledOnce();
   });
 
   it('rejects write/provider errors instead of reporting a saved backup', async () => {
-    const failure = new Error('provider write failed');
+    const failure = Object.assign(new Error('Unable to write the library backup to the chosen destination'), { code: 'FILE_SAVE_FAILED' });
     const { delivery } = setup(vi.fn().mockRejectedValue(failure));
     await expect(delivery.deliver(file)).rejects.toMatchObject({
-      message: 'Unable to save the library backup: provider write failed.',
+      message: 'Unable to save the library backup: Unable to write the library backup to the chosen destination. An empty or partial file may remain in the chosen location.',
       cause: failure,
     });
   });
 
-  it('treats a restored picker call without its in-memory export bytes as failure', async () => {
-    const failure = new Error('The backup save was interrupted. Your library is unchanged; please export again.');
+  it('preserves truthful restored-save interruption copy without adding duplicate punctuation', async () => {
+    const failure = Object.assign(new Error('The file save was interrupted. Your library is unchanged; an empty or partial file may remain in the chosen location. Please try saving again.'), { code: 'FILE_SAVE_INTERRUPTED' });
     const { delivery } = setup(vi.fn().mockRejectedValue(failure));
     await expect(delivery.deliver(file)).rejects.toMatchObject({
-      message: `Unable to save the library backup: ${failure.message}.`,
+      message: `Unable to save the library backup: ${failure.message}`,
       cause: failure,
     });
   });

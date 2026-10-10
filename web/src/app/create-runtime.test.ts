@@ -107,6 +107,20 @@ describe('createCruxControlRuntime', () => {
     runtime.close();
   });
 
+  it('retains an injected restored Android file-save failure notice port', async () => {
+    const drafts = database();
+    const playlists = database();
+    const notice = { subscribe: vi.fn(() => () => undefined), take: vi.fn(() => null) };
+    const runtime = await createCruxControlRuntime({
+      openDrafts: async () => drafts,
+      openPlaylists: async () => playlists,
+      getInstallation: () => createAppInstallationRegistry().require(activeInstallationId),
+      restoredFileSaveFailure: notice,
+    });
+    expect(runtime.restoredFileSaveFailure).toBe(notice);
+    runtime.close();
+  });
+
   it('composes the catalog service without starting its lazy storage port and retains backup delivery', async () => {
     const drafts = database();
     const playlists = database();
