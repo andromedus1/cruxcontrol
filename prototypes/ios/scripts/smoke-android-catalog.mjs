@@ -3,11 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { canonicalSnapshot, decodeLibraryBackup, encodeLibraryBackup } from '../../../web/src/library-backup/codec.ts';
-import { decodeStoredDraft } from '../../../web/src/drafts/codec.ts';
-import { decodeStoredPlaylist } from '../../../web/src/playlists/codec.ts';
 import { checkAndroidCatalogApk } from './check-android-catalog.mjs';
 import { readCatalogManifest } from './prepare-android-catalog.mjs';
-import { appId, catalogDevice, pause } from './android-catalog-device.mjs';
+import { appId, catalogDevice, catalogLibrarySnapshot, pause, verifyColdCatalogLists } from './android-catalog-device.mjs';
 
 const [serial, apkFile, expectedBackupFile, evidenceDirectory, resumeMode] = process.argv.slice(2);
 if (!apkFile || !expectedBackupFile || !evidenceDirectory) throw new Error('Usage: node --experimental-strip-types smoke-android-catalog.mjs emulator-N PRIVATE_APK EXPECTED_SYNTHETIC_BACKUP EVIDENCE_DIRECTORY');
@@ -26,9 +24,7 @@ const device = catalogDevice(serial);
 const { adb, evaluate, waitFor, click, setValue } = device;
 const originalAirplane = adb('shell', 'settings', 'get', 'global', 'airplane_mode_on');
 async function snapshot(label) {
-  // One read-only SQLite statement captures both authored tables coherently.
-  const rows = await evaluate(`window.Capacitor.Plugins.CapacitorSQLite.query({ database: 'cruxcontrol-library', statement: "SELECT 'draft' AS kind, payload FROM climbs UNION ALL SELECT 'playlist' AS kind, payload FROM playlists", values: [], readonly: false }).then(result => result.values)`);
-  const value = { drafts: rows.filter(row => row.kind === 'draft').map(row => decodeStoredDraft(JSON.parse(row.payload))), playlists: rows.filter(row => row.kind === 'playlist').map(row => decodeStoredPlaylist(JSON.parse(row.payload))) };
+  const value = await catalogLibrarySnapshot(device);
   const text = encodeLibraryBackup(value, new Date());
   await writeFile(join(evidence, label + '.json'), text);
   return decodeLibraryBackup(text);
@@ -203,21 +199,17 @@ try {
   adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'enable');
   await device.restart();
   assert.equal(adb('shell', 'settings', 'get', 'global', 'airplane_mode_on'), '1');
-  await click('Kilter');
-  await waitFor("document.body.innerText.includes('Available offline') && document.querySelectorAll('.climb-row').length > 0", 'Offline catalog did not reopen');
-  await click('Lists', true);
-  await click('Prototype ordered', true);
-  await waitFor(`document.querySelector('.playlist-entries')?.innerText.includes(${JSON.stringify(routeName)})`, 'Offline list provider did not resolve');
-  await screenshot('offline-list');
-  await click('Play list');
-  for (let index = 0; index < prior.entries.length; index += 1) await click('Next');
-  await waitFor(`document.querySelector('.playlist-play-through')?.innerText.includes(${JSON.stringify(routeName)}) && !!document.querySelector('[aria-label="Board preview"]')`, 'Offline provider entry was not playable');
+  const coldLists = await verifyColdCatalogLists(device, added);
   await screenshot('offline-play-through');
   assert.equal(canonicalSnapshot(await snapshot('offline')), canonicalSnapshot(added));
+  await click('Exit play-through');
+  await click('Kilter');
+  await waitFor("document.body.innerText.includes('Available offline') && document.querySelectorAll('.climb-row').length > 0", 'Offline catalog did not reopen');
+  assert.equal(canonicalSnapshot(await snapshot('verified-session')), canonicalSnapshot(added));
   const databaseNames = await evaluate('indexedDB.databases().then(rows=>rows.map(row=>row.name).sort())');
   assert.deepEqual(databaseNames, ['cruxcontrol-catalog-metadata'], 'Only catalog receipt metadata may use IndexedDB');
   assert.deepEqual(await evaluate('navigator.serviceWorker.getRegistrations().then(rows=>rows.map(row=>row.scope))'), []);
-  await writeFile(join(evidence, 'result.json'), JSON.stringify({ status: 'passed', packaged, compressed, firstWrite, workerEvidence, androidApi: adb('shell', 'getprop', 'ro.build.version.sdk'), webView: await evaluate('navigator.userAgent'), databaseNames, routeName, appendedReference: changed.entries.at(-1), comparison: 'All canonical fields of every draft/finished/Trash record, metadata, assignments, effect recipes, playlists and ordered references; only the intentional provider append and target playlist revision/update timestamp differ.' }, null, 2));
+  await writeFile(join(evidence, 'result.json'), JSON.stringify({ status: 'passed', packaged, compressed, firstWrite, workerEvidence, androidApi: adb('shell', 'getprop', 'ro.build.version.sdk'), webView: await evaluate('navigator.userAgent'), databaseNames, coldLists, appendedReference: changed.entries.at(-1), comparison: 'All canonical fields of every draft/finished/Trash record, metadata, assignments, effect recipes, playlists and ordered references; only the intentional provider append and target playlist revision/update timestamp differ.' }, null, 2));
   console.log('Android catalog proof passed; evidence', evidence);
 } finally {
   await device.detach();

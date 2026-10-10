@@ -203,6 +203,26 @@ outside Git. API 36 / WebView 133 has passed these checks with the pinned real
 snapshot. This does not establish current official coverage, physical-board
 operation, public redistribution or account-backed automatic recovery.
 
+For a bounded follow-up against that already-installed catalog, use the expected
+complete synthetic backup after the intentional provider append:
+
+```bash
+node --experimental-strip-types prototypes/ios/scripts/smoke-android-catalog-lists.mjs \
+  emulator-N /outside/git/expected-session.json /outside/git/cold-lists-evidence \
+  /outside/git/optional-private-upgrade.apk
+```
+
+The APK argument is optional. When present, the runner checks its private catalog,
+compares the entire library before and after `install -r`, then force-stops and
+opens Lists first in airplane mode, without visiting Kilter first. It verifies
+provider resolution/play-through and complete unchanged authored contents without
+another catalog install or reset. The full runner now also uses this Lists-first
+offline path and emits `verified-session.json`. New JSON results retain provider
+identities rather than catalog names/setter text. Earlier private evidence also
+contains catalog text and screenshots; its supplemental `session-result.json` and
+`verified-session.json` came from a separate documented session. Retain that
+historical evidence unchanged and never attach its directory publicly.
+
 ## Native transport boundary
 
 The prototype's composition root injects `NativeBleByteTransport` through the

@@ -326,7 +326,7 @@ export function PlaylistLibrary({
           <section className="playlist-empty">
             <p aria-hidden="true">≡</p>
             <h2>No lists yet</h2>
-            <p>Create a list, then add Draft or Finished climbs from climb details.</p>
+            <p>Create a list, then add Draft, Finished or catalog climbs from climb details.</p>
           </section>
         ) : (
           <ul className="playlist-selector-list">
@@ -443,7 +443,7 @@ export function PlaylistLibrary({
               )}
               {resolved.length === 0 ? (
                 <p className="playlist-muted">
-                  This list is empty. Open a Draft or Finished climb and choose Add to lists.
+                  This list is empty. Open a Draft, Finished or catalog climb and choose Add to lists.
                 </p>
               ) : (
                 <ol>
@@ -460,8 +460,10 @@ export function PlaylistLibrary({
                       entry.availability === 'trashed'
                         ? 'In Trash'
                         : entry.availability === 'missing'
-                          ? entry.reference.kind === 'provider' && providerRead.status !== 'ready'
-                            ? providerRead.status === 'loading' ? 'Loading catalog' : 'Catalog lookup unavailable'
+                          ? entry.reference.kind === 'provider'
+                            ? providerRead.status === 'ready'
+                              ? `Unavailable at ${installation.config.angle}°`
+                              : providerRead.status === 'loading' ? 'Loading catalog' : 'Catalog lookup unavailable'
                             : 'Missing'
                           : issue
                             ? 'Unavailable here'

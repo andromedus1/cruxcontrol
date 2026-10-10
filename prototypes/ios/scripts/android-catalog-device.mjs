@@ -1,8 +1,35 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { decodeStoredDraft } from '../../../web/src/drafts/codec.ts';
+import { decodeStoredPlaylist } from '../../../web/src/playlists/codec.ts';
 
 export const appId = 'io.github.andromedus1.cruxcontrol.prototype';
 export const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+export async function catalogLibrarySnapshot(device) {
+  // One read-only statement captures both authored tables coherently.
+  const rows = await device.evaluate(`window.Capacitor.Plugins.CapacitorSQLite.query({ database: 'cruxcontrol-library', statement: "SELECT 'draft' AS kind, payload FROM climbs UNION ALL SELECT 'playlist' AS kind, payload FROM playlists", values: [], readonly: false }).then(result => result.values)`);
+  return {
+    drafts: rows.filter(row => row.kind === 'draft').map(row => decodeStoredDraft(JSON.parse(row.payload))),
+    playlists: rows.filter(row => row.kind === 'playlist').map(row => decodeStoredPlaylist(JSON.parse(row.payload))),
+  };
+}
+
+export async function verifyColdCatalogLists(device, library) {
+  const playlist = library.playlists.find(row => row.entries.some(entry => entry.kind === 'provider'));
+  assert.ok(playlist, 'Expected a synthetic playlist with a catalog reference');
+  const index = playlist.entries.findIndex(entry => entry.kind === 'provider');
+  await device.click('Lists', true);
+  await device.click(playlist.name, true);
+  const row = `document.querySelectorAll('.playlist-entries ol > li')[${index}]`;
+  await device.waitFor(`${row}?.querySelector('.playlist-availability')?.innerText === 'Available'`, 'Cold Lists entry did not resolve its catalog provider');
+  const name = await device.evaluate(`${row}.querySelector('strong').innerText`);
+  await device.click('Play list');
+  for (let position = 0; position < index; position += 1) await device.click('Next');
+  await device.waitFor(`document.querySelector('.playlist-play-through')?.innerText.includes(${JSON.stringify(name)}) && !!document.querySelector('.playlist-play-through [aria-label="Board preview"]')`, 'Cold Lists provider did not play through');
+  // Catalog text stays transient; result evidence contains provider identity only.
+  return { reference: playlist.entries[index], position: index + 1 };
+}
 
 export function catalogDevice(serial) {
   assert.match(serial ?? '', /^emulator-\d+$/, 'Catalog smoke accepts an explicit emulator only');

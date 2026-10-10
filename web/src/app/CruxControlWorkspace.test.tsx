@@ -181,6 +181,35 @@ function readyCatalog(get: NonNullable<CatalogServiceSnapshot['queries']>['get']
 }
 
 describe('CruxControlWorkspace', () => {
+  it('opens the catalog lazily from a cold Lists entry and resolves its provider for play-through', async () => {
+    const runtime = runtimeWith();
+    const route = catalogRoute(runtime);
+    const stored = playlist('Projects', [{ kind: 'provider', id: route.providerClimbId }]);
+    const get = vi.fn(async () => ({ status: 'ready' as const, value: route }));
+    const ready = readyCatalog(get).getSnapshot();
+    const cold = catalogServiceFor();
+    let finishStart!: () => void;
+    const opening = new Promise<void>((resolve) => { finishStart = resolve; });
+    vi.mocked(cold.service.start).mockImplementation(async () => {
+      await opening;
+      cold.publish(ready);
+    });
+    render(<CruxControlWorkspace runtime={{ ...runtime, playlists: { ...runtime.playlists, list: async () => [stored] }, catalog: cold.service }} />);
+    const lists = await screen.findByRole('button', { name: /Lists.*1 list/ });
+    expect(cold.service.getSnapshot().queries).toBeNull();
+    expect(cold.service.start).not.toHaveBeenCalled();
+    fireEvent.click(lists);
+    await screen.findByText('Loading catalog climbs…');
+    expect(get).not.toHaveBeenCalled();
+    await act(async () => { finishStart(); await opening; });
+    await screen.findByText(route.name);
+    expect(get).toHaveBeenCalledWith(route.providerClimbId, runtime.installation.config.angle);
+    fireEvent.click(screen.getByRole('button', { name: 'Play list' }));
+    expect(screen.getByRole('heading', { name: route.name })).toBeInTheDocument();
+    expect(screen.getByLabelText('Board preview')).toBeInTheDocument();
+    expect(runtime.playlists.update).not.toHaveBeenCalled();
+  });
+
   it('keeps catalog startup lazy and deduplicates provider reads across ordered lists', async () => {
     const runtime = runtimeWith();
     const route = catalogRoute(runtime);
@@ -199,7 +228,7 @@ describe('CruxControlWorkspace', () => {
     expect(runtime.playlists.update).not.toHaveBeenCalled();
   });
 
-  it('distinguishes lookup failure from a successful missing result and retries', async () => {
+  it('distinguishes lookup failure from configured-angle unavailability and retries', async () => {
     const runtime = runtimeWith();
     const route = catalogRoute(runtime);
     const get = vi.fn().mockRejectedValueOnce(new Error('storage read failed')).mockResolvedValue({ status: 'ready', value: null });
@@ -210,8 +239,29 @@ describe('CruxControlWorkspace', () => {
     await screen.findByText(/Catalog lookup failed: storage read failed/);
     expect(screen.queryByText('Missing')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Retry catalog climbs' }));
-    await screen.findByText('Missing');
+    await screen.findByText('Unavailable at 40°');
+    expect(screen.queryByText('Missing')).not.toBeInTheDocument();
     expect(get).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps a provider with only other-angle statistics unavailable here without calling it missing', async () => {
+    const runtime = runtimeWith();
+    // Real Kilter queries are tested with a 45°-only SQLite row in
+    // kilter-catalog.test.ts: get(id, 40) returns ready/null although it exists.
+    const route = { ...catalogRoute(runtime, 'only-at-45'), angle: 45 };
+    const reference = { kind: 'provider' as const, id: route.providerClimbId };
+    const stored = playlist('Other angle', [reference]);
+    const get = vi.fn(async () => ({ status: 'ready' as const, value: null }));
+    render(<CruxControlWorkspace runtime={{ ...runtime, playlists: { ...runtime.playlists, list: async () => [stored] }, catalog: readyCatalog(get) }} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Lists.*1 list/ }));
+    await screen.findByText('Unavailable at 40°');
+    expect(get).toHaveBeenCalledExactlyOnceWith(reference.id, 40);
+    expect(screen.queryByText('Missing')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Play list' }));
+    expect(screen.queryByLabelText('Board preview')).not.toBeInTheDocument();
+    expect(screen.getByText(/This provider climb is not installed or could not be resolved/)).toBeInTheDocument();
+    expect(stored.entries).toEqual([reference]);
+    expect(runtime.playlists.update).not.toHaveBeenCalled();
   });
 
   it('does not queue remaining provider reads after navigating away during a pending lookup', async () => {

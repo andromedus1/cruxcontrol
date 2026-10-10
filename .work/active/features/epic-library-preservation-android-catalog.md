@@ -187,8 +187,9 @@ reads existing `get(id, configuredAngle)` sequentially (one in flight). Cancel
 stale generations between reads and ignore their results; the current query port
 does not support aborting one issued read. Pass available rows to PlaylistLibrary
 and its existing play-through. Show existing loading/error presentation and retry
-for unavailable storage or lookup errors; only a successful null lookup says
-Missing. No provider refs means no catalog startup. Tests cover lazy startup,
+for unavailable storage or lookup errors. A successful null lookup establishes
+only that no compatible row was found at the configured angle, so show
+Unavailable at that angle rather than globally Missing. No provider refs means no catalog startup. Tests cover lazy startup,
 deduplication, errors, retry and stale results alongside offline emulator resolution.
 
 ## Implementation and verification (2026-10-10)
@@ -218,11 +219,12 @@ deduplication, errors, retry and stale results alongside offline emulator resolu
   and append after the prior ordered entries. Lists lazily starts the catalog only
   with provider references, deduplicates across lists, performs one query at a
   time, cancels further stale work and ignores old results. Errors/unavailable
-  storage have retry and do not claim Missing; a successful null lookup can.
+  storage have retry and do not claim Missing; a successful null lookup reports
+  configured-angle unavailability.
 - Focused root lint/typecheck pass; 160 tests across catalog/bootstrap/SQLite,
   workspace, playlist library and resolver pass (15 files). Added regressions for
   provider membership, lazy startup, cross-list deduplication, failure/retry versus
-  confirmed Missing, stale pending reads and an uninstalled catalog. Native
+  configured-angle unavailability, stale pending reads and an uninstalled catalog. Native
   lint/typecheck/build pass; native90 tests plus package5 pass. Existing catalog
   browser1, bundled bootstrap5 and packaged iOS browser1 tests pass.
   Parent's final combined web suite also passes: 813 tests across 96 files, with
@@ -277,3 +279,64 @@ deduplication, errors, retry and stale results alongside offline emulator resolu
   feature, which owns the same-signature APK8 source upgrade and exact comparison
   against verified-session.json before final SAF export/empty-client recovery.
   Catalog implementation is frozen for the parent-owned independent review.
+
+## Standard review follow-up (2026-10-10)
+
+The parent-owned Claude standard pass reviewed `03eb286` and `ef23d6f` and approved
+with comments. Accepted corrections remain within this feature: `get(id, angle)`
+joins angle-specific statistics, so null cannot establish global absence. Preserve
+the saved reference/order and skipped playback, but label the provider row
+Unavailable at the configured angle; local missing climbs retain Missing. Add a
+real WASM/SQLite regression for a route with statistics only at 45° and no 40° row,
+plus UI coverage for the resulting status. No schema or angle-fallback change.
+
+Also prove the cold path where the catalog starts with queries=null and publishes
+ready after Lists opens, both in a unit test and a bounded emulator force-stop →
+Lists-first → provider resolution/play-through observation with full canonical
+authored equality. Update the runner's normal offline phase to take this path and
+include catalog in the existing empty-list hint. No repeat installation or import
+interruption is required. Parent owns final adjudication; standard policy requires
+no second independent pass.
+
+The redundant lookup/loading-flash nit remains deferred. Mandatory private version
+codes belong to Android parity. Existing evidence is private: catalog route names,
+setter text and screenshots are present, and session-result.json/verified-session.json
+come from the documented supplemental session rather than the original committed
+runner. Do not alter historical evidence or attach that directory publicly. New
+runner results retain provider identities rather than catalog names/setter text.
+
+Follow-up verified and committed for final parent adjudication:
+
+- The added real WASM/SQLite test inserts a fictional 45°-only route, proves lookup
+  at 45° succeeds and lookup at 40° returns ready/null while its statistics remain
+  present. Workspace regression tests verify Unavailable at 40°, retained ordered
+  references and unavailable playback without a false Missing label. Local Missing
+  behavior is unchanged. The old label fails these tests before the correction.
+- The cold unit test starts queries=null, confirms no eager startup/read, publishes
+  ready after Lists requests start, then resolves the provider and shows its board
+  preview in play-through. It permits the existing harmless repeat read during the
+  service subscription handoff; this pass does not resolve the deferred relookup nit.
+- `smoke-android-catalog-lists.mjs` performs the bounded observation using the same
+  coherent library read and Lists-first/play-through helper as the full runner.
+  It accepts only the complete known synthetic fixture plus the prior native edit
+  and one intentional provider append, and optionally validates/upgrades a private
+  APK before restarting offline. No resets, catalog import or authored writes.
+- Private APK9 passed TypeScript/Vite, Capacitor sync, Gradle assembly and final
+  compressed byte/digest/Worker/WASM validation. On explicit emulator-5580 it
+  upgraded APK8 in place, preserved every canonical field, then force-stopped and
+  relaunched in airplane mode. Lists opened first, resolved the provider at its
+  third ordered position and displayed its board preview in play-through without
+  visiting Kilter first. The full library remained identical afterward. Only
+  catalog-metadata IndexedDB exists and no service worker is registered. Restored
+  the prior airplane setting and exited play-through; no phone operation.
+- Follow-up evidence remains private at
+  `/tmp/cruxcontrol-android-catalog-proof/cold-lists-v9/` (before/upgraded/cold-lists
+  backups and result JSON). Result JSON contains provider identity rather than
+  catalog names/setter text. APK retained at
+  `/tmp/cruxcontrol-android-catalog-proof/private-catalog-v9.apk`.
+- Root lint/typecheck and 169 focused tests across 16 files pass, including catalog,
+  SQLite, workspace, playlist library/play-through and resolver. Script syntax and
+  whitespace checks pass. The full installation/interruption runner was updated to
+  share the proven Lists-first helper and emit verified-session.json, but its
+  complete install cycle was deliberately not repeated. Historical evidence stays
+  unchanged. No second independent review; parent owns PR/CI and final closure.
