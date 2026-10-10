@@ -217,8 +217,8 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
 - Actual system-file-chooser whole-library import is required in this parity proof.
   Earlier portable recovery used a real SAF export but injected File bytes for
   import; that is not evidence of the Android chooser import path.
-- Physical phone/Fullride and verified independent signing-key retention keep this
-  feature implementing. Automatic online backups and clean-install online recovery
+- Physical phone/Fullride acceptance keeps this feature implementing. Independent
+  signing-key recovery is verified below. Automatic online backups and clean-install online recovery
   remain the separate aggregate gate before real authoring.
 
 ## Interaction checkpoint (local verification)
@@ -245,8 +245,8 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
   stayed visible. This is not accepted keep-awake evidence. Further bounded
   native/picker/keyboard/signing checks remain, followed by physical acceptance.
 - Execution capability: one feature-owning Codex implementer; standard review
-  remains parent-owned. Stage stays implementing because physical Fullride,
-  owner-phone and independent signing-key retention acceptance are outstanding.
+  remains parent-owned. Stage stays implementing because physical Fullride and
+  owner-phone acceptance are outstanding.
 
 ## Signing and platform checkpoint
 
@@ -257,7 +257,7 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
 - Local retained private signing material lives in excluded `.private-signing/`
   with directory0700/key+credentials0600. No values or keys enter Git. A private
   retention instruction packet makes the required off-laptop retrieval/signing
-  verification concrete; that owner action remains unperformed.
+  verification concrete; the completed Drive retrieval/signing proof is recorded below.
 - API36 isolated signing proof: signedProof11 → non-debuggable release13, same app
   ID/certificate, increasing version, `install -r`. The actual system chooser
   selected the known synthetic backup on empty installation; complete restore
@@ -322,8 +322,8 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
   requires both clean boundaries and identical HEAD.
 - Production behavior is unchanged since4019add. This checkpoint changes tests,
   native UI proof helpers, fictional fixtures, build provenance and instructions.
-  Full feature remains implementing: physical phone/Fullride acceptance and
-  independent off-laptop key retrieval are unperformed; automatic online backups
+  Full feature remains implementing: physical phone/Fullride acceptance is
+  unperformed; automatic online backups
   and clean-install online recovery remain the separate admission gate.
 
 ## Final local verification
@@ -361,12 +361,11 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
   released; no physical device was enumerated, installed, reset or maintained.
 - Remaining external acceptance: actual owner-phone origin/profile and fresh
   whole-library backup before maintenance; synthetic phone/Fullride permissions,
-  chooser/light/clear/effects, interruption/background and explicit reconnect;
-  independent off-laptop key copy/retrieval/certificate verification. Stage stays
+  chooser/light/clear/effects, interruption/background and explicit reconnect. Stage stays
   implementing. Automatic online backup and clean-install online recovery remain
   required before real authoring; local file and emulator results do not admit it.
 
-## Signing-key retention preparation
+## Signing-key retention verification
 
 - Andrew selected Google Drive for the off-laptop signing copy. Prepare it in a
   private, unshared My Drive folder with Restricted general access. This is
@@ -377,10 +376,18 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
   the unchanged keystore and credentials plus recovery instructions. Verified all
   archive entries exactly against their source bytes, archive integrity, private
   local permissions and repository exclusion. No credential values enter Git.
-- The owner uploads this archive and downloads a fresh copy into the excluded
-  `.private-signing/retrieved/` directory. Upload, independent retrieval and signing
-  verification are still pending; a local archive is not accepted as an off-laptop
-  backup. The recovered credentials' keystore path must point to the retrieved
-  key during the signing proof, so the original local key cannot mask a bad copy.
+- Andrew confirmed the Drive upload and fresh download on 2026-10-10. The downloaded
+  archive in `.private-signing/retrieved/` matches the retained SHA-256 manifest;
+  archive integrity, exact entry set and every entry's bytes pass verification.
+- Extracted the downloaded key and credentials into a separate private directory.
+  Parsed credentials without executing or printing them, discarded inherited signing
+  variables, and explicitly pointed signing at the recovered key. The original key
+  was not used. Re-signing a copy of the existing release15 APK succeeded;
+  `apksigner verify` confirms one signer with the same certificate SHA-256 recorded
+  above. Every application entry outside signing metadata is byte-for-byte unchanged.
+- Evidence is retained outside Git in `.private-signing/recovery-verification.json`.
+  The Drive upload/download is owner-reported; archive validation and recovered-key
+  signing are tool-verified. No new APK was installed and no phone was touched.
+  This completes the independent signing-key recovery requirement.
 - No production behavior or tests changed. Feature remains implementing until
-  actual phone/Fullride acceptance and independent key recovery pass.
+  actual phone/Fullride acceptance and the required feature review pass.

@@ -33,6 +33,7 @@ ml/**/__pycache__/
 
 # Native signing material and generated simulator artifacts
 .private-signing/
+.private-firebase/
 *.jks
 *.keystore
 prototypes/ios/android/.idea/

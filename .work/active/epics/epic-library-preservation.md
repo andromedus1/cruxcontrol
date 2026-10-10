@@ -393,8 +393,9 @@ hosted-account setup. Daily-use admission remains the aggregate epic gate.
 
 Native-library, portable-file recovery and Android-catalog features have completed
 focused verification, standard independent review and required CI. Finish the
-remaining Android interaction/signing and physical phone/Fullride acceptance in its
-existing feature owner. Account access, automatic protection and clean-install online recovery remain
+remaining physical phone/Fullride acceptance and parity review in its existing
+feature owner. Local Android interaction proofs and independent signing-key recovery
+are verified in that item. Account access, automatic protection and clean-install online recovery remain
 the admission-critical path. Budget direction is settled in the private-vault item:
 prefer cheaper, with a concrete justification required for USD 25/month. An actual
 native account proof is still required before provider selection. Service setup and phone/board availability

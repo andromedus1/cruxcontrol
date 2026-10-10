@@ -115,3 +115,32 @@ and Storage budget alerts are not a hard cap. No billing account or project has
 been created. The answered budget question establishes a cheaper-first operating
 constraint, not provider selection or permission to activate billing. The source review passed
 after bounded wording/citation corrections; execution evidence remains pending.
+
+### Native authentication proof setup
+
+Start with Firebase's Google sign-in on the no-cost Spark plan, without linking
+billing. This tests the cheaper-first candidate; it does not select the production
+backup provider. Firebase documents social sign-in as no-cost and requires the
+Android package and signing SHA-1 for Google sign-in. Storage setup remains a
+separate billed-service decision after the account proof.
+
+- Prepare a dedicated CruxControl authentication proof project, proposed ID
+  `cruxcontrol-auth-proof-20261010` subject to availability. Use only synthetic
+  libraries and explicitly target this project in commands. No other projects,
+  billing, Analytics, Hosting or Storage are needed for the initial sign-in test.
+- Android package: `io.github.andromedus1.cruxcontrol.prototype`. Existing release
+  certificate SHA-1, verified from release15:
+  `3e4510ae0eeabbfbf7397ebf6b9d66a9ec134c07`. Keep the established signing identity.
+- Firebase CLI 15.33.0 is installed locally under ignored `.private-firebase/`.
+  A command-scoped `XDG_CONFIG_HOME` keeps its credentials/configuration in that
+  private project directory; Gemini and usage telemetry are disabled. No CLI
+  token, service credential or downloaded app configuration belongs in Git.
+- The native SDK proof still needs project/app registration and Google provider
+  configuration. Browser login for the operator CLI is requested; that is service
+  setup access, not evidence that sign-in in the Android app works. Do not advance
+  this feature from drafting until the required design and native proof are ready.
+
+Setup references checked 2026-10-10:
+[Spark and social sign-in](https://firebase.google.com/docs/projects/billing/firebase-pricing-plans),
+[CLI authentication](https://firebase.google.com/docs/cli#log_in_and_test_the_firebase_cli),
+[Android Google sign-in setup](https://firebase.google.com/docs/auth/android/google-signin).

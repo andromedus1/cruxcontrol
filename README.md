@@ -128,8 +128,9 @@ force-stop relaunch, and a same-signature update. Android's system document choo
 restored a synthetic backup into an empty emulator installation; a same-key,
 non-debuggable release update preserved its complete library through relaunch. These
 emulator checks do not establish physical-board control, full Android feature parity,
-owner-phone delivery, off-laptop signing-key retention, remote cloud retention, or
-automatic online backup.
+owner-phone delivery, remote library retention, or automatic online backup. Separately,
+a freshly downloaded signing-key backup passed integrity verification and signed a
+test APK with the same app identity; this protects future updates, not library contents.
 The iPhone simulator has passed a complete Save to Files backup and restore round
 trip; real-board operation, real-device storage pressure, and authentication remain
 open before iOS support can ship.
