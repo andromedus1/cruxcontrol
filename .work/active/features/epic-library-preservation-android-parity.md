@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-android-parity
 kind: feature
-stage: drafting
+stage: implementing
 tags: [data, ble, ui, infra]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -40,3 +40,158 @@ Acceptance is an actual phone-and-Fullride session using synthetic data after po
 - Inherit [library preservation](../../../.mockups/flows/library-preservation/index.html) where backup surfaces apply.
 - Existing editor, library, playlist and Kilter browser reuse their current UI; mock only genuinely new structure.
 - Andrew’s 2026-10-10 instruction to proceed supplies authorization to continue this prepared direction; no new UI redesign milestone.
+
+## Design decisions
+
+Reuse the shared product screens and existing explicit save/error/reconnect behavior.
+Android first does not authorize claiming iPhone hardware acceptance. File import and
+export preserve the existing portable formats; a public web host is not a prerequisite
+for private Android dogfood. Until a real recipient-accessible host exists, native
+playlist sharing offers the complete file and explicitly omits localhost links.
+This is the honest file alternative already allowed by the feature brief.
+
+Implementation can begin after the three Android dependencies have integrated green
+verification. Actual phone/board acceptance follows portable recovery. The separate
+automatic-backup feature owns online account recovery, and the parent epic keeps the
+aggregate independent-protection admission gate.
+
+## Architectural choice
+
+1. **Keep browser device APIs everywhere:** cheapest initial wrapper, but browser
+   download anchors, clipboard, wake locks and origin-based links are not demonstrated
+   Android capabilities. This is insufficient evidence for parity.
+2. **Inject narrow native capabilities into the existing UI (chosen):** retain the
+   shared editor, browser, playlists, screenshot review and controller. Probe the
+   packaged app first and supply native adapters only for real platform gaps.
+3. **Rebuild native screens:** duplicates working product behavior and increases
+   regression surface without improving preservation. Outside this milestone.
+
+The trickiest unit is completing a real connected wall session across permissions,
+background/foreground interruption and reconnect without replaying stale lighting.
+The existing native byte transport/controller contracts remain authoritative; the
+emulator cannot stand in for the actual board. Test this early once the recovered
+synthetic library can safely be installed on the phone.
+
+## Implementation units
+
+### 1. Native file sharing and usable playlist exports
+
+Files: `web/src/app/create-runtime.ts`, `CruxControlWorkspace.tsx`,
+`web/src/playlists/{PlaylistLibrary,PlaylistShareDialog}.tsx`,
+`web/src/playlists/portable-transports.ts`,
+`prototypes/ios/src/native-playlist-delivery.ts`, `runtime.ts`.
+
+```typescript
+// Undefined preserves the browser's existing origin behavior; null explicitly
+// disables link generation for a native installation without a public host.
+interface NativePlaylistSharing {
+  readonly baseUrl: URL | null;
+  readonly deliverFile: LibraryBackupDelivery;
+}
+// Add an optional runtime capability; use the existing delivery result statuses.
+// The complete playlist JSON becomes { filename, text } at the boundary.
+// PlaylistShareDialogProps.baseUrl expands from URL to URL | null.
+```
+
+Thread the capability through the existing workspace and list props. Native file
+delivery uses the verified filesystem/share path from portable-files; retain its
+URI lifetime, cancellation, busy and failure semantics. Do not reuse a backup-only
+validation function if it rejects the distinct playlist envelope. Factor only the
+actual common file handoff if needed, keeping both format validators at their owners.
+Browser link/copy/download behavior remains covered by existing tests.
+
+- [ ] Native list sharing generates no localhost or fictitious-host links.
+- [ ] The actual exported playlist file imports through the existing picker with
+      fresh local identities, exact content/order and provider references retained.
+- [ ] Cancellation/failure do not display completed delivery or discard edits.
+- [ ] Copy/share remains available where a real configured reachable host exists;
+      without one the file alternative is explained without blaming payload size.
+
+### 2. Android screen, keyboard and Back behavior
+
+Files: `web/src/pwa/ScreenAwakeControl.tsx`, shared workspace/editor/list components
+only where a platform seam is needed, `prototypes/ios/src/` platform adapters and
+Android `MainActivity`/a registered plugin only if the packaged probe establishes need.
+
+Probe WebView wake-lock availability and actual prevention of timeout, selected-image
+picker/decode, keyboard resizing, safe-area insets, dialogs and hardware Back first.
+Record observed behavior before adding dependencies. A native screen-awake adapter
+may implement the minimal existing lease contract:
+
+```typescript
+interface ScreenAwakeLease {
+  readonly released: boolean;
+  release(): Promise<void>;
+  addEventListener(type: 'release', listener: () => void,
+                   options?: { once?: boolean }): void;
+}
+interface ScreenAwakePort { request(): Promise<ScreenAwakeLease> }
+```
+
+If needed, add an optional `screenAwake` runtime capability and preserve the UI's
+existing generation guards, visibility release, retry and truthful status. Native
+lease release must not release a newer request. Keep screen-awake ephemeral rather
+than persisting an assumed active OS resource.
+
+Hardware Back must invoke the same logical close/back action as the visible control,
+including the editor's unsaved-change confirmation and list dirty/pending guards.
+Use explicit registered handlers for mounted surfaces if native Back bypasses these;
+do not synthesize DOM clicks. A dialog gets first refusal, then editor/play-through,
+then root minimize after pending writes settle. Do not clear data or reload as a
+navigation shortcut. Preserve cancellation while a restore/import mutation is pending.
+
+- [ ] Multi-image screenshot import reviews and saves ordinary native drafts.
+- [ ] Back/keyboard/dialog interactions preserve pending edits and usable controls.
+- [ ] Screen awake is either proven effective or fails visibly with retry; no false
+      active claim. Backgrounding releases it and requires visible reacquisition.
+
+### 3. Stable private installation and upgrades
+
+Files: `prototypes/ios/android/app/build.gradle`, Android manifest/resources where
+required, a private-build script under `prototypes/ios/scripts/`, package scripts and
+`prototypes/ios/README.md`.
+
+Keep the app ID stable and use a retained private signing key outside Git. Build
+configuration accepts key paths/passwords through local environment or excluded
+properties, never checked-in values or command-line log output. Preserve versionCode
+monotonicity. Do not reinstall under a different ID and describe that as an upgrade.
+Before the first owner-phone rollout, retain and verify the signing material outside
+this laptop as well; make the concrete key-retention step visible to Andrew. Public
+Play distribution is not required.
+
+- [ ] A release-shaped signed package upgrades in place without library changes.
+- [ ] No private keys, personal library content, tokens or device identifiers enter Git.
+- [ ] Actual existing phone app origin/profile and fresh complete backup are verified
+      before maintenance; browser/PWA storage is never reset or used as a fixture.
+
+### 4. Fullride acceptance and complete-library comparison
+
+Files: a repeatable acceptance script/checklist in this item and the native README;
+targeted regression tests in the owning modules for any real integration defect.
+
+Use a clearly synthetic library with a Draft, Finished climb, Trash, grade, effects,
+multiple lists, shared membership, explicit order and catalog references. Verify
+create/edit/autosave/reopen, grade/angle, Trash/restore, list editing/play-through,
+PNG import, portable files and the older Kilter browse/filter/detail flow. Connect
+the real board, light/clear, edit holds, run effects, play through local and catalog
+entries, background/foreground, interrupt/disconnect and explicitly reconnect. Compare
+a coherent canonical export before/after upgrade; account for deliberately authored
+test changes by exact expected records rather than counts alone.
+
+Acceptance records name platform/build and checks without retaining private identifiers.
+Record physical actions Andrew performs honestly. Unavailable hardware keeps this
+feature active; it does not invalidate the completed emulator/adapter work or justify
+claiming board acceptance. Daily irreplaceable authoring additionally requires the
+epic's off-phone protection and verified recovery gate.
+
+## Testing and risks
+
+Keep the root shared product suite and native adapter suite green, plus Android
+compile/package checks. Add behavioral seam tests for disabled native links, actual
+delivery outcomes and any new wake/back adapters. Reuse existing effect/BLE codec
+tests; real permissions/radio/wall behavior remains physical acceptance. A canceled
+picker or denied permission must leave saved library state intact. A debug-only
+installation is useful proof but is not the durable update/signing arrangement.
+
+One feature owner can integrate these coupled runtime/UI changes. Keep the units as
+checkpoints in this item rather than creating story files that duplicate the contract.
