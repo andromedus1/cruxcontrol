@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { canonicalSnapshot, decodeLibraryBackup } from '../../../web/src/library-backup/codec.ts';
 import { appId, catalogDevice, catalogLibrarySnapshot, pause } from './android-catalog-device.mjs';
@@ -23,10 +24,18 @@ function packageInfo(apk) {
   const certificates = execFileSync(join(tools, 'apksigner'), ['verify', '--print-certs', apk], { encoding: 'utf8' });
   const digest = certificates.match(/Signer #1 certificate SHA-256 digest: ([a-f0-9]+)/)?.[1];
   assert.ok(digest, 'APK must have a valid signer');
-  return { version, digest, debuggable: badging.includes('application-debuggable') };
+  const apkSha256 = createHash('sha256').update(readFileSync(apk)).digest('hex');
+  let build = null;
+  if (existsSync(`${apk}.build.json`)) {
+    build = JSON.parse(readFileSync(`${apk}.build.json`, 'utf8'));
+    assert.equal(build.apkSha256, apkSha256, 'Build sidecar must describe these exact APK bytes');
+    assert.match(build.sourceCommit, /^[a-f0-9]{40}$/);
+    assert.equal(typeof build.sourceClean, 'boolean');
+  }
+  return { version, certificateSha256: digest, apkSha256, build, debuggable: badging.includes('application-debuggable') };
 }
 const first = packageInfo(initial), next = packageInfo(update);
-assert.equal(first.digest, next.digest, 'Update must use the retained initial signing key');
+assert.equal(first.certificateSha256, next.certificateSha256, 'Update must use the retained initial signing key');
 assert.ok(first.debuggable, 'Initial synthetic proof requires the explicit instrumented variant');
 assert.equal(next.debuggable, false, 'Final release must disable debugging');
 assert.ok(next.version > first.version, 'Update versionCode must increase');

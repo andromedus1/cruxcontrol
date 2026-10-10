@@ -326,7 +326,9 @@ The output is `prototypes/ios/android/app/build/outputs/apk/release/app-release.
 The release disables debugging. `build:android:signed-proof` instead creates an
 explicitly labeled instrumented synthetic-emulator variant using that same key
 and app ID; never distribute it for everyday authoring. Both recipes verify the
-final private catalog package. Keep all APKs private. Android's signing and version
+final private catalog package and write an adjacent `.apk.build.json` sidecar
+with exact APK SHA-256, source commit and clean-tree status. Keep that sidecar
+with the APK when copying it; the signed runner verifies it when present. Keep all APKs private. Android's signing and version
 contracts are described in its [build variants](https://developer.android.com/build/build-variants)
 and [versioning](https://developer.android.com/studio/publish/versioning) guides.
 

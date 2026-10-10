@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { rm } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join, resolve } from 'node:path';
 import { CATALOG_COMPRESSED_LIMIT } from '../../../web/src/data/catalog/manifest.ts';
@@ -29,5 +30,9 @@ if (sourceFile) console.log('Synced catalog verified', await checkAndroidCatalog
 if (!syncOnly) {
   const task = `assemble${variant[0].toUpperCase()}${variant.slice(1)}`;
   run('./gradlew', [task, ...(versionCode ? [`-PprototypeVersionCode=${versionCode}`] : [])], join(root, 'android'));
-  if (sourceFile) console.log('Final private APK verified', await checkAndroidCatalogApk(join(root, `android/app/build/outputs/apk/${variant}/app-${variant}.apk`), manifestFile));
+  const apk = join(root, `android/app/build/outputs/apk/${variant}/app-${variant}.apk`);
+  if (sourceFile) console.log('Final private APK verified', await checkAndroidCatalogApk(apk, manifestFile));
+  const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+  const sourceClean = execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim() === '';
+  await writeFile(`${apk}.build.json`, JSON.stringify({ sourceCommit, sourceClean, variant, versionCode: versionCode ?? '1', privateCatalog: Boolean(sourceFile), apkSha256: createHash('sha256').update(await readFile(apk)).digest('hex') }, null, 2));
 }
