@@ -27,9 +27,15 @@ retain the shared strict versioned records, including revisions, dates, metadata
 Trash, effects and ordered references. Operations share a serialized connection;
 revision checks, saves, restore batches and complete backup capture use explicit
 SQL transactions. A save succeeds only after commit. Unknown transaction state
-requires a reopen, and unsafe native cleanup requires an app restart. Unsupported
+requires an app restart, as does unsafe native cleanup. Unsupported
 schemas and corrupt records produce errors without replacing the database or
 opening a browser-storage fallback. iOS remains on its existing IndexedDB path.
+
+Android disables OS cloud backup and device transfer for app data, with explicit
+exclusion rules as well as `allowBackup=false`. Recovery must use the app's
+verified library backup/recovery path; an implicit OS copy is not a recovery
+guarantee. Capacitor bridge logging is disabled because bridge calls can contain
+complete authored records or backup payloads.
 
 Build with Node 22, JDK 21 and Android SDK/API 36 plus Build Tools 36.0.0. Set
 `JAVA_HOME` and `ANDROID_HOME` to your local installations; keep local paths and
@@ -40,6 +46,10 @@ npm --prefix prototypes/ios ci
 npm --prefix prototypes/ios run sync:android
 npm --prefix prototypes/ios run build:android
 ```
+
+These two Android commands explicitly omit catalog data and print **COMPILE-ONLY**.
+Their APK proves compilation, and is not the private dogfood build. Use the
+catalog recipe below for a package with offline Kilter availability.
 
 The generated project is `prototypes/ios/android`; the debug APK is under
 `android/app/build/outputs/apk/debug/`. It uses the same application ID as the iOS
@@ -86,6 +96,41 @@ process relaunch and same-signature version upgrades with canonical full-library
 comparisons. This is synthetic-data evidence. Account-protected independent
 backup, clean-client recovery, private signing-key preservation, real-device
 storage pressure and actual board control still gate daily-use admission.
+
+## Private Android catalog package
+
+Use Node 22, JDK 21, API 36/Build Tools 36.0.0 and the standard `zip`/`unzip`
+tools. Supply the catalog gzip explicitly; keep that binary and all APKs outside
+Git and public workflow uploads. The committed `web/public/catalog/manifest.json`
+is the expected artifact: 5,122,102 gzip bytes, 12,410,880 raw bytes, SHA-256
+`68d6d86aad984aca5cf9967d24c818d5bdf2984631b1fe9b9fa1fd30c0edbbbf`.
+It remains an older Legacy Kilter snapshot with unknown source freshness and no
+live updates.
+
+```bash
+npm --prefix prototypes/ios run build:android:catalog -- \
+  --catalog /outside/git/kilter-7x10.v1.db.gz --version-code 2
+```
+
+The private recipe rejects absent or mismatched input before building. It reuses
+the production manifest parser, verifies bounded size/digest/gzip/raw size/SQLite
+header, writes atomically into the web build output, syncs Android and checks both
+synced assets and the final APK. It also follows the reachable module Worker and
+SQLite WASM references. It never rewrites the expected source manifest. The
+packaged manifest and exact gzip digest must agree with that source.
+
+AGP 8.13's asset merger unconditionally expands filenames ending in `.gz` before
+AAPT. Its [noCompress option](https://developer.android.com/reference/tools/gradle-api/8.13/com/android/build/api/dsl/AndroidResources#noCompress())
+controls ZIP storage compression, so the private package uses `.db.gz.bin` and a
+native alias for the exact local manifest-declared `.db.gz` URL. It serves the
+original gzip bytes with identity encoding; the normal importer retains its
+strict origin, compressed-size, SHA-256 and database validation. Other requests
+retain Capacitor's routing.
+
+`npm --prefix prototypes/ios run test:catalog-package` uses shareable synthetic
+artifacts to test invalid inputs and final-APK regressions, including Android's
+old expanded-database failure. Generic CI performs those tests and a compile-only
+build; it neither includes nor uploads the private catalog.
 
 ## Native transport boundary
 
