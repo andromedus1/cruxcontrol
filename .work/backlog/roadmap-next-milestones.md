@@ -1,7 +1,7 @@
 ---
 id: roadmap-next-milestones
 created: 2026-09-12
-updated: 2026-10-09
+updated: 2026-10-10
 tags: []
 ---
 
@@ -14,6 +14,14 @@ priority and resumption capture; the linked work items own their scope. No relea
 schedule, service architecture, or new feature decomposition is selected here.
 
 ## Agreed order
+
+**Android dogfood target (2026-10-10):** Andrew wants to use the native Android app
+within the next few days with full shipped-app parity, off-phone backups and the
+Kilter catalog. The [preservation epic](../active/epics/epic-library-preservation.md)
+owns the six-feature delivery graph, including Android packaging of the approved
+older catalog. This brings native catalog availability into the dogfood gate;
+current official coverage and invited sharing remain subsequent priorities.
+
 
 **Preservation priority (2026-10-09):** Andrew has closed further recovery escalation
 and chosen to proceed assuming the missing post-migration climbs are lost. The

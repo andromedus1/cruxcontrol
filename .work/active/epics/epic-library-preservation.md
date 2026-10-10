@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation
 kind: epic
-stage: drafting
+stage: implementing
 tags: [data, security]
 research_refs: [android-chrome-recovery-access, independent-library-preservation]
 parent: null
@@ -9,7 +9,7 @@ depends_on: [story-phone-library-recovery]
 release_binding: null
 gate_origin: null
 created: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Preserve private libraries across browser and device loss
@@ -266,8 +266,9 @@ there is no separate interim-PWA protection milestone.
 
 ## Design decisions
 
-Directional `--only-questions` preparation, 2026-10-09. Keep this epic at drafting
-until visual alignment completes; no child features have been created by this pass.
+Directional alignment was prepared on 2026-10-09. Andrew authorized proceeding on
+2026-10-10 with an explicit near-term Android dogfood target, full existing feature
+parity, off-phone backup and the Kilter catalog. Full decomposition follows below.
 
 - **Privacy and recovery:** Andrew selected account-protected backups, encrypted
   by the service, with account recovery. Prove owner-only authorization and recovery
@@ -309,7 +310,9 @@ within those capabilities; do not lose them inside a database-only milestone.
 ## Mockups
 
 - Flow: [library preservation preview](../../../.mockups/flows/library-preservation/index.html).
-- Status: **awaiting Andrew's review**, not approved for production UI.
+- Direction carried forward under Andrew’s 2026-10-10 instruction to proceed.
+  Reuse this prepared flow; this records authorization, not a claim that Andrew
+  individually reviewed every simulated state.
 - Everyday path: compact library status → Back up & restore hub → portable file.
 - Recovery path: connect an account → retained versions → review → checked recovery.
   Portable files enter at review without sign-in. These are branches around a hub,
@@ -327,11 +330,58 @@ within those capabilities; do not lose them inside a database-only milestone.
   links, mobile light/dark layouts, desktop overview and browser-driven navigation
   through online recovery, conflicts and portable-file cancellation/recovery.
 
+## Android dogfood milestone
+
+Andrew’s target is a private usable Android build within the next few days. Full
+functionality means parity with the shipped wall-session app, including native
+Bluetooth, editor/grades/effects, Drafts/Finished/Trash, ordered playlists/play-through,
+screenshot import, keep-awake, files and useful sharing. Include the approved older
+Kilter catalog in this build; current official catalog coverage remains separate.
+Use direct private APK installation and updates for initial dogfood. Public store
+publication, partner sharing and iPhone hardware acceptance do not gate this target.
+
+Do not silently reduce the agreed independent-protection requirement to a local file
+or rely on Android automatic OS backup. Both automatic account-protected snapshots
+and complete portable files remain the default scope. A verified manual off-phone
+file could be a separately agreed temporary dogfood bridge if service setup becomes
+the schedule blocker; do not declare that tradeoff on Andrew’s behalf.
+
+## Decomposition
+
+Six capability owners cover native local use, portable recovery, recoverable account
+access, automatic protection, native catalog availability and complete Android
+recovery/daily use. Keep the existing shared React/Capacitor direction because its
+UI and controller already exist; a native-view rewrite expands the critical path,
+while a browser-only wrapper leaves the intended storage boundary unimplemented.
+Do not split by database/API/UI layers or create test-only features.
+
+- `epic-library-preservation-native-library` — Author offline in the native Android app; depends on none.
+- `epic-library-preservation-portable-files` — Keep and restore a complete portable library file; depends on `epic-library-preservation-native-library`.
+- `epic-library-preservation-private-vault` — Access private backups through a recoverable account; depends on `epic-library-preservation-native-library`.
+- `epic-library-preservation-automatic-backup` — Automatically protect saved native library changes; depends on `epic-library-preservation-native-library`, `epic-library-preservation-private-vault`.
+- `epic-library-preservation-android-catalog` — Use the older Kilter catalog in the Android app; depends on `epic-library-preservation-native-library`.
+- `epic-library-preservation-android-recovery` — Recover and dogfood the complete Android wall-session app; depends on `epic-library-preservation-native-library`, `epic-library-preservation-portable-files`, `epic-library-preservation-private-vault`, `epic-library-preservation-automatic-backup`, `epic-library-preservation-android-catalog`.
+
+### Decomposition risks
+
+- Prove the packaged catalog early: OPFS/Worker/WASM or compressed-byte serving may
+  require a native catalog adapter. The Git-ignored database must not disappear in CI.
+- Native storage must replace the IndexedDB composition and provide coherent capture;
+  a compiling shell alone is not completion. Transaction/disk errors must fail saves.
+- Account/session recovery is the off-phone protection critical path. Do not choose
+  the service merely because a storage API is convenient or assume a paid account exists.
+- Native file/clipboard/share/awake/Back behavior and usable outbound URLs need named
+  ownership; shared screens do not establish device parity.
+- Private signing identity must survive laptop replacement. Preserve the signing key
+  outside Git and verify an actual same-identity upgrade before daily-use admission.
+- Close the loop on a physical Android phone and board. Emulator results cannot
+  establish BLE or the owner’s installed-WebView behavior.
+
 ## Next design entry
 
-Finish visual alignment, then run full epic decomposition and design the native
-offline-authoring capability first. Its proof must exercise actual native storage,
-strict saved-library codecs, termination/relaunch/update preservation and failures
-that remain failures. No current-PWA hardening, provider provisioning or phone
-maintenance is needed to begin that design. Account access must be proven on the
-actual native client before choosing a service for automatic protection.
+Design and implement `epic-library-preservation-native-library` first. Run the Android
+packaged catalog smoke early alongside that proof, then complete portable copies,
+account access, automatic protection and clean-client recovery. Service selection,
+platform failures and phone/board availability determine timing; do not promise a
+fixed delivery date before those proofs. No further current-PWA preservation release
+is a prerequisite.
