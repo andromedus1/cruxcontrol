@@ -398,6 +398,70 @@ The parity feature stays implementing until these actions and independent key
 retention pass. Automatic online backup and clean-install online recovery also
 remain required before irreplaceable everyday authoring.
 
+### Native Android authentication feasibility proof
+
+The `signedProof` variant adds an explicit `AuthProofActivity` entry and a
+`NativeAuthProof` bridge with `status`, `signIn`, `verifySession` and `signOut`.
+Firebase Auth, Credential Manager and Google ID dependencies, the activity and
+the configuration asset belong only to this variant; normal release builds use
+neither the proof entry nor these dependencies. The retained signing key and
+application ID stay unchanged. Run this proof only on an isolated synthetic
+emulator with Google Play services and an operator-controlled test Google account.
+The operator runner checks both the emulator serial and `ro.kernel.qemu`;
+the activity itself does not enforce an emulator check.
+
+First finish owner-console Firebase onboarding for a dedicated, billing-disabled
+`cruxcontrol-auth-*` project. Register Android package
+`io.github.andromedus1.cruxcontrol.prototype` with the retained signing
+certificate's SHA fingerprints, enable the Google sign-in provider and download
+its Android `google-services.json` outside Git. The preparation script checks the
+explicit project ID and package and requires the web OAuth client ID; it accepts
+app configuration, never service-account keys or CLI credentials. Keep the source
+configuration outside Git rather than placing it in `android/app/`.
+
+With the signing environment loaded as above and `JAVA_HOME`/`ANDROID_HOME` set,
+prepare the ignored proof-only asset, then build with an increasing version code
+(replace `21` if needed):
+
+```bash
+node prototypes/ios/scripts/prepare-android-auth-proof.mjs \
+  /outside/git/firebase/google-services.json cruxcontrol-auth-PROOF_ID
+npm --prefix prototypes/ios run build:android:signed-proof -- \
+  --catalog /outside/git/kilter-7x10.v1.db.gz --version-code 21
+"$ANDROID_HOME/platform-tools/adb" -s emulator-N install -r \
+  prototypes/ios/android/app/build/outputs/apk/signedProof/app-signedProof.apk
+"$ANDROID_HOME/platform-tools/adb" -s emulator-N shell am start -n \
+  io.github.andromedus1.cruxcontrol.prototype/.AuthProofActivity
+```
+
+Replace the project and emulator placeholders with the actual proof values. The
+runner uses `ADB` when set, otherwise `$ANDROID_HOME/platform-tools/adb`. From
+the repository root, capture each operation into a separate private file:
+
+```bash
+node prototypes/ios/scripts/android-auth-proof.mjs emulator-N status /outside/git/auth-evidence/status.json
+node prototypes/ios/scripts/android-auth-proof.mjs emulator-N signIn /outside/git/auth-evidence/sign-in.json
+node prototypes/ios/scripts/android-auth-proof.mjs emulator-N verifySession /outside/git/auth-evidence/session.json
+node prototypes/ios/scripts/android-auth-proof.mjs emulator-N signOut /outside/git/auth-evidence/sign-out.json
+```
+
+`signIn` requires completing or canceling the native account prompt while the
+command waits. `status` reads the SDK's current user; `verifySession` forces an
+ID-token refresh and returns timestamps, without exposing tokens to JavaScript.
+Evidence contains UID/email metadata when signed in and stays outside Git;
+console output hashes the UID and omits the email. Relaunch the explicit activity
+and use new evidence files for persistence, offline/online and cancellation
+checks. `AUTH_NOT_CONFIGURED` means the asset is absent or invalid, not a
+successful authentication check.
+
+SignedProof16 and release16 compiled. Real Google authentication has not been
+exercised: the dedicated Google Cloud project exists with billing disabled, but
+Firebase activation returned HTTP 403 pending owner-console onboarding. Native
+sign-in, cancellation, session refresh, persistence and sign-out acceptance remain
+open. This spike supplies no automatic online library backup or clean-install
+recovery; both remain required before irreplaceable everyday authoring. It does
+not authorize installation on the owner phone or changes to authored library data.
+
 ## Native transport boundary
 
 The prototype's composition root injects `NativeBleByteTransport` through the
