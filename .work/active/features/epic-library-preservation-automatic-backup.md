@@ -20,6 +20,8 @@ Capture a coherent committed library revision, persist pending work and automati
 
 Own the compact protection status and Manage hub from the prepared flow, including offline, expired session, quota, capture failure and failed local-save states. Recovered OS/app state cannot silently re-establish authority to upload empty or stale snapshots. Retain prior good copies; the first release pauses at capacity instead of silently pruning. This is recovery backup, not live multi-device synchronization or group publication.
 
+This feature also owns the clean-install online recovery journey: discover retained versions through the private-vault account, select/review a copy, preserve IDs and exact content on restore, report conflicts/partial outcomes, and compare a complete canonical snapshot after relaunch. A restored or empty installation cannot upload until recovery/discovery admission is resolved. Keep the source backup intact.
+
 ## Epic context
 
 - Parent: `epic-library-preservation` — Android dogfood with parity, independent backup and the older Kilter catalog.

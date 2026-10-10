@@ -350,17 +350,19 @@ the schedule blocker; do not declare that tradeoff on Andrew’s behalf.
 
 Six capability owners cover native local use, portable recovery, recoverable account
 access, automatic protection, native catalog availability and complete Android
-recovery/daily use. Keep the existing shared React/Capacitor direction because its
+wall-session parity. Keep the existing shared React/Capacitor direction because its
 UI and controller already exist; a native-view rewrite expands the critical path,
 while a browser-only wrapper leaves the intended storage boundary unimplemented.
-Do not split by database/API/UI layers or create test-only features.
+Do not split by database/API/UI layers or create test-only features. Online restore
+belongs with automatic protection; Android parity can proceed independently of
+hosted-account setup. Daily-use admission remains the aggregate epic gate.
 
 - `epic-library-preservation-native-library` — Author offline in the native Android app; depends on none.
 - `epic-library-preservation-portable-files` — Keep and restore a complete portable library file; depends on `epic-library-preservation-native-library`.
 - `epic-library-preservation-private-vault` — Access private backups through a recoverable account; depends on `epic-library-preservation-native-library`.
 - `epic-library-preservation-automatic-backup` — Automatically protect saved native library changes; depends on `epic-library-preservation-native-library`, `epic-library-preservation-private-vault`.
 - `epic-library-preservation-android-catalog` — Use the older Kilter catalog in the Android app; depends on `epic-library-preservation-native-library`.
-- `epic-library-preservation-android-recovery` — Recover and dogfood the complete Android wall-session app; depends on `epic-library-preservation-native-library`, `epic-library-preservation-portable-files`, `epic-library-preservation-private-vault`, `epic-library-preservation-automatic-backup`, `epic-library-preservation-android-catalog`.
+- `epic-library-preservation-android-parity` — Use the complete Android wall-session app; depends on `epic-library-preservation-native-library`, `epic-library-preservation-portable-files`, `epic-library-preservation-android-catalog`.
 
 ### Decomposition risks
 

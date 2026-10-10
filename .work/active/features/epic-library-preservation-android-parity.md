@@ -1,26 +1,26 @@
 ---
-id: epic-library-preservation-android-recovery
+id: epic-library-preservation-android-parity
 kind: feature
 stage: drafting
 tags: [data, ble, ui, infra]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
-depends_on: [epic-library-preservation-native-library, epic-library-preservation-portable-files, epic-library-preservation-private-vault, epic-library-preservation-automatic-backup, epic-library-preservation-android-catalog]
+depends_on: [epic-library-preservation-native-library, epic-library-preservation-portable-files, epic-library-preservation-android-catalog]
 release_binding: null
 gate_origin: null
 created: 2026-10-10
 updated: 2026-10-10
 ---
 
-# Recover and dogfood the complete Android wall-session app
+# Use the complete Android wall-session app
 
 ## Brief
 
-Complete the clean-install online recovery journey and remaining native interaction adapters so Andrew can use the app daily with parity to the shipped web version. Select a retained version, review additions/conflicts and verify exact restoration including IDs, grades, effects, Trash and ordered lists. Interrupted/partial restore remains honest and recoverable; retain the original copy.
+Complete the remaining native interaction adapters so Andrew can use the app with parity to the shipped web version. Online recovery belongs to automatic-backup; this feature can be implemented without waiting for hosted account setup. Its completion alone does not authorize everyday irreplaceable authoring before the epic’s independent-protection gate passes.
 
 Own Android permissions, chooser/light/clear/effects, pause/reconnect, keep-awake, Android Back/keyboard/safe areas, multiple-image screenshot import, playlist file/clipboard/share delivery and recipient-usable links. Native localhost share URLs are not acceptable. Verify catalog climbs resolve/light/play through from ordered playlists. Provide a stable private signing/install/update path and signing-key retention outside Git, without requiring a public Play Store release.
 
-Acceptance is an actual phone-and-Fullride session after synthetic clean-install recovery, upgrade preservation and full-library semantic comparison pass. Never reset Andrew's profile as a fixture. Catalog downloads are reacquirable and excluded from authored-library backup. This feature does not close physical-iPhone acceptance or add partner sharing, logbook, manufacturers or recommendations.
+Acceptance is an actual phone-and-Fullride session using synthetic data after portable recovery, upgrade preservation and full-library semantic comparison pass. The epic owns daily-use admission after online protection and clean-client recovery also pass. Never reset Andrew's profile as a fixture. Catalog downloads are reacquirable and excluded from authored-library backup. This feature does not close physical-iPhone acceptance or add partner sharing, logbook, manufacturers or recommendations.
 
 ## Epic context
 
