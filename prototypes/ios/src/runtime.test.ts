@@ -109,7 +109,7 @@ describe("prototype runtime composition and lifetime", () => {
     expect(notice!.take()).toBeNull();
     unsubscribe();
     runtime.close();
-    expect([...callbacks.keys()]).toEqual(["pause", "resume", "appRestoredResult"]);
+    expect([...callbacks.keys()]).toEqual(["pause", "resume", "appRestoredResult", "backButton"]);
     for (const remove of removals) expect(remove).toHaveBeenCalledOnce();
   });
 
