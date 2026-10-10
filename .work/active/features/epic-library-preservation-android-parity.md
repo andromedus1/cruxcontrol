@@ -94,8 +94,8 @@ interface NativePlaylistSharing {
 ```
 
 Thread the capability through the existing workspace and list props. Native file
-delivery uses the verified filesystem/share path from portable-files; retain its
-URI lifetime, cancellation, busy and failure semantics. Do not reuse a backup-only
+delivery uses the verified Android SAF destination write/close from portable-files;
+retain cancellation, busy and failure semantics. Do not reuse a backup-only
 validation function if it rejects the distinct playlist envelope. Factor only the
 actual common file handoff if needed, keeping both format validators at their owners.
 Browser link/copy/download behavior remains covered by existing tests.
@@ -195,3 +195,28 @@ installation is useful proof but is not the durable update/signing arrangement.
 
 One feature owner can integrate these coupled runtime/UI changes. Keep the units as
 checkpoints in this item rather than creating story files that duplicate the contract.
+
+## Pending-close defect absorbed
+
+`idea-pending-import-close` was parked in `fc37889` after real tests reproduced
+screenshot and playlist dialog header/cancel actions dismissing pending imports.
+Absorb here under the authorized Back/pending-write parity scope. Share the guarded
+logical close with native Back and visible controls. Screenshot import uses a
+synchronous mutation ref through import and refresh; playlist import uses its
+existing importRunning ref; membership tracks all writes/refreshes. Busy handlers
+consume Back without dismissing a lower surface. Cancel remains available before
+mutation. Preserve the same UI layout and strict serialization/identity contracts.
+
+## Implementation notes
+
+- Execution: one feature owner, isolated worktree `codex/android-dogfood-parity`.
+  Standard review is parent-owned after physical acceptance; no nested delegation.
+- Android runtime gains optional playlistSharing and backNavigation capabilities;
+  web defaults stay unchanged. Registered mounted actions prioritize dialogs,
+  details, editor/play-through and root; no synthetic DOM clicks or history reload.
+- Actual system-file-chooser whole-library import is required in this parity proof.
+  Earlier portable recovery used a real SAF export but injected File bytes for
+  import; that is not evidence of the Android chooser import path.
+- Physical phone/Fullride and verified independent signing-key retention keep this
+  feature implementing. Automatic online backups and clean-install online recovery
+  remain the separate aggregate gate before real authoring.
