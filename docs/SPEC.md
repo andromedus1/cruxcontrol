@@ -288,6 +288,11 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   before an external copy has been verified.
 - Retain prior versions. A new, empty, unreadable or partial local library must not
   silently replace a good recovery point or be interpreted as authorized deletion.
+- The Android package disables OS Auto Backup and excludes app data domains from legacy
+  backup and Android 12+ cloud-backup/device-transfer rules. Treat unexpected nonempty
+  or OS-restored state as untrusted during recovery admission; it cannot authorize an
+  upload until deliberate account or portable-file recovery resolves it. This policy
+  does not claim every OEM transfer path has been verified.
 - Recover on a clean client without relying on credentials or keys kept only inside
   the lost browser origin. Preserve private access isolation from invited sharing.
 - Private backups may use service-managed encryption and recovery through the

@@ -254,6 +254,12 @@ account system, or automatic-backup implementation is selected or provisioned ye
 Browser/native file-delivery and scheduling limits need proof before promising automatic
 file copies.
 
+The Android package disables OS Auto Backup and excludes app data domains from the legacy
+backup rules and Android 12+ cloud-backup/device-transfer rules. This is an explicit app
+policy, not evidence that every OEM transfer path has been tested. Future recovery
+admission must treat any unexpected nonempty or OS-restored library as untrusted until
+deliberate account or portable-file recovery resolves it; it cannot authorize an upload.
+
 ## Data Flow
 
 ### Intended shared-library boundary
@@ -279,7 +285,9 @@ database; strict codecs and revision checks are shared with the browser reposito
 FULL synchronization. Android emulator checks have verified synthetic restore, edit/save,
 force-stop/relaunch, and same-signature update preservation. They do not establish physical
 board behavior, complete Android parity, catalog operation, or independent recovery. The
-iOS simulator has separately passed synthetic-data startup, scene/lifecycle, safe-area,
+Capacitor configuration sets `loggingBehavior` to `none` to suppress bridge payload logs;
+final packaged-config and Logcat verification remains pending. The iOS simulator has
+separately passed synthetic-data startup, scene/lifecycle, safe-area,
 focus, application-update preservation, and a complete Save to Files backup/restore
 round trip. Real-board BLE, real-device storage pressure, and authentication remain
 unverified on iOS. The observed startup screenshot showed status-bar and app-control safe
