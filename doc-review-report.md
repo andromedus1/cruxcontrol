@@ -16,20 +16,27 @@
 Independent Claude Opus job `20261010T175954Z-98bdbac3` supplied the read-only
 system audit below at committed snapshot `8e85ecd`. The parent consumed the
 terminal result. No Critical or High finding requires a foundation fix loop.
-This is documentation review, not acceptance of the separately reviewed portable
-feature: that feature has required code/evidence fixes in progress.
+This is documentation review. The separately reviewed portable feature subsequently
+closed in `f7ba6a3` after its accepted code/evidence fixes were verified; the original
+audit below remains a record of snapshot `8e85ecd`.
 
 - DM2 is corrected in the accompanying root README update using the verified
   catalog result; it does not claim phone/board or online-recovery acceptance.
-- DM3 and DL1 are assigned to the portable feature's current review follow-up.
+- DM3 and DL1 were corrected in the portable review follow-up: the README describes
+  actual SAF readback, and a tested Capacitor restored-result listener surfaces
+  interrupted file saves through the existing workspace alert.
 - The native import proof used actual SAF-exported bytes injected into the HTML
-  file input by the harness; actual Android chooser import belongs to parity.
-- DL3 belongs to the parity implementation. Remaining Medium/Low findings are
+  file input by the harness. Parity separately proved actual Android chooser import
+  and a same-key non-debuggable release update; README records those limits.
+- DL3 is corrected in the parity implementation. DL7's stale stage wording and
+  missing research reference are corrected in `a5f67a1`. DL9's blanket off-device
+  limitation is corrected in `6a87003` and `45a4330`. Remaining Medium/Low findings are
   recorded as non-blocking drift; no broad documentation cleanup is implied.
 - The separate portable reviewer identified missing grade coverage in the original
   synthetic fixture. Existing exact-equality results establish preservation of
-  that fixture, not native grade roundtrip. The portable follow-up must add this
-  proof and correct overstated evidence claims.
+  that fixture, not native grade roundtrip. Subsequent APK10/11 native proof verifies
+  V4 at 45° through save, relaunch, independent recovery and an app update. The
+  portable feature records provenance and distinguishes the original fixture.
 
 ### Pass 1: System-level
 

@@ -391,10 +391,10 @@ hosted-account setup. Daily-use admission remains the aggregate epic gate.
 
 ## Current delivery entry
 
-Native-library and Android-catalog features have completed focused verification,
-standard independent review and required CI. Finish portable-file review corrections
-and the remaining Android interaction/signing acceptance in their existing feature
-owners. Account access, automatic protection and clean-install online recovery remain
+Native-library, portable-file recovery and Android-catalog features have completed
+focused verification, standard independent review and required CI. Finish the
+remaining Android interaction/signing and physical phone/Fullride acceptance in its
+existing feature owner. Account access, automatic protection and clean-install online recovery remain
 the admission-critical path; budget direction and an actual native account proof are
 still required before provider selection. Service setup and phone/board availability
 determine timing; do not promise a fixed delivery date before those proofs. No further
