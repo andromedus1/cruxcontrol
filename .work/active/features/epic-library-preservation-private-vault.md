@@ -147,18 +147,27 @@ Setup references checked 2026-10-10:
 
 ### Account setup checkpoint
 
-The dedicated Google Cloud project is created. A direct billing-info read confirms
-no linked billing account and `billingEnabled=false`. Firebase activation currently
-returns HTTP 403; direct project permission checks confirm the operator has
-`firebase.projects.update`, project read and service-enable/read permissions.
-Andrew clarified that the console prompted him to enable two-factor authentication.
-The CLI access token was then refreshed successfully, but a fresh activation attempt
-still returned HTTP 403. Console 2FA enrollment and the remaining API refusal are
-separate observations; unaccepted Firebase terms remain a documented possibility,
-not an established diagnosis. Andrew has been asked which screen the console shows
-after enrollment so setup can continue from the actual state. No Firebase
-app, Google provider or Storage bucket is configured yet. The initial longer project
-ID was rejected before creation; only the shorter ID above was created.
+The dedicated Firebase project and Android app are registered. Andrew completed
+Google two-factor enrollment and then accepted Firebase terms through the official
+[direct terms workflow](https://console.firebase.google.com/?forceCheckTos=true).
+Activation succeeded immediately after terms acceptance; the prior HTTP 403 is
+resolved. Required IAM permissions had already been verified. The welcome page
+alone did not establish terms acceptance or project activation.
+
+The Android app uses the retained signing certificate's SHA-1 and SHA-256. Firebase
+CLI `deploy --only auth` configured Google sign-in with the proof display name and
+the operator's chosen support account; the CLI also created its default Web app
+registration for OAuth provisioning. No website was deployed. A readback confirms
+Google enabled, anonymous/email/password/phone disabled, and an OAuth client
+configured. A fresh billing read confirms no linked billing account and
+`billingEnabled=false`. Private configuration and readback evidence remain in
+ignored `.private-firebase/`; `auth-proof/provider-setup.json` contains sanitized
+setup checks. No Storage bucket or library backup service is configured yet.
+
+Provider configuration follows the official
+[Firebase CLI authentication setup](https://firebase.google.com/docs/auth/configure-providers-cli).
+The initial longer project ID was rejected before creation; only the shorter ID
+above was created.
 
 ### Bounded native authentication spike
 
@@ -242,3 +251,19 @@ drafting while this feasibility evidence and the full vault design remain incomp
   emulator operation and pending acceptance. No production UI changed, so inherited
   preservation mocks remain sufficient. Standard feature review and final CI closure
   remain with the eventual integrated feature; no completed-auth claim is made here.
+- All CI lanes passed for the native spike commit `9ed5850` in
+  [run 38092380128](https://github.com/andromedus1/cruxcontrol/actions/runs/38092380128).
+- SignedProof17 built from clean tracked source `896408a`, with private proof
+  configuration and the packaged catalog validated. APK SHA-256:
+  `8d41fd30eba5b80624ac2adf1d04633374b7fed4880d7a43112c57656a40dd9d`.
+  Signature verification matches the retained certificate. It updated only the
+  isolated authentication emulator. The native `signIn` call opened Google's
+  account chooser; owner sign-in and session acceptance remain pending. The runner
+  now waits for Capacitor's bridge as well as the WebView target after an early
+  status invocation failed before sign-in. No native operation is retried by that
+  readiness check.
+- Release17 also compiled with the private proof asset present in the source tree.
+  APK and merged-manifest inspection still exclude the asset, proof activity,
+  bridge and Firebase Auth classes; `debuggable=false` and `allowBackup=false`.
+  Evidence: `.private-firebase/release-isolation17.json`. This repeats isolation
+  with real configuration present, rather than relying on the unconfigured build.

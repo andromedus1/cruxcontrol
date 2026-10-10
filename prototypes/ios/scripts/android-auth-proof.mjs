@@ -41,21 +41,37 @@ try {
     socket.addEventListener("open", resolve, { once: true });
     socket.addEventListener("error", reject, { once: true });
   });
-  const response = new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("Native auth proof timed out")), 10 * 60 * 1000);
-    socket.addEventListener("message", event => {
+  let messageId = 0;
+  const evaluate = (expression, timeoutMs) => new Promise((resolve, reject) => {
+    const id = ++messageId;
+    const timer = setTimeout(() => {
+      socket.removeEventListener("message", onMessage);
+      reject(new Error("Native auth proof timed out"));
+    }, timeoutMs);
+    function onMessage(event) {
       const message = JSON.parse(event.data);
-      if (message.id !== 1) return;
+      if (message.id !== id) return;
       clearTimeout(timer);
+      socket.removeEventListener("message", onMessage);
       if (message.error || message.result?.exceptionDetails) reject(new Error("Native bridge invocation failed"));
       else resolve(message.result.result.value);
-    });
+    }
+    socket.addEventListener("message", onMessage);
+    socket.send(JSON.stringify({ id, method: "Runtime.evaluate", params: {
+      expression, awaitPromise: true, returnByValue: true,
+    } }));
   });
-  socket.send(JSON.stringify({ id: 1, method: "Runtime.evaluate", params: {
-    expression: `window.Capacitor.nativePromise('NativeAuthProof', ${JSON.stringify(method)}, {}).then(value => ({ok:true,value}), error => ({ok:false,code:error.code ?? 'UNKNOWN'}))`,
-    awaitPromise: true, returnByValue: true,
-  } }));
-  const result = await response;
+  // The WebView target can exist before Capacitor injects its native bridge.
+  let bridgeReady = false;
+  for (let attempt = 0; attempt < 60 && !bridgeReady; attempt += 1) {
+    bridgeReady = await evaluate("typeof window.Capacitor?.nativePromise === 'function'", 5000);
+    if (!bridgeReady) await new Promise(resolve => setTimeout(resolve, 250));
+  }
+  assert(bridgeReady, "Native bridge did not finish starting");
+  const result = await evaluate(
+    `window.Capacitor.nativePromise('NativeAuthProof', ${JSON.stringify(method)}, {}).then(value => ({ok:true,value}), error => ({ok:false,code:error.code ?? 'UNKNOWN'}))`,
+    10 * 60 * 1000,
+  );
   await mkdir(dirname(evidence), { recursive: true, mode: 0o700 });
   await writeFile(evidence, JSON.stringify({ at: new Date().toISOString(), method, ...result }, null, 2) + "\n", { mode: 0o600 });
   const value = result.value;

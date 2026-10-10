@@ -454,11 +454,13 @@ and use new evidence files for persistence, offline/online and cancellation
 checks. `AUTH_NOT_CONFIGURED` means the asset is absent or invalid, not a
 successful authentication check.
 
-SignedProof16 and release16 compiled. Real Google authentication has not been
-exercised: the dedicated Google Cloud project exists with billing disabled, but
-Firebase activation returned HTTP 403 pending owner-console onboarding. Native
-sign-in, cancellation, session refresh, persistence and sign-out acceptance remain
-open. This spike supplies no automatic online library backup or clean-install
+SignedProof17 compiled with the dedicated Firebase project's Android registration
+and Google provider configured; billing remains disabled. The native account
+chooser opens in the isolated emulator. Completed sign-in, cancellation, session
+refresh, persistence and sign-out acceptance remain open. Release17 packaging
+verification, with the private proof asset present in the source tree, excluded
+that asset, the proof activity, bridge and Firebase dependencies. This
+spike supplies no automatic online library backup or clean-install
 recovery; both remain required before irreplaceable everyday authoring. It does
 not authorize installation on the owner phone or changes to authored library data.
 
