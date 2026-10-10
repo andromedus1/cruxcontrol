@@ -124,8 +124,8 @@ backup provider. Firebase documents social sign-in as no-cost and requires the
 Android package and signing SHA-1 for Google sign-in. Storage setup remains a
 separate billed-service decision after the account proof.
 
-- Prepare a dedicated CruxControl authentication proof project, proposed ID
-  `cruxcontrol-auth-proof-20261010` subject to availability. Use only synthetic
+- Prepare a dedicated CruxControl authentication proof project, ID
+  `cruxcontrol-auth-20261010`. Use only synthetic
   libraries and explicitly target this project in commands. No other projects,
   billing, Analytics, Hosting or Storage are needed for the initial sign-in test.
 - Android package: `io.github.andromedus1.cruxcontrol.prototype`. Existing release
@@ -136,11 +136,105 @@ separate billed-service decision after the account proof.
   private project directory; Gemini and usage telemetry are disabled. No CLI
   token, service credential or downloaded app configuration belongs in Git.
 - The native SDK proof still needs project/app registration and Google provider
-  configuration. Browser login for the operator CLI is requested; that is service
-  setup access, not evidence that sign-in in the Android app works. Do not advance
+  configuration. Browser login for the operator CLI succeeded with Andrew's chosen
+  account; that is service setup access, not evidence that sign-in in the Android app works. Do not advance
   this feature from drafting until the required design and native proof are ready.
 
 Setup references checked 2026-10-10:
 [Spark and social sign-in](https://firebase.google.com/docs/projects/billing/firebase-pricing-plans),
 [CLI authentication](https://firebase.google.com/docs/cli#log_in_and_test_the_firebase_cli),
 [Android Google sign-in setup](https://firebase.google.com/docs/auth/android/google-signin).
+
+### Account setup checkpoint
+
+The dedicated Google Cloud project is created. A direct billing-info read confirms
+no linked billing account and `billingEnabled=false`. Firebase activation currently
+returns HTTP 403; direct project permission checks confirm the operator has
+`firebase.projects.update`, project read and service-enable/read permissions.
+Firebase documents unaccepted first-use terms as another possible cause. Andrew
+has been asked to complete console onboarding in the chosen account. No Firebase
+app, Google provider or Storage bucket is configured yet. The initial longer project
+ID was rejected before creation; only the shorter ID above was created.
+
+### Bounded native authentication spike
+
+Resolve the highest-risk unknown before the production vault design: actual native
+Google sign-in and renewable account identity in the existing Capacitor Android
+shell. Execution is inline/direct-read; the small known native integration surface
+does not need exploratory delegation. Settled user direction supplies the account,
+encryption, offline-use and cost constraints; no product question is reopened.
+
+Options considered: the documented Capawesome Firebase bridge offers broad provider
+support but exposes credential/token methods to JavaScript; a narrow native bridge
+over Firebase Auth plus Android Credential Manager can return only identity and
+verification metadata; a WebView auth SDK introduces a separate persistence/session
+boundary. Use the narrow native bridge for the feasibility test. This adds no
+custom OAuth protocol or token store: Firebase's native SDK owns the session.
+Inspect its actual persistence; do not claim Android Keystore encryption without
+evidence. Keep the existing OS-backup exclusions and logging policy.
+
+Proof-only units, all excluded from the daily-use release variant:
+
+- `prototypes/ios/android/app/src/signedProof/java/io/github/andromedus1/cruxcontrol/prototype/AuthProofActivity.java`
+  extends the existing activity and registers the test bridge. Invoke explicitly
+  on an isolated emulator. Existing shared app screens are reused; the only sign-in
+  UI is Google's provider-owned dialog, not a new product surface.
+- Adjacent `NativeAuthProofPlugin.java` exposes `status(PluginCall)`,
+  `signIn(PluginCall)`, `verifySession(PluginCall)` and `signOut(PluginCall)`.
+  Status is `{signedIn:boolean, uid?:string, email?:string}`; verified status adds
+  native token issuance/expiration times, never the token or provider credential.
+  `verifySession` requires a current user and a forced server refresh; sign-out
+  clears Firebase and Credential Manager state. Failures use bounded codes and
+  no raw provider exception details in the bridge.
+- Proof manifest and `signedProofImplementation` dependencies isolate activity,
+  plugin and native Firebase libraries. Private app configuration is a generated,
+  ignored proof asset; no credentials or account state enter source control.
+- `prototypes/ios/scripts/android-auth-proof.mjs` is an explicit emulator-only
+  operator driver with bounded native calls and metadata-only private evidence.
+  It never imports CLI credentials into the app, resets a phone, or writes library
+  contents. Human Google authentication occurs directly in Google's UI.
+
+Acceptance: signed build compiles; release packaging excludes proof activity,
+bridge and configuration; Google sign-in returns to the app; force-stop/relaunch
+retains the same native user; forced refresh succeeds; sign-out makes refresh fail
+and remains signed out after relaunch; a separate empty emulator installation can
+sign into the same account without copying app state; inspect native token storage
+and confirm no token persistence in WebView/library/export or OS backup eligibility.
+No mocked auth or CLI login can satisfy these checks. Immutable storage isolation,
+authenticated snapshot readback and full-library recovery remain subsequent proofs.
+
+Risks: console/provider setup and interactive Google login may require Andrew;
+emulator Play Services must support Credential Manager; native SDK persistence may
+not meet the intended boundary. If any fails, record the actual limitation and
+revisit the bridge/provider before selecting a production service. Keep this feature
+drafting while this feasibility evidence and the full vault design remain incomplete.
+
+### Native spike preparation evidence
+
+- Added the proof activity/bridge and emulator operator commands above, plus
+  `prepare-android-auth-proof.mjs` to select only app configuration fields from the
+  explicit proof project's Android registration. No application account or CLI
+  credential is bundled. This is a feasibility spike during design, not completion
+  of the production vault feature or an advance to implementing.
+- SignedProof16 and release16 compile with Firebase Auth 25.0.0 (BoM35.0.0),
+  Android Credential Manager1.3.0 and Google ID1.1.1 in the proof variant only.
+  Both APKs were built without an auth configuration asset. Dex and merged-manifest
+  inspection confirms release16 excludes the proof plugin/activity, Firebase Auth
+  and the proof asset, remains non-debuggable, and keeps `allowBackup=false`.
+  Private APK hashes and inspection results: `.private-firebase/release-isolation.json`.
+- A newly created isolated API36 emulator received only signedProof16. Launching
+  the explicit proof activity and calling native `status` returns the expected
+  `AUTH_NOT_CONFIGURED` failure. The runner now waits for WebView startup before
+  attaching; an early first attach was a harness timing failure, not an auth result.
+  Evidence: `.private-firebase/auth-proof/not-configured.json`. No physical device
+  or existing preservation emulator was modified.
+- Inspected the pinned Auth25.0.0 AAR's storage helper bytecode. It writes encrypted
+  native SharedPreferences values and configures an Android Keystore URI for its
+  crypto keyset. Legacy plaintext reads and key-initialization failure branches
+  exist. This is SDK-code evidence only: real persisted session bytes, key behavior,
+  token/log isolation and restart/renewal must still be checked after real sign-in.
+  Do not infer a successful device encryption or persistence result from this audit.
+- Script syntax and `git diff --check` pass. Documentation describes explicit
+  emulator operation and pending acceptance. No production UI changed, so inherited
+  preservation mocks remain sufficient. Standard feature review and final CI closure
+  remain with the eventual integrated feature; no completed-auth claim is made here.
