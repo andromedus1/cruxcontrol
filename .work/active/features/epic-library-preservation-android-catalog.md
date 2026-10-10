@@ -163,3 +163,16 @@ must match only this app's local catalog path and retain the exact gzip bytes; d
 not weaken the downloader's origin/hash/size checks or silently rewrite the source
 manifest. A broad custom server or native catalog database replacement is not justified
 by this packaging defect. Regression must fail against the current APK.
+
+## Catalog membership defect absorbed (2026-10-10)
+
+`idea-catalog-playlist-callback` was captured in `90d4d86` under test integrity.
+The parent authorized absorption here because catalog-to-playlist is this feature's
+explicit acceptance. CatalogBrowser receives an optional `onManageLists(climb)`
+callback and resolves the selected visible catalog row before forwarding it from
+LocalClimbViewer. CruxControlWorkspace stores the dialog's name/reference instead
+of a draft-only value and passes the provider's existing ID/layout reference to
+PlaylistMembershipDialog. Reuse existing modal, repository writes and operation
+safeguards; disable membership when playlists are unavailable. Verify callback row
+identity, canonical ordered append, offline provider resolution and unchanged
+local climbs/other playlist data. No new UI surface or foundation change.
