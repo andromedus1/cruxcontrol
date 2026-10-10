@@ -47,6 +47,15 @@ describe('createAndroidBackupDelivery', () => {
     });
   });
 
+  it('treats a restored picker call without its in-memory export bytes as failure', async () => {
+    const failure = new Error('Backup contents were lost while the picker was open. No file was written; retry the backup.');
+    const { delivery } = setup(vi.fn().mockRejectedValue(failure));
+    await expect(delivery.deliver(file)).rejects.toMatchObject({
+      message: `Unable to save the library backup: ${failure.message}.`,
+      cause: failure,
+    });
+  });
+
   it.each(['', 'https://example.com/backup.json', 'file:///tmp/backup.json'])('requires a content URI from the picker: %s', async (invalidUri) => {
     const { delivery } = setup(vi.fn(async () => ({ uri: invalidUri })));
     await expect(delivery.deliver(file)).rejects.toThrow('did not return a content URI');

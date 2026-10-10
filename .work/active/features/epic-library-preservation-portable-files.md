@@ -156,9 +156,28 @@ and the final everyday-phone acceptance owner.
 - Android uses a dedicated SAF save picker; picker cancellation and provider errors
   are distinct outcomes, and success follows output-stream close.
 - Export filenames include UTC milliseconds and a same-instance collision suffix.
-- Verified locally with web backup tests (32), prototype tests (89), catalog package
-  tests (5), web and prototype TypeScript checks, scoped ESLint checks, `git diff --check`,
-  and Node syntax checks for both Android smoke scripts and the picker helper.
-- Native UI delivery and isolated restore proof remain pending the reserved emulator
-  lane; no Android sync/build/install or emulator action was run for this change. The
-  code unit is ready for that proof, and this feature is not ready for review yet.
+- On pinned `@capacitor/android` 8.4.3 / AndroidX Activity 1.11.0, `Bridge.callPluginMethod`
+  dispatches plugin methods on Capacitor's `CapacitorPlugins` HandlerThread, while
+  Activity Result callbacks synchronously reach the plugin from the Activity result
+  path on the main thread. The callback now only extracts the result and queues
+  provider I/O with `Plugin.execute`, keeping cloud-backed writes off the UI thread.
+- Capacitor serializes retained `PluginCall` data into activity saved state. The
+  plugin removes the backup text after copying it into its in-memory buffer, before
+  launching the picker. After process/activity recreation, a callback without that
+  buffer rejects before opening the output stream; a missing `PluginCall` only clears
+  the buffer because there is no callback to reject. Capacitor also logs plugin call
+  data before invoking the plugin in debug logging mode, so this removal does not
+  prevent that log; the shell's committed Capacitor configuration now sets
+  `loggingBehavior: "none"` and Android backup/transfer is disabled in the source
+  manifest rules. The final APK policy and a fresh Logcat window remain pending
+  native proof.
+- Verified locally with web backup tests (32), prototype tests (90), catalog package
+  tests (5), including an adapter regression for missing restored bytes, web and
+  prototype TypeScript checks, scoped ESLint checks, `git diff --check`, and Node
+  syntax checks for the Android proof scripts and picker helper.
+- The provider write now runs away from Android's UI thread, and restored activity
+  results without the in-memory bytes fail before opening a provider stream. No
+  Android sync/build/install or emulator action was run for this change. Native UI
+  save, independent empty-installation recovery, edit/relaunch comparison, merged
+  package policy and Logcat checks remain pending the reserved emulator lane, so
+  this feature is not ready for review yet.

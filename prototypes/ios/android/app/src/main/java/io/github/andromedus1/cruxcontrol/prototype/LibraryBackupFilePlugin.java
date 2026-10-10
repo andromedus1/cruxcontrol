@@ -4,6 +4,7 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
 import androidx.activity.result.ActivityResult;
+import androidx.annotation.Nullable;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -40,17 +41,37 @@ public class LibraryBackupFilePlugin extends Plugin {
         intent.putExtra(Intent.EXTRA_TITLE, filename);
         isSaving = true;
         pendingText = text;
+        // Capacitor persists PluginCall data for activity results. Keep large
+        // backup contents only in this plugin's short-lived in-memory buffer.
+        call.getData().remove("text");
         try {
             startActivityForResult(call, intent, "saveFileResult");
-        } catch (Exception error) {
+        } catch (Exception ignored) {
             clearPendingSave();
-            call.reject("Unable to open the Android file picker", "FILE_PICKER_FAILED", error);
+            call.reject("Unable to open the Android file picker", "FILE_PICKER_FAILED");
         }
     }
 
     @ActivityCallback
-    private void saveFileResult(PluginCall call, ActivityResult result) {
-        if (result.getResultCode() != android.app.Activity.RESULT_OK) {
+    private void saveFileResult(@Nullable PluginCall call, ActivityResult result) {
+        if (call == null) {
+            // Capacitor can lack a restored call after process recreation. No
+            // callback is available to reject, so discard the buffer safely.
+            execute(this::clearPendingSave);
+            return;
+        }
+
+        int resultCode = result.getResultCode();
+        Intent data = result.getData();
+        Uri uri = data == null ? null : data.getData();
+        // On pinned Capacitor Android 8.4.3 / AndroidX Activity 1.11.0,
+        // ActivityResult callbacks run on the main thread. Provider I/O belongs
+        // on Capacitor's dedicated plugin HandlerThread instead.
+        execute(() -> finishSaveFile(call, resultCode, uri));
+    }
+
+    private void finishSaveFile(PluginCall call, int resultCode, Uri uri) {
+        if (resultCode != android.app.Activity.RESULT_OK) {
             clearPendingSave();
             call.reject("Save canceled", "FILE_SAVE_CANCELED");
             return;
@@ -58,9 +79,11 @@ public class LibraryBackupFilePlugin extends Plugin {
 
         try {
             String text = pendingText;
-            Intent data = result.getData();
-            Uri uri = data == null ? null : data.getData();
-            if (uri == null || !ContentResolver.SCHEME_CONTENT.equals(uri.getScheme()) || text == null) {
+            if (text == null) {
+                call.reject("Backup contents were lost while the picker was open. No file was written; retry the backup.", "FILE_SAVE_INTERRUPTED");
+                return;
+            }
+            if (uri == null || !ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {
                 call.reject("The Android file picker returned an invalid destination", "FILE_SAVE_FAILED");
                 return;
             }
@@ -74,8 +97,9 @@ public class LibraryBackupFilePlugin extends Plugin {
             JSObject response = new JSObject();
             response.put("uri", uri.toString());
             call.resolve(response);
-        } catch (Exception error) {
-            call.reject("Unable to write the library backup to the chosen destination", "FILE_SAVE_FAILED", error);
+        } catch (Exception ignored) {
+            // Provider exceptions may contain user-selected paths or URIs.
+            call.reject("Unable to write the library backup to the chosen destination", "FILE_SAVE_FAILED");
         } finally {
             clearPendingSave();
         }
