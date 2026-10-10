@@ -111,8 +111,8 @@ backup exclusions before claiming secure recovery.
 
 Firebase Storage requires a Blaze billing account even within eligible no-cost
 allowances. A US-region bucket can use those allowances; overages are chargeable,
-and Storage budget alerts are not a hard cap. No billing account or project has
-been created. The answered budget question establishes a cheaper-first operating
+and Storage budget alerts are not a hard cap. No billing account is linked; the
+isolated authentication proof project below has been created. The answered budget question establishes a cheaper-first operating
 constraint, not provider selection or permission to activate billing. The source review passed
 after bounded wording/citation corrections; execution evidence remains pending.
 
@@ -151,8 +151,12 @@ The dedicated Google Cloud project is created. A direct billing-info read confir
 no linked billing account and `billingEnabled=false`. Firebase activation currently
 returns HTTP 403; direct project permission checks confirm the operator has
 `firebase.projects.update`, project read and service-enable/read permissions.
-Firebase documents unaccepted first-use terms as another possible cause. Andrew
-has been asked to complete console onboarding in the chosen account. No Firebase
+Andrew clarified that the console prompted him to enable two-factor authentication.
+The CLI access token was then refreshed successfully, but a fresh activation attempt
+still returned HTTP 403. Console 2FA enrollment and the remaining API refusal are
+separate observations; unaccepted Firebase terms remain a documented possibility,
+not an established diagnosis. Andrew has been asked which screen the console shows
+after enrollment so setup can continue from the actual state. No Firebase
 app, Google provider or Storage bucket is configured yet. The initial longer project
 ID was rejected before creation; only the shorter ID above was created.
 
