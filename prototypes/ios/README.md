@@ -382,7 +382,17 @@ exercised API36 chooser paths; physical-device media providers still need accept
 
 API36 synthetic emulator evidence establishes local Back, keyboard resizing,
 timeout prevention/background wake-lock release, native file chooser and retained
-signature upgrade behavior. Physical phone permissions, Fullride lighting/clear,
+signature upgrade behavior. The actual playlist chooser added fresh local copies
+and retained exact snapshots/provider order; the real two-image chooser decoded
+fictional public-geometry PNGs into ordinary drafts. A signed14→non-debuggable
+release15 update preserved the complete eight-climb/three-list expected library
+through actual SAF exports before update, after update and after process relaunch.
+Release15's sidecar records the same clean committed source at both build
+boundaries and its exact APK digest. This synthetic signing fixture has no grade
+metadata. All proof libraries, private artifacts and earlier partial attempts
+remain outside Git without resetting any installation.
+
+Physical phone permissions, Fullride lighting/clear,
 effects, pause/interruption and explicit reconnect remain required acceptance.
 The parity feature stays implementing until these actions and independent key
 retention pass. Automatic online backup and clean-install online recovery also

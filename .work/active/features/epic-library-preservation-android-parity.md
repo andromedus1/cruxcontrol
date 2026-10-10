@@ -325,3 +325,43 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
   Full feature remains implementing: physical phone/Fullride acceptance and
   independent off-laptop key retrieval are unperformed; automatic online backups
   and clean-install online recovery remain the separate admission gate.
+
+## Final local verification
+
+- Clean committed source0c824ba produced true release15. Start18:57:35.130Z and
+  finish18:57:43.146Z on2026-10-10 both recorded commit
+  `0c824ba968d0decabadc47f820a013b9d344f01d`, tracked index/worktree clean.
+  Private APK `/tmp/cruxcontrol-android-parity-proof/release15.apk` and adjacent
+  `.build.json` preserve that provenance. APK content SHA-256 is
+  `24e387a3f3c7395bd64fc56ed5ed6d2fb05fb24b622643b629162a26d066053f`.
+  Certificate SHA-256 is separately
+  `45a130298d76cb97ed00204f382ac40acf8328def2203660915bd56cf1ac2ff8`.
+- `smoke-android-signed.mjs` passed the exact signed14→release15 same-key,
+  same-ID increasing-version `install -r` transition on isolated emulator5584.
+  Before-update, after-update and release-relaunch files in `signed-final14-15/`
+  were written by the actual SAF provider and operated through native UI.
+  Every record field, Trash, effects, ordered local/provider membership and the
+  intentional playlist/PNG additions compare canonically equal to the complete
+  eight-climb/three-list `png-only-final/verified-picker-library.json` baseline.
+  This fixture contains no grade metadata; it does not claim the separately owned
+  portable graded-update proof or physical Fullride/phone acceptance.
+- Final APK inspection confirmed debugging disabled, `allowBackup=false`, all
+  nine legacy exclusion domains and nine each for cloud/device transfer, plus
+  `loggingBehavior:none`; `release15-policy.json` records the bounded check.
+  Final compressed catalog digest, worker/WASM package checks and Gradle release
+  compile passed. No private key, credential, binary catalog or fixture is committed.
+- Final scoped checks: shared Back/workspace/membership36tests/2files; native
+  runtime/storage/delivery95tests/8files plus8 packaging/options tests; root and
+  native lint/typecheck; packaged-browser smoke1test; native web build and Android
+  release compile all pass. Parent integration owns full827-test shared suite,
+  final PR CI and later standard review after remaining feature acceptance.
+- Source emulator5580 remains its exact debug10 original four-climb/two-list
+  snapshot; signing5584 retains release15 and all eight climbs/three lists.
+  Both installations and prior proof directories are preserved. UI/build lane
+  released; no physical device was enumerated, installed, reset or maintained.
+- Remaining external acceptance: actual owner-phone origin/profile and fresh
+  whole-library backup before maintenance; synthetic phone/Fullride permissions,
+  chooser/light/clear/effects, interruption/background and explicit reconnect;
+  independent off-laptop key copy/retrieval/certificate verification. Stage stays
+  implementing. Automatic online backup and clean-install online recovery remain
+  required before real authoring; local file and emulator results do not admit it.
