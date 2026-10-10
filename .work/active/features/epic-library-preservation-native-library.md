@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-native-library
 kind: feature
-stage: review
+stage: implementing
 tags: [data, infra]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -345,3 +345,43 @@ the list form during its legitimate asynchronous loading state; wait for the for
 before editing it. These are CI configuration and test-harness repairs, with no
 application behavior change. Repeat CI after the repairs; independent review is
 still in progress.
+
+## Independent review and adjudication
+
+Standard review: one read-only Claude Opus pass through `peeragent:peer`, job
+`20261010T171457Z-1d924cd4`. No blockers were found in transactions, schema admission,
+serialized close/lease behavior, platform injection, record validation or coherent
+snapshot capture. The reviewer ran 17 storage/opener tests; the owner retains the
+Node 22 and device proof responsibility. Accepted findings are fixed and verified
+without a second independent review under the project's standard weight.
+
+- **CI commit integration (blocker until committed):** the catalog test step was
+  captured in `334edf8` while its owning scripts were still uncommitted. Keep the
+  explicit SDK package fix and do not push until the catalog scripts/package entry
+  land together. The two-line catalog step belongs to that feature; it was not part
+  of the no-behavior-change CI/test repair described above.
+- **Implicit Android OS backup (blocker):** generated `allowBackup=true` allowed an
+  unverified OS snapshot to reintroduce stale nonempty state. Disable OS backup and
+  explicitly exclude app domains from legacy backup and Android 12+ cloud/device
+  transfer. Account recovery and portable-file import are the deliberate recovery
+  paths. This is a policy choice, not proof of every vendor's transfer behavior.
+  Verify the final merged manifest/rules; future recovery still treats unexpected
+  nonempty/OS-restored state as untrusted admission, never upload authority.
+- **Final-source execution evidence (blocker):** the final native runner resumed an
+  earlier successful fixture edit. Require the portable feature's separate empty
+  emulator to initialize, restore, edit and relaunch the final compiled source,
+  comparing complete records. Do not clear the established emulator or owner phone.
+- **Restart wording (nit):** clarify that ambiguous transactions require an app
+  restart, since there is no exposed in-session reopen control.
+
+An adjacent implementation audit found Capacitor's debug bridge logs all call data
+before invoking a plugin, including authored SQLite parameters and file text. Set
+the shell's `loggingBehavior` to `none`; stripping payload fields inside a plugin
+does not prevent the earlier log. Verify final bundled config and absence of unique
+synthetic payload text in a fresh Logcat window during writes/export. This is a
+current-cycle privacy blocker, not a claim that real phone data was logged here.
+
+Android's [backup configuration documentation](https://developer.android.com/identity/data/autobackup)
+and the pinned Capacitor `Bridge.java`, `CapConfig.java`, and `Logger.java` establish
+the configuration behavior. Required follow-up is final-package inspection, fresh
+synthetic native execution, updated operating docs and green PR CI.
