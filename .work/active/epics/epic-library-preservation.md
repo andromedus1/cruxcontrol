@@ -342,9 +342,10 @@ publication, partner sharing and iPhone hardware acceptance do not gate this tar
 
 Do not silently reduce the agreed independent-protection requirement to a local file
 or rely on Android automatic OS backup. Both automatic account-protected snapshots
-and complete portable files remain the default scope. A verified manual off-phone
-file could be a separately agreed temporary dogfood bridge if service setup becomes
-the schedule blocker; do not declare that tradeoff on Andrew’s behalf.
+and complete portable files remain in scope. Andrew explicitly confirmed on
+2026-10-10 that automatic online backups must pass before real authoring; a temporary
+manual cloud-file bridge is not accepted. Keep pre-admission testing synthetic and
+verify online recovery into an empty installation as well as portable-file recovery.
 
 ## Decomposition
 

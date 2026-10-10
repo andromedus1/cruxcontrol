@@ -48,9 +48,9 @@ to automatic-backup; portable-file delivery does not wait for account UI.
 
 Export completion means OS handoff, not confirmed remote retention. An independently
 stored file is verified by reading that actual file on a different client and doing
-an exact semantic restore comparison. Daily manual copying is not the default
-substitute for automatic online backup; Andrew's temporary-dogfood preference is
-pending in the parent conversation.
+an exact semantic restore comparison. Andrew confirmed on 2026-10-10 that automatic
+online backups are required before real authoring. Manual cloud copies are not an
+accepted dogfood bridge; portable files remain the independent second recovery route.
 
 ## Architectural choice
 
