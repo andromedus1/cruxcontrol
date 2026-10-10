@@ -7,6 +7,7 @@ import type { ResolvedPlaylistEntry } from './resolve.ts';
 import type { LocalPlaylist, PlaylistId } from './types.ts';
 import '../climb-browser/LocalClimbViewer.css';
 import './playlists.css';
+import { useBackAction } from '../app/use-back-action.ts';
 
 export interface PlaylistPlayThroughProps {
   readonly playlist: LocalPlaylist;
@@ -54,6 +55,7 @@ export function PlaylistPlayThrough({
   initialEntryKey,
   onEditLocalClimb,
 }: PlaylistPlayThroughProps) {
+  useBackAction(onExit, true, 20);
   const previousRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);

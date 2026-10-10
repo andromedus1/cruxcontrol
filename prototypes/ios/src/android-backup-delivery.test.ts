@@ -57,6 +57,14 @@ describe('createAndroidBackupDelivery', () => {
     });
   });
 
+  it('uses the stable cancel code and warns when a failed write may leave a partial file', async () => {
+    const { delivery } = setup(vi.fn().mockRejectedValueOnce(new Error('Save canceled')).mockRejectedValueOnce(
+      Object.assign(new Error('Write failed.'), { code: 'FILE_SAVE_FAILED' }),
+    ));
+    await expect(delivery.deliver(file)).rejects.toThrow('Unable to save');
+    await expect(delivery.deliver(file)).rejects.toThrow('Write failed. An empty or partial file may remain');
+  });
+
   it.each(['', 'https://example.com/backup.json', 'file:///tmp/backup.json'])('requires a content URI from the picker: %s', async (invalidUri) => {
     const { delivery } = setup(vi.fn(async () => ({ uri: invalidUri })));
     await expect(delivery.deliver(file)).rejects.toThrow('did not return a content URI');

@@ -6,6 +6,7 @@ import { playlistId, playlistRevision } from './codec.ts';
 import { PlaylistShareDialog } from './PlaylistShareDialog.tsx';
 import type { PlaylistTransportAdapters } from './portable-transports.ts';
 import type { LocalPlaylist } from './types.ts';
+import { decodePortablePlaylist } from './portable-codec.ts';
 
 const CLIMB_ID = localDraftId('00000000-0000-4000-8000-000000000401');
 
@@ -49,6 +50,39 @@ function transports(overrides: Partial<PlaylistTransportAdapters> = {}) {
 }
 
 describe('PlaylistShareDialog', () => {
+  it('omits native links and saves the complete playlist through the injected delivery', async () => {
+    const deliver = vi.fn(async (_file: { filename: string; text: string }) => ({ status: 'saved' as const }));
+    const adapter = transports();
+    render(<PlaylistShareDialog playlist={playlist()} localClimbs={[climb()]} baseUrl={null} transports={adapter} deliverFile={{ kind: 'save', deliver }} onClose={vi.fn()} />);
+    expect(screen.queryByLabelText('Share link')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Copy link' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/too large/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save playlist file' }));
+    await screen.findByText('Playlist file saved.');
+    expect(deliver).toHaveBeenCalledOnce();
+    const file = deliver.mock.calls[0]![0] as { filename: string; text: string };
+    expect(file.filename).toBe('Shared projects.cruxplaylist.json');
+    expect(decodePortablePlaylist(JSON.parse(file.text)).playlist.entries).toMatchObject([{ kind: 'local-snapshot', snapshot: { name: 'Ocean 🌊', assignments: climb().assignments } }]);
+    expect(adapter.startDownload).not.toHaveBeenCalled();
+  });
+
+  it('guards pending native delivery and reports cancellation or failure without completion', async () => {
+    let finish!: (value: { status: 'cancelled' }) => void;
+    const pending = new Promise<{ status: 'cancelled' }>((resolve) => { finish = resolve; });
+    const deliver = vi.fn().mockReturnValueOnce(pending).mockRejectedValueOnce(new Error('Destination write failed'));
+    const onClose = vi.fn(); const onOperationStart = vi.fn(); const onOperationEnd = vi.fn();
+    render(<PlaylistShareDialog playlist={playlist()} localClimbs={[climb()]} baseUrl={null} deliverFile={{ kind: 'save', deliver }} onClose={onClose} onOperationStart={onOperationStart} onOperationEnd={onOperationEnd} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save playlist file' }));
+    expect(screen.getByRole('button', { name: 'Close sharing' })).toBeDisabled();
+    fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }));
+    expect(onClose).not.toHaveBeenCalled();
+    finish({ status: 'cancelled' });
+    await screen.findByText('Playlist file save canceled.');
+    expect(onOperationStart).toHaveBeenCalledOnce(); expect(onOperationEnd).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'Save playlist file' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Destination write failed');
+    expect(screen.queryByText('Playlist file saved.')).not.toBeInTheDocument();
+  });
   it('treats native share cancellation neutrally and preserves real failures and file fallback', async () => {
     const share = vi.fn().mockRejectedValueOnce(new DOMException('Cancelled', 'AbortError'))
       .mockRejectedValueOnce(new DOMException('Sharing denied', 'NotAllowedError'));

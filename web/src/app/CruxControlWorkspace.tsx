@@ -21,6 +21,8 @@ import { CatalogBrowser } from '../catalog/CatalogBrowser.tsx';
 import type { CatalogServiceSnapshot } from '../catalog/service.ts';
 import type { CatalogClimb, CatalogQueryPort } from '../catalog/types.ts';
 import { playlistReferenceKey } from '../playlists/codec.ts';
+import { BackNavigationProvider } from './BackNavigation.tsx';
+import { useBackAction } from './use-back-action.ts';
 
 export type LocalClimbCollection = 'finished' | 'drafts' | 'trash';
 export type WorkspaceDestination = LocalClimbCollection | 'lists' | 'kilter';
@@ -120,7 +122,11 @@ export interface CruxControlWorkspaceProps {
   readonly updateService?: AppUpdateService;
 }
 
-export function CruxControlWorkspace({ runtime, updateService }: CruxControlWorkspaceProps) {
+export function CruxControlWorkspace(props: CruxControlWorkspaceProps) {
+  return <BackNavigationProvider port={props.runtime.backNavigation}><Workspace {...props} /></BackNavigationProvider>;
+}
+
+function Workspace({ runtime, updateService }: CruxControlWorkspaceProps) {
   const [drafts, setDrafts] = useState<readonly LocalClimbDraft[]>([]);
   const [playlists, setPlaylists] = useState<readonly LocalPlaylist[]>([]);
   const [readIssues, setReadIssues] = useState<readonly DraftReadIssue[]>([]);
@@ -219,6 +225,14 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
     return () => { cancelled = true; };
   }, [needsProviderRows, providerReferences, providerRetry, catalogSnapshot.queries, runtime.catalog, runtime.installation.config.angle]);
   const updateBlocksWorkspace = updateSnapshot?.status === 'applying' || updateSnapshot?.status === 'reload-required';
+  useBackAction(() => {
+    if (updateBlocksWorkspace || pendingOperations > 0 || playlistSafety.pendingOperations > 0) return true;
+    if (playlistSafety.dirty) {
+      setError('Save your list changes before leaving.');
+      return true;
+    }
+    return false;
+  }, true, 0);
 
   useEffect(() => {
     const controller = runtime.controller;
@@ -667,6 +681,8 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
             setProviderRetry((value) => value + 1);
           }}
           repository={runtime.playlists}
+          shareBaseUrl={runtime.playlistSharing?.baseUrl}
+          deliverFile={runtime.playlistSharing?.deliverFile}
           draftRepository={runtime.drafts}
           installation={runtime.installation}
           definition={runtime.installation.definition}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useBackAction } from '../app/use-back-action.ts';
 import { decodeLibraryBackup, LIBRARY_BACKUP_LIMITS } from './codec.ts';
 import type { BackupReview, DecodedLibraryBackup } from './types.ts';
 import { browserLibraryBackupDelivery, type LibraryBackupDelivery } from './delivery.ts';
@@ -55,6 +56,7 @@ export function LibraryBackupDialog({
     generation.current += 1;
     onClose();
   }
+  useBackAction(close);
 
   async function chooseFile(file: File): Promise<void> {
     if (operationPending.current) return;

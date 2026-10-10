@@ -12,6 +12,8 @@ import { activeInstallationId, createAppInstallationRegistry } from './installat
 import { createCatalogService, type CatalogService } from '../catalog/service.ts';
 import { SqliteCatalogPort } from '../data/sqlite/sqlite-catalog-port.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
+import type { NativePlaylistSharing } from '../playlists/portable-transports.ts';
+import type { BackNavigationPort } from './back-navigation.ts';
 
 export interface RestoredFileSaveFailureNotice {
   subscribe(listener: () => void): () => void;
@@ -25,6 +27,8 @@ export interface CruxControlRuntime {
   readonly backup?: LibraryBackupService;
   readonly backupDelivery?: LibraryBackupDelivery;
   readonly restoredFileSaveFailure?: RestoredFileSaveFailureNotice;
+  readonly playlistSharing?: NativePlaylistSharing;
+  readonly backNavigation?: BackNavigationPort;
   readonly catalog: CatalogService;
   readonly controller: BoardLightController | null;
   close(): void;
@@ -37,6 +41,8 @@ export interface CruxControlRuntimeDependencies {
   readonly getInstallation?: () => ConfiguredBoardInstallation;
   readonly backupDelivery?: LibraryBackupDelivery;
   readonly restoredFileSaveFailure?: RestoredFileSaveFailureNotice;
+  readonly playlistSharing?: NativePlaylistSharing;
+  readonly backNavigation?: BackNavigationPort;
   readonly createCatalog?: (definition: BoardDefinition) => CatalogService;
 }
 
@@ -71,6 +77,8 @@ export async function createCruxControlRuntime(
       ...(dependencies.restoredFileSaveFailure
         ? { restoredFileSaveFailure: dependencies.restoredFileSaveFailure }
         : {}),
+      playlistSharing: dependencies.playlistSharing,
+      backNavigation: dependencies.backNavigation,
       catalog,
       controller: installation.createController(),
       close: () => {

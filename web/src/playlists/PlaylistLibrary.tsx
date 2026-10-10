@@ -10,6 +10,7 @@ import { PlaylistPlayThrough } from './PlaylistPlayThrough.tsx';
 import { PlaylistShareDialog } from './PlaylistShareDialog.tsx';
 import type { PlaylistHistoryAdapter } from './portable-history.ts';
 import type { PlaylistTransportAdapters } from './portable-transports.ts';
+import type { LibraryBackupDelivery } from '../library-backup/delivery.ts';
 import type { LocalPlaylistRepository } from './repository.ts';
 import { resolvePlaylistEntries, type ResolvedPlaylistEntry } from './resolve.ts';
 import type { LocalPlaylist, PlaylistId } from './types.ts';
@@ -47,7 +48,8 @@ export interface PlaylistLibraryProps {
   readonly initialImportFragment?: string | null;
   readonly history?: PlaylistHistoryAdapter;
   readonly transports?: PlaylistTransportAdapters;
-  readonly shareBaseUrl?: URL;
+  readonly shareBaseUrl?: URL | null;
+  readonly deliverFile?: LibraryBackupDelivery;
   readonly onSafetyStateChange?: (state: PlaylistSafetyState) => void;
   readonly onOperationStart?: () => void;
   readonly onOperationEnd?: () => void;
@@ -92,6 +94,7 @@ export function PlaylistLibrary({
   history,
   transports,
   shareBaseUrl,
+  deliverFile,
   onSafetyStateChange,
   onOperationStart,
   onOperationEnd,
@@ -540,6 +543,9 @@ export function PlaylistLibrary({
           playlist={selected}
           localClimbs={localClimbs}
           baseUrl={shareBaseUrl}
+          deliverFile={deliverFile}
+          onOperationStart={onOperationStart}
+          onOperationEnd={onOperationEnd}
           transports={transports}
           onClose={() => closePortableDialog('share')}
         />

@@ -75,6 +75,8 @@ describe("prototype runtime composition and lifetime", () => {
     expect(runtime.drafts).toBe(library.drafts);
     expect(runtime.playlists).toBe(library.playlists);
     expect(runtime.backupDelivery?.kind).toBe("save");
+    expect(runtime.playlistSharing?.baseUrl).toBeNull();
+    expect(runtime.playlistSharing?.deliverFile.kind).toBe("save");
     expect(native.initialize).not.toHaveBeenCalled();
     expect(native.saveFile).not.toHaveBeenCalled();
     expect(browserOpen).not.toHaveBeenCalled();

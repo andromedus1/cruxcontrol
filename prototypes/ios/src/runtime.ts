@@ -14,6 +14,9 @@ import { createAndroidBackupDelivery } from "./android-backup-delivery.ts";
 import { LibraryBackupFile } from "./library-backup-file-plugin.ts";
 import { createNativeBackupDelivery } from "./native-backup-delivery.ts";
 import { openNativeLibrary } from "./open-native-library.ts";
+import { createNativePlaylistDelivery } from "./native-playlist-delivery.ts";
+import { createBackNavigation } from "../../../web/src/app/back-navigation.ts";
+import { bindAndroidBack } from "./native-back-navigation.ts";
 
 const interruptedFileSaveMessage =
   "The file save was interrupted. Your library is unchanged; an empty or partial file may remain in the chosen location. Please try saving again.";
@@ -96,8 +99,12 @@ export async function createPrototypeRuntime() {
   const dispose = native
     ? await bindNativeLifecycle(transport, App, restoredFileSaveFailure?.publish)
     : () => transport.forceDisconnect();
+  const backNavigation = platform === "android" ? createBackNavigation() : undefined;
+  let disposeBack = () => {};
   try {
+    if (backNavigation) disposeBack = await bindAndroidBack(backNavigation, App);
     const runtime = await createCruxControlRuntime({
+      backNavigation,
       ...(platform === "android" ? { openLibrary: openNativeLibrary } : {}),
       ...(restoredFileSaveFailure
         ? { restoredFileSaveFailure: restoredFileSaveFailure.notice }
@@ -107,7 +114,10 @@ export async function createPrototypeRuntime() {
           createTransport: () => transport,
         }).require(activeInstallationId),
       ...(platform === "android"
-        ? { backupDelivery: createAndroidBackupDelivery({ filePicker: LibraryBackupFile }) }
+        ? {
+            backupDelivery: createAndroidBackupDelivery({ filePicker: LibraryBackupFile }),
+            playlistSharing: { baseUrl: null, deliverFile: createNativePlaylistDelivery({ filePicker: LibraryBackupFile }) },
+          }
         : platform === "ios"
           ? {
               backupDelivery: createNativeBackupDelivery({
@@ -124,11 +134,13 @@ export async function createPrototypeRuntime() {
         if (closed) return;
         closed = true;
         dispose();
+        disposeBack();
         runtime.close();
       },
     };
   } catch (cause) {
     dispose();
+    disposeBack();
     throw cause;
   }
 }

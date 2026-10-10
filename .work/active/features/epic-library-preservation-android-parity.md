@@ -220,3 +220,30 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
 - Physical phone/Fullride and verified independent signing-key retention keep this
   feature implementing. Automatic online backups and clean-install online recovery
   remain the separate aggregate gate before real authoring.
+
+## Interaction checkpoint (local verification)
+
+- Android playlist export now uses the same SAF destination/write/close plugin as
+  whole-library export. The complete existing playlist envelope is preserved;
+  Android explicitly disables origin-based links until a real reachable host is
+  configured. Browser copy/download/share behavior remains unchanged.
+- A small mounted-action Back dispatcher routes dialogs, details, editor and
+  play-through through their existing logical callbacks. Root minimizes only
+  after pending writes settle and list edits are saved. Pending import and
+  membership close guards share the same callbacks with visible controls.
+- Format-neutral Android file delivery retains the committed native stable
+  FILE_SAVE_CANCELED/FILE_SAVE_FAILED contract, punctuation and partial-file
+  caveat. Backup and playlist encoders remain at their format owners.
+- Focused shared verification: 23 files / 191 tests; root typecheck and lint pass.
+  Native verification: 8 files / 94 tests plus 5 packaging checks; native
+  typecheck/lint pass. Existing browser/native-runtime and editor confirmation
+  tests cover defaults, pending writes, cancellation, latest mounted handler,
+  teardown and exact UTF-8 handoff.
+- Source APK9 packaged probe established that hardware Back left the backup
+  dialog open before this adapter. Timeout probe is inconclusive: disabled and
+  enabled both stayed awake at 18 seconds; background WebView visibility also
+  stayed visible. This is not accepted keep-awake evidence. Further bounded
+  native/picker/keyboard/signing checks remain, followed by physical acceptance.
+- Execution capability: one feature-owning Codex implementer; standard review
+  remains parent-owned. Stage stays implementing because physical Fullride,
+  owner-phone and independent signing-key retention acceptance are outstanding.
