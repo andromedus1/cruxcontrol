@@ -124,11 +124,12 @@ screens for iOS and Android in a separate Node 22+ project. It reuses the shared
 controller and requires explicit connection. The iOS prototype keeps the browser
 library stores; Android injects the same library interfaces over one native SQLite
 database. The synthetic Android emulator runner verifies restore, edit/save,
-force-stop relaunch, and a same-signature update. A SAF-written Downloads file was
-read back and restored offline into a separate empty emulator installation, with the
-harness supplying its bytes to the restore input; Android's import chooser remains
-unverified. These checks do not establish physical-board control, full Android feature
-parity, owner-phone or cloud delivery, remote retention, or online backup.
+force-stop relaunch, and a same-signature update. Android's system document chooser
+restored a synthetic backup into an empty emulator installation; a same-key,
+non-debuggable release update preserved its complete library through relaunch. These
+emulator checks do not establish physical-board control, full Android feature parity,
+owner-phone delivery, off-laptop signing-key retention, remote cloud retention, or
+automatic online backup.
 The iPhone simulator has passed a complete Save to Files backup and restore round
 trip; real-board operation, real-device storage pressure, and authentication remain
 open before iOS support can ship.
