@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-portable-files
 kind: feature
-stage: review
+stage: done
 tags: [data, ui]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -308,3 +308,47 @@ and the final everyday-phone acceptance owner.
   source/build provenance immediately at successful provider readback. Logcat
   checks are separate and still make no complete-payload absence claim. No other
   emulator was modified for this follow-up.
+
+## Review (2026-10-10)
+
+**Verdict:** Approve with comments after fix verification.
+
+**Weight and pass count:** Standard; one independent Claude Opus pass via
+peeragent job `20261010T175954Z-98bdbac3`. The initial request for changes is
+closed by verification of the accepted fixes, without a second review pass.
+
+**Blockers:** None unresolved. F1's missing restored-result notification is fixed
+in `bc8ef9d`, with filtered Capacitor event, retained notice and workspace regression
+coverage. F2's hand-written receipt is explicitly qualified and rejected as runner
+input. Its original failure cause cannot be recovered and remains unknown; the
+machine-produced APK10 and APK11 receipts, actual SAF readbacks, canary checks and
+clean-build provenance provide the replacement acceptance evidence. No cause or
+privacy outcome is inferred for the old interrupted run.
+
+**Important:** None outstanding. S1 records the harness import precisely; the
+parity feature separately proves the actual Android import chooser. S2 uses the
+native cancellation code and a real picker Back action. S3 now covers V4/45 through
+save, relaunch, independent restore and a subsequent binary update. S4's failure
+copy warns about partial/empty destinations. S5 removes the complete-payload Logcat
+absence claim. S6 binds actual APK hashes to separately captured clean-build
+provenance.
+
+**Nits:** S7's stuck state after an unavailable Capacitor callback launcher is
+unreachable with the registered callback used here; no speculative adapter is added.
+
+**Rejected:** Do not delete a provider-owned destination after interruption. It
+may be an existing document, and reporting failure does not authorize removing it.
+
+**Verification:** Integrated shared suite 825 tests and native suite 95 tests pass;
+the current signing/catalog packaging suite adds eight passing checks. Typecheck,
+lint and CI run `38075989967` on `9b0d49c` are green for the integrated production
+fixes. Subsequent proof-script/build checks pass. The parent independently decoded
+and compared APK10 recovery and APK11 before/after provider files with the production
+codec, verified the APK content hashes and confirmed exact complete-library equality.
+The parent epic remains implementing because account-backed backup, online recovery
+and actual phone/Fullride acceptance are not complete.
+
+**Limits:** Emulator Downloads-provider recovery is complete for this feature.
+No cloud upload/retention, owner-phone destination, actual process-kill restoration
+event, near-limit 25 MiB bridge payload or physical board session is claimed. The
+automatic-backup requirement before real authoring remains in force.
