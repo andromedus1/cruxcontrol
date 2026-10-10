@@ -1,9 +1,12 @@
 # CruxControl
 
 CruxControl is a local-first, installable web app for creating climbs and controlling
-a home **Kilter Fullride 7x10**. It runs on Android and desktop Chromium, connects to
-the board through Web Bluetooth, and keeps personal climbs and lists in the browser—no
-account or application server required.
+a home **Kilter Fullride 7x10**. The web app runs in Android and desktop Chromium,
+connects through Web Bluetooth, and stores its personal climbs and lists in browser
+storage. An experimental Capacitor package also targets Android with native BLE and
+SQLite-backed authoring; its synthetic emulator preservation check passes, while
+physical-board parity and independent recovery remain open. Local use needs no account
+or application server. Android catalog support still needs its own packaged proof.
 
 ## What works now
 
@@ -31,8 +34,9 @@ account or application server required.
 - Import Kilter Fullride screenshots through a local review-and-correction flow, or
   import the supplied set of 16 climbs as ordinary 40° drafts. Screenshot pixels are
   never uploaded or persisted.
-- Connect the physical board from Android or desktop Chromium, then selected climbs,
-  saved effects, and hold/effect edits light automatically. Connect/Reconnect remains
+- In the PWA, connect the physical board from a supported Android or desktop Chromium
+  browser. Selected climbs, saved effects, and hold/effect edits then light automatically.
+  Connect/Reconnect remains
   an explicit action in the persistent workspace header beside **Keep screen awake**.
   **Retry lighting** appears when lighting is blocked or fails and animation is not running.
   The existing API-2 profile supports complete static scenes of up to 127 lights and complete
@@ -113,30 +117,37 @@ npm -w web run test:e2e  # build first
 Node 20 or newer is required (see `.nvmrc`). `/web` is an npm workspace; `/ml` is a
 separate Python project.
 
-An experimental [iOS shell](prototypes/ios/README.md) packages the existing screens
-with Capacitor and an isolated native BLE adapter in a separate Node 22+ project.
-It reuses the shared controller and local library, requires explicit connection,
-and disconnects on backgrounding. Its setup guide covers adapter checks, synthetic
-data, and the pending simulator/device work. A complete Save to Files backup and
-restore round trip has passed in the iPhone simulator; real-board operation,
-real-device storage pressure, and authentication still need proof before iOS support
-can ship.
+An experimental [Capacitor shell](prototypes/ios/README.md) packages the existing
+screens for iOS and Android in a separate Node 22+ project. It reuses the shared
+controller and requires explicit connection. The iOS prototype keeps the browser
+library stores; Android injects the same library interfaces over one native SQLite
+database. The synthetic Android emulator runner verifies restore, edit/save,
+force-stop relaunch, and a same-signature update. This does not establish physical
+board control, full Android feature parity, off-device recovery, or online backup.
+The iPhone simulator has passed a complete Save to Files backup and restore round
+trip; real-board operation, real-device storage pressure, and authentication remain
+open before iOS support can ship.
 
 ### Implementation highlights
 
 - One immutable Fullride definition owns all 305 placement identities, coordinates,
   LED positions, supported angles, and semantic role presets.
-- Independent versioned IndexedDB repositories own local climbs and lists, including
-  optimistic revisions, lifecycle recovery, portable list snapshots, whole-library backup,
-  and offline use. Workspace reads report corrupt or unsupported climb records while
+- The web app and iOS prototype use independent versioned IndexedDB repositories for
+  local climbs and lists, including optimistic revisions, lifecycle recovery,
+  portable list snapshots, whole-library backup, and offline use. Workspace reads
+  report corrupt or unsupported climb records while
   keeping healthy climbs and Trash available and leaving unreadable records untouched.
   Climbs and lists refresh independently; a list read failure retains previously loaded
   lists and offers **Retry loading lists** in Lists.
-- Library backup uses a 25 MiB file limit with limits of 10,000 climbs, 1,000 playlists,
-  and 100,000 playlist references. Export checks for changes across the two stores and
-  asks you to finish edits in other tabs; the check is bounded and does not form one
-  cross-database atomic snapshot. It uses the existing browser-local origin and saved
-  records only; no schema rewrite, cloud upload, or account is involved. Backup reads
+- The Android shell injects those repository contracts over one native SQLite database.
+  Its serialized transactions retain optimistic revisions and expose one coherent
+  whole-library snapshot; this remains local storage, not an independent recovery copy.
+- Library backup uses a 25 MiB file limit with limits of 10,000 climbs, 1,000
+  playlists, and 100,000 playlist references. On web and iOS, export checks for
+  changes across the two stores and asks you to finish edits in other tabs; the
+  bounded check does not form one cross-database atomic snapshot. Android captures
+  its one-database snapshot transactionally. Backup remains a manual local file
+  workflow: it does not upload to a cloud service or require an account. Backup reads
   remain strict: unreadable records block export rather than producing an incomplete
   backup. The backup file cannot salvage corrupt raw records.
 - A version-dispatched pure frame engine drives both screen preview and BLE output. It

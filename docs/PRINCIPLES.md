@@ -2,7 +2,7 @@
 description: Product and engineering principles governing CruxControl decisions
 type: planning
 kind: planning
-updated: 2026-10-09
+updated: 2026-10-10
 nav_priority: high
 summary: >
   Durable decision rules for building CruxControl as a Kilter-first,
@@ -37,9 +37,10 @@ must justify that friction.
 
 Drafts, playlists, attempts, ascents, and notes remain locally available and
 exportable. Provider sync is optional and must never be the sole copy of user-created
-data. Browser-local saving alone does not establish durability across origin or
-device loss. Keep independently recoverable versions and portable copies; verify
-restoration rather than inferring it from export success. Clearly distinguish locally
+data. Browser-managed storage and native app-private SQLite are both local copies;
+neither establishes recovery across origin, app, or device loss. Keep independently
+recoverable versions and portable copies; verify restoration rather than inferring it
+from export success. Clearly distinguish locally
 saved changes from changes included in a verified independent backup. Offline edits
 remain usable while awaiting protection, with that exposure made explicit.
 
@@ -66,7 +67,11 @@ show the right generalization.
 
 ### Local-first, backend-later
 
-Static distribution, browser-local catalogs, and local user data are the default.
+Static distribution, browser-local catalogs, and platform-local user data are the default.
+The PWA and iOS package use browser-managed IndexedDB for authored climbs and playlists;
+the Android package injects the same library boundary over one native SQLite database.
+Platform-local storage keeps offline reads and saves available, but does not replace
+independent recovery.
 CI-generated provider snapshots are acceptable. Add a narrowly scoped service only
 for a demonstrated constraint such as protected credentials, browser-incompatible
 access, independent private backup/recovery, or live multi-user coordination. Private

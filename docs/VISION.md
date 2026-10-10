@@ -2,7 +2,7 @@
 description: CruxControl vision, problem, audience, principles, and non-goals
 type: planning
 kind: planning
-updated: 2026-10-09
+updated: 2026-10-10
 nav_priority: high
 summary: >
   CruxControl is a Kilter-first, eventually universal climbing-board app. Its
@@ -12,10 +12,13 @@ summary: >
   older-snapshot Kilter catalog browser is integrated with explicit consent and
   offline access while native iPhone preparation continues.
   Private library preservation now takes priority: independent online backups and
-  portable owner-controlled files must complement offline local authoring.
-  Invited contributions follow with Android and iPhone board control.
+  portable owner-controlled files must complement offline local authoring. An
+  experimental Android package now uses native SQLite for local authorship; its
+  synthetic emulator persistence check passes, while physical and independent
+  recovery proofs remain open. Invited contributions follow with Android and iPhone
+  board control.
 decisions:
-  - "Share product logic across web, Android and iOS; preserve the working web client while proving native iPhone board control."
+  - "Share product logic across web, Android and iOS while retaining platform-specific storage and device adapters; preserve the working web client and keep native-device acceptance explicit."
   - "Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional."
   - "The Fullride 7x10 is the first complete milestone; one app for any supported climbing board is the long-term north star."
   - "Board definitions, catalog providers, and controller protocols are independent extension points."
@@ -32,20 +35,27 @@ decisions:
 
 CruxControl is a data-owning climbing-board app whose first complete target is a
 home Kilter Board Fullride 7x10. Its implemented first milestone creates, saves,
-reopens, and lights unrestricted browser-local climbs through a fast, offline-first
-client; organizes them into shareable lists; and supports locally reviewed screenshot
-imports and editable light effects. The immediate priority is independent library
-preservation: automatic private online backups, retained versions, portable files,
+reopens, and lights unrestricted climbs through a fast, offline-first web client;
+organizes them into shareable lists; and supports locally reviewed screenshot imports
+and editable light effects. The web client and iOS prototype store their authored
+library in IndexedDB. The experimental Android package injects the same library
+interfaces over one native SQLite database and has passed synthetic emulator checks
+for restore, edit/save, forced process termination, relaunch, and a same-signature
+update. Physical-board behavior and full Android feature parity remain unverified.
+Native local storage is not independent recovery. The immediate priority is independent
+library preservation: automatic private online backups, retained versions, portable files,
 and verified restoration after browser or device loss. These protections are intended
-work, not shipped guarantees; current whole-library exports are manual. Local saving
-and offline access must remain available while backup is pending or unavailable.
+work, not shipped guarantees; current whole-library exports are manual, and no
+off-device or online recovery path has been proven. Local saving and offline access
+must remain available while backup is pending or unavailable.
 The Kilter community catalog first slice is now
 integrated in the running app: entry opens the older offline Fullride snapshot when
 available, while explicit management consent controls metadata lookup and download.
 The snapshot's source freshness is unknown and it receives no live updates; complete
 current-app coverage and public distribution permission are not established. Catalog
 work can advance on Android and the web while native iPhone work proceeds; unavailable
-iPhone hardware does not block that work. The isolated iOS prototype now compiles,
+iPhone hardware does not block that work, but Android catalog support still needs its
+own packaged proof. The isolated iOS prototype now compiles,
 starts, and has passed synthetic-data library preservation and complete backup/restore
 round trips in an iPhone 17 simulator; physical-device acceptance remains open.
 
@@ -141,9 +151,11 @@ multi-tenancy.
   authorized public catalog data and may optionally sync; those capabilities are not
   implemented yet and will not reproduce Kilter's community/social features.
 - **No separate mobile product fork.** iPhone board control is intended through a
-  researched mobile integration sharing the application core. Native framework
-  selection remains conditional on hardware, storage and sign-in proof; a separate
-  iOS-only feature set or unsolicited interface redesign is outside the scope.
+  researched mobile integration sharing the application core. The experimental
+  Capacitor package currently supports an Android native-storage path and an iOS
+  IndexedDB path; production mobile support still depends on device, parity, and
+  recovery evidence. A separate iOS-only feature set or unsolicited interface redesign
+  is outside the scope.
 
 ## Reference
 
