@@ -144,3 +144,22 @@ native asset handler's gzip behavior. Test this before investing in a replacemen
 catalog adapter. A clean build requires supplied private data; publishing that data
 is not implied by a successful private dogfood proof. Current official coverage is
 still a separate milestone. No new UI structure is needed.
+
+## Packaged-asset defect absorbed into this feature (2026-10-10)
+
+`idea-android-catalog-gzip` was captured in commit `fce8645` under the test-integrity
+rule and is absorbed here because it is the exact platform compatibility scope of
+unit 3. The installed APK serves 404 for the manifest gzip: Android's asset merge
+expanded it and packaged `kilter-7x10.v1.db` instead. Source and synced-asset checks
+alone pass incorrectly. WebView133/API36 exposes wake lock, OPFS and Web Locks;
+actual worker/database installation remains unverified until file delivery works.
+
+Extend unit 2 to inspect the **final APK** after assembly and verify the exact
+compressed bytes/digest. Preserve the existing strict source manifest and catalog
+import validation. First inspect the pinned build tool's supported options. If its
+gzip processing cannot be disabled safely, package under an inert asset suffix and
+serve a narrowly scoped native asset alias at the original canonical URL. The alias
+must match only this app's local catalog path and retain the exact gzip bytes; do
+not weaken the downloader's origin/hash/size checks or silently rewrite the source
+manifest. A broad custom server or native catalog database replacement is not justified
+by this packaging defect. Regression must fail against the current APK.
