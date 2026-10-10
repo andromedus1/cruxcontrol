@@ -97,6 +97,51 @@ comparisons. This is synthetic-data evidence. Account-protected independent
 backup, clean-client recovery, private signing-key preservation, real-device
 storage pressure and actual board control still gate daily-use admission.
 
+### Portable Android backup proof
+
+The Android backup button opens the Storage Access Framework's **Save** picker.
+The plugin reports “saved to the chosen location” only after the selected
+provider's UTF-8 output stream closes. The portable proof selects Downloads,
+reads those exact provider-written bytes back to the host, and restores them into
+a separate app installation. It then compares the complete canonical library,
+including Trash, effects and ordered playlist entries, makes one synthetic editor
+change, force-stops the recovery app and compares again after relaunch.
+
+Use Node 22 and two isolated API 36 emulators: a synthetic source installation
+with the prior signed APK, and a fresh recovery installation. Supply the exact
+validated source export as the canonical baseline and retain each run's evidence
+outside Git:
+
+```bash
+node --experimental-strip-types prototypes/ios/scripts/smoke-android-portable.mjs \
+  emulator-SOURCE emulator-RECOVERY /outside/git/final.apk \
+  /outside/git/portable-evidence /outside/git/verified-source.json
+```
+
+The runner checks the final APK's merged backup exclusions and bridge logging
+configuration, verifies the source before upgrade, applies the same-signature
+update with `adb install -r`, and compares actual SAF exports before and after.
+If a run stops after that upgrade, pass its source-evidence directory as the
+optional final argument to resume; the runner verifies both prior source exports
+and takes a fresh export from the updated app. If the recovery APK was already
+installed by an interrupted run, resume is allowed only for that APK version and
+after the app opens with zero climbs and playlists. Use a new, empty evidence
+directory for every attempt. The runner never clears app data, uninstalls or
+resets either emulator.
+
+The 2026-10-10 APK8 run matched the catalog owner's complete synthetic source,
+read the Downloads file back from the provider, restored those bytes into the
+separate installation, and retained its single test edit across force-stop and
+relaunch. Its host-only evidence is at
+`/tmp/cruxcontrol-android-portable-proof-v8-resume1-20261010/`; the prior source
+upgrade exports are at
+`/tmp/cruxcontrol-android-portable-proof-v8-retry2-20261010/`. This demonstrates
+local file save/readback and isolated recovery. A cloud-backed picker provider
+may return after local stream close without proving remote upload or retention;
+verify a remote copy independently. Automatic online backup remains a separate
+required recovery path before real authoring, so this manual file route is not a
+manual-only dogfood bridge.
+
 ## Private Android catalog package
 
 Use Node 22, JDK 21, API 36/Build Tools 36.0.0 and the standard `zip`/`unzip`

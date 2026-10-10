@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-portable-files
 kind: feature
-stage: implementing
+stage: review
 tags: [data, ui]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -171,15 +171,41 @@ and the final everyday-phone acceptance owner.
   data before invoking the plugin in debug logging mode, so this removal does not
   prevent that log; the shell's committed Capacitor configuration now sets
   `loggingBehavior: "none"` and Android backup/transfer is disabled in the source
-  manifest rules. The final APK policy and a fresh Logcat window remain pending
-  native proof.
+  manifest rules. APK8's merged manifest, referenced legacy/cloud/device-transfer
+  exclusions and packaged Capacitor configuration were inspected during native
+  proof; fresh Logcat windows contained no synthetic marker or full export payload.
 - Verified locally with web backup tests (32), prototype tests (90), catalog package
   tests (5), including an adapter regression for missing restored bytes, web and
   prototype TypeScript checks, scoped ESLint checks, `git diff --check`, and Node
   syntax checks for the Android proof scripts and picker helper.
 - The provider write now runs away from Android's UI thread, and restored activity
-  results without the in-memory bytes fail before opening a provider stream. No
-  Android sync/build/install or emulator action was run for this change. Native UI
-  save, independent empty-installation recovery, edit/relaunch comparison, merged
-  package policy and Logcat checks remain pending the reserved emulator lane, so
-  this feature is not ready for review yet.
+  results without the in-memory bytes fail before opening a provider stream. The
+  current APK8 includes this repair and was installed as a same-signature v7-to-v8
+  source update with `adb install -r`; the source's actual pre- and post-update
+  SAF exports match each other and the catalog owner's verified canonical snapshot.
+  Native process-death callback restoration itself is covered by the adapter's
+  missing-buffer regression, not by an induced Android process kill.
+- The portable runner now derives its full expected source from the committed
+  synthetic fixture plus exactly the known edited-climb name/revision and the
+  catalog provider append (including exact provider identity/order). Its canonical
+  assertion was checked against the catalog owner's verified synthetic export; it
+  does not use that export as a committed fixture or weaken the comparison to counts.
+  Startup requires the two browser library databases to be absent while allowing
+  only the distinct catalog receipt database. During the APK8 proof, the source
+  export was saved through Android's `ACTION_CREATE_DOCUMENT` into Downloads, read
+  back from the provider to the host, and decoded with the production codec. The
+  actual bytes restored into the separate Android 36 recovery installation produced
+  an exact canonical re-export. The recovery app was freshly installed before the
+  restore; after a runner interruption, the resumed pass verified APK8 and zero
+  climbs/playlists before proceeding. A single synthetic editor name change was
+  the only canonical difference, and it remained after force-stop and relaunch.
+  APK8 policy inspection found `allowBackup=false`, 9 legacy exclusions, 18 cloud /
+  device-transfer exclusions and `loggingBehavior: "none"`. Logcat windows around
+  source export, restore/export, editor write/export and relaunch/export checked both
+  edit names where applicable and rejected the full backup payload. Evidence is
+  retained outside Git under `/tmp/cruxcontrol-android-portable-proof-v8-resume1-20261010`
+  with the prior source-upgrade exports in `/tmp/cruxcontrol-android-portable-proof-v8-retry2-20261010`.
+  This verifies local provider save/readback and isolated emulator recovery; it does
+  not verify cloud-provider upload, remote retention or an owner-phone destination.
+  Native proof has been accepted by the parent; the item is at review for the
+  independent implementation pass and remaining CI/documentation alignment.

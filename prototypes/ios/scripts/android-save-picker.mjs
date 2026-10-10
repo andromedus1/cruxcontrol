@@ -69,5 +69,8 @@ export async function chooseDownloadsAndSave({ adb, pause }) {
     );
   }
 
-  await tap((node) => node.text === "Save" || node["content-desc"] === "Save", "Save button");
+  await tap(
+    (node) => /^save$/i.test(node.text.trim()) || /^save$/i.test(node["content-desc"] ?? ""),
+    "Save button",
+  );
 }
