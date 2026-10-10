@@ -430,7 +430,7 @@ npm --prefix prototypes/ios run build:android:signed-proof -- \
   --catalog /outside/git/kilter-7x10.v1.db.gz --version-code 21
 "$ANDROID_HOME/platform-tools/adb" -s emulator-N install -r \
   prototypes/ios/android/app/build/outputs/apk/signedProof/app-signedProof.apk
-"$ANDROID_HOME/platform-tools/adb" -s emulator-N shell am start -n \
+"$ANDROID_HOME/platform-tools/adb" -s emulator-N shell am start -W -n \
   io.github.andromedus1.cruxcontrol.prototype/.AuthProofActivity
 ```
 
@@ -455,9 +455,12 @@ checks. `AUTH_NOT_CONFIGURED` means the asset is absent or invalid, not a
 successful authentication check.
 
 SignedProof17 compiled with the dedicated Firebase project's Android registration
-and Google provider configured; billing remains disabled. The native account
-chooser opens in the isolated emulator. Completed sign-in, cancellation, session
-refresh, persistence and sign-out acceptance remain open. Release17 packaging
+and Google provider configured; billing remains disabled. Native sign-in, forced
+session refresh before and after a full app restart, sign-out across restart and
+sign-in cancellation pass on the isolated emulator. Native session records are
+encrypted; inspected native preferences, WebView files, library databases and app
+logs contain no JWT-shaped tokens. A separate fresh emulator starts signed out;
+independent account recovery remains pending. Release17 packaging
 verification, with the private proof asset present in the source tree, excluded
 that asset, the proof activity, bridge and Firebase dependencies. This
 spike supplies no automatic online library backup or clean-install

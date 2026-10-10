@@ -31,7 +31,7 @@ Reuse the verified preservation comparison. Compare actual native authentication
 - [Preservation comparison](../../../.research/analysis/briefs/independent-library-preservation.md).
 - [Specification](../../../docs/SPEC.md), especially private library preservation and current wall-session capabilities.
 - [Architecture](../../../docs/ARCHITECTURE.md), especially runtime composition, native transport and independent preservation.
-- [Existing native shell](../../../prototypes/ios/README.md); native packaging does not currently imply native library persistence.
+- [Existing native shell](../../../prototypes/ios/README.md); Android uses native library storage, with off-device recovery requiring the separate preservation service.
 
 ## Mockups
 
@@ -59,7 +59,8 @@ Supabase remains an alternative native authentication candidate, not a selected
 production service. Its rotating sessions and native redirect documentation address a known
 gap in the Cloudflare Access candidate. Compare actual Android sign-in, secure
 session persistence, renewal after app restart and account recovery before locking
-the architecture. No account, paid plan or service has been provisioned.
+the architecture. No Supabase project or paid plan has been provisioned; the
+Firebase authentication proof below has separate setup evidence.
 
 The proposed private configuration is one project, one non-public snapshot bucket,
 and owner-scoped authenticated insert/list/read. Do not grant client update/delete
@@ -135,9 +136,9 @@ separate billed-service decision after the account proof.
   A command-scoped `XDG_CONFIG_HOME` keeps its credentials/configuration in that
   private project directory; Gemini and usage telemetry are disabled. No CLI
   token, service credential or downloaded app configuration belongs in Git.
-- The native SDK proof still needs project/app registration and Google provider
-  configuration. Browser login for the operator CLI succeeded with Andrew's chosen
-  account; that is service setup access, not evidence that sign-in in the Android app works. Do not advance
+- Project/app registration and Google provider configuration are complete.
+  Browser login for the operator CLI is service setup access; native acceptance
+  is recorded separately below. Do not advance
   this feature from drafting until the required design and native proof are ready.
 
 Setup references checked 2026-10-10:
@@ -267,3 +268,41 @@ drafting while this feasibility evidence and the full vault design remain incomp
   bridge and Firebase Auth classes; `debuggable=false` and `allowBackup=false`.
   Evidence: `.private-firebase/release-isolation17.json`. This repeats isolation
   with real configuration present, rather than relying on the unconfigured build.
+
+### Native session acceptance
+
+SignedProof17 on the isolated API36 authentication emulator passed:
+
+- Sign-in with the expected Google account, confirmed by native status and a real
+  forced server refresh. The first operator invocation timed out while interactive
+  Google account setup was unfinished; that is an evidence-capture timeout, not
+  an authentication rejection. Subsequent native status and refresh establish the
+  completed session.
+- A full app force-stop and cold launch retain the same Firebase user. Forced
+  refresh succeeds again, with a new issue time and later expiration.
+- Sign-out returns signed-out status and removes native user/token preference
+  entries. Forced refresh then rejects with `AUTH_REQUIRED`; cold launch remains
+  signed out.
+- A new sign-in prompt canceled with Android Back returns `AUTH_CANCELED` and
+  leaves the app signed out.
+- Actual native user and token-response preference values have the SDK's
+  `ENCRYPTED:` encoding. Inspection of 49 app preference/database/WebView files and
+  the app process log found no JWT-shaped tokens. This is a bounded inspection,
+  not proof that arbitrary secrets can never leak. The pinned SDK's inspected
+  code configures Android Keystore for this crypto boundary; physical hardware
+  key protection has not been tested on the owner's phone.
+
+Private evidence is under `.private-firebase/auth-proof/`, summarized by
+`native-session-summary.json`; account identifiers and raw token values stay out
+of Git. The operator README now waits for activity launch (`am start -W`) before
+attaching: an immediate probe after asynchronous launch can run before the app
+process exists. That harness timing error is separate from restart persistence.
+
+A second AVD was created from the installed system image, without copying either
+app data or credentials. Before install, CruxControl and Google accounts were
+absent; after installing the same signedProof17 APK, native status is signed out.
+Andrew has been asked to complete Google sign-in there for independent account
+recovery. The first emulator is stopped with its signed-out state preserved.
+No library snapshot has been uploaded or recovered; those remain separate required
+proofs. Feature stage remains drafting while independent account recovery and the
+complete production vault design are unfinished.
