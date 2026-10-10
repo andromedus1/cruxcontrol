@@ -40,10 +40,10 @@ describe('createAndroidBackupDelivery', () => {
   });
 
   it('rejects write/provider errors instead of reporting a saved backup', async () => {
-    const failure = Object.assign(new Error('Unable to write the library backup to the chosen destination'), { code: 'FILE_SAVE_FAILED' });
+    const failure = Object.assign(new Error('Unable to write the file to the chosen destination'), { code: 'FILE_SAVE_FAILED' });
     const { delivery } = setup(vi.fn().mockRejectedValue(failure));
     await expect(delivery.deliver(file)).rejects.toMatchObject({
-      message: 'Unable to save the library backup: Unable to write the library backup to the chosen destination. An empty or partial file may remain in the chosen location.',
+      message: 'Unable to save the library backup: Unable to write the file to the chosen destination. An empty or partial file may remain in the chosen location.',
       cause: failure,
     });
   });

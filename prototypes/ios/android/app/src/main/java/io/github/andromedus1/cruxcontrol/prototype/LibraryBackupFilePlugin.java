@@ -24,14 +24,14 @@ public class LibraryBackupFilePlugin extends Plugin {
     @PluginMethod
     public void save(PluginCall call) {
         if (isSaving) {
-            call.reject("A library backup save is already in progress");
+            call.reject("A file save is already in progress");
             return;
         }
 
         String filename = call.getString("filename");
         String text = call.getString("text");
         if (!isJsonBasename(filename) || text == null) {
-            call.reject("A valid JSON filename and backup text are required");
+            call.reject("A valid JSON filename and text are required");
             return;
         }
 
@@ -99,7 +99,7 @@ public class LibraryBackupFilePlugin extends Plugin {
             call.resolve(response);
         } catch (Exception ignored) {
             // Provider exceptions may contain user-selected paths or URIs.
-            call.reject("Unable to write the library backup to the chosen destination", "FILE_SAVE_FAILED");
+            call.reject("Unable to write the file to the chosen destination", "FILE_SAVE_FAILED");
         } finally {
             clearPendingSave();
         }
