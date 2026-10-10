@@ -132,6 +132,32 @@ artifacts to test invalid inputs and final-APK regressions, including Android's
 old expanded-database failure. Generic CI performs those tests and a compile-only
 build; it neither includes nor uploads the private catalog.
 
+After the native preservation proof has restored the complete synthetic fixture,
+provide its expected whole-library backup and run against an explicit emulator:
+
+```bash
+node --experimental-strip-types prototypes/ios/scripts/smoke-android-catalog.mjs \
+  emulator-N /outside/git/private.apk /outside/git/expected-synthetic.json \
+  /outside/git/catalog-evidence
+```
+
+The runner rejects unrelated authored records, verifies the final APK and actual
+canonical local gzip response, uses the normal consent flow, and compares complete
+canonical library snapshots. Its interrupted attempt imports the exact packaged
+worker through an emulator-only module wrapper and stops after flushing a real
+64 KB database chunk. Force-stop/relaunch restores the ordinary Worker: an
+interrupted candidate stays inactive, then the unmodified Worker/WASM importer
+installs normally. It checks search/grade/angle, detail, one intentional ordered
+provider append, airplane-mode relaunch, list resolution and board preview in
+play-through. Only catalog receipt metadata uses IndexedDB on Android.
+
+If a UI assertion interrupts the run after installation but before membership,
+`--resume-installed` requires the saved interrupted/reinstalled canonical evidence
+and continues without clearing catalog or authored storage. Evidence remains
+outside Git. API 36 / WebView 133 has passed these checks with the pinned real
+snapshot. This does not establish current official coverage, physical-board
+operation, public redistribution or account-backed automatic recovery.
+
 ## Native transport boundary
 
 The prototype's composition root injects `NativeBleByteTransport` through the

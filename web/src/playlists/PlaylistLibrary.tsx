@@ -13,6 +13,7 @@ import type { PlaylistTransportAdapters } from './portable-transports.ts';
 import type { LocalPlaylistRepository } from './repository.ts';
 import { resolvePlaylistEntries, type ResolvedPlaylistEntry } from './resolve.ts';
 import type { LocalPlaylist, PlaylistId } from './types.ts';
+import type { ClimbViewRecord } from '../climb-browser/types.ts';
 import './playlists.css';
 
 interface RetryState {
@@ -29,6 +30,9 @@ export interface PlaylistEditReturn {
 export interface PlaylistLibraryProps {
   readonly playlists: readonly LocalPlaylist[];
   readonly localClimbs: readonly LocalClimbDraft[];
+  readonly providerClimbs?: readonly ClimbViewRecord[];
+  readonly providerRead?: ProviderPlaylistRead;
+  readonly onRetryProviderRead?: () => void;
   readonly repository: LocalPlaylistRepository;
   readonly draftRepository: LocalDraftRepository;
   readonly installation: ConfiguredBoardInstallation;
@@ -49,6 +53,10 @@ export interface PlaylistLibraryProps {
   readonly onOperationEnd?: () => void;
 }
 
+export type ProviderPlaylistRead =
+  | Readonly<{ status: 'loading' | 'ready' }>
+  | Readonly<{ status: 'unavailable' | 'error'; message: string }>;
+
 export interface PlaylistSafetyState {
   readonly dirty: boolean;
   readonly playing: boolean;
@@ -66,6 +74,9 @@ function entryLabel(entry: ResolvedPlaylistEntry): string {
 export function PlaylistLibrary({
   playlists,
   localClimbs,
+  providerClimbs = [],
+  providerRead = { status: 'ready' },
+  onRetryProviderRead,
   repository,
   draftRepository,
   installation,
@@ -230,7 +241,7 @@ export function PlaylistLibrary({
     });
   }
 
-  const resolved = selected ? resolvePlaylistEntries(selected, localClimbs) : [];
+  const resolved = selected ? resolvePlaylistEntries(selected, localClimbs, providerClimbs) : [];
   const localById = new Map(localClimbs.map((climb) => [climb.id, climb]));
   const resolvedCompatibilityIssue = (entry: ResolvedPlaylistEntry) => {
     if (entry.availability !== 'available' || entry.reference.kind !== 'local') return null;
@@ -421,6 +432,15 @@ export function PlaylistLibrary({
                 <h2 id="playlist-entries-heading">Climbs</h2>
                 <span>{resolved.length}</span>
               </header>
+              {selected.entries.some(({ kind }) => kind === 'provider') && providerRead.status === 'loading' && (
+                <p role="status" className="playlist-muted">Loading catalog climbs…</p>
+              )}
+              {selected.entries.some(({ kind }) => kind === 'provider') && (providerRead.status === 'unavailable' || providerRead.status === 'error') && (
+                <p role="alert" className="playlist-error">
+                  {providerRead.message}{' '}
+                  {onRetryProviderRead && <button type="button" onClick={onRetryProviderRead}>Retry catalog climbs</button>}
+                </p>
+              )}
               {resolved.length === 0 ? (
                 <p className="playlist-muted">
                   This list is empty. Open a Draft or Finished climb and choose Add to lists.
@@ -440,7 +460,9 @@ export function PlaylistLibrary({
                       entry.availability === 'trashed'
                         ? 'In Trash'
                         : entry.availability === 'missing'
-                          ? 'Missing'
+                          ? entry.reference.kind === 'provider' && providerRead.status !== 'ready'
+                            ? providerRead.status === 'loading' ? 'Loading catalog' : 'Catalog lookup unavailable'
+                            : 'Missing'
                           : issue
                             ? 'Unavailable here'
                             : 'Available';

@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-android-catalog
 kind: feature
-stage: implementing
+stage: review
 tags: [data, infra]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -190,3 +190,90 @@ and its existing play-through. Show existing loading/error presentation and retr
 for unavailable storage or lookup errors; only a successful null lookup says
 Missing. No provider refs means no catalog startup. Tests cover lazy startup,
 deduplication, errors, retry and stale results alongside offline emulator resolution.
+
+## Implementation and verification (2026-10-10)
+
+- Packaging checkpoint `03eb286` implements the explicit private recipe,
+  production-parser preflight, atomic copy, inert `.gz.bin` suffix, exact local
+  native URL alias, synced asset check and final-APK byte/digest/code-graph check.
+  `build:android:catalog -- --catalog PATH --version-code N` requires the input;
+  generic Android build/sync explicitly reports compile-only and omits catalog.
+  No dependency or source manifest changes. The binary remains ignored/private.
+- Inspected installed AGP8.13.0/sdk-common31.13.0 bytecode: AssetItem strips `.gz`
+  solely by extension; MergedAssetWriter uses GZIPInputStream before AAPT. The
+  supported [noCompress](https://developer.android.com/reference/tools/gradle-api/8.13/com/android/build/api/dsl/AndroidResources#noCompress())
+  option controls APK ZIP storage, not this asset transformation. Preserved strict
+  downloader and importer contracts; no native catalog database replacement.
+- Synthetic package tests pass (5): explicit input/atomic byte copy; missing,
+  tampered, truncated, oversized data; manifest identity/raw bounds/SQLite header;
+  missing catalog with code present; expanded old APK regression; expected source
+  manifest comparison and reachable Worker/WASM. The actual prior APK also failed
+  final inspection because its gzip asset was absent. Private APKs 6/7/8 pass exact
+  compressed digest `68d6d86aad984aca5cf9967d24c818d5bdf2984631b1fe9b9fa1fd30c0edbbbf`,
+  5,122,102 bytes gzip /12,410,880 bytes raw after assembly. The synthetic CI step
+  was included by the parent in `334edf8`; its script landed in `03eb286` before
+  the parent pushed that CI state.
+- Connected CatalogBrowser's existing detail action to the existing workspace
+  membership dialog. Provider references retain native provider/source/layout IDs
+  and append after the prior ordered entries. Lists lazily starts the catalog only
+  with provider references, deduplicates across lists, performs one query at a
+  time, cancels further stale work and ignores old results. Errors/unavailable
+  storage have retry and do not claim Missing; a successful null lookup can.
+- Focused root lint/typecheck pass; 160 tests across catalog/bootstrap/SQLite,
+  workspace, playlist library and resolver pass (15 files). Added regressions for
+  provider membership, lazy startup, cross-list deduplication, failure/retry versus
+  confirmed Missing, stale pending reads and an uninstalled catalog. Native
+  lint/typecheck/build pass; native90 tests plus package5 pass. Existing catalog
+  browser1, bundled bootstrap5 and packaged iOS browser1 tests pass.
+  Parent's final combined web suite also passes: 813 tests across 96 files, with
+  output retained at `/tmp/cruxcontrol-web-integrated-tests.log`.
+- Real private APK7 on isolated AndroidAPI36 /arm64 WebView133.0.6943.137:
+  original `https://localhost/catalog/kilter-7x10.v1.db.gz` returns200, identity
+  encoding and the exact pinned compressed byte count/SHA. Consent offer shows
+  older snapshot, unknown source freshness and no live updates. Interrupted after
+  a flushed65,536-byte database chunk before receipt activation; force-stop and
+  relaunch reports Not installed. Then the **ordinary unmodified module Worker**
+  installed the real gzip via the normal consent/import path, loaded SQLite WASM,
+  queried compatible climbs and reopened in airplane mode. The worker exposes
+  sync handles and Web Locks; successful write/import/query exercises them.
+- Interrupted-attempt instrumentation is restricted to the emulator runner: a
+  module wrapper imports the exact bundled worker, preserves queued startup
+  messages, and blocks after the first flushed database chunk so the host can
+  force-stop. It is absent after restart and absent from app assets. An earlier
+  CDP auto-attach/debugger probe crashed the renderer; it is not used by the runner
+  and is not evidence of ordinary worker failure. A brief emulator ADB offline
+  transition interrupted an earlier probe; the bounded resumed proof passed.
+- Real search excluded a nonexistent name and restored a known climb. Grade
+  exclusion/reset,45°/40° filtering, read-only detail/board preview, provider append
+  and offline list resolution/play-through pass. IndexedDB contains only
+  `cruxcontrol-catalog-metadata`; **no authored-library IndexedDB database was
+  created**. No service-worker registration or laptop server is involved.
+- Full synthetic comparison includes every canonical field of4 draft/finished/
+  Trash records (IDs/revisions/dates/status/trash timestamp, metadata, assignments,
+  effect recipes/seeds/palette/targets) and2 playlists (IDs/revisions/dates/names/
+  notes and ordered references, including shared and missing local references).
+  All match the native preserved fixture before/after package update, interrupted
+  install, successful install and offline relaunch. The only intentional change
+  is one provider appended to Prototype ordered plus its revision/update time;
+  prior order and all other authored fields remain identical. Snapshot reads use
+  one read-only SQLite UNION statement across both tables and the production
+  decode/encode/canonical backup codec; UI export delivery is a separate feature.
+- Evidence stays outside Git at `/tmp/cruxcontrol-android-catalog-proof/evidence/`:
+  before/upgraded/interrupted/installed/membership/offline/verified-session JSON,
+  interrupted-write/result/session-result JSON and screenshots. The exact source
+  for the portable proof is verified-session.json. No phone was enumerated,
+  accessed, reset, uninstalled or maintained; no authored data was deleted.
+- Final APK8 merged manifest/resources/config inspection confirms parent `1de6550`:
+  allowBackup=false, both backup/device-transfer exclusion XML resources and
+  loggingBehavior:none. MainActivity registers the separately owned SAF plugin
+  (already committed `492ddf1`); its native file semantics remain portable-feature
+  scope. The catalog feature does not claim automatic cloud backups or real
+  device/board admission. Independent review and PR/CI remain parent-owned.
+- Final integrated private build8 passed native TypeScript/Vite, Capacitor sync,
+  Gradle assembly and final APK validation. The retained private artifact is
+  `/tmp/cruxcontrol-android-catalog-proof/private-catalog-v8.apk`; merged manifest,
+  both exclusion XML resource dumps and packaged Capacitor config are retained
+  alongside it. Emulator UI and build ownership are released to the portable
+  feature, which owns the same-signature APK8 source upgrade and exact comparison
+  against verified-session.json before final SAF export/empty-client recovery.
+  Catalog implementation is frozen for the parent-owned independent review.

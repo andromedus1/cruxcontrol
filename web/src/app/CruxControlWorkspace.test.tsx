@@ -21,6 +21,12 @@ import { createFullrideLightController } from '../board-control/light-controller
 import { LibraryBackupService } from '../library-backup/service';
 import type { LibraryBackupDelivery } from '../library-backup/delivery';
 import type { CatalogService, CatalogServiceSnapshot } from '../catalog/service.ts';
+import type { CatalogClimb } from '../catalog/types.ts';
+import { providerClimbViewKey } from '../climb-browser/types.ts';
+import { providerSourceId } from '../domain/boards/identity.ts';
+import { KILTER_PROVIDER_ID } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
+import { parseCatalogManifest } from '../data/catalog/manifest.ts';
+import catalogManifest from '../../public/catalog/manifest.json';
 
 const original: LocalClimbDraft = {
   ...draftContent({ name: 'Original', installationId: activeInstallationId }),
@@ -152,7 +158,124 @@ function catalogServiceFor(initial: CatalogServiceSnapshot = {
   };
 }
 
+function catalogRoute(runtime: CruxControlRuntime, source = 'catalog-route'): CatalogClimb {
+  const providerClimbId = { provider: KILTER_PROVIDER_ID, sourceId: providerSourceId(source), layoutRevision: runtime.installation.definition.layoutRevision };
+  return {
+    key: providerClimbViewKey(providerClimbId), name: `Catalog ${source}`, angle: 40,
+    origin: 'provider', providerClimbId, assignments: original.assignments,
+    gradeValue: 12, nativeGrades: { scale: 'kilter-difficulty', display: 12, community: 12, benchmark: null },
+    statistics: { ascentCount: 1, quality: 2 },
+  };
+}
+
+function readyCatalog(get: NonNullable<CatalogServiceSnapshot['queries']>['get']) {
+  return catalogServiceFor({
+    storage: { status: 'ready', receipt: { schemaVersion: 1, slot: 'a', installedAt: original.createdAt, manifest: parseCatalogManifest(catalogManifest) } },
+    operation: 'idle', offer: null, progress: null, error: null,
+    queries: {
+      provenance: { source: 'Legacy Kilter', snapshotId: 'test', retrievedAt: null, coverage: null },
+      query: async () => ({ status: 'ready', value: { climbs: [], nextCursor: null, excludedCount: 0 } }),
+      grades: async () => ({ status: 'ready', value: [] }), get,
+    },
+  }).service;
+}
+
 describe('CruxControlWorkspace', () => {
+  it('keeps catalog startup lazy and deduplicates provider reads across ordered lists', async () => {
+    const runtime = runtimeWith();
+    const route = catalogRoute(runtime);
+    const reference = { kind: 'provider' as const, id: route.providerClimbId };
+    const first = playlist('First', [reference]);
+    const second = { ...playlist('Second', [reference]), id: playlistId('55555555-5555-4555-8555-555555555555') };
+    const get = vi.fn(async () => ({ status: 'ready' as const, value: route }));
+    const catalog = readyCatalog(get);
+    render(<CruxControlWorkspace runtime={{ ...runtime, playlists: { ...runtime.playlists, list: async () => [first, second] }, catalog }} />);
+    await screen.findByRole('button', { name: /Lists.*2 lists/ });
+    expect(catalog.start).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /Lists.*2 lists/ }));
+    await screen.findByText(route.name);
+    expect(get).toHaveBeenCalledExactlyOnceWith(route.providerClimbId, runtime.installation.config.angle);
+    expect(screen.getByText('Available')).toBeInTheDocument();
+    expect(runtime.playlists.update).not.toHaveBeenCalled();
+  });
+
+  it('distinguishes lookup failure from a successful missing result and retries', async () => {
+    const runtime = runtimeWith();
+    const route = catalogRoute(runtime);
+    const get = vi.fn().mockRejectedValueOnce(new Error('storage read failed')).mockResolvedValue({ status: 'ready', value: null });
+    const catalog = readyCatalog(get);
+    const stored = playlist('Projects', [{ kind: 'provider', id: route.providerClimbId }]);
+    render(<CruxControlWorkspace runtime={{ ...runtime, playlists: { ...runtime.playlists, list: async () => [stored] }, catalog }} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Lists.*1 list/ }));
+    await screen.findByText(/Catalog lookup failed: storage read failed/);
+    expect(screen.queryByText('Missing')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry catalog climbs' }));
+    await screen.findByText('Missing');
+    expect(get).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not queue remaining provider reads after navigating away during a pending lookup', async () => {
+    const runtime = runtimeWith();
+    const routes = ['one', 'two', 'three'].map((source) => catalogRoute(runtime, source));
+    let resolve!: (value: { status: 'ready'; value: CatalogClimb }) => void;
+    const pending = new Promise<{ status: 'ready'; value: CatalogClimb }>((done) => { resolve = done; });
+    const get = vi.fn(async () => pending);
+    const catalog = readyCatalog(get);
+    const stored = playlist('Projects', routes.map((route) => ({ kind: 'provider', id: route.providerClimbId })));
+    render(<CruxControlWorkspace runtime={{ ...runtime, playlists: { ...runtime.playlists, list: async () => [stored] }, catalog }} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Lists.*1 list/ }));
+    await waitFor(() => expect(get).toHaveBeenCalledOnce());
+    expect(screen.getByText('Loading catalog climbs…')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Drafts/ }));
+    await act(async () => { resolve({ status: 'ready', value: routes[0]! }); await pending; });
+    expect(get).toHaveBeenCalledOnce();
+    expect(screen.queryByText(routes[0]!.name)).not.toBeInTheDocument();
+  });
+
+  it('leaves provider references unresolved when the catalog is not installed', async () => {
+    const runtime = runtimeWith();
+    const route = catalogRoute(runtime);
+    const stored = playlist('Projects', [{ kind: 'provider', id: route.providerClimbId }]);
+    render(<CruxControlWorkspace runtime={{ ...runtime, playlists: { ...runtime.playlists, list: async () => [stored] } }} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Lists.*1 list/ }));
+    await screen.findByText('Install the older Kilter catalog to resolve these list entries.');
+    expect(screen.queryByText('Missing')).not.toBeInTheDocument();
+    expect(runtime.playlists.update).not.toHaveBeenCalled();
+  });
+  it('appends a catalog provider reference through the existing membership dialog without changing local climbs', async () => {
+    let stored = playlist('Projects', [{ kind: 'local', id: original.id }]);
+    const update = vi.fn<LocalPlaylistRepository['update']>(async (_id, revision, content) => {
+      stored = { ...stored, ...content, revision: playlistRevision(Number(revision) + 1) };
+      return stored;
+    });
+    const runtime = runtimeWith({ list: listCollections([original], []) }, { list: async () => [stored], update });
+    const providerClimbId = { provider: KILTER_PROVIDER_ID, sourceId: providerSourceId('catalog-route'), layoutRevision: runtime.installation.definition.layoutRevision };
+    const route: CatalogClimb = {
+      key: providerClimbViewKey(providerClimbId), name: 'Catalog route', angle: 40,
+      origin: 'provider', providerClimbId, assignments: original.assignments,
+      gradeValue: 12, nativeGrades: { scale: 'kilter-difficulty', display: 12, community: 12, benchmark: null },
+      statistics: { ascentCount: 1, quality: 2 },
+    };
+    const catalog = catalogServiceFor({
+      storage: { status: 'ready', receipt: { schemaVersion: 1, slot: 'a', installedAt: original.createdAt, manifest: parseCatalogManifest(catalogManifest) } },
+      operation: 'idle', offer: null, progress: null, error: null,
+      queries: {
+        provenance: { source: 'Legacy Kilter', snapshotId: 'test', retrievedAt: null, coverage: null },
+        query: async () => ({ status: 'ready', value: { climbs: [route], nextCursor: null, excludedCount: 0 } }),
+        get: async () => ({ status: 'ready', value: route }),
+        grades: async () => ({ status: 'ready', value: [] }),
+      },
+    }).service;
+    render(<CruxControlWorkspace runtime={{ ...runtime, catalog }} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Kilter' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Catalog route/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add to lists' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Projects' }));
+    await waitFor(() => expect(update).toHaveBeenCalledOnce());
+    expect(stored.entries).toEqual([{ kind: 'local', id: original.id }, { kind: 'provider', id: providerClimbId }]);
+    expect(stored.notes).toBe('');
+    expect(runtime.drafts.update).not.toHaveBeenCalled();
+  });
   it('passes the runtime backup delivery into the backup dialog', async () => {
     const runtime = runtimeWith();
     const delivery: LibraryBackupDelivery = { kind: 'share', deliver: vi.fn(async () => ({ status: 'shared' as const })) };
