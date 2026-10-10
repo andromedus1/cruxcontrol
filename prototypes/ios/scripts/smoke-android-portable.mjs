@@ -20,19 +20,21 @@ import {
 } from "./android-save-picker.mjs";
 
 const [sourceSerial, recoverySerial, apk, evidenceDirectory, sourceBaselineFile, optionalSourceEvidenceOrMode, optionalModeOrBuildProvenance, optionalBuildProvenance] = process.argv.slice(2);
-const proofMode = ["source-upgrade", "grade-roundtrip"].includes(optionalSourceEvidenceOrMode)
+const proofModes = ["source-upgrade", "grade-roundtrip", "recovery-grade-upgrade"];
+const proofMode = proofModes.includes(optionalSourceEvidenceOrMode)
   ? optionalSourceEvidenceOrMode
   : optionalModeOrBuildProvenance ?? "source-upgrade";
-const previousSourceEvidenceDirectory = ["source-upgrade", "grade-roundtrip"].includes(optionalSourceEvidenceOrMode)
+const previousSourceEvidenceDirectory = proofModes.includes(optionalSourceEvidenceOrMode)
   ? undefined
   : optionalSourceEvidenceOrMode;
-const buildProvenanceFile = ["source-upgrade", "grade-roundtrip"].includes(optionalSourceEvidenceOrMode)
+const buildProvenanceFile = proofModes.includes(optionalSourceEvidenceOrMode)
   ? optionalModeOrBuildProvenance
   : optionalBuildProvenance;
-if (!/^emulator-\d+$/.test(sourceSerial ?? "") || !/^emulator-\d+$/.test(recoverySerial ?? "") || sourceSerial === recoverySerial || !apk || !evidenceDirectory || !sourceBaselineFile) {
-  throw new Error("Usage: node --experimental-strip-types smoke-android-portable.mjs SOURCE_EMULATOR RECOVERY_EMULATOR APK EVIDENCE_DIRECTORY SOURCE_BASELINE_JSON [PREVIOUS_SOURCE_EVIDENCE_DIRECTORY] [source-upgrade|grade-roundtrip] [BUILD_PROVENANCE_JSON]");
+const recoveryOnlyMode = proofMode === "recovery-grade-upgrade";
+if (!(recoveryOnlyMode ? sourceSerial === "-" : /^emulator-\d+$/.test(sourceSerial ?? "")) || !/^emulator-\d+$/.test(recoverySerial ?? "") || sourceSerial === recoverySerial || !apk || !evidenceDirectory || !sourceBaselineFile) {
+  throw new Error("Usage: node --experimental-strip-types smoke-android-portable.mjs SOURCE_EMULATOR|- RECOVERY_EMULATOR APK EVIDENCE_DIRECTORY SOURCE_BASELINE_JSON [PREVIOUS_SOURCE_EVIDENCE_DIRECTORY] [source-upgrade|grade-roundtrip|recovery-grade-upgrade] [BUILD_PROVENANCE_JSON]");
 }
-assert.ok(["source-upgrade", "grade-roundtrip"].includes(proofMode), "Proof mode must be source-upgrade or grade-roundtrip");
+assert.ok(proofModes.includes(proofMode), "Unsupported Android portable proof mode");
 
 const evidence = resolve(evidenceDirectory);
 if (existsSync(evidence)) {
@@ -491,7 +493,7 @@ function device(serial) {
   return { adb, adbBytes, startup, close, counts, saveExport, cancelSave, attach, click, evaluate, waitFor, editClimbName, editClimbGradeAndAngle, versionCode, waitForDevice };
 }
 
-const source = device(sourceSerial);
+const source = sourceSerial === "-" ? undefined : device(sourceSerial);
 const recovery = device(recoverySerial);
 const originals = new Map();
 
@@ -716,6 +718,100 @@ async function runGradeRoundtrip(packagePolicy, recoveryAlreadyInstalled) {
   console.log(`Android native grade and portable restore passed. Evidence: ${evidence}`);
 }
 
+async function runRecoveryGradeUpgrade(packagePolicy, recoveryAlreadyInstalled) {
+  assert.equal(recoveryAlreadyInstalled, true, "Recovery grade upgrade requires the retained restored installation");
+  assert.ok(buildProvenanceFile, "Recovery grade upgrade requires APK build-boundary provenance");
+  const gradedDraft = sourceBaseline.drafts.find((record) => record.id === recoveryEditId);
+  assert.ok(gradedDraft, "Recovery baseline is missing the known synthetic climb");
+  assert.equal(gradedDraft.name, editedName, "Recovery baseline must retain the known synthetic name edit");
+  assert.equal(gradedDraft.angle, 45, "Recovery baseline must contain the accepted angle edit");
+  assert.equal(gradedDraft.metadata.grade, "V4", "Recovery baseline must contain the accepted grade edit");
+  assert.equal(sourceBaseline.drafts.length, 4, "Recovery baseline should preserve all four synthetic climbs");
+  assert.equal(sourceBaseline.playlists.length, 2, "Recovery baseline should preserve both synthetic playlists");
+
+  const versionCodeBefore = recovery.versionCode();
+  assert.ok(packagePolicy.versionCode > versionCodeBefore, "Recovery update APK must have a newer version code");
+  setOffline(recovery);
+  const browserDatabasesBefore = await recovery.startup();
+  const before = await recovery.saveExport("recovery-before-upgrade", {
+    forbiddenMarkers: [syntheticMarker, editedName],
+  });
+  assert.equal(canonicalSnapshot(before.snapshot), canonicalSnapshot(sourceBaseline), "Retained graded recovery differs from its accepted baseline before APK11");
+  assertLogcatClean(before.logcat, "recovery before APK update");
+
+  await recovery.close();
+  recovery.adb("shell", "am", "force-stop", appId);
+  recovery.waitForDevice();
+  recovery.adb("install", "-r", resolve(apk));
+  const versionCodeAfter = recovery.versionCode();
+  assert.equal(versionCodeAfter, packagePolicy.versionCode, "Recovery app did not update to the inspected APK");
+  await recovery.startup();
+
+  let updateEvidence;
+  const after = await recovery.saveExport("recovery-after-upgrade", {
+    forbiddenMarkers: [syntheticMarker, editedName],
+    onReadback(exported) {
+      assert.equal(canonicalSnapshot(exported.snapshot), canonicalSnapshot(before.snapshot), "Same-signature APK update changed the graded recovery library");
+      assert.equal(canonicalSnapshot(exported.snapshot), canonicalSnapshot(sourceBaseline), "Post-update export differs from the accepted graded recovery baseline");
+      const buildProvenance = readBuildProvenance(packagePolicy);
+      updateEvidence = {
+        producer: "smoke-android-portable.mjs",
+        schemaVersion: 1,
+        verification: "retained graded recovery; same-signature adb install -r; exact pre/post SAF exports and canonical library equality",
+        installCommand: "adb install -r",
+        recoveryVersionCodeBefore: versionCodeBefore,
+        recoveryVersionCodeAfter: versionCodeAfter,
+        apkVersionCode: packagePolicy.versionCode,
+        sameSignatureUpgrade: versionCodeAfter > versionCodeBefore && versionCodeAfter === packagePolicy.versionCode,
+        baselineSha256: sha256(sourceBaselineText),
+        beforeExportFile: before.filename,
+        beforeExportSha256: sha256(before.text),
+        afterExportFile: exported.filename,
+        afterExportSha256: sha256(exported.text),
+        beforeCanonicalSha256: sha256(canonicalSnapshot(before.snapshot)),
+        afterCanonicalSha256: sha256(canonicalSnapshot(exported.snapshot)),
+        canonicalUnchangedAcrossUpdate: canonicalSnapshot(before.snapshot) === canonicalSnapshot(exported.snapshot)
+          && canonicalSnapshot(exported.snapshot) === canonicalSnapshot(sourceBaseline),
+        preservedGrade: { id: recoveryEditId, name: gradedDraft.name, grade: gradedDraft.metadata.grade, angle: gradedDraft.angle },
+        apk: { filename: basename(apk), sha256: sha256(readFileSync(resolve(apk))) },
+        buildProvenance,
+        repositoryAtVerification: {
+          commit: gitOutput("rev-parse", "HEAD"),
+          trackedDirty: trackedDirtyState(),
+        },
+      };
+      writeFileSync(resolve(evidence, "recovery-upgrade.json"), JSON.stringify(updateEvidence, null, 2));
+    },
+  });
+  assert.ok(updateEvidence, "Recovery upgrade receipt was not written at the byte-readback boundary");
+  assertLogcatClean(after.logcat, "recovery after APK update");
+
+  const result = {
+    packagePolicy,
+    recoveryUpgrade: updateEvidence,
+    apkProvenance: updateEvidence.apk,
+    buildProvenance: updateEvidence.buildProvenance,
+    repositoryProvenance: updateEvidence.repositoryAtVerification,
+    baselineOrigin: "APK10 grade-recovery-relaunched export after actual SAF restore and recovery relaunch",
+    recoveryStartedInstalled: true,
+    recoveryStartedEmpty: false,
+    offline: true,
+    sameSignatureUpdatePreservedExactLibrary: true,
+    safReadbackBeforeAndAfter: true,
+    recoveryImportMethod: "not repeated; retained APK10 recovery installation",
+    preservedGrade: updateEvidence.preservedGrade,
+    browserIndexedDBNames: browserDatabasesBefore,
+    browserLibraryDatabases: [],
+    logcat: {
+      beforeUpgrade: before.logcat,
+      afterUpgrade: after.logcat,
+      fullBackupPayloadAbsenceClaim: false,
+    },
+  };
+  writeFileSync(resolve(evidence, "result.json"), JSON.stringify(result, null, 2));
+  console.log(`Android graded recovery survived the same-signature update. Evidence: ${evidence}`);
+}
+
 function assertSourceSnapshotForGradeBaseline(snapshot) {
   const draft = snapshot.drafts.find((record) => record.id === recoveryEditId);
   assert.ok(draft, "Accepted recovery baseline is missing its known synthetic climb");
@@ -728,9 +824,9 @@ function assertSourceSnapshotForGradeBaseline(snapshot) {
 
 let primaryFailure;
 try {
-  source.waitForDevice();
+  source?.waitForDevice();
   recovery.waitForDevice();
-  assert.equal(source.adb("shell", "getprop", "ro.kernel.qemu"), "1", "Source target must be an emulator");
+  if (source) assert.equal(source.adb("shell", "getprop", "ro.kernel.qemu"), "1", "Source target must be an emulator");
   assert.equal(recovery.adb("shell", "getprop", "ro.kernel.qemu"), "1", "Recovery target must be an emulator");
   const recoveryAlreadyInstalled = recovery.adb("shell", "pm", "list", "packages", appId).includes(appId);
   const packagePolicy = inspectPackagePolicy(apk);
@@ -738,9 +834,12 @@ try {
     const provenance = readBuildProvenance(packagePolicy);
     writeFileSync(resolve(evidence, "build-provenance.json"), JSON.stringify(provenance, null, 2));
   }
-  if (proofMode === "grade-roundtrip") {
+  if (proofMode === "recovery-grade-upgrade") {
+    await runRecoveryGradeUpgrade(packagePolicy, recoveryAlreadyInstalled);
+  } else if (proofMode === "grade-roundtrip") {
     await runGradeRoundtrip(packagePolicy, recoveryAlreadyInstalled);
   } else {
+  assert.ok(source, "The source emulator is required for source-upgrade proof modes");
   assertSourceSnapshot(sourceBaseline);
   writeFileSync(resolve(evidence, "source-catalog-baseline.json"), sourceBaselineText);
   const sourceVersionBeforeUpdate = source.versionCode();
@@ -895,7 +994,7 @@ try {
   throw error;
 } finally {
   const cleanupFailures = [];
-  try { await source.close(); } catch (error) { cleanupFailures.push(error); }
+  try { await source?.close(); } catch (error) { cleanupFailures.push(error); }
   try { await recovery.close(); } catch (error) { cleanupFailures.push(error); }
   for (const [target, original] of originals) {
     if (original !== "1") {
