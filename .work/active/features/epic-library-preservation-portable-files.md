@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-portable-files
 kind: feature
-stage: drafting
+stage: implementing
 tags: [data, ui]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -38,3 +38,101 @@ Own platform delivery/cancellation, complete file naming and repeated exports, a
 - Inherit [library preservation](../../../.mockups/flows/library-preservation/index.html) where backup surfaces apply.
 - Existing editor, library, playlist and Kilter browser reuse their current UI; mock only genuinely new structure.
 - Andrew’s 2026-10-10 instruction to proceed supplies authorization to continue this prepared direction; no new UI redesign milestone.
+
+## Design decisions
+
+Use the established complete JSON format and native delivery port. The file must
+remain readable independently of the app and backup service. The existing picker/
+review/conflict/partial-result UI is retained. The prepared new Manage hub belongs
+to automatic-backup; portable-file delivery does not wait for account UI.
+
+Export completion means OS handoff, not confirmed remote retention. An independently
+stored file is verified by reading that actual file on a different client and doing
+an exact semantic restore comparison. Daily manual copying is not the default
+substitute for automatic online backup; Andrew's temporary-dogfood preference is
+pending in the parent conversation.
+
+## Architectural choice
+
+- **Native Filesystem + Share with strict file validation (chosen):** already exists
+  for iOS, exposes owner-controlled destinations and requires the smallest Android
+  extension. Validate Android cancellation and URI lifetime with the pinned plugin.
+- **Custom Storage Access Framework plugin:** can provide a more direct save picker,
+  but still cannot prove a cloud provider uploaded the bytes. Add only if the existing
+  share/destination path is unusable on the target device.
+- **Blob anchor download:** browser behavior is not enough evidence of packaged
+  Android delivery; no fallback that silently treats an unobservable download as saved.
+
+The trickiest unit is when the OS chooser returns versus when a recipient has finished
+reading. Preserve app-owned temporary export bytes until they can safely be removed;
+platform return semantics must not remove a file still being consumed by a destination.
+
+## Implementation units
+
+### 1. Platform delivery correctness
+
+Files: `prototypes/ios/src/native-backup-delivery.ts`, its test file, and Android file
+provider configuration if required by the chosen cache path.
+
+```typescript
+export function createNativeBackupDelivery(
+  dependencies: NativeBackupDeliveryDependencies,
+): LibraryBackupDelivery;
+```
+
+Keep the existing port; extend dependency configuration only for a proven platform
+lifetime difference. Inspect the pinned Share8.0.3 Android activity callback and
+Filesystem8.1.4 errors. Cover initial missing-directory handling, valid UTF-8 file
+URI, cancellation, failure, repeat export and destination handoff. Restrict cleanup
+to the export-owned cache directory; never touch the native library or user files.
+A successful share callback must retain the existing instruction to check the chosen
+destination, not display a false off-phone protection receipt.
+
+### 2. File identity and validation
+
+Files: `web/src/library-backup/service.ts`, `delivery.ts` and focused tests.
+
+Keep `exportFile(): Promise<{filename:string; text:string}>` and validate using the
+strict complete-library codec. Give repeated exports distinct readable names at
+least to millisecond resolution (with collision handling if same-clock exports are
+possible); date-only names should not encourage overwriting the only retained copy.
+Exact snapshot content, not naming, establishes equality. No raw live SQLite-file
+copy is substituted for a coherent logical export.
+
+### 3. Offline recovery proof
+
+Files: an isolated Android smoke script under `prototypes/ios/scripts/` and evidence
+in this feature body. Use the actual exported file, not the original fixture as a
+stand-in. Copy the delivered synthetic file outside the emulator, validate with the
+production decoder, and restore it into a separately isolated empty installation.
+Compare canonical full-library state including Trash, grade/angle, effects and ordered
+memberships before/after/relaunch. Do not wipe the primary proof installation or the
+owner's phone. Corrupt input and conflicts must not be presented as successful restore.
+The local host copy proves off-device portable recovery; cloud-drive delivery on the
+owner's phone is a separate actual destination check if used for dogfood.
+
+### 4. Copy and operations
+
+Files: `web/src/library-backup/LibraryBackupDialog.tsx` only for necessary truthful
+copy (no layout change), `prototypes/ios/README.md` and this item.
+
+Document actual Android picker/share behavior, where the independently retained test
+file lives (outside Git), and remaining destination limitations. Do not commit personal
+library contents or synthetic output dumps when the existing fixture suffices.
+
+## Testing
+
+Use injected filesystem/share boundaries for failure, cancellation, no false success,
+concurrent request exclusion and correct temporary-file lifetime. Derive assertions
+from platform delivery contract. Native emulator UI proves the delivered bytes and
+independent file restore. Run native/static suites and affected library backup tests;
+retain existing browser/iOS contracts. Real cloud destination proof is required before
+calling a manual file bridge off-phone-protected on Andrew's installation.
+
+## Risks
+
+A chooser may return before the recipient finishes, or offer only same-device targets.
+Remote upload success is outside this port; do not infer it. If the chooser cannot
+supply a usable portable destination, revise for a dedicated native save capability.
+Keep scope separate from automatic cloud-account setup and the final everyday-phone
+acceptance owner.
