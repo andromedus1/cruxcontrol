@@ -456,3 +456,14 @@ intentionally skipped. This closes this feature administratively after its
 standard pass and verified fix set. Physical-device durability/board behavior,
 private signing and automatic online recovery remain separate active features;
 the parent epic is not complete and real authoring is not yet admitted.
+
+## Subsequent portable upgrade qualification (2026-10-10)
+
+The APK11 follow-up updated the already restored, grade-inclusive recovery
+installation from version 10 to 11 with the same signing key. Actual SAF exports
+immediately before and after `adb install -r` matched the complete accepted APK10
+recovery snapshot, including its V4/angle45 climb, four climbs and two playlists.
+The portable-files feature retains the build/hash receipt and exact proof path;
+this supplement confirms only that the native library did not lose the grade during
+a subsequent app update. It does not expand the original APK8 proof or establish
+remote/provider retention.

@@ -187,6 +187,28 @@ cloud-backed provider upload, remote retention, owner-phone recovery or the
 required automatic online backup. Verify any remote copy independently; automatic
 online backup remains required before real authoring.
 
+The APK11 follow-up did not repeat restore or cancellation. It rebooted the retained
+graded recovery emulator, exported its current library through SAF, installed the
+same-signature APK11 with `adb install -r`, and read back a second SAF export. The
+complete canonical snapshots matched the APK10 graded recovery baseline before
+and after update, including V4 at angle45. The run used no source emulator:
+
+```bash
+node --experimental-strip-types prototypes/ios/scripts/smoke-android-portable.mjs \
+  - emulator-5586 /outside/git/apk11/final.apk \
+  /outside/git/grade-upgrade-evidence \
+  /tmp/cruxcontrol-android-portable-grade-proof-20261010/grade-recovery-relaunched.json \
+  recovery-grade-upgrade /outside/git/apk11/build-provenance.json
+```
+
+This mode requires the retained recovery installation and a newer APK. It neither
+restores again nor clears or uninstalls the app. APK11 evidence is outside Git at
+`/tmp/cruxcontrol-android-portable-grade-upgrade-apk11-20261010/`; the APK and
+build-boundary sidecar are in `/tmp/cruxcontrol-android-portable-proof-apk11/`.
+Its APK SHA-256 is
+`419248fc966ba36a0698897a97ef676f4a50d7c01151a253198cd8cf653d2d0e`, built from
+clean tracked commit `bd57b1ebdab9d1f21414eaf72794be1b2c03391c`.
+
 ## Private Android catalog package
 
 Use Node 22, JDK 21, API 36/Build Tools 36.0.0 and the standard `zip`/`unzip`

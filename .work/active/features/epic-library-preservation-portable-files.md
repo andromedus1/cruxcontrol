@@ -286,3 +286,25 @@ and the final everyday-phone acceptance owner.
 - The original retry2 failure cause remains unknown and is preserved as a historic
   gap; the new receipt supersedes it for the current source-update proof. No
   personal library or real phone was used.
+
+## APK11 graded recovery update evidence (2026-10-10)
+
+- The retained recovery emulator 5586 was booted with its APK10-restored graded
+  library intact. Before updating, the runner exported the actual SAF-selected file
+  and matched the accepted `grade-recovery-relaunched.json` snapshot exactly.
+- The same-signature APK11 was installed with `adb install -r` (version code 10→11).
+  A second SAF save was independently read back and decoded; its complete canonical
+  library matched both the before-update export and accepted baseline. The known
+  synthetic climb remains grade V4 at angle 45; all four climbs and two playlists
+  are unchanged. This closes the grade-across-app-update evidence gap without
+  repeating restore, cancellation or a clean-install cycle.
+- APK11 was built from clean tracked commit `bd57b1ebdab9d1f21414eaf72794be1b2c03391c`
+  with the validated private catalog. The binary SHA-256 is
+  `419248fc966ba36a0698897a97ef676f4a50d7c01151a253198cd8cf653d2d0e`. Its
+  build-boundary sidecar and native evidence are retained outside Git at
+  `/tmp/cruxcontrol-android-portable-proof-apk11/` and
+  `/tmp/cruxcontrol-android-portable-grade-upgrade-apk11-20261010/`.
+- The machine receipt records exact raw and canonical before/after hashes and
+  source/build provenance immediately at successful provider readback. Logcat
+  checks are separate and still make no complete-payload absence claim. No other
+  emulator was modified for this follow-up.
