@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-native-library
 kind: feature
-stage: drafting
+stage: implementing
 tags: [data, infra]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -38,3 +38,201 @@ This capability owns the focused runtime storage boundary, native repository com
 - Inherit [library preservation](../../../.mockups/flows/library-preservation/index.html) where backup surfaces apply.
 - Existing editor, library, playlist and Kilter browser reuse their current UI; mock only genuinely new structure.
 - Andrew’s 2026-10-10 instruction to proceed supplies authorization to continue this prepared direction; no new UI redesign milestone.
+
+## Design decisions
+
+All product direction is inherited. Existing UI is reused without a new visual
+surface. Android is the only new persisted-library target in this feature; the iOS
+prototype retains its current storage until its own explicit migration/acceptance.
+The same Capacitor package under `prototypes/ios` gains Android support to avoid
+forking the shell; defer a directory rename that adds no capability. Keep its app
+identity stable for upgrades. This is a synthetic-data proof until the remaining
+preservation capabilities pass.
+
+## Architectural choice
+
+1. **Shared UI with a native SQLite library (chosen):** reuse React, domain codecs,
+   editor, playlists and controller. Add a narrow runtime library factory and native
+   repositories in one persistent database. The verified comparison identifies
+   `@capacitor-community/sqlite` 8.1.1 as the concrete bridge candidate; pin it and
+   prove it on Android before admitting the client.
+2. **Persisted browser IndexedDB inside the shell:** less integration work but does
+   not satisfy the requested actual-native-storage direction. Keep as comparison,
+   not a hidden fallback if native initialization fails.
+3. **Rewrite UI/domain with native views:** greater rewrite and parity risk without
+   eliminating independent-backup requirements. No justification for this dogfood target.
+
+The trickiest unit is transaction/lifetime correctness across asynchronous plugin
+calls: all library operations share one serialized connection; snapshot capture must
+see a single coherent database state; closing/reopening under React StrictMode must
+not race an in-flight commit or attach a new runtime to a disposed connection.
+
+## Implementation units
+
+### 1. Runtime library composition
+
+Files: `web/src/app/library.ts` (new), `web/src/app/create-runtime.ts`, runtime tests.
+
+```typescript
+export interface AppLibrary {
+  readonly drafts: LocalDraftRepository;
+  readonly playlists: LocalPlaylistRepository;
+  readonly backupStore: LibraryBackupStore;
+  close(): void;
+}
+// Added to CruxControlRuntimeDependencies:
+readonly openLibrary?: () => Promise<AppLibrary>;
+```
+
+Encapsulate the current two-IDB opening/cleanup in the default factory. Retain the
+existing database-opener test seams unless an equivalent focused replacement makes
+them unnecessary. Injected native storage must never open either browser library DB.
+Runtime construction errors and idempotent close release exactly their owned resources.
+Catalog composition stays separate and lazy.
+
+### 2. Reuse validated domain construction
+
+Files: `web/src/drafts/record.ts`, `web/src/playlists/record.ts` (new if needed),
+existing IndexedDB repositories.
+
+```typescript
+export function draftFrom(content: DraftContent, identity: {
+  id: LocalDraftId; revision: DraftRevision; createdAt: string;
+  updatedAt: string; trashedAt?: string;
+}): LocalClimbDraft;
+export function draftContentOf(draft: LocalClimbDraft): DraftContent;
+export function draftInCollection(draft: LocalClimbDraft,
+  collection: NonNullable<DraftListOptions['collection']>): boolean;
+export function playlistFrom(content: PlaylistContent, identity: {
+  id: PlaylistId; revision: PlaylistRevision; createdAt: string; updatedAt: string;
+}): LocalPlaylist;
+```
+
+Extract the existing pure constructors/filter rules only where the second adapter
+needs them. Reuse codecs as the contract authority; preserve browser behavior.
+
+### 3. Transactional native library
+
+Files: `prototypes/ios/src/native-library.ts`, `native-library.test.ts`.
+
+```typescript
+export interface NativeLibraryDatabase {
+  execute(sql: string): Promise<void>;
+  run(sql: string, values: readonly unknown[]): Promise<void>;
+  query(sql: string, values?: readonly unknown[]): Promise<readonly Record<string, unknown>[]>;
+  close(): Promise<void>;
+}
+export async function createNativeLibrary(database: NativeLibraryDatabase,
+  options?: DraftRepositoryOptions & PlaylistRepositoryOptions): Promise<AppLibrary>;
+```
+
+One native database, schema version checked before use, stable IDs as primary keys
+and strict versioned JSON records stored in separate climb/playlist tables. Bound SQL
+values, no interpolated user input. No speculative ORM or syncing tables. Serialize
+all operations on the connection, and use explicit transactions for revision checks,
+writes, restore batches and complete snapshot capture. Commit must succeed before
+reporting success. On ambiguous rollback/connection failure, fail subsequent writes
+until reopen rather than continuing on unknown transaction state. Do not delete,
+recreate, or silently fall back when open/schema/decode fails.
+
+Implement existing repository semantics: UUID collision handling; expected-revision
+conflicts; immutable dates/identities; active/draft/finished/Trash collection filtering;
+update rejection for trashed climbs; strict reads unless diagnostics opt-in is given;
+playlist ordering; atomic per-batch missing-only restore with canonical equality.
+Malformed JSON and key/payload ID mismatches are corrupt records. Backup capture
+remains strict even when the browsing list elects partial diagnostic reads.
+
+### 4. Coherent complete capture
+
+Files: `web/src/library-backup/types.ts`, `service.ts`, tests; native library.
+
+```typescript
+// Optional strong snapshot boundary on LibraryBackupStore:
+readSnapshot?(): Promise<LibrarySnapshot>;
+```
+
+Use the atomic snapshot method when supplied. Retain the browser's bounded repeated
+reads as its existing weaker fallback; never describe them as a transaction.
+`exportFile` and `review` must read all saved records, including Trash, grades,
+recipes and memberships, through strict decoding. Existing per-store restore outcome
+contracts remain accurate; whole-restore atomicity is not required in this unit.
+
+### 5. Actual Capacitor connection and Android bootstrap
+
+Files: `prototypes/ios/src/open-native-library.ts`, `runtime.ts`, tests, package/lock.
+
+```typescript
+export function openNativeLibrary(): Promise<AppLibrary>;
+```
+
+Pin the SQLite plugin at 8.1.1 and Android runtime at the existing Capacitor 8.4.3.
+Connect in persistent native database storage, not cache/WebView. Configure or verify
+appropriate journaling and synchronization; let the plugin expose its real failures.
+Use a serialized lease/lifetime if necessary to handle overlapping React initialization
+and close/reopen. Native Android startup injects this factory; iOS keeps its current
+library for now. Enable the existing native BLE/lifecycle and file-delivery composition
+for Android without initializing Bluetooth before Connect.
+
+### 6. Android package and build
+
+Files: `prototypes/ios/android/**`, package scripts, `.gitignore`, CI as appropriate.
+Generate the Android project from the pinned CLI. Provide `sync:android` and a
+repeatable Gradle build with JDK 21/Android SDK 36. Keep binaries, SDK paths, device
+identifiers, databases, signing keys and private artifacts out of Git. Configure
+Bluetooth permissions and existing native app semantics following the pinned plugin.
+Bundle shared assets without a service worker or remote development-server URL.
+The parent owns local SDK installation; no physical-phone maintenance in this unit.
+
+### 7. Verification and operational entry
+
+Files: `prototypes/ios/scripts/*android*`, `prototypes/ios/README.md`, tests above.
+Use the existing synthetic whole-library fixture. A real SQL engine exercises
+repository transactions, conflict/rollback, corrupt rows and canonical full export
+round trips (Node 22 SQLite is acceptable for adapter-independent SQL tests).
+Plugin mocks establish composition and lifecycle only; they do not prove native
+storage. Compile Android, launch in an isolated emulator, restore/edit/save/relaunch,
+then install an update with the same identity and compare a complete exported snapshot.
+Document precisely which checks ran; failure to run native acceptance leaves the
+feature implementing rather than claiming device durability.
+
+## Implementation order
+
+Start package/toolchain compilation early, then library composition and native
+transactions, snapshot capture, runtime integration, exact synthetic comparisons and
+emulator update proof. Cohesive ownership: one worker implements this feature; no
+child-story fan-out or separate database/API/UI owners. The host owns SDK installation
+and independent review; work through interfaces and acceptance above as checkpoints.
+
+## Testing
+
+- Real SQL lifecycle/revision/collision/Trash/list/order behavior, reopen persistence,
+  strict corruption failures, rollback under failed writes, and concurrent operations.
+- A complete native snapshot matches the fixture exactly and never mixes a queued
+  write between climb/playlist reads; unchanged restore is idempotent and conflicts
+  preserve originals.
+- Native runtime opens no IndexedDB library, retains native BLE/file injection, cleans
+  up startup failures, and handles overlapping init/disposal. Browser/iOS paths keep
+  their established behavior.
+- Root lint/typecheck/tests/build, native-package lint/typecheck/tests/build, Android
+  compile, existing packaged browser smoke and the isolated emulator preservation check.
+
+## Risks
+
+- Plugin transaction defaults can accidentally nest transactions: disable implicit
+  transactions in adapter calls and own the explicit boundary; inspect pinned API.
+- Failed rollback can poison queued operations: fail closed and preserve disk state.
+- Native plugin and wrapper connection registries can race React StrictMode: exercise
+  actual startup and sequential reopen, not just a fake happy-path database.
+- A new app identity cannot inherit PWA storage: only explicit validated import can
+  transfer a surviving library. Do not touch the real phone in the proof.
+- Android catalog support is still a separate early proof; successful startup is not
+  full dogfood parity or independent protection.
+
+## Execution
+
+One feature-owning implementation worker is authorized by implement-orchestrator.
+Preferred GPT-5.6 Luna is unavailable in this session; use available GPT-6.1 Sol at
+xhigh for the storage/transaction risk. Review weight is standard (project policy):
+one independent review after integrated verification, then fix and verify material
+findings without a repeated review loop. Host handles review, SDK and subsequent
+capabilities. Worker must not delegate or use peeragent.
