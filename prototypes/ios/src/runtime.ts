@@ -10,6 +10,8 @@ import {
   createAppInstallationRegistry,
 } from "../../../web/src/app/installations.ts";
 import { NativeBleByteTransport } from "./native-ble-transport.ts";
+import { createAndroidBackupDelivery } from "./android-backup-delivery.ts";
+import { LibraryBackupFile } from "./library-backup-file-plugin.ts";
 import { createNativeBackupDelivery } from "./native-backup-delivery.ts";
 import { openNativeLibrary } from "./open-native-library.ts";
 
@@ -60,14 +62,16 @@ export async function createPrototypeRuntime() {
         createAppInstallationRegistry({
           createTransport: () => transport,
         }).require(activeInstallationId),
-      ...(native
-        ? {
-            backupDelivery: createNativeBackupDelivery({
-              filesystem: Filesystem,
-              share: Share,
-            }),
-          }
-        : {}),
+      ...(platform === "android"
+        ? { backupDelivery: createAndroidBackupDelivery({ filePicker: LibraryBackupFile }) }
+        : platform === "ios"
+          ? {
+              backupDelivery: createNativeBackupDelivery({
+                filesystem: Filesystem,
+                share: Share,
+              }),
+            }
+          : {}),
     });
     let closed = false;
     return {

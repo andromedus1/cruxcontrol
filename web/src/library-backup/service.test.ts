@@ -117,9 +117,21 @@ describe('LibraryBackupService', () => {
     });
     const service = new LibraryBackupService(store, () => exportedAt);
     const result = await service.exportFile();
-    expect(result.filename).toBe('cruxcontrol-library-2026-09-05.json');
+    expect(result.filename).toBe('cruxcontrol-library-2026-09-05T00-00-00.000Z.json');
     expect(decodeLibraryBackup(result.text).drafts).toEqual([stable]);
     expect(store.readDrafts).toHaveBeenCalledTimes(4);
+  });
+
+  it('names exports at millisecond resolution and disambiguates same-clock deliveries', async () => {
+    const service = new LibraryBackupService(memoryStore(), () => exportedAt);
+    const first = await service.exportFile();
+    const second = await service.exportFile();
+
+    expect(first.filename).toBe('cruxcontrol-library-2026-09-05T00-00-00.000Z.json');
+    expect(second.filename).toBe('cruxcontrol-library-2026-09-05T00-00-00.000Z-2.json');
+    expect(second.filename).not.toBe(first.filename);
+    expect(decodeLibraryBackup(first.text).exportedAt).toBe(exportedAt.toISOString());
+    expect(decodeLibraryBackup(second.text).exportedAt).toBe(exportedAt.toISOString());
   });
 
   it('blocks a draft or playlist preflight conflict before either write boundary', async () => {

@@ -25,13 +25,17 @@ function asError(cause: unknown): Error {
   return cause instanceof Error ? cause : new Error(String(cause));
 }
 
-function filename(date: Date): string {
-  return `cruxcontrol-library-${date.toISOString().slice(0, 10)}.json`;
+function filename(date: Date, sameTimestampSequence: number): string {
+  const timestamp = date.toISOString().replace(/:/g, '-');
+  const collisionSuffix = sameTimestampSequence > 1 ? `-${sameTimestampSequence}` : '';
+  return `cruxcontrol-library-${timestamp}${collisionSuffix}.json`;
 }
 
 export class LibraryBackupService {
   readonly #store: LibraryBackupStore;
   readonly #now: () => Date;
+  #lastExportTimestamp = '';
+  #sameTimestampSequence = 0;
 
   constructor(store: LibraryBackupStore, now: () => Date = () => new Date()) {
     this.#store = store;
@@ -67,8 +71,13 @@ export class LibraryBackupService {
       );
     }
     const exportedAt = this.#now();
+    const timestamp = exportedAt.toISOString();
+    this.#sameTimestampSequence = timestamp === this.#lastExportTimestamp
+      ? this.#sameTimestampSequence + 1
+      : 1;
+    this.#lastExportTimestamp = timestamp;
     return Object.freeze({
-      filename: filename(exportedAt),
+      filename: filename(exportedAt, this.#sameTimestampSequence),
       text: encodeLibraryBackup(stable, exportedAt),
     });
   }

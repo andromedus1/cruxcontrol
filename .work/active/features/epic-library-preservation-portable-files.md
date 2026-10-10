@@ -46,33 +46,48 @@ remain readable independently of the app and backup service. The existing picker
 review/conflict/partial-result UI is retained. The prepared new Manage hub belongs
 to automatic-backup; portable-file delivery does not wait for account UI.
 
-Export completion means OS handoff, not confirmed remote retention. An independently
-stored file is verified by reading that actual file on a different client and doing
-an exact semantic restore comparison. Andrew confirmed on 2026-10-10 that automatic
-online backups are required before real authoring. Manual cloud copies are not an
-accepted dogfood bridge; portable files remain the independent second recovery route.
+Export completion is platform-specific and never means confirmed remote retention.
+iOS keeps its existing Filesystem + Share handoff. Android saves through a focused
+Storage Access Framework `ACTION_CREATE_DOCUMENT` plugin and reports the file as
+saved only after the chosen provider's UTF-8 output stream closes. The native plugin
+returns the selected `content:` URI for proof but does not log or retain it. Android
+picker cancellation is reported as cancellation; an `AbortSignal` can stop delivery
+only before the picker starts, so once native work begins the adapter follows its
+actual result. A provider may leave a partial file after a write failure, which is
+reported as failure and never as a successful backup.
+
+An independently stored file is verified by reading the actual provider-written
+file and restoring it into a separate empty installation for an exact semantic
+comparison. This Android proof uses the emulator's Downloads provider and copies
+the read-back bytes outside Git. Cloud upload and remote retention remain separate
+destination checks. Andrew confirmed on 2026-10-10 that automatic online backups
+are required before real authoring; portable files remain the independent second
+recovery route, not a manual-only dogfood bridge.
 
 ## Architectural choice
 
-- **Native Filesystem + Share with strict file validation (chosen):** already exists
-  for iOS, exposes owner-controlled destinations and requires the smallest Android
-  extension. Validate Android cancellation and URI lifetime with the pinned plugin.
-- **Custom Storage Access Framework plugin:** can provide a more direct save picker,
-  but still cannot prove a cloud provider uploaded the bytes. Add only if the existing
-  share/destination path is unusable on the target device.
+- **Platform-specific native delivery (chosen):** retain the established iOS
+  Filesystem + Share flow. Android uses a small `ACTION_CREATE_DOCUMENT` plugin
+  with strict JSON-basename validation, UTF-8 output and close-before-success
+  semantics. The selected `content:` URI is used only to verify the actual file.
+- **Share-only Android delivery:** rejected because callback completion does not
+  establish when a recipient finished reading the shared URI; no destination
+  lifetime assumption is needed with the direct document save path.
 - **Blob anchor download:** browser behavior is not enough evidence of packaged
   Android delivery; no fallback that silently treats an unobservable download as saved.
 
-The trickiest unit is when the OS chooser returns versus when a recipient has finished
-reading. Preserve app-owned temporary export bytes until they can safely be removed;
-platform return semantics must not remove a file still being consumed by a destination.
+The trickiest unit is distinguishing picker cancellation from a completed provider
+write. Keep `AbortSignal` on the TypeScript side; once the picker starts, report only
+the native completion or failure. Do not claim a cloud provider uploaded or retained
+the selected file.
 
 ## Implementation units
 
 ### 1. Platform delivery correctness
 
-Files: `prototypes/ios/src/native-backup-delivery.ts`, its test file, and Android file
-provider configuration if required by the chosen cache path.
+Files: `prototypes/ios/src/native-backup-delivery.ts`,
+`prototypes/ios/src/android-backup-delivery.ts`, the focused
+`LibraryBackupFile` Android plugin, runtime composition and their tests.
 
 ```typescript
 export function createNativeBackupDelivery(
@@ -80,13 +95,12 @@ export function createNativeBackupDelivery(
 ): LibraryBackupDelivery;
 ```
 
-Keep the existing port; extend dependency configuration only for a proven platform
-lifetime difference. Inspect the pinned Share8.0.3 Android activity callback and
-Filesystem8.1.4 errors. Cover initial missing-directory handling, valid UTF-8 file
-URI, cancellation, failure, repeat export and destination handoff. Restrict cleanup
-to the export-owned cache directory; never touch the native library or user files.
-A successful share callback must retain the existing instruction to check the chosen
-destination, not display a false off-phone protection receipt.
+Keep the existing delivery port. Cover iOS temporary-file cleanup and share handoff,
+plus Android picker cancellation, write failure, close-before-success, abort boundary,
+overlap exclusion and valid `content:` URI. Android has no app-owned export cache;
+the SAF provider receives the complete encoded backup and the native plugin resolves
+only after the output stream closes. A save result tells the user to check the chosen
+location and explicitly says remote retention is unverified.
 
 ### 2. File identity and validation
 
@@ -101,10 +115,10 @@ copy is substituted for a coherent logical export.
 
 ### 3. Offline recovery proof
 
-Files: an isolated Android smoke script under `prototypes/ios/scripts/` and evidence
-in this feature body. Use the actual exported file, not the original fixture as a
-stand-in. Copy the delivered synthetic file outside the emulator, validate with the
-production decoder, and restore it into a separately isolated empty installation.
+Files: isolated Android smoke scripts under `prototypes/ios/scripts/` and evidence in
+this feature body. Use the actual file written by the SAF provider, not the original
+fixture as a stand-in. Read the selected Downloads file outside the emulator, validate
+with the production decoder, and restore it into a separate fresh installation.
 Compare canonical full-library state including Trash, grade/angle, effects and ordered
 memberships before/after/relaunch. Do not wipe the primary proof installation or the
 owner's phone. Corrupt input and conflicts must not be presented as successful restore.
@@ -114,7 +128,8 @@ owner's phone is a separate actual destination check if used for dogfood.
 ### 4. Copy and operations
 
 Files: `web/src/library-backup/LibraryBackupDialog.tsx` only for necessary truthful
-copy (no layout change), `prototypes/ios/README.md` and this item.
+copy (no layout change), and this item. The prototype README also needs a later
+alignment pass after native acceptance; it is outside this implementation's write scope.
 
 Document actual Android picker/share behavior, where the independently retained test
 file lives (outside Git), and remaining destination limitations. Do not commit personal
@@ -122,17 +137,28 @@ library contents or synthetic output dumps when the existing fixture suffices.
 
 ## Testing
 
-Use injected filesystem/share boundaries for failure, cancellation, no false success,
-concurrent request exclusion and correct temporary-file lifetime. Derive assertions
-from platform delivery contract. Native emulator UI proves the delivered bytes and
-independent file restore. Run native/static suites and affected library backup tests;
-retain existing browser/iOS contracts. Real cloud destination proof is required before
-calling a manual file bridge off-phone-protected on Andrew's installation.
+Use injected delivery boundaries for failure, cancellation, no false success and
+concurrent request exclusion. Derive assertions from the platform delivery contract.
+Native emulator UI proves the provider-written bytes and independent file restore. Run
+native/static suites and affected library backup tests; retain existing browser/iOS
+contracts. Real cloud destination proof is required before calling a manual file bridge
+off-phone-protected on Andrew's installation.
 
 ## Risks
 
-A chooser may return before the recipient finishes, or offer only same-device targets.
-Remote upload success is outside this port; do not infer it. If the chooser cannot
-supply a usable portable destination, revise for a dedicated native save capability.
-Keep scope separate from automatic cloud-account setup and the final everyday-phone
-acceptance owner.
+The document picker can target local or cloud-backed providers; successful stream close
+does not prove a cloud upload completed. A later independent-client read remains the
+evidence for a retained copy. Keep scope separate from automatic cloud-account setup
+and the final everyday-phone acceptance owner.
+
+## Implementation evidence
+
+- Android uses a dedicated SAF save picker; picker cancellation and provider errors
+  are distinct outcomes, and success follows output-stream close.
+- Export filenames include UTC milliseconds and a same-instance collision suffix.
+- Verified locally with web backup tests (32), prototype tests (89), catalog package
+  tests (5), web and prototype TypeScript checks, scoped ESLint checks, `git diff --check`,
+  and Node syntax checks for both Android smoke scripts and the picker helper.
+- Native UI delivery and isolated restore proof remain pending the reserved emulator
+  lane; no Android sync/build/install or emulator action was run for this change. The
+  code unit is ready for that proof, and this feature is not ready for review yet.

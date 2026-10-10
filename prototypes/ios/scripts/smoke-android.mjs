@@ -7,6 +7,11 @@ import {
   canonicalSnapshot,
   decodeLibraryBackup,
 } from "../../../web/src/library-backup/codec.ts";
+import {
+  chooseDownloadsAndSave,
+  downloadNames,
+  readDownload,
+} from "./android-save-picker.mjs";
 
 const [serial, initialApk, updateApk, evidenceDirectory] =
   process.argv.slice(2);
@@ -39,6 +44,11 @@ const adb = (...args) =>
     encoding: "utf8",
     timeout: 30000,
   }).trim();
+const adbBytes = (...args) =>
+  execFileSync(adbPath, ["-s", serial, ...args], {
+    maxBuffer: 64 * 1024 * 1024,
+    timeout: 30000,
+  });
 assert.equal(
   adb("shell", "getprop", "ro.kernel.qemu"),
   "1",
@@ -177,29 +187,32 @@ async function detach() {
 }
 async function exportSnapshot(name) {
   const startedAt = Date.now();
+  const previousFiles = downloadNames(adb);
   await click("Back up & restore");
-  await click("Save or share library backup");
+  await click("Save library backup file");
+  await chooseDownloadsAndSave({ adb, pause });
+  await waitFor(
+    "document.body.innerText.includes('Backup file saved to the chosen location.')",
+    "Android backup file was not saved",
+  );
+
+  let filename;
   let text;
   for (let attempt = 0; attempt < 60; attempt += 1) {
     try {
-      const names = adb(
-        "shell",
-        "run-as",
-        appId,
-        "ls",
-        "cache/cruxcontrol-backup-export",
-      ).split("\n");
-      assert.equal(names.length, 1);
-      assert.match(names[0], /^cruxcontrol-library-\d{4}-\d{2}-\d{2}\.json$/);
-      text = adb(
-        "shell",
-        "run-as",
-        appId,
-        "cat",
-        `cache/cruxcontrol-backup-export/${names[0]}`,
+      const newFiles = [...downloadNames(adb)].filter((candidate) => !previousFiles.has(candidate));
+      assert.equal(newFiles.length, 1);
+      filename = newFiles[0];
+      text = readDownload(adbBytes, filename);
+      const decoded = decodeLibraryBackup(text);
+      const filenameTimestamp = decoded.exportedAt.replace(/:/g, "-");
+      assert.ok(
+        filename === `cruxcontrol-library-${filenameTimestamp}.json` ||
+          filename.startsWith(`cruxcontrol-library-${filenameTimestamp}-`),
+        "Backup filename must identify its exported millisecond",
       );
-      if (Date.parse(decodeLibraryBackup(text).exportedAt) < startedAt)
-        throw new Error("Previous export is still in cache");
+      if (Date.parse(decoded.exportedAt) < startedAt)
+        throw new Error("Previous Android export is still present");
       break;
     } catch {
       await pause(250);
@@ -210,26 +223,6 @@ async function exportSnapshot(name) {
     `Native export did not create a complete file: ${await evaluate("document.body.innerText")}`,
   );
   writeFileSync(resolve(evidence, `${name}.json`), text);
-  // Inspect the actual native export before dismissing the chooser. Destination
-  // delivery and Android chooser cancellation are a separate acceptance gate.
-  let chooserVisible = false;
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    if (
-      /topResumedActivity=.*(?:ChooserActivity|ResolverActivity)/.test(
-        adb("shell", "dumpsys", "activity", "activities"),
-      )
-    ) {
-      chooserVisible = true;
-      break;
-    }
-    await pause(250);
-  }
-  assert.ok(chooserVisible, "Native share chooser did not appear");
-  adb("shell", "input", "keyevent", "KEYCODE_BACK");
-  await waitFor(
-    "[...document.querySelectorAll('button')].some(b => b.innerText.trim() === 'Close' && !b.disabled)",
-    "Export did not settle after chooser dismissal",
-  );
   await click("Close");
   return decodeLibraryBackup(text);
 }

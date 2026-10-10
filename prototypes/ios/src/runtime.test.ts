@@ -12,6 +12,7 @@ const native = vi.hoisted(() => ({
   writeFile: vi.fn(),
   rmdir: vi.fn(),
   share: vi.fn(),
+  saveFile: vi.fn(),
   openLibrary: vi.fn(),
 }));
 vi.mock("./open-native-library.ts", () => ({
@@ -33,6 +34,9 @@ vi.mock("@capacitor/filesystem", () => ({
   Filesystem: { writeFile: native.writeFile, rmdir: native.rmdir },
 }));
 vi.mock("@capacitor/share", () => ({ Share: { share: native.share } }));
+vi.mock("./library-backup-file-plugin.ts", () => ({
+  LibraryBackupFile: { save: native.saveFile },
+}));
 
 const callbacks = new Map<string, () => void>();
 const removals: ReturnType<typeof vi.fn>[] = [];
@@ -52,6 +56,7 @@ beforeEach(() => {
   native.writeFile.mockResolvedValue({ uri: "file:///tmp/backup.json" });
   native.rmdir.mockResolvedValue(undefined);
   native.share.mockResolvedValue({ activityType: "" });
+  native.saveFile.mockResolvedValue({ uri: "content://example/document/backup.json" });
 });
 
 describe("prototype runtime composition and lifetime", () => {
@@ -69,8 +74,9 @@ describe("prototype runtime composition and lifetime", () => {
     expect(native.openLibrary).toHaveBeenCalledOnce();
     expect(runtime.drafts).toBe(library.drafts);
     expect(runtime.playlists).toBe(library.playlists);
-    expect(runtime.backupDelivery?.kind).toBe("share");
+    expect(runtime.backupDelivery?.kind).toBe("save");
     expect(native.initialize).not.toHaveBeenCalled();
+    expect(native.saveFile).not.toHaveBeenCalled();
     expect(browserOpen).not.toHaveBeenCalled();
     runtime.close();
     runtime.close();
@@ -100,6 +106,7 @@ describe("prototype runtime composition and lifetime", () => {
     expect(native.writeFile).not.toHaveBeenCalled();
     expect(native.rmdir).not.toHaveBeenCalled();
     expect(native.share).not.toHaveBeenCalled();
+    expect(native.saveFile).not.toHaveBeenCalled();
     expect([...callbacks.keys()]).toEqual(["pause", "resume"]);
     runtime.close();
     for (const remove of removals) expect(remove).toHaveBeenCalledOnce();
@@ -115,6 +122,7 @@ describe("prototype runtime composition and lifetime", () => {
     expect(native.writeFile).not.toHaveBeenCalled();
     expect(native.rmdir).not.toHaveBeenCalled();
     expect(native.share).not.toHaveBeenCalled();
+    expect(native.saveFile).not.toHaveBeenCalled();
     expect(native.addListener).not.toHaveBeenCalled();
     runtime.close();
   });
