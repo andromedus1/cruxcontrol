@@ -159,7 +159,7 @@ Before the first owner-phone rollout, retain and verify the signing material out
 this laptop as well; make the concrete key-retention step visible to Andrew. Public
 Play distribution is not required.
 
-- [ ] A release-shaped signed package upgrades in place without library changes.
+- [x] A release-shaped signed package upgrades in place without library changes.
 - [ ] No private keys, personal library content, tokens or device identifiers enter Git.
 - [ ] Actual existing phone app origin/profile and fresh complete backup are verified
       before maintenance; browser/PWA storage is never reset or used as a fixture.
@@ -247,3 +247,38 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
 - Execution capability: one feature-owning Codex implementer; standard review
   remains parent-owned. Stage stays implementing because physical Fullride,
   owner-phone and independent signing-key retention acceptance are outstanding.
+
+## Signing and platform checkpoint
+
+- Private builds reject absent, malformed or out-of-range version codes before
+  package mutation. Compile-only CI remains explicit and unsigned/debug. Gradle
+  independently rejects missing signed-build credentials/version. Release disables
+  debugging; the separate signedProof variant enables synthetic instrumentation.
+- Local retained private signing material lives in excluded `.private-signing/`
+  with directory0700/key+credentials0600. No values or keys enter Git. A private
+  retention instruction packet makes the required off-laptop retrieval/signing
+  verification concrete; that owner action remains unperformed.
+- API36 isolated signing proof: signedProof11 → non-debuggable release13, same app
+  ID/certificate, increasing version, `install -r`. The actual system chooser
+  selected the known synthetic backup on empty installation; complete restore
+  and force-stop comparison passed. This first chooser step used a supplemental
+  host helper; the committed signed runner resumed the exact restored library.
+- Signed runner `/tmp/cruxcontrol-android-parity-proof/signed-upgrade-retry/`
+  contains actual provider-written SAF exports before update, after release update
+  and after release relaunch. All authored fields, Trash, recipes and ordered
+  local/provider references compare canonically equal. Release UI uses native
+  taps/Back, with no CDP/debugging enabled. Earlier failed UI-probe attempts remain
+  private and unchanged; none reset or removed the installation.
+- Source APK9→10 preserved the complete original 4-climb/2-list synthetic snapshot.
+  Native Back closed backup, exited play-through, dismissed the actual keyboard
+  while retaining the editor, then exited a saved editor. Keyboard resized the
+  viewport; no keyboard/inset adapter is warranted by that successful probe.
+- A clean timeout control detached CDP: with stay-on disabled and a5s setting
+  (Android minimum10s), off slept by25s; on retained an app-attributed bright-screen
+  wake lock past25s; Home background released the lock and slept by25s. Settings
+  were restored afterward. Existing browser wake implementation retained. This
+  supersedes the inconclusive debugger-attached18s observation, without altering
+  its original private evidence.
+- Packaging tests8pass, native95tests/8filespass after primary portable integration;
+  final release catalog/worker/WASM digest check and Gradle compile pass.
+  Private artifacts/evidence: `/tmp/cruxcontrol-android-parity-proof/`.

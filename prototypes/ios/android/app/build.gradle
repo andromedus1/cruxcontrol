@@ -1,5 +1,16 @@
 apply plugin: 'com.android.application'
 
+def requestedSignedBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') || it.toLowerCase().contains('signedproof') }
+def privateVersion = providers.gradleProperty('prototypeVersionCode').orNull
+if (privateVersion != null && (!(privateVersion ==~ /[1-9]\d*/) || privateVersion.toBigInteger() > 2100000000)) {
+    throw new GradleException('prototypeVersionCode must be an integer from 1 through 2100000000')
+}
+def privateVersionCode = (privateVersion ?: '1').toInteger()
+def signingValues = ['CRUX_ANDROID_KEYSTORE', 'CRUX_ANDROID_KEY_ALIAS', 'CRUX_ANDROID_STORE_PASSWORD', 'CRUX_ANDROID_KEY_PASSWORD'].collect { System.getenv(it) }
+if (requestedSignedBuild && (privateVersion == null || signingValues.any { !it })) {
+    throw new GradleException('Signed builds require an explicit prototypeVersionCode and all four CRUX_ANDROID signing environment variables')
+}
+
 android {
     namespace = "io.github.andromedus1.cruxcontrol.prototype"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -8,7 +19,7 @@ android {
         applicationId "io.github.andromedus1.cruxcontrol.prototype"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode providers.gradleProperty('prototypeVersionCode').getOrElse('1').toInteger()
+        versionCode privateVersionCode
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -17,10 +28,28 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (signingValues.every { it }) {
+            retainedPrivate {
+                storeFile file(signingValues[0])
+                keyAlias signingValues[1]
+                storePassword signingValues[2]
+                keyPassword signingValues[3]
+            }
+        }
+    }
     buildTypes {
         release {
+            debuggable false
+            if (signingValues.every { it }) signingConfig signingConfigs.retainedPrivate
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        // Separate synthetic emulator instrumentation; never a distribution artifact.
+        signedProof {
+            initWith release
+            debuggable true
+            matchingFallbacks = ['release']
         }
     }
 }

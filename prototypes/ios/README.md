@@ -268,6 +268,78 @@ contains catalog text and screenshots; its supplemental `session-result.json` an
 `verified-session.json` came from a separate documented session. Retain that
 historical evidence unchanged and never attach its directory publicly.
 
+## Android interaction and retained private signing
+
+Android list sharing uses the same Storage Access Framework write/close handoff
+as library backups. With no recipient-accessible web host configured, the dialog
+provides the complete playlist JSON file and omits origin-based links. Browser
+sharing retains its current URL/copy/download behavior. Hardware Back calls the
+existing logical dialog, detail, editor and play-through actions; pending imports,
+file saves and membership writes consume it until completion. At the root, pending
+writes and unsaved list changes prevent minimizing.
+
+Private catalog builds require an explicit `--version-code` from 1 through
+2100000000. Choose a value above the installed package, and retain both the same
+application ID and signing key. Never use `adb install -d`, uninstall or storage
+reset to work around an update failure. Debug builds retain the Android debug key
+and cannot be upgraded with a different private key.
+
+Keep a durable keystore and its credentials outside Git, with restricted directory
+and file permissions. Release builds read only these environment variables:
+`CRUX_ANDROID_KEYSTORE`, `CRUX_ANDROID_KEY_ALIAS`,
+`CRUX_ANDROID_STORE_PASSWORD`, `CRUX_ANDROID_KEY_PASSWORD`. Load them from an
+excluded local credentials file without printing them. The repository ignores
+keystores and environment files; a local signing directory must also be excluded.
+Missing credentials fail the signed recipe before a build; no debug-key fallback.
+
+```bash
+set -a
+source /outside/git/private-signing/credentials.env
+set +a
+npm --prefix prototypes/ios run build:android:release -- \
+  --catalog /outside/git/kilter-7x10.v1.db.gz --version-code 20
+```
+
+The output is `prototypes/ios/android/app/build/outputs/apk/release/app-release.apk`.
+The release disables debugging. `build:android:signed-proof` instead creates an
+explicitly labeled instrumented synthetic-emulator variant using that same key
+and app ID; never distribute it for everyday authoring. Both recipes verify the
+final private catalog package. Keep all APKs private. Android's signing and version
+contracts are described in its [build variants](https://developer.android.com/build/build-variants)
+and [versioning](https://developer.android.com/studio/publish/versioning) guides.
+
+Before owner-phone rollout, Andrew must copy both keystore and credentials into
+an independent encrypted location outside this laptop, retrieve them, and verify
+the retrieved key by building/signing a package and matching its certificate
+SHA-256 using `apksigner verify --print-certs`. A copy on the same laptop is not
+accepted retention. Never rotate a lost key or change the app ID as an update
+shortcut. No owner-phone installation is authorized by emulator proof.
+
+A repeatable signing proof takes an explicit isolated emulator, an instrumented
+initial APK, a higher-version non-debuggable release APK, a complete synthetic
+backup and a new evidence directory:
+
+```bash
+node --experimental-strip-types prototypes/ios/scripts/smoke-android-signed.mjs \
+  emulator-N /outside/git/signed-proof.apk /outside/git/release.apk \
+  /outside/git/expected-synthetic.json /outside/git/new-evidence
+```
+
+The runner checks the same signing certificate, stable app ID, increasing version
+and final-release debugging flag. It restores through the actual Android system
+document chooser when empty, preserves an exact existing synthetic library when
+resuming, then compares complete actual provider-written SAF backups before and
+after `install -r` and after release process relaunch. The real release is operated
+through native UI events, without enabling WebView debugging.
+
+API36 synthetic emulator evidence establishes local Back, keyboard resizing,
+timeout prevention/background wake-lock release, native file chooser and retained
+signature upgrade behavior. Physical phone permissions, Fullride lighting/clear,
+effects, pause/interruption and explicit reconnect remain required acceptance.
+The parity feature stays implementing until these actions and independent key
+retention pass. Automatic online backup and clean-install online recovery also
+remain required before irreplaceable everyday authoring.
+
 ## Native transport boundary
 
 The prototype's composition root injects `NativeBleByteTransport` through the
