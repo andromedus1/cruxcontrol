@@ -311,7 +311,8 @@ and file permissions. Release builds read only these environment variables:
 `CRUX_ANDROID_KEYSTORE`, `CRUX_ANDROID_KEY_ALIAS`,
 `CRUX_ANDROID_STORE_PASSWORD`, `CRUX_ANDROID_KEY_PASSWORD`. Load them from an
 excluded local credentials file without printing them. The repository ignores
-keystores and environment files; a local signing directory must also be excluded.
+keystores, environment files and `.private-signing/`; another local signing
+directory must also be excluded.
 Missing credentials fail the signed recipe before a build; no debug-key fallback.
 
 ```bash
@@ -327,8 +328,12 @@ The release disables debugging. `build:android:signed-proof` instead creates an
 explicitly labeled instrumented synthetic-emulator variant using that same key
 and app ID; never distribute it for everyday authoring. Both recipes verify the
 final private catalog package and write an adjacent `.apk.build.json` sidecar
-with exact APK SHA-256, source commit and clean-tree status. Keep that sidecar
-with the APK when copying it; the signed runner verifies it when present. Keep all APKs private. Android's signing and version
+with exact APK SHA-256 and start/finish timestamps, source commits, tracked index
+and working-tree state. The aggregate clean flag requires both boundaries clean
+and unchanged HEAD; untracked private artifacts do not enter the metadata. These
+boundary observations expose detected source changes during a build; they do not
+make a mutable checkout immutable. Keep that sidecar with the APK when copying it;
+the signed runner verifies its APK digest when present. Keep all APKs private. Android's signing and version
 contracts are described in its [build variants](https://developer.android.com/build/build-variants)
 and [versioning](https://developer.android.com/studio/publish/versioning) guides.
 
@@ -355,6 +360,25 @@ document chooser when empty, preserves an exact existing synthetic library when
 resuming, then compares complete actual provider-written SAF backups before and
 after `install -r` and after release process relaunch. The real release is operated
 through native UI events, without enabling WebView debugging.
+
+The bounded picker runner operates an instrumented synthetic build with an exact
+existing library, saves and cancels a real SAF playlist file, then selects that
+file through Android's document chooser. It verifies the fresh imported local
+identities, every snapshot field, provider references and membership order. It
+also selects two fictional PNGs generated solely from public board geometry
+through Photo Picker's **Browse** route, reviews/saves both drafts and compares
+the complete library after relaunch:
+
+```bash
+node --experimental-strip-types prototypes/ios/scripts/smoke-android-parity-pickers.mjs \
+  emulator-N /outside/git/expected-synthetic.json /outside/git/new-evidence
+```
+
+The runner records `playlist-imported.json` before the PNG stage. A bounded
+`--screenshots-only` continuation requires that exact checkpoint and does not
+repeat playlist import. It refuses unrelated source data and never resets the
+installation. Earlier partial attempts remain separate evidence. This proves the
+exercised API36 chooser paths; physical-device media providers still need acceptance.
 
 API36 synthetic emulator evidence establishes local Back, keyboard resizing,
 timeout prevention/background wake-lock release, native file chooser and retained

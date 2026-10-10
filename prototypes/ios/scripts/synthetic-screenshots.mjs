@@ -33,6 +33,10 @@ export function syntheticScreenshots() {
       }
       return { placementId: `kilter:${board.revision}:placement:${p.placement_id}`, appearance: { kind: 'role', role } };
     });
+    assignments.sort((a, b) => {
+      const position = assignment => placements.find(p => `kilter:${board.revision}:placement:${p.placement_id}` === assignment.placementId);
+      return position(b).y - position(a).y || position(a).x - position(b).x;
+    });
     const rows = Buffer.alloc(height * (1 + width * 4));
     for (let y = 0; y < height; y += 1) pixels.copy(rows, y * (1 + width * 4) + 1, y * width * 4, (y + 1) * width * 4);
     const header = Buffer.alloc(13); header.writeUInt32BE(width); header.writeUInt32BE(height, 4); header[8] = 8; header[9] = 6;

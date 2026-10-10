@@ -100,11 +100,11 @@ validation function if it rejects the distinct playlist envelope. Factor only th
 actual common file handoff if needed, keeping both format validators at their owners.
 Browser link/copy/download behavior remains covered by existing tests.
 
-- [ ] Native list sharing generates no localhost or fictitious-host links.
-- [ ] The actual exported playlist file imports through the existing picker with
+- [x] Native list sharing generates no localhost or fictitious-host links.
+- [x] The actual exported playlist file imports through the existing picker with
       fresh local identities, exact content/order and provider references retained.
-- [ ] Cancellation/failure do not display completed delivery or discard edits.
-- [ ] Copy/share remains available where a real configured reachable host exists;
+- [x] Cancellation/failure do not display completed delivery or discard edits.
+- [x] Copy/share remains available where a real configured reachable host exists;
       without one the file alternative is explained without blaming payload size.
 
 ### 2. Android screen, keyboard and Back behavior
@@ -140,9 +140,9 @@ do not synthesize DOM clicks. A dialog gets first refusal, then editor/play-thro
 then root minimize after pending writes settle. Do not clear data or reload as a
 navigation shortcut. Preserve cancellation while a restore/import mutation is pending.
 
-- [ ] Multi-image screenshot import reviews and saves ordinary native drafts.
-- [ ] Back/keyboard/dialog interactions preserve pending edits and usable controls.
-- [ ] Screen awake is either proven effective or fails visibly with retry; no false
+- [x] Multi-image screenshot import reviews and saves ordinary native drafts.
+- [x] Back/keyboard/dialog interactions preserve pending edits and usable controls.
+- [x] Screen awake is either proven effective or fails visibly with retry; no false
       active claim. Backgrounding releases it and requires visible reacquisition.
 
 ### 3. Stable private installation and upgrades
@@ -160,7 +160,7 @@ this laptop as well; make the concrete key-retention step visible to Andrew. Pub
 Play distribution is not required.
 
 - [x] A release-shaped signed package upgrades in place without library changes.
-- [ ] No private keys, personal library content, tokens or device identifiers enter Git.
+- [x] No private keys, personal library content, tokens or device identifiers enter Git.
 - [ ] Actual existing phone app origin/profile and fresh complete backup are verified
       before maintenance; browser/PWA storage is never reset or used as a fixture.
 
@@ -282,3 +282,46 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
 - Packaging tests8pass, native95tests/8filespass after primary portable integration;
   final release catalog/worker/WASM digest check and Gradle compile pass.
   Private artifacts/evidence: `/tmp/cruxcontrol-android-parity-proof/`.
+
+## Final picker and build-provenance checkpoint
+
+- Instrumented signed14 on isolated emulator5584 used the real SAF save/cancel
+  path and Android document picker for playlist import. The saved portable bytes
+  exactly match the production encoder, including two local snapshots, effects,
+  provider reference and order. Import added exactly two fresh climb identities
+  and one fresh ordered list; the complete original four climbs/two lists remained
+  equal. The committed runner's intermediate `pickers-retry2/playlist-imported.json`
+  records this six-climb/three-list checkpoint before its PNG stage. Earlier
+  attempts retain their real failure boundaries without reset or repeated import.
+- The bounded PNG-only continuation passed in `png-only-final/`: API36's real
+  Photo Picker GET_CONTENT activity → More/Browse → DocumentsUI Downloads selected
+  two task-owned fictional PNGs. They contain only public board geometry and
+  generated role discs, not private screenshot originals or catalog contents.
+  Production decode/review saved two exact draft records with fresh identities,
+  expected role assignments and empty metadata/effects. All six prior climbs and
+  three lists remained canonically equal; all eight climbs/three lists remained
+  equal after force-stop/relaunch. `verified-picker-library.json` is the exact
+  baseline for the final signed update. The PNG-only result does not independently
+  establish the earlier playlist stage; that stage is grounded in its explicit
+  checkpoint, file and system-picker XML.
+- Two additional meaningful regressions verify root Back consumes unsaved list
+  input/pending creation and membership Back remains guarded until both write and
+  refresh finish. Focused shared checks pass36tests/2files. These reveal no new
+  production defect or change; parent full-suite integration will include827tests.
+- `.private-signing/` is now ignored by portable repository rules. No credential
+  values or signing material enter this worktree or Git. The private retention
+  instruction packet remains an owner action before rollout.
+- Signed14 APK content SHA-256:
+  `9071e67d92a480ef6fa7df10f14905f72aebc537ff3b3f789ec47faefefc8cb0`.
+  Its adjacent sidecar records clean end-boundary commit6111f1c; it predates the
+  two-boundary enhancement and does not claim start-boundary provenance. A clean
+  rebuild produced exactly the already-installed14 bytes, so no repeat install
+  or chooser cycle was needed. The final15 recipe will capture start/finish
+  commit, tracked index/working-tree dirty state and timestamps, plus exact APK
+  SHA, without recording signing environment values. The aggregate clean flag
+  requires both clean boundaries and identical HEAD.
+- Production behavior is unchanged since4019add. This checkpoint changes tests,
+  native UI proof helpers, fictional fixtures, build provenance and instructions.
+  Full feature remains implementing: physical phone/Fullride acceptance and
+  independent off-laptop key retrieval are unperformed; automatic online backups
+  and clean-install online recovery remain the separate admission gate.

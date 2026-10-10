@@ -27,6 +27,7 @@ import { providerSourceId } from '../domain/boards/identity.ts';
 import { KILTER_PROVIDER_ID } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
 import { parseCatalogManifest } from '../data/catalog/manifest.ts';
 import catalogManifest from '../../public/catalog/manifest.json';
+import { createBackNavigation } from './back-navigation.ts';
 
 const original: LocalClimbDraft = {
   ...draftContent({ name: 'Original', installationId: activeInstallationId }),
@@ -373,6 +374,29 @@ describe('CruxControlWorkspace', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(failure);
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeEnabled();
+  });
+
+  it('consumes root Back for unsaved list input and pending create, then permits minimize after save', async () => {
+    const back = createBackNavigation();
+    let finish!: (value: LocalPlaylist) => void;
+    let stored: readonly LocalPlaylist[] = [];
+    const pending = new Promise<LocalPlaylist>(resolve => { finish = resolve; });
+    const create = vi.fn(async () => { const created = await pending; stored = [created]; return created; });
+    const runtime = { ...runtimeWith({}, { create, list: vi.fn(async () => stored) }), backNavigation: back };
+    render(<CruxControlWorkspace runtime={runtime} />);
+    fireEvent.click(screen.getByRole('button', { name: /Lists/ }));
+    const input = await screen.findByLabelText('New list');
+    expect(back.dispatch()).toBe(false);
+    fireEvent.change(input, { target: { value: 'Synthetic pending list' } });
+    act(() => { expect(back.dispatch()).toBe(true); });
+    expect(screen.getByRole('alert')).toHaveTextContent('Save your list changes before leaving.');
+    expect(input).toHaveValue('Synthetic pending list');
+    fireEvent.click(screen.getByRole('button', { name: 'Create list' }));
+    await waitFor(() => expect(create).toHaveBeenCalledOnce());
+    expect(back.dispatch()).toBe(true);
+    await act(async () => { finish(playlist('Synthetic pending list')); });
+    await waitFor(() => expect(input).toHaveValue(''));
+    expect(back.dispatch()).toBe(false);
   });
 
   it('preserves an unsaved new-list name and its update blocker after an empty snapshot fails to refresh', async () => {

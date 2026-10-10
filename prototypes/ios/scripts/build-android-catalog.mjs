@@ -13,6 +13,17 @@ const manifestFile = resolve(root, '../../web/public/catalog/manifest.json');
 const dist = resolve(root, '../../web/dist-ios-prototype');
 const assets = join(root, 'android/app/src/main/assets/public');
 const { sourceFile, syncOnly, versionCode, variant } = androidBuildOptions(process.argv.slice(2));
+function sourceBoundary() {
+  const status = execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean);
+  return {
+    sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+    trackedClean: status.length === 0,
+    trackedIndexClean: status.every(line => line[0] === ' '),
+    trackedWorktreeClean: status.every(line => line[1] === ' '),
+    at: new Date().toISOString(),
+  };
+}
+const buildStarted = sourceBoundary();
 if (variant !== 'debug') requireSigningEnvironment(process.env);
 if (variant === 'signedProof') console.warn('SYNTHETIC SIGNED PROOF ONLY: WebView debugging enabled. Never distribute this variant for daily authoring.');
 if (sourceFile) {
@@ -32,7 +43,8 @@ if (!syncOnly) {
   run('./gradlew', [task, ...(versionCode ? [`-PprototypeVersionCode=${versionCode}`] : [])], join(root, 'android'));
   const apk = join(root, `android/app/build/outputs/apk/${variant}/app-${variant}.apk`);
   if (sourceFile) console.log('Final private APK verified', await checkAndroidCatalogApk(apk, manifestFile));
-  const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
-  const sourceClean = execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim() === '';
-  await writeFile(`${apk}.build.json`, JSON.stringify({ sourceCommit, sourceClean, variant, versionCode: versionCode ?? '1', privateCatalog: Boolean(sourceFile), apkSha256: createHash('sha256').update(await readFile(apk)).digest('hex') }, null, 2));
+  const buildFinished = sourceBoundary();
+  const sourceCommit = buildStarted.sourceCommit;
+  const sourceClean = buildStarted.trackedClean && buildFinished.trackedClean && buildStarted.sourceCommit === buildFinished.sourceCommit;
+  await writeFile(`${apk}.build.json`, JSON.stringify({ sourceCommit, sourceClean, buildStarted, buildFinished, variant, versionCode: versionCode ?? '1', privateCatalog: Boolean(sourceFile), apkSha256: createHash('sha256').update(await readFile(apk)).digest('hex') }, null, 2));
 }
