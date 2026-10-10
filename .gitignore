@@ -30,3 +30,8 @@ ml/**/__pycache__/
 *.db
 *.sqlite
 *.sqlite3
+
+# Native signing material and generated simulator artifacts
+*.jks
+*.keystore
+prototypes/ios/android/.idea/

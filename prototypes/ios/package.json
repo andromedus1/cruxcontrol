@@ -12,10 +12,15 @@
     "build": "npm run typecheck && npm --prefix ../../web run build -- --mode ios-prototype",
     "sync": "npm run build && cap sync ios",
     "open": "cap open ios",
-    "run": "npm run sync && cap run ios --no-sync"
+    "run": "npm run sync && cap run ios --no-sync",
+    "sync:android": "npm run build && cap sync android",
+    "build:android": "npm run sync:android && cd android && ./gradlew assembleDebug",
+    "open:android": "cap open android"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "8.3.0",
+    "@capacitor-community/sqlite": "8.1.1",
+    "@capacitor/android": "8.4.3",
     "@capacitor/app": "8.1.1",
     "@capacitor/core": "8.4.3",
     "@capacitor/filesystem": "8.1.4",

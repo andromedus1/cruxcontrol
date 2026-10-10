@@ -107,6 +107,43 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  android-prototype:
+    name: Android prototype (native compile)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: prototypes/ios/.nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            prototypes/ios/package-lock.json
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android API 36
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+
+      - name: Install web and native dependencies
+        run: |
+          npm ci
+          npm --prefix prototypes/ios ci
+
+      - name: Compile bundled Android app
+        run: npm --prefix prototypes/ios run build:android
+
   ml:
     name: ml (stub lane)
     runs-on: ubuntu-latest

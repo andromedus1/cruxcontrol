@@ -1,32 +1,34 @@
-import { Capacitor } from '@capacitor/core';
-import { BleClient } from '@capacitor-community/bluetooth-le';
-import { App, type AppPlugin } from '@capacitor/app';
-import { Filesystem } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
-import type { PluginListenerHandle } from '@capacitor/core';
-import { createCruxControlRuntime } from '../../../web/src/app/create-runtime.ts';
+import { Capacitor } from "@capacitor/core";
+import { BleClient } from "@capacitor-community/bluetooth-le";
+import { App, type AppPlugin } from "@capacitor/app";
+import { Filesystem } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
+import type { PluginListenerHandle } from "@capacitor/core";
+import { createCruxControlRuntime } from "../../../web/src/app/create-runtime.ts";
 import {
   activeInstallationId,
   createAppInstallationRegistry,
-} from '../../../web/src/app/installations.ts';
-import { NativeBleByteTransport } from './native-ble-transport.ts';
-import { createNativeBackupDelivery } from './native-backup-delivery.ts';
+} from "../../../web/src/app/installations.ts";
+import { NativeBleByteTransport } from "./native-ble-transport.ts";
+import { createNativeBackupDelivery } from "./native-backup-delivery.ts";
+import { openNativeLibrary } from "./open-native-library.ts";
 
 export async function bindNativeLifecycle(
   transport: NativeBleByteTransport,
-  app: Pick<AppPlugin, 'addListener'>,
+  app: Pick<AppPlugin, "addListener">,
 ): Promise<() => void> {
   const handles: PluginListenerHandle[] = [];
   let disposed = false;
-  const removeListeners = () => Promise.allSettled(handles.map((handle) => handle.remove()));
+  const removeListeners = () =>
+    Promise.allSettled(handles.map((handle) => handle.remove()));
   try {
     handles.push(
-      await app.addListener('pause', () => {
+      await app.addListener("pause", () => {
         if (!disposed) transport.setForeground(false);
       }),
     );
     handles.push(
-      await app.addListener('resume', () => {
+      await app.addListener("resume", () => {
         if (!disposed) transport.setForeground(true);
       }),
     );
@@ -44,7 +46,8 @@ export async function bindNativeLifecycle(
 }
 
 export async function createPrototypeRuntime() {
-  const native = Capacitor.getPlatform() === 'ios';
+  const platform = Capacitor.getPlatform();
+  const native = platform === "ios" || platform === "android";
   if (native) BleClient.disableQueue(); // adapter owns FIFO; emergency disconnect bypasses it
   const transport = new NativeBleByteTransport(native ? BleClient : null);
   const dispose = native
@@ -52,15 +55,26 @@ export async function createPrototypeRuntime() {
     : () => transport.forceDisconnect();
   try {
     const runtime = await createCruxControlRuntime({
+      ...(platform === "android" ? { openLibrary: openNativeLibrary } : {}),
       getInstallation: () =>
         createAppInstallationRegistry({
           createTransport: () => transport,
         }).require(activeInstallationId),
-      ...(native ? { backupDelivery: createNativeBackupDelivery({ filesystem: Filesystem, share: Share }) } : {}),
+      ...(native
+        ? {
+            backupDelivery: createNativeBackupDelivery({
+              filesystem: Filesystem,
+              share: Share,
+            }),
+          }
+        : {}),
     });
+    let closed = false;
     return {
       ...runtime,
       close: () => {
+        if (closed) return;
+        closed = true;
         dispose();
         runtime.close();
       },

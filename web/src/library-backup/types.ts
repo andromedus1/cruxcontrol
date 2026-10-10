@@ -14,6 +14,8 @@ export interface RestoreBatchResult {
 }
 
 export interface LibraryBackupStore {
+  /** A single coherent transaction when provided by the storage adapter. */
+  readSnapshot?(): Promise<LibrarySnapshot>;
   readDrafts(): Promise<readonly LocalClimbDraft[]>;
   readPlaylists(): Promise<readonly LocalPlaylist[]>;
   restoreMissingDrafts(records: readonly LocalClimbDraft[]): Promise<RestoreBatchResult>;

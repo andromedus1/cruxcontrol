@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-native-library
 kind: feature
-stage: implementing
+stage: review
 tags: [data, infra]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -236,3 +236,100 @@ xhigh for the storage/transaction risk. Review weight is standard (project polic
 one independent review after integrated verification, then fix and verify material
 findings without a repeated review loop. Host handles review, SDK and subsequent
 capabilities. Worker must not delegate or use peeragent.
+
+
+## Implementation notes
+
+- Execution capability: one feature-owning Codex implementation worker, direct source
+  reads and integrated implementation; no child fan-out or peer delegation. The
+  serialized connection and strict complete-library contract determined the scope.
+- Review weight: standard, from project policy and caller. The host owns the one
+  independent Claude pass and PR/CI; this implementation stops at review.
+- Runtime composition: `web/src/app/library.ts` owns browser library resources;
+  `create-runtime.ts` accepts an injected `AppLibrary` without opening either browser
+  database, closes once, and releases its library/catalog on construction failure.
+  Shared draft/playlist constructors now live in their `record.ts` modules, keeping
+  codecs authoritative and browser repository behavior intact.
+- Native storage: `native-library.ts` implements both current repository ports and
+  missing-only backup restore in one persistent SQLite file. Bound values, serialized
+  operations, explicit revision/write/restore/snapshot transactions, checked schemas,
+  strict row/key decoding, collection rules and canonical conflict handling preserve
+  the domain. Commit must resolve before success. Failed begin, ambiguous commit or
+  failed rollback poisons the connection; pending operations fail until reopening.
+  Close rejects new work and drains admitted transactions before releasing the native
+  lease. A failed native close prevents unsafe reconnect until app restart.
+- Coherent capture: optional `LibraryBackupStore.readSnapshot` is used for one native
+  export/review capture. Browser backup retains its bounded repeated-read fallback;
+  restore continues to report separate climb/playlist commits accurately.
+- Android composition: same package and stable app identity under `prototypes/ios`;
+  pinned SQLite 8.1.1 and Capacitor Android/CLI 8.4.3. Android selects SQLite and the
+  existing native BLE/lifecycle/file composition. iOS keeps IndexedDB. Neither
+  Bluetooth initialization nor permission requests occur at library startup.
+- Build/operations: committed generated Android project, API 36 / Build Tools 36.0.0
+  / JDK 21 build, `sync:android`, `build:android`, compile CI lane, documented Gradle
+  version-code override and an emulator-only synthetic preservation runner. Native
+  assets are bundled without a remote URL or service worker. SDK paths, databases,
+  signing material, APKs and proof artifacts remain outside Git. Removed generated
+  example arithmetic/package-name tests; they establish no application behavior.
+- Tests: real Node 22 SQLite covers lifecycle, metadata, revisions, collision retry,
+  ordering, strict malformed/unsupported/mismatched records, atomic restore conflict
+  rollback, failed writes, ambiguous commits, failed rollback/begin, coherent capture,
+  persistent file reopen and pending-close behavior. Bridge/runtime tests cover
+  explicit transaction flags, WAL/FULL verification, failure cleanup, overlapping
+  lease initialization/disposal and no browser-storage fallback.
+- Simplification: extracted only the shared validated constructors/filter rules;
+  reused current repository ports/codecs and current shell. The opener uses the
+  plugin's direct connection API with a serialized lease, avoiding another mutable
+  JavaScript connection registry or an ORM.
+- Discrepancy reconciled: actual Android SQLCipher rejects a returning
+  `PRAGMA journal_mode = WAL` through `execute`, despite the plugin API's general
+  PRAGMA guidance. Use `query` for that assignment and verify the resulting mode;
+  an adapter regression asserts returning journal PRAGMAs never use `execute`.
+- Adjacent issues: Android destination delivery/cancellation and platform-specific
+  backup-dialog copy remain owned by the existing portable-files feature. No new
+  unrelated product bug was silently fixed. The first proof runner's immediate
+  Back press raced native chooser presentation; corrected the harness to wait for
+  `ChooserActivity` and a newly timestamped export file. Synthetic records were
+  retained and retries validated prior restore evidence and the exact edit.
+
+## Integrated verification
+
+- Root `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`: passed;
+  96 test files / 806 tests. Existing React act diagnostics and bundle-size advisories
+  did not fail checks.
+- Native package (Node 22.23.3) `npm run lint`, `npm run typecheck`, `npm test`,
+  `npm run build` and `npm run sync:android`: passed; 5 test files / 73 tests.
+  SQLite's Node experimental notice is expected for this real-engine test lane.
+- Existing `npm -w web run test:ios-prototype`: passed, one packaged browser smoke.
+- Android Gradle `assembleDebug`: passed with JDK 21 / Android API 36; repeated
+  version-code builds produced same-signature synthetic upgrade APKs. Verified the
+  merged Bluetooth/scan/connect and legacy location permissions from the pinned
+  BLE plugin. The compile lane is added to CI; remote PR CI remains host-owned.
+- Existing iOS `npm run sync` and generic iOS Simulator `xcodebuild` with Xcode 27 /
+  iOS 27 SDK: passed after SQLite was added to the shared SPM package graph. The
+  resolved native dependencies are committed. No physical-device operation occurred.
+- Actual Android 36 arm64 emulator: the fixture was restored through the app's
+  backup file input, a synthetic finished climb's name was edited through the
+  editor and autosaved, then the process was force-stopped/relaunched and updated
+  with the same application ID/signing identity. Version 1→2 ran first; the corrected
+  runner completed verified 2→3 and final-source 3→4 upgrades. The final-source run
+  used airplane mode during startup and preservation, then restored its prior state.
+- Each complete native JSON export was decoded by the production backup codec and
+  compared canonically: all four climb records and both playlist records, original
+  IDs/creation dates, status/Trash, assignments, effect recipe, metadata and every
+  ordered shared/missing-reference membership. The only allowed changes were the
+  named finished climb's intentional name, incremented revision and update timestamp.
+  Relaunch and upgrade exports matched the edited snapshot exactly. Native WAL and
+  FULL synchronization were queried through the actual bridge; the persistent
+  database file existed and `indexedDB.databases()` reported no library databases.
+  Bundled startup had no service-worker registration or manifest injection.
+- Local evidence: `/tmp/cruxcontrol-android-native-proof/evidence/` contains the
+  complete restore/edit/relaunch/upgrade JSON files, screenshots and `result.json`;
+  build output is outside Git alongside it. The runner records when it resumes a
+  previously validated edit instead of changing existing synthetic records again.
+- Evidence boundary: native file creation/capture was inspected before dismissing
+  the Android chooser; successful external destination delivery belongs to the
+  portable-files feature. This feature's synthetic native-storage proof does not
+  establish automatic account protection, clean-client recovery, private signing-key
+  preservation, physical-board BLE or actual-phone storage-pressure durability.
+  Real authoring remains gated by the epic's required independent preservation work.

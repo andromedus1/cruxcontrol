@@ -1,8 +1,4 @@
-import {
-  canonicalSnapshot,
-  encodeLibraryBackup,
-  reviewLibraryBackup,
-} from './codec.ts';
+import { canonicalSnapshot, encodeLibraryBackup, reviewLibraryBackup } from './codec.ts';
 import type {
   BackupReview,
   DecodedLibraryBackup,
@@ -43,6 +39,7 @@ export class LibraryBackupService {
   }
 
   async #readSnapshot(): Promise<LibrarySnapshot> {
+    if (this.#store.readSnapshot) return this.#store.readSnapshot();
     const [drafts, playlists] = await Promise.all([
       this.#store.readDrafts(),
       this.#store.readPlaylists(),
@@ -51,10 +48,12 @@ export class LibraryBackupService {
   }
 
   async exportFile(): Promise<Readonly<{ filename: string; text: string }>> {
-    let stable: LibrarySnapshot | null = null;
+    let stable: LibrarySnapshot | null = this.#store.readSnapshot
+      ? await this.#store.readSnapshot()
+      : null;
     // Two reads of each independent store form one bounded stability attempt.
     // A second attempt is intentionally the limit: this is not a cross-DB lock.
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    for (let attempt = 0; !stable && attempt < 2; attempt += 1) {
       const first = await this.#readSnapshot();
       const second = await this.#readSnapshot();
       if (canonicalSnapshot(first) === canonicalSnapshot(second)) {

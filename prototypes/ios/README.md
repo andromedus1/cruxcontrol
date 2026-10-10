@@ -1,4 +1,4 @@
-# iOS shell prototype
+# Shared native shell prototype
 
 This experiment packages the existing React screens with Capacitor 8.4.3 and a
 native BLE adapter to prepare for iPhone testing. Xcode 27 / iOS 27 build and
@@ -17,12 +17,83 @@ selects `src/main.tsx` in this package as its entry point. It disables PWA gener
 and omits service-worker registration and the update coordinator entirely. The
 normal browser entry retains its existing PWA update admission behavior.
 
+## Android library and build
+
+The same package now includes Android with Capacitor Android 8.4.3 and the pinned
+`@capacitor-community/sqlite` 8.1.1 bridge. Android stores authored climbs and
+playlists in the app-specific `databases/cruxcontrol-librarySQLite.db` file, with
+WAL journaling and FULL synchronization verified when opening. The two tables
+retain the shared strict versioned records, including revisions, dates, metadata,
+Trash, effects and ordered references. Operations share a serialized connection;
+revision checks, saves, restore batches and complete backup capture use explicit
+SQL transactions. A save succeeds only after commit. Unknown transaction state
+requires a reopen, and unsafe native cleanup requires an app restart. Unsupported
+schemas and corrupt records produce errors without replacing the database or
+opening a browser-storage fallback. iOS remains on its existing IndexedDB path.
+
+Build with Node 22, JDK 21 and Android SDK/API 36 plus Build Tools 36.0.0. Set
+`JAVA_HOME` and `ANDROID_HOME` to your local installations; keep local paths and
+signing material outside Git. From the repository root:
+
+```bash
+npm --prefix prototypes/ios ci
+npm --prefix prototypes/ios run sync:android
+npm --prefix prototypes/ios run build:android
+```
+
+The generated project is `prototypes/ios/android`; the debug APK is under
+`android/app/build/outputs/apk/debug/`. It uses the same application ID as the iOS
+prototype, bundled assets and no remote server or service worker. The pinned BLE
+plugin supplies the merged Android Bluetooth/scan/connect and legacy location
+permissions. Plugin initialization and permission requests remain behind explicit
+Connect. App pause/resume uses the existing foreground/disconnect contract. Real
+Android BLE, physical-device behavior and destinations outside the app remain
+separate acceptance gates.
+
+The SQLite tests use Node 22's real SQLite engine for schema checking, revisions,
+collision handling, Trash, corruption, rollback and ambiguous commits, concurrent
+operations, whole-fixture export and file reopen. Bridge mocks verify composition
+and overlapping initialization/close/reopen; they do not prove Android storage.
+The Android compile also runs in CI.
+
+For an isolated emulator preservation proof, prepare two debug APKs with the same
+application ID and signing key and increasing version codes. The Gradle property
+`-PprototypeVersionCode=2` overrides the default 1 for the update build. Copy each
+APK outside the repository before building the next one. Use an explicitly chosen
+emulator target; the runner rejects physical devices:
+
+```bash
+node --experimental-strip-types prototypes/ios/scripts/smoke-android.mjs \
+  emulator-N /outside/git/initial.apk /outside/git/update.apk /outside/git/evidence
+```
+
+This requires Node 22 and `ANDROID_HOME` (or an explicit `ADB` executable). The
+runner automates the normal backup file input and editor in the actual Android
+WebView, imports only the synthetic fixture, verifies a complete native export,
+changes one synthetic name, waits for save, force-stops/relaunches, installs the
+newer binary with `adb install -r` and compares every authored field and ordered
+membership. It checks the actual native database, journaling/synchronization, no
+browser library databases and no service-worker registration. It captures the
+app's complete export file before dismissing the native chooser; this proves
+capture and native file creation, while external destination delivery is owned by
+the portable-files feature. Screenshots and JSON evidence stay outside Git. It
+rejects unrelated existing records and can resume an interrupted synthetic proof
+only after validating its original restore evidence and exact intentional edit.
+It never clears storage, uninstalls the app or resets an existing library.
+
+Android API 36 on an isolated arm64 emulator has passed fixture restore/edit/save,
+process relaunch and same-signature version upgrades with canonical full-library
+comparisons. This is synthetic-data evidence. Account-protected independent
+backup, clean-client recovery, private signing-key preservation, real-device
+storage pressure and actual board control still gate daily-use admission.
+
 ## Native transport boundary
 
 The prototype's composition root injects `NativeBleByteTransport` through the
 existing installation registry and `BoardByteTransport` port. It reuses the React
-UI, controller, Aurora codecs, capacity/pacing policy, effects, and IndexedDB
-library repositories. Opening the packaged assets in a browser exposes an
+UI, controller, Aurora codecs, capacity/pacing policy and effects. Android injects
+a native SQLite library; iOS and packaged browser inspection use the existing
+IndexedDB library repositories. Opening the packaged assets in a browser exposes an
 unavailable transport; it does not fall back to Web Bluetooth.
 
 Bluetooth initialization and device selection begin only after explicit **Connect**.
@@ -100,8 +171,8 @@ review it, and explicitly restore it. Make the file available to the simulator's
 file picker first. Keep experiments in this separate app; do not import personal
 backups or alter the established browser/PWA origin to perform these checks.
 
-The shell currently uses the existing IndexedDB repositories. Their availability
-here is not a durable native-storage decision. In the isolated iPhone 17 / iOS 27
+The iOS shell uses the existing IndexedDB repositories. Their availability
+here is not a durable native-storage decision for iOS. In the isolated iPhone 17 / iOS 27
 simulator, the synthetic fixture imported through the normal picker, a created V4
 draft survived save and relaunch, and the fixture's ordered list contents remained
 intact. A native app update also retained the synthetic records and list order.

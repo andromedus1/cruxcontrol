@@ -1,18 +1,10 @@
+import { openBrowserLibrary, type AppLibrary } from './library.ts';
 import type { BoardLightController } from '../board-control/light-controller';
-import {
-  IndexedDbLocalDraftRepository,
-  openDraftDatabase,
-  type LocalDraftRepository,
-} from '../drafts';
+import type { LocalDraftRepository } from '../drafts';
 import type { ConfiguredBoardInstallation } from '../installations/contracts';
-import {
-  IndexedDbLocalPlaylistRepository,
-  openPlaylistDatabase,
-  type LocalPlaylistRepository,
-} from '../playlists';
+import type { LocalPlaylistRepository } from '../playlists';
 import {
   browserLibraryBackupDelivery,
-  IndexedDbLibraryBackupStore,
   LibraryBackupService,
   type LibraryBackupDelivery,
 } from '../library-backup';
@@ -33,6 +25,7 @@ export interface CruxControlRuntime {
 }
 
 export interface CruxControlRuntimeDependencies {
+  readonly openLibrary?: () => Promise<AppLibrary>;
   readonly openDrafts?: () => Promise<IDBDatabase>;
   readonly openPlaylists?: () => Promise<IDBDatabase>;
   readonly getInstallation?: () => ConfiguredBoardInstallation;
@@ -43,24 +36,25 @@ export interface CruxControlRuntimeDependencies {
 export async function createCruxControlRuntime(
   dependencies: CruxControlRuntimeDependencies = {},
 ): Promise<CruxControlRuntime> {
-  let draftDatabase: IDBDatabase | null = null;
-  let playlistDatabase: IDBDatabase | null = null;
+  let library: AppLibrary | null = null;
+  let catalog: CatalogService | null = null;
   try {
-    draftDatabase = await (dependencies.openDrafts ?? openDraftDatabase)();
-    playlistDatabase = await (dependencies.openPlaylists ?? openPlaylistDatabase)();
-    const drafts = new IndexedDbLocalDraftRepository(draftDatabase);
-    const playlists = new IndexedDbLocalPlaylistRepository(playlistDatabase);
-    const backup = new LibraryBackupService(
-      new IndexedDbLibraryBackupStore(draftDatabase, playlistDatabase),
-    );
+    library = await (dependencies.openLibrary ?? (() => openBrowserLibrary(dependencies)))();
+    const { drafts, playlists } = library;
+    const backup = new LibraryBackupService(library.backupStore);
     const installation = (
       dependencies.getInstallation ??
       (() => createAppInstallationRegistry().require(activeInstallationId))
     )();
-    const catalog = (dependencies.createCatalog ?? ((definition) => createCatalogService(definition, {
-      createPort: () => SqliteCatalogPort.create(),
-      fetcher: globalThis.fetch.bind(globalThis),
-    })))(installation.definition);
+    catalog = (
+      dependencies.createCatalog ??
+      ((definition) =>
+        createCatalogService(definition, {
+          createPort: () => SqliteCatalogPort.create(),
+          fetcher: globalThis.fetch.bind(globalThis),
+        }))
+    )(installation.definition);
+    let closed = false;
     return Object.freeze({
       installation,
       drafts,
@@ -70,14 +64,15 @@ export async function createCruxControlRuntime(
       catalog,
       controller: installation.createController(),
       close: () => {
-        void catalog.close().catch(() => undefined);
-        playlistDatabase?.close();
-        draftDatabase?.close();
+        if (closed) return;
+        closed = true;
+        void catalog?.close().catch(() => undefined);
+        library?.close();
       },
     });
   } catch (error) {
-    playlistDatabase?.close();
-    draftDatabase?.close();
+    void catalog?.close().catch(() => undefined);
+    library?.close();
     throw error;
   }
 }

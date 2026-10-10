@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createCruxControlRuntime } from './create-runtime.ts';
 import { activeInstallationId, createAppInstallationRegistry } from './installations.ts';
-import { browserLibraryBackupDelivery, type LibraryBackupDelivery } from '../library-backup/delivery.ts';
+import {
+  browserLibraryBackupDelivery,
+  type LibraryBackupDelivery,
+} from '../library-backup/delivery.ts';
+import type { AppLibrary } from './library.ts';
 import type { CatalogService } from '../catalog/service.ts';
 
 function database() {
@@ -9,6 +13,39 @@ function database() {
 }
 
 describe('createCruxControlRuntime', () => {
+  it('owns only an injected library and closes it after composition failure or repeated disposal', async () => {
+    const library = {
+      drafts: {},
+      playlists: {},
+      backupStore: {},
+      close: vi.fn(),
+    } as unknown as AppLibrary;
+    const openDrafts = vi.fn();
+    const openPlaylists = vi.fn();
+    const runtime = await createCruxControlRuntime({
+      openLibrary: async () => library,
+      openDrafts,
+      openPlaylists,
+    });
+    expect(runtime.drafts).toBe(library.drafts);
+    expect(runtime.playlists).toBe(library.playlists);
+    expect(openDrafts).not.toHaveBeenCalled();
+    expect(openPlaylists).not.toHaveBeenCalled();
+    runtime.close();
+    runtime.close();
+    expect(library.close).toHaveBeenCalledOnce();
+    vi.mocked(library.close).mockClear();
+    await expect(
+      createCruxControlRuntime({
+        openLibrary: async () => library,
+        getInstallation: () => {
+          throw new Error('No installation');
+        },
+      }),
+    ).rejects.toThrow('No installation');
+    expect(library.close).toHaveBeenCalledOnce();
+  });
+
   it('closes draft storage when playlist startup fails', async () => {
     const drafts = database();
     const failure = new Error('Playlist storage unavailable');
@@ -56,7 +93,10 @@ describe('createCruxControlRuntime', () => {
   it('returns an injected backup delivery through runtime composition', async () => {
     const drafts = database();
     const playlists = database();
-    const delivery: LibraryBackupDelivery = { kind: 'share', deliver: vi.fn(async () => ({ status: 'shared' as const })) };
+    const delivery: LibraryBackupDelivery = {
+      kind: 'share',
+      deliver: vi.fn(async () => ({ status: 'shared' as const })),
+    };
     const runtime = await createCruxControlRuntime({
       openDrafts: async () => drafts,
       openPlaylists: async () => playlists,
@@ -71,7 +111,14 @@ describe('createCruxControlRuntime', () => {
     const drafts = database();
     const playlists = database();
     const catalog: CatalogService = {
-      getSnapshot: () => ({ storage: null, operation: 'idle', offer: null, progress: null, error: null, queries: null }),
+      getSnapshot: () => ({
+        storage: null,
+        operation: 'idle',
+        offer: null,
+        progress: null,
+        error: null,
+        queries: null,
+      }),
       subscribe: () => () => undefined,
       start: vi.fn(async () => undefined),
       loadOffer: vi.fn(async () => undefined),
@@ -81,7 +128,10 @@ describe('createCruxControlRuntime', () => {
       close: vi.fn(async () => undefined),
     };
     const createCatalog = vi.fn(() => catalog);
-    const delivery: LibraryBackupDelivery = { kind: 'share', deliver: vi.fn(async () => ({ status: 'shared' as const })) };
+    const delivery: LibraryBackupDelivery = {
+      kind: 'share',
+      deliver: vi.fn(async () => ({ status: 'shared' as const })),
+    };
     const runtime = await createCruxControlRuntime({
       openDrafts: async () => drafts,
       openPlaylists: async () => playlists,
