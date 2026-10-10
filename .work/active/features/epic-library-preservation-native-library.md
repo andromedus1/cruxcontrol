@@ -333,3 +333,15 @@ capabilities. Worker must not delegate or use peeragent.
   establish automatic account protection, clean-client recovery, private signing-key
   preservation, physical-board BLE or actual-phone storage-pressure durability.
   Real authoring remains gated by the epic's required independent preservation work.
+
+## PR verification follow-up
+
+Draft [PR #32](https://github.com/andromedus1/cruxcontrol/pull/32) carries this
+foundation. The first CI run passed the iOS adapter/build/browser lane. Android
+setup failed before compilation because setup-android v3 defaults to the removed
+`tools` package; explicitly request `platform-tools` while retaining the separate
+API/build-tools installation. Web tests exposed an existing synchronous query for
+the list form during its legitimate asynchronous loading state; wait for the form
+before editing it. These are CI configuration and test-harness repairs, with no
+application behavior change. Repeat CI after the repairs; independent review is
+still in progress.

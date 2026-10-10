@@ -132,6 +132,8 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android API 36
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
@@ -140,6 +142,9 @@ jobs:
         run: |
           npm ci
           npm --prefix prototypes/ios ci
+
+      - name: Verify synthetic catalog packaging contracts
+        run: npm --prefix prototypes/ios run test:catalog-package
 
       - name: Compile bundled Android app
         run: npm --prefix prototypes/ios run build:android
