@@ -2,7 +2,7 @@
 description: CruxControl vision, problem, audience, principles, and non-goals
 type: planning
 kind: planning
-updated: 2026-10-09
+updated: 2026-10-10
 nav_priority: high
 summary: >
   CruxControl is a Kilter-first, eventually universal climbing-board app. Its
@@ -11,16 +11,21 @@ summary: >
   surrendering offline use, data ownership, or source fidelity. The first
   older-snapshot Kilter catalog browser is integrated with explicit consent and
   offline access while native iPhone preparation continues.
-  Invited contributions follow with Android and iPhone board control.
+  Private library preservation now takes priority: independent online backups and
+  portable owner-controlled files must complement offline local authoring. An
+  experimental Android package now uses native SQLite for local authorship; its
+  synthetic emulator persistence check passes, while physical and independent
+  recovery proofs remain open. Invited contributions follow with Android and iPhone
+  board control.
 decisions:
-  - "Share product logic across web, Android and iOS; preserve the working web client while proving native iPhone board control."
+  - "Share product logic across web, Android and iOS while retaining platform-specific storage and device adapters; preserve the working web client and keep native-device acceptance explicit."
   - "Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional."
   - "The Fullride 7x10 is the first complete milestone; one app for any supported climbing board is the long-term north star."
   - "Board definitions, catalog providers, and controller protocols are independent extension points."
   - "Imports may use public or user-authorized sources; access and redistribution constraints are enforced per provider."
-  - "Static/backendless remains the default, with a narrow service allowed later only where a provider or collaboration capability requires it."
+  - "Static delivery and offline local use remain the default; a narrow service may support independent private backups, provider access or invited collaboration."
   - "Kilter community catalog access precedes invited shared contributions; its first browser uses an explicitly older offline snapshot, and native iPhone preparation continues independently, with a logbook, broader providers, grade prediction and personalized training retained afterward."
-  - "The installable PWA keeps private authoring and playlists local; an invited shared library may use a narrow, research-grounded collaboration service."
+  - "Private authoring and playlists stay locally usable; everyday real authoring waits for verified automatic online backup and clean-install recovery, with portable owner-controlled files as an independent second path."
   - "Invited partner and friends need Android and iPhone board control; establish the iOS path before advancing shared-library implementation."
 ---
 
@@ -30,15 +35,34 @@ decisions:
 
 CruxControl is a data-owning climbing-board app whose first complete target is a
 home Kilter Board Fullride 7x10. Its implemented first milestone creates, saves,
-reopens, and lights unrestricted browser-local climbs through a fast, offline-first
-client; organizes them into shareable lists; and supports locally reviewed screenshot
-imports and editable light effects. The Kilter community catalog first slice is now
+reopens, and lights unrestricted climbs through a fast, offline-first web client;
+organizes them into shareable lists; and supports locally reviewed screenshot imports
+and editable light effects. The web client and iOS prototype store their authored
+library in IndexedDB. The experimental Android package injects the same library
+interfaces over one native SQLite database and has passed synthetic emulator checks
+for restore, edit/save, forced process termination, relaunch, and a same-signature
+update. Physical-board behavior and full Android feature parity remain unverified.
+Native local storage is not independent recovery. The immediate priority is independent
+library preservation: automatic private online backups, retained versions, portable files,
+and verified restoration after browser or device loss. Real authored climbs remain
+gated until automatic private online protection and clean-install recovery from that
+online backup are verified. Owner-controlled portable-file recovery is the independent
+second path, not a substitute for that online gate. Automatic online protection and
+clean-install recovery remain intended work, not shipped guarantees. Whole-library
+exports remain manual; Android's portable-file path has passed synthetic isolated-emulator
+export and empty-install offline recovery checks. No cloud destination or online recovery
+has been proven. Local saving and offline access must remain available while automatic
+protection is pending or unavailable.
+The Kilter community catalog first slice is now
 integrated in the running app: entry opens the older offline Fullride snapshot when
 available, while explicit management consent controls metadata lookup and download.
 The snapshot's source freshness is unknown and it receives no live updates; complete
-current-app coverage and public distribution permission are not established. Catalog
-work can advance on Android and the web while native iPhone work proceeds; unavailable
-iPhone hardware does not block that work. The isolated iOS prototype now compiles,
+current-app coverage and public distribution permission are not established. A private
+Android APK has passed isolated emulator checks for consented catalog installation and
+offline worker-backed browsing of that snapshot; this does not establish physical-board
+control or full Android parity. Catalog work can advance on Android and the web while
+native iPhone work proceeds; unavailable iPhone hardware does not block that work. The
+isolated iOS prototype now compiles,
 starts, and has passed synthetic-data library preservation and complete backup/restore
 round trips in an iPhone 17 simulator; physical-device acceptance remains open.
 
@@ -81,16 +105,18 @@ each submission. Android and iPhone board control are required. Local playlists 
 already portable by bounded URL or lossless file; provider climb URLs remain future
 catalog work. The design begins with this
 "distribute to friends" case: an installable PWA built for static hosting once the
-deployment setup and acceptance checks are complete. The shared library permits a
-narrow collaboration service where research establishes the need; it does not make
-local authoring depend on a service. Supporting more board types broadens the
+deployment setup and acceptance checks are complete. Narrow private-backup and
+collaboration services are permitted where research establishes the need; local
+authoring does not depend on either service. Private backup is independent of
+contributing a climb to the group. Supporting more board types broadens the
 hardware and catalog surface without requiring public registration or commercial
 multi-tenancy.
 
 ## Principles
 
-- **Data ownership first.** The climber's logbook is local and portable; syncing
-  to the Kilter API is optional, never required.
+- **Data ownership first.** Authored work stays local and portable, with independent
+  recoverable copies. Local saving and independently verified backup are distinct
+  states. Syncing to the Kilter API is optional, never required.
 - **Fast by default.** Offline-first, instant load, responsive browsing — the
   official app's biggest weakness is the bar to clear.
 - **Data-driven over hand-curated.** Build repeatable pipelines from verified,
@@ -123,7 +149,8 @@ multi-tenancy.
   library serves one invited circle. Billing, public discovery, and hosting or
   remotely controlling other people's boards are outside its scope. A collaboration
   service may hold explicit contributions and the access data needed for the group;
-  private drafts, playlists, and future logbook data stay locally owned.
+  private drafts, playlists, and future logbook data stay locally owned. Owner-private
+  backups do not become group contributions or grant members access to that work.
 - **Not simultaneous board rollout.** The Fullride 7x10 remains the first complete
   product milestone. Other Aurora boards and MoonBoard follow through separately
   researched adapters rather than delaying the Kilter path.
@@ -131,9 +158,11 @@ multi-tenancy.
   authorized public catalog data and may optionally sync; those capabilities are not
   implemented yet and will not reproduce Kilter's community/social features.
 - **No separate mobile product fork.** iPhone board control is intended through a
-  researched mobile integration sharing the application core. Native framework
-  selection remains conditional on hardware, storage and sign-in proof; a separate
-  iOS-only feature set or unsolicited interface redesign is outside the scope.
+  researched mobile integration sharing the application core. The experimental
+  Capacitor package currently supports an Android native-storage path and an iOS
+  IndexedDB path; production mobile support still depends on device, parity, and
+  recovery evidence. A separate iOS-only feature set or unsolicited interface redesign
+  is outside the scope.
 
 ## Reference
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useBackAction } from '../app/use-back-action.ts';
 import { decodeLibraryBackup, LIBRARY_BACKUP_LIMITS } from './codec.ts';
 import type { BackupReview, DecodedLibraryBackup } from './types.ts';
 import { browserLibraryBackupDelivery, type LibraryBackupDelivery } from './delivery.ts';
@@ -55,6 +56,7 @@ export function LibraryBackupDialog({
     generation.current += 1;
     onClose();
   }
+  useBackAction(close);
 
   async function chooseFile(file: File): Promise<void> {
     if (operationPending.current) return;
@@ -180,7 +182,11 @@ export function LibraryBackupDialog({
     const currentGeneration = ++generation.current;
     setPhase('exporting');
     setError('');
-    setStatus(delivery.kind === 'share' ? 'Preparing backup and opening share options…' : 'Preparing backup…');
+    setStatus(delivery.kind === 'share'
+      ? 'Preparing backup and opening share options…'
+      : delivery.kind === 'save'
+        ? 'Preparing backup and opening the file picker…'
+        : 'Preparing backup…');
     try {
       const file = await service.exportFile();
       if (currentGeneration !== generation.current) return;
@@ -189,11 +195,13 @@ export function LibraryBackupDialog({
       const outcome = await delivery.deliver(file, controller.signal);
       if (currentGeneration !== generation.current) return;
       setPhase('idle');
-      const message = outcome.status === 'shared'
-        ? 'Backup export completed. Check your chosen destination.'
-        : outcome.status === 'cancelled'
-          ? 'Backup export canceled.'
-          : 'Backup download started';
+      const message = outcome.status === 'saved'
+        ? 'Backup file saved to the chosen location. Confirm it is available there; remote retention is not verified.'
+        : outcome.status === 'shared'
+          ? 'Backup handed off to the chosen destination. Check that it retained the file.'
+          : outcome.status === 'cancelled'
+            ? 'Backup export canceled.'
+            : 'Backup download started';
       setStatus(outcome.warning ? `${message} ${outcome.warning}` : message);
     } catch (cause) {
       if (currentGeneration !== generation.current) return;
@@ -207,7 +215,8 @@ export function LibraryBackupDialog({
   }
 
   const busy = phase === 'exporting' || phase === 'restoring' || phase === 'refreshing';
-  const nativeDelivery = delivery.kind === 'share';
+  const nativeDelivery = delivery.kind !== 'download';
+  const saveFile = delivery.kind === 'save';
 
   const noOp = Boolean(review && review.add.climbs === 0 && review.add.playlists === 0 && review.conflicts.length === 0);
 
@@ -232,8 +241,9 @@ export function LibraryBackupDialog({
       <section className="library-backup-section">
         <h3>{nativeDelivery ? 'Save a backup' : 'Download a backup'}</h3>
         <p>Keep an independent copy of saved climbs, Trash, playlists, memberships and animation settings.</p>
-        {nativeDelivery && <p className="library-backup-help">Choose Save to Files or another destination in the iOS share sheet.</p>}
-        <button className="button button--primary" type="button" disabled={busy || phase === 'reading' || Boolean(backup)} onClick={() => void download()}>{nativeDelivery ? 'Save or share library backup' : 'Download library backup'}</button>
+        {delivery.kind === 'share' && <p className="library-backup-help">Choose a destination in the share sheet. Check that it received the file before relying on an off-device copy.</p>}
+        {saveFile && <p className="library-backup-help">Choose where to save the file. CruxControl cannot verify that a cloud destination retained it.</p>}
+        <button className="button button--primary" type="button" disabled={busy || phase === 'reading' || Boolean(backup)} onClick={() => void download()}>{saveFile ? 'Save library backup file' : nativeDelivery ? 'Save or share library backup' : 'Download library backup'}</button>
       </section>
       <section className="library-backup-section">
         <h3>Recover from a file</h3>

@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-10-09
+updated: 2026-10-10
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
@@ -13,7 +13,7 @@ decisions:
   - "The local wall-session loop is implemented; approved invited-library journeys guide access, publication, retained personal copies, and explicit source updates."
   - "Invited members explicitly publish climbs immediately to their group; personal authoring/playlists remain local and Android plus iPhone board control are required."
   - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
-  - "The current browser controller requires supported Web Bluetooth; the intended mobile path must supply native iPhone BLE access."
+  - "The PWA controller requires supported Web Bluetooth; the experimental Capacitor Android/iOS package supplies native BLE adapters, with physical-device acceptance still open."
   - "Grade-prediction target is community consensus difficulty_average from climb_stats."
   - "Playlists are a CruxControl-local construct (no Kilter playlist API): local-first, climb-ID-referenced, shareable, board-playable."
   - "Every climb and layout identity is namespaced by provider and immutable board/layout revision; bare vendor IDs never cross domain boundaries."
@@ -21,9 +21,9 @@ decisions:
   - "Establish iPhone board control and native storage/authentication contracts before further shared-library implementation."
   - "The first Kilter community catalog slice is a consented, read-only Fullride browser over an explicitly older offline snapshot; current coverage, source freshness, and public binary distribution remain unproven."
   - "Kilter community catalog access precedes invited sharing and can ship on Android/web independently of native iPhone hardware acceptance."
-  - "Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status and recoverable Trash; provider publication validation is a separate future boundary."
+  - "Locally authored climbs are unrestricted platform-local aggregates with Draft/Finished status and recoverable Trash; web and iOS use IndexedDB, Android uses native SQLite, and provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
-  - "Whole-library backup is a bounded local file of saved records; restore is missing-only, identity-preserving, conflict-blocking, and transactional per IndexedDB store."
+  - "Current whole-library export is manual and restore is missing-only per store; everyday real authoring requires verified automatic online backup and clean-install recovery, with portable files as an independent second path."
   - "PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs, and workspace, mutation, play-through, and BLE session gates protect local work before activation."
 ---
 
@@ -102,6 +102,11 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   a manifest can still present an offer when its binary is absent. After explicit
   download consent, an unavailable binary produces an HTTP or size error with retry,
   while authored climbs and lists remain available.
+- A private Android APK has verified the bundled snapshot's exact compressed bytes
+  and normal consent/install/query flow through the module Worker, WASM, OPFS, and
+  Web Locks, followed by offline reopen/list resolution on an isolated Android 36
+  arm64 / WebView 133 emulator. This establishes packaged catalog operation for that
+  test stack, not physical-board behavior or full Android feature parity.
 - Add shareable URLs for individual/provider climbs with future catalog browsing;
   current portable sharing is implemented for playlists through fragments or files.
 - Visual 2D board renderer showing recognizable hold artwork, positions, semantic role
@@ -226,13 +231,13 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 
 - Create named, hand-picked, **manually reorderable** lists of climbs.
 - A playlist is a CruxControl-local construct (Kilter has no playlist concept);
-  it stores ordered, unique references to either stable browser-local climb IDs or
+  it stores ordered, unique references to either stable local climb IDs or
   namespaced provider + layout revision + source climb IDs.
 - Draft and Finished climbs may belong to multiple lists. Trash, catalog absence,
   or permanent climb deletion leaves an explicit unavailable reference in place
   until the user removes it; restoring a local climb resolves the same membership.
 - Export a playlist through a bounded shareable URL fragment when it fits and through
-  a complete JSON file for every valid list. Resolvable browser-local memberships are
+  a complete JSON file for every valid list. Resolvable local memberships are
   immutable climb snapshots without local IDs, revisions, installation identity, or
   Trash state; provider memberships remain namespaced references.
 - Import URL and file payloads through the same strict compatibility preview with no
@@ -274,6 +279,41 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   capability is not yet delivered. The hosting/session proof must include the chosen
   native iPhone client; a web-only same-origin proof is insufficient.
 
+### 10. Private Library Preservation (Intended)
+
+- Preserve offline local creation and board use while protecting saved authored work
+  through automatic private online backups and portable owner-controlled files.
+  Current exports remain manual; automatic protection is not implemented.
+- Include Draft/Finished/Trash, metadata including grade and angle, holds/roles,
+  effect recipes, stable identities and revisions, playlists and exact membership
+  order. Catalog downloads are separately reacquirable and are not authored backups.
+- Show local save state separately from independently verified protection, including
+  pending offline edits, failed backups and the last protected version. State the
+  remaining loss window; offline writes cannot be called independently protected
+  before an external copy has been verified.
+- Retain prior versions. A new, empty, unreadable or partial local library must not
+  silently replace a good recovery point or be interpreted as authorized deletion.
+- The Android package disables OS Auto Backup and excludes app data domains from legacy
+  backup and Android 12+ cloud-backup/device-transfer rules. Treat unexpected nonempty
+  or OS-restored state as untrusted during recovery admission; it cannot authorize an
+  upload until deliberate account or portable-file recovery resolves it. This policy
+  does not claim every OEM transfer path has been verified.
+- Recover on a clean client without relying on credentials or keys kept only inside
+  the lost browser origin. Preserve private access isolation from invited sharing.
+- Everyday use with real authored climbs remains gated until automatic private online
+  protection and clean-install recovery from that online backup are verified. Verified
+  owner-controlled portable-file restoration is a required independent second path; it
+  does not substitute for the online gate.
+- Private backups may use service-managed encryption and recovery through the
+  owner's account. End-to-end encryption that excludes the service operator is
+  not required; account recovery must work without the old device.
+- Verify restoration after complete loss of a synthetic test library's local storage,
+  and verify portable-file restoration without the online service. Preserve IDs,
+  content and list order; report conflicts and partial outcomes without destructive
+  fallback. Never erase the owner's phone as a test fixture.
+- Request stronger local persistence where supported after capability validation;
+  it supplements independent backups and does not establish permanent retention.
+
 ## Domain Model
 
 The model mirrors the official Kilter SQLite schema (see
@@ -289,7 +329,7 @@ The model mirrors the official Kilter SQLite schema (see
 - **Ascent / Bid** — logged sends and attempts (auth-gated for personal data).
 - **Session** — a grouping of attempts/ascents over a single board session.
 - **Playlist** — a CruxControl-local, user-named, ordered list of climb
-  references (by stable browser-local ID or namespaced provider + layout revision +
+  references (by stable local ID or namespaced provider + layout revision +
   source climb ID), with notes and optimistic revision identity; shareable and
   board-playable. Not a Kilter schema entity.
 
@@ -315,18 +355,22 @@ The model mirrors the official Kilter SQLite schema (see
   workspace, route editor, and Web Bluetooth controller. The private artwork does not
   imply redistribution permission: public distribution requires Kilter's permission
   or replacement with redistributable imagery.
-- Locally authored climbs are authoritative in a dedicated native IndexedDB database,
-  survive reload/reopen, move between Draft and Finished without content validation,
-  and remain in Trash until the user explicitly chooses Delete forever. Definition/layout/
-  angle/placement incompatibility is surfaced while retaining the stored record unchanged. Drafts remain
-  in their dedicated workspace rather than appearing in the finished My Climbs library.
+- Locally authored climbs are authoritative in the platform library store: a dedicated
+  browser-managed IndexedDB database on the PWA and iOS package, and one native SQLite
+  database on Android. They survive reload/reopen, move between Draft and Finished
+  without content validation, and remain in Trash until the user explicitly chooses
+  Delete forever. Definition/layout/angle/placement incompatibility is surfaced while
+  retaining the stored record unchanged. Drafts remain in their dedicated workspace
+  rather than appearing in the finished My Climbs library.
 - The Drafts workspace can import selected Kilter Android Fullride PNGs sequentially,
   review and correct each detected climb, and save confirmed results as ordinary 40°
   drafts. It also exposes the pixel-free built-in migration for the supplied 16 climbs.
   Decoded bitmap/canvas resources are released after local analysis; selected File
   references and object-URL title evidence are released when review closes. None are
   persisted or uploaded, and exact duplicates are skipped across active climbs and Trash.
-- Flexible lists are authoritative in a separate versioned native IndexedDB database.
+- Flexible lists are authoritative in the platform library store: a separate versioned
+  browser-managed IndexedDB database on the PWA and iOS package, and the same native SQLite
+  database as climbs on Android.
   Their ordered references survive reload, allow one climb in multiple lists, and
   resolve Trash or missing climbs without rewriting membership rows. Exact-order
   play-through keeps navigation position ephemeral, remains browsable while
@@ -341,14 +385,29 @@ The model mirrors the official Kilter SQLite schema (see
   including orphan records and Trash, plus every playlist, ordered shared membership,
   stable ID, revision, lifecycle timestamp, metadata, and saved effect recipe. Its limits
   are 25 MiB UTF-8, 10,000 climbs, 1,000 playlists, and 100,000 playlist references.
-  Export performs a bounded stability check across the independent stores and asks users
-  to finish edits in other tabs; it is not a cross-database atomic snapshot. Restore
-  reviews the complete file first, adds missing IDs, skips canonically identical IDs, and
-  blocks any differing ID without overwriting or allocating replacement IDs. Each store
+  On the PWA and iOS, export performs a bounded stability check across the independent
+  stores and asks users to finish edits in other tabs; this is not a cross-database atomic
+  snapshot. Android captures both aggregates through one SQLite read transaction. The
+  Android emulator has passed synthetic restore, edit/save, force-stop/relaunch, and
+  same-signature update preservation checks; physical-board behavior and full Android
+  feature parity remain unverified. Automatic online backup and recovery also remain
+  unverified. The separately verified private
+  APK catalog flow covers the older snapshot through offline reopen on Android 36 / WebView
+  133, not board lighting or general Android acceptance. Android SAF delivery uses
+  `ACTION_CREATE_DOCUMENT` and reports success after the provider's UTF-8 stream closes;
+  interruption before opening the stream leaves the library unchanged but may leave an
+  empty destination. The manual Android flow passed isolated-emulator checks: actual
+  Downloads-provider files were read back, one restored offline into a separate empty
+  installation with an exact canonical comparison, and an edit to the recovered library
+  survived force-stop/relaunch. The source also survived a same-signature update. These
+  synthetic checks do not establish cloud upload or physical-device behavior.
+  The restore flow reviews the complete file first, adds missing IDs, skips canonically
+  identical IDs, and blocks any differing ID without overwriting or allocating replacement
+  IDs. Each store
   commits in its own transaction and aborts that store on error; a playlist failure can
   therefore follow a committed climb batch and is reported for honest retry with the
-  retained file. The workflow uses the existing browser-local databases and origin for
-  saved contents only; it does not rewrite schemas or upload to a cloud/account service.
+  retained file. The workflow uses the existing platform-local library store for saved
+  contents only; it does not rewrite schemas or upload to a cloud/account service.
   Trash remains until explicit Delete forever.
 - The installable PWA precaches the app shell with Workbox and owns registration through an
   update coordinator configured for prompt-mode workers (`skipWaiting: false`,
@@ -389,30 +448,36 @@ The model mirrors the official Kilter SQLite schema (see
 
 - **Browser support.** Direct Web Bluetooth control runs in supported Android and
   desktop Chromium browsers (Chrome/Edge); other browsers can browse but not drive
-  the board through that transport. The intended iPhone client adds native BLE access.
+  the board through that transport. The experimental Capacitor package adds native
+  BLE adapters for Android and iOS, with physical-device acceptance still open.
 - **Offline-first.** Local drafts already create, edit, and reopen without network.
   The catalog and logbook must likewise be usable from local storage when their
   milestones ship.
 - **Kilter-first acceptance scope.** The Fullride 7x10 is the first end-to-end
   acceptance board. Core identities and ports support multiple boards, but other
   providers do not block that milestone.
-- **Data ownership.** Locally authored climbs are browser-authoritative today. The logbook will
-  likewise be locally authoritative; Kilter sync remains optional and reversible.
+- **Data ownership.** Locally authored climbs and playlists are authoritative in the local
+  library store for each installation: browser-managed IndexedDB on the PWA and iOS, and
+  app-private SQLite on Android. Local saving does not itself establish independent
+  recovery; Android's native store remains on the device. The logbook will likewise be
+  locally authoritative; Kilter sync remains optional and reversible.
 - **Protocol fidelity.** BLE packets implement framing, checksums, and packet splitting
   for the controller-selected API level 2 or 3 (see
   [briefs/hardware-and-protocol.md](briefs/hardware-and-protocol.md)).
 - **Reproducible pipelines.** Catalog sync and model training must re-run as the
   catalog grows — not one-off scripts.
-- **Distributable PWA.** The app is built for static, hosted, installable PWA
+- **Distributable PWA.** The web app is built for static, hosted, installable PWA
   distribution so a friend can open it from a URL after deployment is configured,
-  with browser-local private data. The running app has no shared service or accounts;
+  with browser-local private data. The PWA has no shared service or accounts;
   the intended invited library may add a narrowly scoped collaboration service and
-  access mechanism after research. Local use must not require that service.
+  access mechanism after research. Intended private preservation may likewise use a
+  narrowly scoped backup service; local use must not require either service.
   Distribution robustness — stable across mainstream Chromium browsers/devices,
   installable, trivially hostable on static infra (Cloudflare Workers Static Assets) — is a hard
   requirement; it was the criterion by which the framework (React + Vite) was chosen.
 - **Per-user isolation.** Private drafts, playlists, and future logbook data remain
-  local unless the user explicitly shares chosen content. Current playlist sharing
+  locally usable; configured private backups remain accessible only to their owner.
+  Private backup does not publish content to the invited group. Current playlist sharing
   uses bounded URL fragments or lossless files; the intended shared library publishes
   explicit contributions to invited members. Shared access must not expose the rest
   of a member's local library.
@@ -421,7 +486,10 @@ The model mirrors the official Kilter SQLite schema (see
   decisions recorded per provider.
 - **Mobile capability.** Responsive local browsing and editing work on modern phones;
   logging must do the same when its future milestone ships. The shared-library
-  audience requires direct Android and iPhone board control. The iPhone path must
+  audience requires direct Android and iPhone board control. Android native library
+  storage has passed synthetic emulator restore/edit/save/relaunch/update checks, but
+  physical-board behavior, complete feature parity, and independent recovery remain
+  unverified. The iPhone path must
   prove connection/light/clear, interruption recovery, durable local storage,
   whole-library export/restore and native sign-in before claiming support.
   Unsupported transports degrade explicitly to browse-only; that fallback does not

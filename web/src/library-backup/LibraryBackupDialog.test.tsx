@@ -152,7 +152,7 @@ describe('recovery failure and async boundaries', () => {
     const onClose = vi.fn();
     render(<LibraryBackupDialog service={new LibraryBackupService(store())} onClose={onClose} onRestored={vi.fn()} delivery={delivery} />);
     expect(screen.getByRole('heading', { name: 'Save a backup' })).toBeInTheDocument();
-    expect(screen.getByText('Choose Save to Files or another destination in the iOS share sheet.')).toBeInTheDocument();
+    expect(screen.getByText('Choose a destination in the share sheet. Check that it received the file before relying on an off-device copy.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Save or share library backup' }));
     await waitFor(() => expect(delivery.deliver).toHaveBeenCalledOnce());
     expect(screen.getByText('Preparing backup and opening share options…')).toBeInTheDocument();
@@ -165,8 +165,20 @@ describe('recovery failure and async boundaries', () => {
     expect(delivery.deliver).toHaveBeenCalledOnce();
 
     await act(async () => pending.resolve({ status: 'shared' }));
-    expect(await screen.findByText('Backup export completed. Check your chosen destination.')).toBeInTheDocument();
+    expect(await screen.findByText('Backup handed off to the chosen destination. Check that it retained the file.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close' })).toBeEnabled();
+  });
+
+  it('reports a selected-location save without implying remote protection', async () => {
+    const pending = deferred<LibraryBackupDeliveryResult>();
+    const delivery: LibraryBackupDelivery = { kind: 'save', deliver: vi.fn(() => pending.promise) };
+    render(<LibraryBackupDialog service={new LibraryBackupService(store())} onClose={vi.fn()} onRestored={vi.fn()} delivery={delivery} />);
+    expect(screen.getByText('Choose where to save the file. CruxControl cannot verify that a cloud destination retained it.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save library backup file' }));
+    expect(await screen.findByText('Preparing backup and opening the file picker…')).toBeInTheDocument();
+    await act(async () => pending.resolve({ status: 'saved' }));
+    expect(await screen.findByText('Backup file saved to the chosen location. Confirm it is available there; remote retention is not verified.')).toBeInTheDocument();
   });
 
   it('reports cancellation without an error and offers a fresh export attempt', async () => {
@@ -181,7 +193,7 @@ describe('recovery failure and async boundaries', () => {
     expect(await screen.findByText('Backup export canceled.')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Save or share library backup' }));
-    expect(await screen.findByText('Backup export completed. Check your chosen destination.')).toBeInTheDocument();
+    expect(await screen.findByText('Backup handed off to the chosen destination. Check that it retained the file.')).toBeInTheDocument();
     expect(delivery.deliver).toHaveBeenCalledTimes(2);
   });
 
@@ -198,7 +210,7 @@ describe('recovery failure and async boundaries', () => {
     expect(screen.getByRole('button', { name: 'Try export again' })).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'Choose another file' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Try export again' }));
-    expect(await screen.findByText('Backup export completed. Check your chosen destination.')).toBeInTheDocument();
+    expect(await screen.findByText('Backup handed off to the chosen destination. Check that it retained the file.')).toBeInTheDocument();
   });
 
   it('aborts an in-flight delivery when unmounted and ignores its eventual result', async () => {
@@ -230,7 +242,7 @@ describe('recovery failure and async boundaries', () => {
     };
     render(<LibraryBackupDialog service={new LibraryBackupService(store())} onClose={vi.fn()} onRestored={vi.fn()} delivery={delivery} />);
     fireEvent.click(screen.getByRole('button', { name: 'Save or share library backup' }));
-    expect(await screen.findByText("Backup export completed. Check your chosen destination. The temporary backup copy could not be removed from this app's storage.")).toBeInTheDocument();
+    expect(await screen.findByText("Backup handed off to the chosen destination. Check that it retained the file. The temporary backup copy could not be removed from this app's storage.")).toBeInTheDocument();
   });
 });
 

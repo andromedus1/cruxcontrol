@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-10-09
+updated: 2026-10-10
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -15,26 +15,28 @@ summary: >
   An invited contribution library is intended; approved journeys and a verified
   access/storage comparison guide its bounded collaboration service and retained local copies.
   An iPhone client proof now precedes further shared-service implementation.
-  An isolated experimental Capacitor shell injects native BLE into the shared screens
-  and controller; it compiles, starts, and has passed synthetic-data preservation and
-  whole-library backup/restore round trips in an iPhone 17 simulator. Physical-device
-  acceptance remains pending.
+  An experimental Capacitor package uses native BLE on Android and iOS. iOS retains
+  browser-managed library storage; Android injects a native SQLite library and has
+  passed synthetic emulator restore, edit/save, process-relaunch, and same-signature
+  update checks. Physical-board behavior, full Android feature parity, and independent
+  recovery remain open. Account-protected online backups and portable files are intended
+  recovery layers; service selection and verified recovery remain open.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; an optional lazy runtime service opens the local SQLite catalog through a serialized wa-sqlite AccessHandlePoolVFS worker."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
   - "Provider-native records and provenance are retained beside the normalized read model; catalogs install per provider/layout rather than as one universal bundled database."
-  - "BLE byte I/O is isolated behind Web Bluetooth in the PWA and an experimental native adapter in the iOS shell; both reuse API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
+  - "BLE byte I/O is isolated behind Web Bluetooth in the PWA and experimental native adapters in the Capacitor Android/iOS package; both reuse API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
   - "The required iPhone path reuses the controller transport boundary; simulator backup round-trip is proven, while real-board BLE, real-device storage pressure and native authentication remain unverified before service implementation resumes."
   - "Catalog acquisition and local browsing compose existing provider, storage, renderer and controller boundaries without depending on invited access or native iPhone proof."
   - "The first browser explicitly installs and reads an older Fullride snapshot; two OPFS slots and IndexedDB receipt metadata provide bounded recovery, with no automatic source refresh or claim of current coverage."
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
-  - "Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
+  - "Locally authored climbs and playlists use the platform library adapter: independent versioned IndexedDB repositories on web and iOS, and one native SQLite database on Android; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
-  - "Whole-library backup uses a bounded local JSON file and missing-only, identity-preserving restore with conflict blocking and one transaction per IndexedDB store; the two stores are never treated as one atomic snapshot."
+  - "Current backup is a manual bounded file with missing-only per-store restore; real authored climbs require verified account-protected online backup and clean-install recovery, with portable files as a separate second path."
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
   - "PWA updates use an app-owned prompt-mode Workbox registration, shared Web Locks admission, and explicit safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes."
   - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
-  - "The intended invited library separates authenticated publication and immutable source revisions from retained browser-local copies; production service selection remains conditional on a hosting/session proof."
+  - "The intended invited library separates authenticated publication and immutable source revisions from retained platform-local copies; production service selection remains conditional on a hosting/session proof."
 ---
 
 # CruxControl — Architecture
@@ -61,21 +63,28 @@ feature item bodies in `.work/`, not here. Capabilities are in
    previous slot remains available for bounded recovery; OPFS and IndexedDB do not
    share an atomic transaction. Unsupported OPFS/worker environments report the
    catalog unavailable. Native records and provenance sit beside a normalized read
-   model. Small locally authored climb and playlist aggregates use
-   independent native IndexedDB repositories with versioned codecs and atomic
-   optimistic updates; climb storage additionally owns explicit lifecycle commands.
-   Library backup reads both stores through their codecs and restores saved records with
-   stable IDs in separate per-store transactions; it is a bounded local file workflow,
-   not a schema migration or cloud service.
+   model. Locally authored climb and playlist aggregates use the shared `AppLibrary`
+   boundary. The PWA and iOS package use independent browser-managed IndexedDB
+   repositories with versioned codecs and atomic optimistic updates; the Android package
+   injects one persistent native SQLite database with serialized revision transactions.
+   Climb storage additionally owns explicit lifecycle commands. Library backup uses the
+   same strict codecs on every platform; web and iOS use a bounded stability check across
+   their two stores, while Android captures a coherent whole-library snapshot in one
+   database transaction. Restore retains the per-store outcome contract. This is a local
+   file workflow, not a schema migration or cloud service.
 3. **Catalog Providers** — source-specific import/sync adapters. Kilter is first;
    later Aurora-family and MoonBoard providers are separately researched. Network,
    auth, reconciliation, and policy metadata remain outside domain and UI code.
-   The browser currently consumes the approved older offline Fullride snapshot with
-   explicit download consent; the catalog binary remains private and public
-   distribution approval is unresolved. Source freshness is unknown, there is no live
-   refresh, and the adapter's supported query surface does not establish current or
-   complete official-app coverage. Kilter catalog work proceeds independently of the
-   invited contribution service and native iPhone proof.
+   The PWA and private Android APK consume the approved older offline Fullride snapshot
+   with explicit download consent. Android packaging requires an explicit local artifact
+   input; compile-only APKs omit the catalog. An isolated Android 36 arm64 / WebView 133
+   APK passed exact-byte delivery, consented install/query through the ordinary module
+   Worker and SQLite WASM, and airplane-mode reopen/list resolution using OPFS and Web
+   Locks. This proves packaged offline catalog operation for that test stack, not general
+   Android parity or board control. The binary remains private and public distribution
+   approval is unresolved. Source freshness is unknown, there is no live refresh, and the
+   query surface does not establish current or complete official-app coverage. Kilter
+   catalog work proceeds independently of invited sharing and native iPhone proof.
 4. **Controller Profiles & Transports** — profiles own discovery and command
    encoding; transports own platform I/O. The first pair is Aurora API level 2/3 over
    Web Bluetooth: deterministic framing/checksum/multi-packet encoding, serialized
@@ -88,8 +97,8 @@ feature item bodies in `.work/`, not here. Capabilities are in
    and the editor's absolute-time animation scheduler sends complete scenes of at most
    20 lights at up to 2 FPS with one frame in flight and stale deadlines coalesced. Since
    omitted lights replace rather than preserve the previous scene, sparse delta frames
-   are forbidden. Refused playback never rewrites saved assignments. The isolated
-   iOS prototype supplies `NativeBleByteTransport` behind the same port. Its own
+   are forbidden. Refused playback never rewrites saved assignments. The Capacitor
+   package supplies `NativeBleByteTransport` behind the same port. Its own
    composition root injects native I/O into the shared controller and library runtime;
    browser inspection of prototype assets exposes unsupported control. A storyboard-
    backed scene delegate forwards cold and warm URLs through Capacitor's existing
@@ -108,7 +117,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    distributable fallback. Coordinates, hit testing, focus, overlays, and LED mapping
    always come from the generated definition; pixels never become domain geometry.
 6. **Climb Browser** — the implemented source-neutral My Climbs/Drafts/Trash
-   list/detail surface drives the renderer and controller for browser-local climbs.
+   list/detail surface drives the renderer and controller for locally authored climbs.
    `CruxControlWorkspace` groups `BoardControlBar` and `ScreenAwakeControl` in a
    persistent header above navigation and editing. The connection bar owns explicit
    Connect/Reconnect actions. Mobile climb detail retains a connection row within its
@@ -175,8 +184,10 @@ feature item bodies in `.work/`, not here. Capabilities are in
    content duplicates in active storage or Trash are skipped.
 9. **Future: Logbook & Sessions** — local store of ascents/attempts/sessions with
    analytics; optional push to the Kilter API via the Sync Engine.
-10. **Playlists** — an implemented separate native IndexedDB repository, responsive
-   management surface, and exact-order board play-through for named, annotated,
+10. **Playlists** — an implemented platform-local repository behind `AppLibrary`
+   (separate browser-managed IndexedDB databases on the PWA and iOS, one native SQLite
+   database shared with climbs on Android), a responsive management surface, and
+   exact-order board play-through for named, annotated,
    manually ordered local/provider climb references. Runtime resolution preserves
    unavailable Trash, missing, or incompatible-board entries without cross-database
    writes. Play-through keeps position ephemeral and delegates preview and automatic
@@ -195,10 +206,11 @@ feature item bodies in `.work/`, not here. Capabilities are in
 11. **Library Backup & Recovery** — the library workspace exports a versioned, bounded
    local JSON file containing all saved climb rows across installations (including orphan
    and Trash rows) and all playlist rows with ordered shared references, IDs, revisions,
-   timestamps, metadata, and effect recipes. Export reads both independent stores twice
-   with a bounded stability check and asks users to finish other-tab edits; it cannot
-   provide a cross-database atomic snapshot. Restore validates the whole file, then adds
-   missing IDs, skips identical records, and blocks differing IDs without overwrite or
+   timestamps, metadata, and effect recipes. Web and iOS export read both independent
+   stores twice with a bounded stability check and ask users to finish other-tab edits;
+   they cannot provide a cross-database atomic snapshot. Android uses one native
+   transaction for a coherent read of both aggregates. Restore validates the whole file,
+   then adds missing IDs, skips identical records, and blocks differing IDs without overwrite or
    replacement IDs. Draft and playlist stores commit independently in their own
    transactions, so a playlist failure after a committed climb batch is reported as a
    partial outcome for retry; no compensating deletion is used. Bounds are 25 MiB UTF-8,
@@ -222,12 +234,49 @@ feature item bodies in `.work/`, not here. Capabilities are in
     inference (ONNX Runtime Web / WASM); feeds prediction + recommendation features back
     into the app.
 
+## Intended independent preservation boundary
+
+The [preservation epic](../.work/active/epics/epic-library-preservation.md) owns an
+independent recovery boundary for private authored libraries. It must reuse the
+versioned whole-library contracts where sound, support automatic private online
+backup and portable files, retain prior versions and verify recovery after local
+origin/device loss. The web and iOS stores need a bounded consistency check across
+their independent databases; Android can read both aggregates in one local transaction.
+Version acknowledgement, retention and account recovery require explicit design.
+An empty installation cannot supply deletion authority over retained backups.
+The intended trust boundary permits service-managed encryption with recoverable
+owner accounts; it does not require operator-blind encryption or a separate
+user-managed decryption key. Account recovery must not depend on the lost device.
+
+This boundary is separate from group publication and provider catalogs. Platform-local
+authoring remains authoritative for offline work: browser-managed IndexedDB on the PWA
+and iOS, and app-private SQLite on Android. Android's native database provides a coherent
+local snapshot, but a copy on the same device is not independent recovery. Backup
+availability and sign-in cannot gate local reads or saves. Acknowledged protection must
+identify the saved revision represented in an independently verified copy. No service,
+account system, or automatic-backup implementation is selected or provisioned yet.
+Browser/native file-delivery and scheduling limits need proof before promising automatic
+file copies.
+
+The Android package disables OS Auto Backup and excludes app data domains from the legacy
+backup rules and Android 12+ cloud-backup/device-transfer rules. Merged-manifest and
+resource inspection of a private APK confirmed those rules are packaged. This is an
+explicit app policy, not evidence that every OEM transfer path has been tested. Future
+recovery admission must treat any unexpected nonempty or OS-restored library as untrusted
+until deliberate account or portable-file recovery resolves it; it cannot authorize an
+upload.
+
+Everyday use with real authored climbs remains gated until automatic private online
+protection and clean-install recovery from that online backup are verified. Owner-controlled
+portable-file recovery is an independent second path and does not satisfy the online gate
+by itself.
+
 ## Data Flow
 
 ### Intended shared-library boundary
 
 The shared contribution library is not implemented. Its design must distinguish
-explicit publication and group updates from browser-local authoring and personal
+  explicit publication and group updates from platform-local authoring and personal
 playlists. It should reuse existing versioned snapshot validation, board-definition
 compatibility, renderer/controller composition, and local recovery mechanisms.
 The verified [invited-library comparison](../.research/analysis/briefs/invited-offline-library.md)
@@ -240,20 +289,40 @@ An isolated [experimental Capacitor shell](../prototypes/ios/README.md) packages
 existing screens under a separate app identity. Its dedicated entry point composes
 native BLE and lifecycle plugins, disables PWA generation, and omits service-worker
 registration and the update coordinator. The normal browser entry retains update admission.
-No production framework is selected. Native compilation and startup are verified on
-the iPhone 17 / iOS 27.0 simulator. Synthetic-data startup, scene/lifecycle, safe-area,
-focus, and application-update preservation checks passed. A complete backup was
-exported through Save to Files, restored from an empty simulator library, and re-exported
-to a canonically equal snapshot after relaunch. Real-board BLE, real-device storage
-pressure, and authentication remain unverified. The observed startup screenshot showed
-status-bar and app-control safe areas without overlap.
-Access design
-must account for the native origin and session return path; its existing same-origin
-web units are held for revision. Native backup delivery encodes UTF-8 JSON into the
-app cache and passes a Filesystem URI to Share. Successful sharing removes the cache
-copy; cancellation or rejection retains it until the next export preflight because
-a nested OS destination may still need the file. Native bootstrap/update integration
-still requires explicit adapters or proof, rather than assuming all browser facilities carry over.
+On iOS, climbs and playlists still use browser-managed IndexedDB. On Android, the same
+shared runtime injects an `AppLibrary` backed by one persistent native SQLite
+database; strict codecs and revision checks are shared with the browser repositories, and
+`readSnapshot` reads both aggregates in one native transaction. The database uses WAL and
+FULL synchronization. Android emulator checks have verified synthetic restore, edit/save,
+force-stop/relaunch, and same-signature update preservation. Separately, the private catalog
+APK passed the offline worker flow described in Catalog Providers on Android 36 / WebView
+133. These checks do not establish physical-board behavior, complete Android parity, or
+automatic online backup and recovery. The Capacitor configuration sets
+`loggingBehavior` to `none` to suppress bridge payload logs; inspection of a private APK
+confirmed the bundled setting, and fresh Logcat windows during export, recovery/edit, and
+relaunch contained neither the synthetic marker nor the full backup payload. The iOS
+simulator has separately passed
+synthetic-data startup, scene/lifecycle, safe-area, focus, application-update preservation,
+and a complete Save to Files backup/restore
+round trip. Real-board BLE, real-device storage pressure, and authentication remain
+unverified on iOS. The observed startup screenshot showed status-bar and app-control safe
+areas without overlap.
+Access design must account for the native origin and session return path; its existing
+same-origin web units are held for revision. Backup handoff is platform-specific: iOS
+writes UTF-8 JSON in the app cache and passes the Filesystem URI to Share; successful
+sharing removes that cache copy, while cancellation or rejection retains it until the next
+export preflight for a nested destination. Android uses Storage Access Framework
+`ACTION_CREATE_DOCUMENT` and reports success only after the selected provider's UTF-8
+output stream closes. Picker cancellation is distinct from failure. If activity
+recreation interrupts a save before the output stream opens, the library remains
+unchanged, although the provider may leave an empty destination; the current-source
+Android flow passed isolated-emulator checks: exports were read back from the selected
+Downloads provider, one restored offline into a separate empty installation with an exact
+canonical comparison, and the recovered library's edit survived force-stop/relaunch. A
+same-signature update also preserved the source library. This synthetic local-provider
+proof does not establish a cloud upload, physical-phone behavior, or every OEM transfer
+path. Native bootstrap/update integration still requires explicit adapters or proof,
+rather than assuming all browser facilities carry over.
 The intended boundary uses current membership authorization, explicit retry-safe
 publication, stable contribution identities, and immutable source revisions.
 Locally retained copies record source provenance without surrendering local ownership;
@@ -276,10 +345,11 @@ Board definition ──▶ Installation registry ─────┼──▶ Bro
                                          │
                              Byte transport ──▶ Physical board
                              ├─ Web Bluetooth (PWA)
-                             └─ Native BLE (isolated iOS prototype; device proof pending)
+                             └─ Native BLE (experimental Android/iOS package; physical-board proof pending)
 
-Editor ──▶ Local climb repository ──▶ native IndexedDB
-  │               (versioned + optimistic)       (browser-local authority)
+Editor ──▶ Local climb repository ──▶ platform AppLibrary adapter
+  │               (versioned + optimistic)       ├─ PWA / iOS: browser-managed IndexedDB
+  │                                               └─ Android: native SQLite database
   ├──▶ Renderer ──▶ SVG board surface
   ├──▶ Saved effect snapshots ──▶ two-pass frame engine ──▶ role-protected scene
   └──▶ Light controller ──▶ existing capacity policy ──▶ controller profile / transport
@@ -288,7 +358,7 @@ Kilter screenshot PNG ──▶ transient local analysis ──▶ editable defi
                                                         └──▶ deduplicated 40° draft ──▶ Local climb repository
 Supplied 16-climb facts (no pixels) ────────────────────┘
 
-Lists ──▶ Local playlist repository ──▶ separate native IndexedDB
+Lists ──▶ Local playlist repository ──▶ same platform AppLibrary adapter
   └──▶ read-time climb resolver ──▶ available / Trash / missing entry view
   │                                └──▶ ephemeral play-through ──▶ Renderer / controller
   ├──▶ portable snapshot envelope ──▶ fragment URL / JSON file
@@ -296,6 +366,8 @@ Lists ──▶ Local playlist repository ──▶ separate native IndexedDB
                  └──▶ fresh climb copies, then fresh playlist (compensated on failure)
 
 Library workspace ──▶ backup service ──▶ bounded local JSON file
+  ├─ PWA / iOS: bounded two-store stability check
+  ├─ Android: one-transaction native readSnapshot
   └──◀ imported file ──▶ full review/conflict gate ──▶ per-store missing-only restore
 
 App runtime ──▶ update coordinator ──▶ prompt-mode Workbox registration
@@ -320,15 +392,17 @@ or network.
   ID + layout revision, never a bare climb ID or mutable display name.
 - **Preserve source truth.** Normalized tables are query projections. Native payloads,
   grades, versions, attribution, and provenance remain available for reconciliation.
-- **Single source of truth.** The local SQLite catalog is the community read model;
-  the native IndexedDB climb store is authoritative for locally authored climbs; the
-  independent native IndexedDB playlist store is authoritative for list metadata and
-  ordered references. The future logbook store owns personal activity.
+- **Single source of truth.** The local SQLite catalog is the community read model.
+  Platform-local library storage is authoritative for authored climbs, playlists, metadata,
+  and ordered references: separate browser-managed IndexedDB databases on the PWA and iOS,
+  and one native SQLite database in the Android package. The future logbook store owns
+  personal activity.
 - **Local backup semantics.** Backup captures saved records from the existing climb and
   playlist stores, including Trash, orphan rows, other installations, shared references,
-  revisions, and recipes. Export stability checks are bounded because the stores cannot
-  share one transaction. Restore validates before writes, preserves IDs, and treats a
-  playlist failure after a committed climb batch as a reportable partial result for retry.
+  revisions, and recipes. Web and iOS export stability checks are bounded because their
+  stores cannot share one transaction; Android reads the two aggregates in one native
+  transaction. Restore validates before writes, preserves IDs, and treats a playlist
+  failure after a committed climb batch as a reportable partial result for retry.
 - **Safe update admission.** A waiting worker never activates or reloads a tab on arrival.
   The coordinator protects the lifetime of editing, dialogs, imports, backups, repository
   mutations, list play-through, and BLE sessions/operations, then uses shared Web Locks
@@ -344,14 +418,18 @@ or network.
   decoded bitmap/canvas resources are released after analysis, while selected File
   references and object-URL evidence remain only through review. None enter durable
   storage or network I/O; only the confirmed climb aggregate reaches IndexedDB.
-- **Static-first distribution.** The initial app is a client-side, installable PWA
+- **Static-first distribution.** The web app is a client-side, installable PWA
   configured for future static hosting on Cloudflare Workers (Static Assets); live
   deployment still requires operator setup and acceptance. There is no application
-  server, account system, or shared database, and each friend's client is independent
-  with browser-local storage. The current hardware edge is the board over BLE. A
+  server, account system, or shared database. The PWA and iOS prototype use
+  browser-local storage; the experimental Android package uses its app-private SQLite
+  library. Each client's local storage remains independent. The current hardware edge
+  is the board over BLE. A
   future provider adapter may connect to the Kilter sync API, and a narrowly scoped
-  service is allowed for the intended invited contribution library or a provider
-  constraint demonstrated by research. Any collaboration service owns explicit
+  service is allowed for independent private recovery, the intended invited
+  contribution library or a provider constraint demonstrated by research. A private
+  backup service holds owner-private recovery copies; group access never grants
+  access to them. Any collaboration service owns explicit
   group contributions and necessary access data, not private drafts or playlists.
 
 ## Key Dependencies
@@ -363,11 +441,12 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | React 19 + Vite 6 (TypeScript)              | Client-only SPA framework + build tooling                                                                                                                                                                      |
 | `wa-sqlite` (`AccessHandlePoolVFS`)         | In-browser SQLite catalog read path in a Web Worker; catalog IndexedDB fallback is deferred                                                                                                                    |
-| Native IndexedDB                            | Independent versioned, atomic, browser-local authorities for climbs (Draft/Finished/Trash lifecycle) and playlist aggregates                                                                                   |
+| Browser IndexedDB                           | Independent versioned, atomic, browser-local authorities for climbs (Draft/Finished/Trash lifecycle) and playlist aggregates on the PWA and iOS package                                                          |
 | `vite-plugin-pwa` (Workbox)                 | Service worker + manifest — offline shell and installability; prompt-mode waiting worker consumed by the app-owned update coordinator                                                                        |
 | Web Locks API                               | Shared per-tab admission and exclusive, `ifAvailable` update apply coordination                                                                                                                               |
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
-| Capacitor 8.4.3 + BLE 8.3.0 + App 8.1.1      | Isolated iOS prototype only: bundled shared UI, native byte transport, foreground lifecycle; no background BLE mode                                                                                             |
+| Capacitor 8.4.3 + BLE 8.3.0 + App 8.1.1      | Experimental iOS/Android package: bundled shared UI, native byte transport, foreground lifecycle; no background BLE mode                                                                                       |
+| Capacitor Community SQLite 8.1.1             | Android app-private library database behind `AppLibrary`, with serialized revision transactions and a coherent snapshot; physical-board, full-parity, and automatic online recovery remain open                   |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |
 | BoardLib (Python)                           | Legacy bootstrap and sync-protocol reference; not a verified current catalog source                                                                                                                            |
 | Kilter sync API                             | Legacy protocol reference; current availability and coverage are unverified                                                                                                                                   |
@@ -381,6 +460,15 @@ Web Bluetooth + in-browser SQLite + ONNX inference). No SSR is used (Web Bluetoo
 requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundation-pwa-sqlite.md).
 
 ## Biggest Risks
+
+- **Loss of irreplaceable local work.** Browser-local repositories, the Android app-private
+  database, and manual exports do not guarantee recovery after origin eviction, app/device
+  loss or failed migration.
+  Intended protection combines independent versioned online backup, portable files,
+  honest pending/offline status and verified restore drills. Local persistence
+  permission alone is insufficient. Automatic online backup and independently verified
+  recovery remain unimplemented; the local native SQLite store is on the same device and
+  does not meet that recovery boundary.
 
 - **Web Bluetooth reliability** across OS/browser versions — deterministic transport and
   renderer coverage exercises mapping, light/clear, animation, and the existing API-2

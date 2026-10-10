@@ -6,16 +6,25 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run && npm run test:catalog-package",
+    "test:catalog-package": "node --experimental-strip-types --test scripts/android-catalog.test.mjs scripts/android-build-options.test.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --config ../../web/eslint.config.js src",
     "build": "npm run typecheck && npm --prefix ../../web run build -- --mode ios-prototype",
     "sync": "npm run build && cap sync ios",
     "open": "cap open ios",
-    "run": "npm run sync && cap run ios --no-sync"
+    "run": "npm run sync && cap run ios --no-sync",
+    "sync:android": "node --experimental-strip-types scripts/build-android-catalog.mjs --compile-only --sync-only",
+    "build:android": "node --experimental-strip-types scripts/build-android-catalog.mjs --compile-only",
+    "build:android:catalog": "node --experimental-strip-types scripts/build-android-catalog.mjs",
+    "open:android": "cap open android",
+    "build:android:release": "node --experimental-strip-types scripts/build-android-catalog.mjs --release",
+    "build:android:signed-proof": "node --experimental-strip-types scripts/build-android-catalog.mjs --signed-proof"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "8.3.0",
+    "@capacitor-community/sqlite": "8.1.1",
+    "@capacitor/android": "8.4.3",
     "@capacitor/app": "8.1.1",
     "@capacitor/core": "8.4.3",
     "@capacitor/filesystem": "8.1.4",

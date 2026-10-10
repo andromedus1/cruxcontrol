@@ -1,4 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useBackAction } from '../app/use-back-action.ts';
 import type { CatalogService } from './service.ts';
 import './catalog.css';
 
@@ -51,6 +52,7 @@ export function CatalogManageDialog({ service, onClose, statusAnnouncement }: Ca
     if (dialog?.open) dialog.close();
     onClose();
   };
+  useBackAction(close);
 
   const receipt = snapshot.storage?.status === 'ready' ? snapshot.storage.receipt : null;
   const details = receipt?.manifest ?? snapshot.offer;

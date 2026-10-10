@@ -1,8 +1,4 @@
-import {
-  canonicalSnapshot,
-  encodeLibraryBackup,
-  reviewLibraryBackup,
-} from './codec.ts';
+import { canonicalSnapshot, encodeLibraryBackup, reviewLibraryBackup } from './codec.ts';
 import type {
   BackupReview,
   DecodedLibraryBackup,
@@ -29,13 +25,17 @@ function asError(cause: unknown): Error {
   return cause instanceof Error ? cause : new Error(String(cause));
 }
 
-function filename(date: Date): string {
-  return `cruxcontrol-library-${date.toISOString().slice(0, 10)}.json`;
+function filename(date: Date, sameTimestampSequence: number): string {
+  const timestamp = date.toISOString().replace(/:/g, '-');
+  const collisionSuffix = sameTimestampSequence > 1 ? `-${sameTimestampSequence}` : '';
+  return `cruxcontrol-library-${timestamp}${collisionSuffix}.json`;
 }
 
 export class LibraryBackupService {
   readonly #store: LibraryBackupStore;
   readonly #now: () => Date;
+  #lastExportTimestamp = '';
+  #sameTimestampSequence = 0;
 
   constructor(store: LibraryBackupStore, now: () => Date = () => new Date()) {
     this.#store = store;
@@ -43,6 +43,7 @@ export class LibraryBackupService {
   }
 
   async #readSnapshot(): Promise<LibrarySnapshot> {
+    if (this.#store.readSnapshot) return this.#store.readSnapshot();
     const [drafts, playlists] = await Promise.all([
       this.#store.readDrafts(),
       this.#store.readPlaylists(),
@@ -51,10 +52,12 @@ export class LibraryBackupService {
   }
 
   async exportFile(): Promise<Readonly<{ filename: string; text: string }>> {
-    let stable: LibrarySnapshot | null = null;
+    let stable: LibrarySnapshot | null = this.#store.readSnapshot
+      ? await this.#store.readSnapshot()
+      : null;
     // Two reads of each independent store form one bounded stability attempt.
     // A second attempt is intentionally the limit: this is not a cross-DB lock.
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    for (let attempt = 0; !stable && attempt < 2; attempt += 1) {
       const first = await this.#readSnapshot();
       const second = await this.#readSnapshot();
       if (canonicalSnapshot(first) === canonicalSnapshot(second)) {
@@ -68,8 +71,13 @@ export class LibraryBackupService {
       );
     }
     const exportedAt = this.#now();
+    const timestamp = exportedAt.toISOString();
+    this.#sameTimestampSequence = timestamp === this.#lastExportTimestamp
+      ? this.#sameTimestampSequence + 1
+      : 1;
+    this.#lastExportTimestamp = timestamp;
     return Object.freeze({
-      filename: filename(exportedAt),
+      filename: filename(exportedAt, this.#sameTimestampSequence),
       text: encodeLibraryBackup(stable, exportedAt),
     });
   }

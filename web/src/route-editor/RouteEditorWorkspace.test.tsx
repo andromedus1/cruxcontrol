@@ -8,6 +8,8 @@ import type { LocalDraftRepository } from '../drafts/repository';
 import type { LocalClimbDraft } from '../drafts/types';
 import { RouteEditorWorkspace } from './RouteEditorWorkspace';
 import { createSpatialPreset } from '../light-effects/preset-library';
+import { BackNavigationProvider } from '../app/BackNavigation.tsx';
+import { createBackNavigation } from '../app/back-navigation.ts';
 
 const draft: LocalClimbDraft = {
   ...draftContent(),
@@ -29,6 +31,17 @@ const repository: LocalDraftRepository = {
 };
 
 describe('RouteEditorWorkspace', () => {
+  it('uses the same unsaved confirmation for hardware Back and removes the handler on unmount', () => {
+    const navigation = createBackNavigation(); const onBack = vi.fn();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const { unmount } = render(<BackNavigationProvider port={navigation}><RouteEditorWorkspace definition={kilterFullride7x10Definition} draft={draft} repository={repository} onBack={onBack} /></BackNavigationProvider>);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Pending edit' } });
+    expect(navigation.dispatch()).toBe(true);
+    expect(confirm).toHaveBeenCalledWith('Leave with changes that may not be saved?');
+    expect(onBack).not.toHaveBeenCalled();
+    confirm.mockReturnValue(true); navigation.dispatch(); expect(onBack).toHaveBeenCalledOnce();
+    unmount(); expect(navigation.dispatch()).toBe(false); confirm.mockRestore();
+  });
   it('shows the simplified autosaving hold tools and exact custom channels', () => {
     render(
       <RouteEditorWorkspace

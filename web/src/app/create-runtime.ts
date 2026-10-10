@@ -1,18 +1,10 @@
+import { openBrowserLibrary, type AppLibrary } from './library.ts';
 import type { BoardLightController } from '../board-control/light-controller';
-import {
-  IndexedDbLocalDraftRepository,
-  openDraftDatabase,
-  type LocalDraftRepository,
-} from '../drafts';
+import type { LocalDraftRepository } from '../drafts';
 import type { ConfiguredBoardInstallation } from '../installations/contracts';
-import {
-  IndexedDbLocalPlaylistRepository,
-  openPlaylistDatabase,
-  type LocalPlaylistRepository,
-} from '../playlists';
+import type { LocalPlaylistRepository } from '../playlists';
 import {
   browserLibraryBackupDelivery,
-  IndexedDbLibraryBackupStore,
   LibraryBackupService,
   type LibraryBackupDelivery,
 } from '../library-backup';
@@ -20,6 +12,13 @@ import { activeInstallationId, createAppInstallationRegistry } from './installat
 import { createCatalogService, type CatalogService } from '../catalog/service.ts';
 import { SqliteCatalogPort } from '../data/sqlite/sqlite-catalog-port.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
+import type { NativePlaylistSharing } from '../playlists/portable-transports.ts';
+import type { BackNavigationPort } from './back-navigation.ts';
+
+export interface RestoredFileSaveFailureNotice {
+  subscribe(listener: () => void): () => void;
+  take(): string | null;
+}
 
 export interface CruxControlRuntime {
   readonly installation: ConfiguredBoardInstallation;
@@ -27,57 +26,71 @@ export interface CruxControlRuntime {
   readonly playlists: LocalPlaylistRepository;
   readonly backup?: LibraryBackupService;
   readonly backupDelivery?: LibraryBackupDelivery;
+  readonly restoredFileSaveFailure?: RestoredFileSaveFailureNotice;
+  readonly playlistSharing?: NativePlaylistSharing;
+  readonly backNavigation?: BackNavigationPort;
   readonly catalog: CatalogService;
   readonly controller: BoardLightController | null;
   close(): void;
 }
 
 export interface CruxControlRuntimeDependencies {
+  readonly openLibrary?: () => Promise<AppLibrary>;
   readonly openDrafts?: () => Promise<IDBDatabase>;
   readonly openPlaylists?: () => Promise<IDBDatabase>;
   readonly getInstallation?: () => ConfiguredBoardInstallation;
   readonly backupDelivery?: LibraryBackupDelivery;
+  readonly restoredFileSaveFailure?: RestoredFileSaveFailureNotice;
+  readonly playlistSharing?: NativePlaylistSharing;
+  readonly backNavigation?: BackNavigationPort;
   readonly createCatalog?: (definition: BoardDefinition) => CatalogService;
 }
 
 export async function createCruxControlRuntime(
   dependencies: CruxControlRuntimeDependencies = {},
 ): Promise<CruxControlRuntime> {
-  let draftDatabase: IDBDatabase | null = null;
-  let playlistDatabase: IDBDatabase | null = null;
+  let library: AppLibrary | null = null;
+  let catalog: CatalogService | null = null;
   try {
-    draftDatabase = await (dependencies.openDrafts ?? openDraftDatabase)();
-    playlistDatabase = await (dependencies.openPlaylists ?? openPlaylistDatabase)();
-    const drafts = new IndexedDbLocalDraftRepository(draftDatabase);
-    const playlists = new IndexedDbLocalPlaylistRepository(playlistDatabase);
-    const backup = new LibraryBackupService(
-      new IndexedDbLibraryBackupStore(draftDatabase, playlistDatabase),
-    );
+    library = await (dependencies.openLibrary ?? (() => openBrowserLibrary(dependencies)))();
+    const { drafts, playlists } = library;
+    const backup = new LibraryBackupService(library.backupStore);
     const installation = (
       dependencies.getInstallation ??
       (() => createAppInstallationRegistry().require(activeInstallationId))
     )();
-    const catalog = (dependencies.createCatalog ?? ((definition) => createCatalogService(definition, {
-      createPort: () => SqliteCatalogPort.create(),
-      fetcher: globalThis.fetch.bind(globalThis),
-    })))(installation.definition);
+    catalog = (
+      dependencies.createCatalog ??
+      ((definition) =>
+        createCatalogService(definition, {
+          createPort: () => SqliteCatalogPort.create(),
+          fetcher: globalThis.fetch.bind(globalThis),
+        }))
+    )(installation.definition);
+    let closed = false;
     return Object.freeze({
       installation,
       drafts,
       playlists,
       backup,
       backupDelivery: dependencies.backupDelivery ?? browserLibraryBackupDelivery,
+      ...(dependencies.restoredFileSaveFailure
+        ? { restoredFileSaveFailure: dependencies.restoredFileSaveFailure }
+        : {}),
+      playlistSharing: dependencies.playlistSharing,
+      backNavigation: dependencies.backNavigation,
       catalog,
       controller: installation.createController(),
       close: () => {
-        void catalog.close().catch(() => undefined);
-        playlistDatabase?.close();
-        draftDatabase?.close();
+        if (closed) return;
+        closed = true;
+        void catalog?.close().catch(() => undefined);
+        library?.close();
       },
     });
   } catch (error) {
-    playlistDatabase?.close();
-    draftDatabase?.close();
+    void catalog?.close().catch(() => undefined);
+    library?.close();
     throw error;
   }
 }

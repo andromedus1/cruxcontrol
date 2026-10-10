@@ -46,6 +46,19 @@ function analyzed(
 const emptyResult: ScreenshotImportResult = { created: [], skipped: [], failures: [] };
 
 describe('KilterScreenshotImportDialog', () => {
+  it('keeps a pending screenshot mutation mounted through close and cancel requests', async () => {
+    let finish!: (value: ScreenshotImportResult) => void;
+    const pending = new Promise<ScreenshotImportResult>((resolve) => { finish = resolve; });
+    const onClose = vi.fn();
+    render(<KilterScreenshotImportDialog installation={installation} repository={repository()} importCandidates={() => pending} loadSuppliedCandidates={() => [{ sourceName: 'synthetic.png', sourceSha256: 'f'.repeat(64), name: 'Synthetic pending import', assignments: [], warnings: [] }]} onImported={vi.fn(async () => undefined)} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Load supplied 16' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Import 1 draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close screenshot import' }));
+    fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }));
+    expect(onClose).not.toHaveBeenCalled();
+    finish(emptyResult);
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+  });
   it('loads exactly 16 pixel-free supplied candidates into the same write-free review', async () => {
     const repo = repository();
     const importCandidates = vi.fn(async (_repo, _installation, candidates) => {

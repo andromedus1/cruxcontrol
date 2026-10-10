@@ -4,9 +4,9 @@ import type { ClimbViewKey } from '../climb-browser/types';
 import { toClimbViewRecord } from '../drafts/to-climb-view-record';
 import type { DraftContent, LocalClimbDraft, LocalDraftId } from '../drafts/types';
 import type { DraftReadIssue } from '../drafts/repository';
-import { PlaylistLibrary, type PlaylistEditReturn } from '../playlists/PlaylistLibrary';
+import { PlaylistLibrary, type PlaylistEditReturn, type ProviderPlaylistRead } from '../playlists/PlaylistLibrary';
 import { PlaylistMembershipDialog } from '../playlists/PlaylistMembershipDialog';
-import type { LocalPlaylist } from '../playlists/types';
+import type { LocalPlaylist, PlaylistClimbReference } from '../playlists/types';
 import { RouteEditorWorkspace } from '../route-editor/RouteEditorWorkspace';
 import { KilterScreenshotImportDialog } from '../screenshot-import/KilterScreenshotImportDialog';
 import { LibraryBackupDialog } from '../library-backup';
@@ -19,6 +19,10 @@ import { ScreenAwakeControl } from '../pwa/ScreenAwakeControl';
 import './CruxControlWorkspace.css';
 import { CatalogBrowser } from '../catalog/CatalogBrowser.tsx';
 import type { CatalogServiceSnapshot } from '../catalog/service.ts';
+import type { CatalogClimb, CatalogQueryPort } from '../catalog/types.ts';
+import { playlistReferenceKey } from '../playlists/codec.ts';
+import { BackNavigationProvider } from './BackNavigation.tsx';
+import { useBackAction } from './use-back-action.ts';
 
 export type LocalClimbCollection = 'finished' | 'drafts' | 'trash';
 export type WorkspaceDestination = LocalClimbCollection | 'lists' | 'kilter';
@@ -118,7 +122,11 @@ export interface CruxControlWorkspaceProps {
   readonly updateService?: AppUpdateService;
 }
 
-export function CruxControlWorkspace({ runtime, updateService }: CruxControlWorkspaceProps) {
+export function CruxControlWorkspace(props: CruxControlWorkspaceProps) {
+  return <BackNavigationProvider port={props.runtime.backNavigation}><Workspace {...props} /></BackNavigationProvider>;
+}
+
+function Workspace({ runtime, updateService }: CruxControlWorkspaceProps) {
   const [drafts, setDrafts] = useState<readonly LocalClimbDraft[]>([]);
   const [playlists, setPlaylists] = useState<readonly LocalPlaylist[]>([]);
   const [readIssues, setReadIssues] = useState<readonly DraftReadIssue[]>([]);
@@ -130,9 +138,13 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const [editing, setEditing] = useState<LocalDraftId | null>(null);
   const [playlistEditReturn, setPlaylistEditReturn] = useState<PlaylistEditReturn | null>(null);
   const [selectedKey, setSelectedKey] = useState<ClimbViewKey | null>(null);
-  const [membershipDraft, setMembershipDraft] = useState<LocalClimbDraft | null>(null);
+  const [membership, setMembership] = useState<{
+    readonly name: string;
+    readonly reference: PlaylistClimbReference;
+  } | null>(null);
   const [importingScreenshots, setImportingScreenshots] = useState(false);
   const [backingUp, setBackingUp] = useState(false);
+  const [restoredFileSaveFailure, setRestoredFileSaveFailure] = useState<string | null>(null);
   const backupButtonRef = useRef<HTMLButtonElement>(null);
   const [error, setError] = useState('');
   const [retryAction, setRetryAction] = useState<RetryAction | null>(null);
@@ -143,7 +155,84 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
   const [updateSnapshot, setUpdateSnapshot] = useState<AppUpdateSnapshot | null>(() => updateService?.getSnapshot() ?? null);
   const [catalogSnapshot, setCatalogSnapshot] = useState<CatalogServiceSnapshot>(() => runtime.catalog.getSnapshot());
   const [catalogManageOpen, setCatalogManageOpen] = useState(false);
+  const providerReferences = useMemo(() => {
+    const unique = new Map<string, Extract<PlaylistClimbReference, { kind: 'provider' }>>();
+    for (const playlist of playlists) for (const reference of playlist.entries) {
+      if (reference.kind === 'provider') unique.set(playlistReferenceKey(reference), reference);
+    }
+    return [...unique.values()];
+  }, [playlists]);
+  const [providerRetry, setProviderRetry] = useState(0);
+  const [providerLookup, setProviderLookup] = useState<{
+    references: typeof providerReferences;
+    queries: CatalogQueryPort | null;
+    rows: readonly CatalogClimb[];
+    read: ProviderPlaylistRead;
+  } | null>(null);
+  const needsProviderRows = collection === 'lists' && providerReferences.length > 0;
+  const providerLookupCurrent = providerLookup?.references === providerReferences
+    && providerLookup.queries === catalogSnapshot.queries;
+
+  useEffect(() => {
+    const notice = runtime.restoredFileSaveFailure;
+    if (!notice) return;
+    const consume = () => {
+      const message = notice.take();
+      if (!message) return;
+      setRestoredFileSaveFailure(message);
+    };
+    const unsubscribe = notice.subscribe(consume);
+    consume();
+    return unsubscribe;
+  }, [runtime.restoredFileSaveFailure]);
+
+  useEffect(() => {
+    if (!needsProviderRows) return;
+    let cancelled = false;
+    const publish = (queries: CatalogQueryPort | null, rows: readonly CatalogClimb[], read: ProviderPlaylistRead) => {
+      if (!cancelled) setProviderLookup({ references: providerReferences, queries, rows, read });
+    };
+    publish(catalogSnapshot.queries, [], { status: 'loading' });
+    void (async () => {
+      let queries = catalogSnapshot.queries;
+      try {
+        await runtime.catalog.start();
+        if (cancelled) return;
+        const snapshot = runtime.catalog.getSnapshot();
+        queries = snapshot.queries;
+        if (!queries) {
+          publish(null, [], { status: 'unavailable', message: snapshot.storage?.status === 'unavailable'
+            ? snapshot.storage.message : 'Install the older Kilter catalog to resolve these list entries.' });
+          return;
+        }
+        const rows: CatalogClimb[] = [];
+        // One issued read at a time, no stale generation queues further work.
+        for (const reference of providerReferences) {
+          if (cancelled) return;
+          const result = await queries.get(reference.id, runtime.installation.config.angle);
+          if (cancelled) return;
+          if (result.status === 'unavailable') {
+            publish(queries, [], { status: 'unavailable', message: 'The catalog is unavailable; these references have not been checked.' });
+            return;
+          }
+          if (result.value) rows.push(result.value);
+        }
+        publish(queries, rows, { status: 'ready' });
+      } catch (cause) {
+        publish(queries, [], { status: 'error', message: `Catalog lookup failed: ${cause instanceof Error ? cause.message : String(cause)}` });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [needsProviderRows, providerReferences, providerRetry, catalogSnapshot.queries, runtime.catalog, runtime.installation.config.angle]);
   const updateBlocksWorkspace = updateSnapshot?.status === 'applying' || updateSnapshot?.status === 'reload-required';
+  useBackAction(() => {
+    if (updateBlocksWorkspace || pendingOperations > 0 || playlistSafety.pendingOperations > 0) return true;
+    if (playlistSafety.dirty) {
+      setError('Save your list changes before leaving.');
+      return true;
+    }
+    return false;
+  }, true, 0);
 
   useEffect(() => {
     const controller = runtime.controller;
@@ -270,7 +359,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
       ? 'Wait for your backup or restore to finish before updating.'
       : importingScreenshots
         ? 'Finish importing screenshots before updating.'
-        : membershipDraft
+        : membership
           ? 'Finish updating list memberships before updating.'
           : pendingOperations > 0 || playlistSafety.pendingOperations > 0
             ? 'Wait for the current library change to finish before updating.'
@@ -465,7 +554,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
               setCollection(value);
               setPlaylistEditReturn(null);
               setSelectedKey(null);
-              setMembershipDraft(null);
+              setMembership(null);
             }}
           >
             <span>{value === 'lists' ? 'Lists' : value === 'kilter' ? 'Kilter' : collectionCopy[value].label}</span>
@@ -502,6 +591,12 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           <button type="button" onClick={() => void refresh()}>
             Refresh workspace
           </button>
+        </div>
+      )}
+      {restoredFileSaveFailure && (
+        <div className="workspace-error" role="alert">
+          <p>{restoredFileSaveFailure}</p>
+          <button type="button" onClick={() => setRestoredFileSaveFailure(null)}>Dismiss</button>
         </div>
       )}
       {readIssues.length > 0 && (
@@ -571,12 +666,23 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           defaultAngle={runtime.installation.config.angle}
           controller={runtime.controller}
           onManageOpenChange={setCatalogManageOpen}
+          onManageLists={playlistsLoaded && !playlistError ? (climb) => {
+            setMembership({ name: climb.name, reference: { kind: 'provider', id: climb.providerClimbId } });
+          } : undefined}
         />
       ) : collection === 'lists' ? (
         playlistsLoaded ? <PlaylistLibrary
           playlists={playlists}
           localClimbs={drafts}
+          providerClimbs={providerLookupCurrent ? providerLookup!.rows : []}
+          providerRead={providerLookupCurrent ? providerLookup!.read : { status: 'loading' }}
+          onRetryProviderRead={() => {
+            if (!runtime.catalog.getSnapshot().queries) void runtime.catalog.retryOpen();
+            setProviderRetry((value) => value + 1);
+          }}
           repository={runtime.playlists}
+          shareBaseUrl={runtime.playlistSharing?.baseUrl}
+          deliverFile={runtime.playlistSharing?.deliverFile}
           draftRepository={runtime.drafts}
           installation={runtime.installation}
           definition={runtime.installation.definition}
@@ -636,7 +742,7 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
                   const draft = compatibleDrafts.find(
                     (value) => toClimbViewRecord(value).key === key,
                   );
-                  if (draft) setMembershipDraft(draft);
+                  if (draft) setMembership({ name: climbName(draft), reference: { kind: 'local', id: draft.id } });
                 }
           }
           primaryAction={
@@ -663,15 +769,15 @@ export function CruxControlWorkspace({ runtime, updateService }: CruxControlWork
           }
         />
       )}
-      {membershipDraft && (
+      {membership && (
         <PlaylistMembershipDialog
-          climbName={climbName(membershipDraft)}
-          reference={{ kind: 'local', id: membershipDraft.id }}
+          climbName={membership.name}
+          reference={membership.reference}
           playlists={playlists}
           repository={runtime.playlists}
           onChanged={replacePlaylist}
           onRefresh={refreshPlaylists}
-          onClose={() => setMembershipDraft(null)}
+          onClose={() => setMembership(null)}
           onOperationStart={beginOperation}
           onOperationEnd={endOperation}
         />

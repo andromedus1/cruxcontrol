@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { localDraftId } from '../drafts/codec.ts';
@@ -6,6 +6,8 @@ import { playlistId, playlistRevision } from './codec.ts';
 import { PlaylistMembershipDialog } from './PlaylistMembershipDialog.tsx';
 import type { LocalPlaylistRepository } from './repository.ts';
 import type { LocalPlaylist } from './types.ts';
+import { BackNavigationProvider } from '../app/BackNavigation.tsx';
+import { createBackNavigation } from '../app/back-navigation.ts';
 
 const CLIMB_ID = localDraftId('00000000-0000-4000-8000-000000000081');
 
@@ -72,6 +74,27 @@ function renderDialog(initial: readonly LocalPlaylist[]) {
 }
 
 describe('PlaylistMembershipDialog', () => {
+  it('consumes native Back and visible close until membership write and refresh settle', async () => {
+    const first = playlist('00000000-0000-4000-8000-000000000082', 'Projects');
+    let finishWrite!: (value: LocalPlaylist) => void;
+    let finishRefresh!: () => void;
+    const update = vi.fn(() => new Promise<LocalPlaylist>(resolve => { finishWrite = resolve; }));
+    const onRefresh = vi.fn(() => new Promise<void>(resolve => { finishRefresh = resolve; }));
+    const onClose = vi.fn(), back = createBackNavigation();
+    render(<BackNavigationProvider port={back}><PlaylistMembershipDialog climbName="Synthetic" reference={{ kind: 'local', id: CLIMB_ID }} playlists={[first]} repository={{ create: vi.fn(), get: vi.fn(), list: vi.fn(), update, delete: vi.fn() }} onChanged={vi.fn()} onRefresh={onRefresh} onClose={onClose} /></BackNavigationProvider>);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Projects' }));
+    fireEvent.click(screen.getByLabelText('Close lists'));
+    expect(back.dispatch()).toBe(true);
+    expect(onClose).not.toHaveBeenCalled();
+    await act(async () => { finishWrite({ ...first, entries: [{ kind: 'local', id: CLIMB_ID }] }); });
+    expect(onRefresh).toHaveBeenCalledOnce();
+    expect(back.dispatch()).toBe(true);
+    expect(onClose).not.toHaveBeenCalled();
+    await act(async () => { finishRefresh(); });
+    expect(back.dispatch()).toBe(true);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('mutates each list independently and permits one climb in multiple lists', async () => {
     const first = playlist('00000000-0000-4000-8000-000000000082', 'Projects');
     const second = playlist('00000000-0000-4000-8000-000000000083', 'Warmups');
