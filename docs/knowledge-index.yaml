@@ -6,9 +6,9 @@
 #   2 = enforce (missing v2 fields are errors)
 # Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-10-09T23:08:46Z
+generated_at: 2026-10-10T17:29:52Z
 generated_from: frontmatter
-total_docs: 29
+total_docs: 30
 
 documents:
   # ── planning ──────────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ documents:
     title: CruxControl — Architecture
     type: planning
     kind: planning
-    updated: 2026-10-09
+    updated: 2026-10-10
     consumer_hint: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 
   - path: docs/DEPLOY.md
@@ -31,21 +31,21 @@ documents:
     title: CruxControl — Principles
     type: planning
     kind: planning
-    updated: 2026-10-09
+    updated: 2026-10-10
     consumer_hint: Product and engineering principles governing CruxControl decisions
 
   - path: docs/SPEC.md
     title: CruxControl — Specification
     type: planning
     kind: planning
-    updated: 2026-10-09
+    updated: 2026-10-10
     consumer_hint: CruxControl capabilities, domain model, constraints, and non-functional requirements
 
   - path: docs/VISION.md
     title: CruxControl — Vision
     type: planning
     kind: planning
-    updated: 2026-10-09
+    updated: 2026-10-10
     consumer_hint: CruxControl vision, problem, audience, principles, and non-goals
 
   # ── research ──────────────────────────────────────────────────────────────
@@ -86,6 +86,15 @@ documents:
     kind: research
     updated: 2026-09-27
     consumer_hint: Read when choosing an iOS/Android client path that preserves an existing React web application and supports board BLE control.
+
+  - path: .research/analysis/briefs/native-backup-service-costs.md
+    title: Native account backups without an assumed monthly service floor
+    type: brief
+    kind: research
+    updated: 2026-10-10
+    status: locked
+    research_method: /research
+    consumer_hint: Assess Firebase as a usage-priced native backup proof alongside the existing Supabase candidate.
 
   - path: .research/briefs/cloudflare-deploy/parent.md
     title: "Research: Cloudflare Deploy Path for CruxControl"

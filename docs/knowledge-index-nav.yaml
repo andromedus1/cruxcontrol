@@ -3,20 +3,20 @@
 # Provides corpus situational awareness only. Read knowledge-index.yaml for full index.
 
 schema_version: 3
-generated_at: 2026-10-09T23:08:46Z
+generated_at: 2026-10-10T17:29:52Z
 generated_from: frontmatter
-total_docs: 29
+total_docs: 30
 
 by_kind:
   planning: 5
-  research: 23
+  research: 24
   historical: 1
 
 # Substrate items (.work/) by tier. Query via .work/bin/work-view.
 substrate_summary:
   active:
     epic: 6
-    feature: 12
+    feature: 18
     story: 4
     release: 0
   backlog: 13
@@ -28,19 +28,19 @@ recent:
   - path: docs/ARCHITECTURE.md
     title: "CruxControl — Architecture"
     kind: planning
-    updated: 2026-10-09
+    updated: 2026-10-10
   - path: docs/PRINCIPLES.md
     title: "CruxControl — Principles"
     kind: planning
-    updated: 2026-10-09
+    updated: 2026-10-10
   - path: docs/SPEC.md
     title: "CruxControl — Specification"
     kind: planning
-    updated: 2026-10-09
+    updated: 2026-10-10
   - path: docs/VISION.md
     title: "CruxControl — Vision"
     kind: planning
-    updated: 2026-10-09
+    updated: 2026-10-10
   - path: docs/DEPLOY.md
     title: "Deploy"
     kind: planning

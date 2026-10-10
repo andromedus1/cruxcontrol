@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-09T23:08:46Z'
+generated_at: '2026-10-10T17:29:52Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -13,11 +13,11 @@ documents:
       advances on Android/web independently of native iPhone acceptance. An invited contribution library
       is intended; approved journeys and a verified access/storage comparison guide its bounded collaboration
       service and retained local copies. An iPhone client proof now precedes further shared-service implementation.
-      An isolated experimental Capacitor shell injects native BLE into the shared screens and controller;
-      it compiles, starts, and has passed synthetic-data preservation and whole-library backup/restore
-      round trips in an iPhone 17 simulator. Physical-device acceptance remains pending. Independent private
-      library preservation targets a native Android client first, with actual native storage, account-protected
-      online backups and portable files. Service selection and recovery implementation remain open.
+      An experimental Capacitor package uses native BLE on Android and iOS. iOS retains browser-managed
+      library storage; Android injects a native SQLite library and has passed synthetic emulator restore,
+      edit/save, process-relaunch, and same-signature update checks. Physical-board behavior, full Android
+      feature parity, and independent recovery remain open. Account-protected online backups and portable
+      files are intended recovery layers; service selection and verified recovery remain open.
 
       '
     decisions:
@@ -28,9 +28,9 @@ documents:
       by an installation registry.
     - Provider-native records and provenance are retained beside the normalized read model; catalogs install
       per provider/layout rather than as one universal bundled database.
-    - BLE byte I/O is isolated behind Web Bluetooth in the PWA and an experimental native adapter in the
-      iOS shell; both reuse API-level-2 and API-level-3 Aurora codecs selected from the connected controller
-      identity.
+    - BLE byte I/O is isolated behind Web Bluetooth in the PWA and experimental native adapters in the
+      Capacitor Android/iOS package; both reuse API-level-2 and API-level-3 Aurora codecs selected from
+      the connected controller identity.
     - The required iPhone path reuses the controller transport boundary; simulator backup round-trip is
       proven, while real-board BLE, real-device storage pressure and native authentication remain unverified
       before service implementation resumes.
@@ -42,8 +42,9 @@ documents:
     - The generated immutable Fullride definition is the shared geometry, placement identity, role, and
       LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while
       schematics remain the distributable fallback.
-    - Locally authored climbs and playlists use independent versioned IndexedDB repositories; climb storage
-      owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs.
+    - 'Locally authored climbs and playlists use the platform library adapter: independent versioned IndexedDB
+      repositories on web and iOS, and one native SQLite database on Android; climb storage owns unrestricted
+      Draft/Finished and recoverable-Trash lifecycle outside provider catalogs.'
     - Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports
       preview before creating fresh local records and compensate partial failures.
     - Current backup is a manual bounded file with missing-only per-store restore; intended independent
@@ -57,7 +58,7 @@ documents:
     - Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and
       runs browser inference through ONNX Runtime Web.
     - The intended invited library separates authenticated publication and immutable source revisions
-      from retained browser-local copies; production service selection remains conditional on a hosting/session
+      from retained platform-local copies; production service selection remains conditional on a hosting/session
       proof.
   docs/DEPLOY.md:
     summary: 'Operator runbook for the CI-gated Cloudflare Workers Static Assets deployment, including
@@ -96,8 +97,8 @@ documents:
     - Invited members explicitly publish climbs immediately to their group; personal authoring/playlists
       remain local and Android plus iPhone board control are required.
     - The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats).
-    - The current browser controller requires supported Web Bluetooth; the intended mobile path must supply
-      native iPhone BLE access.
+    - The PWA controller requires supported Web Bluetooth; the experimental Capacitor Android/iOS package
+      supplies native BLE adapters, with physical-device acceptance still open.
     - Grade-prediction target is community consensus difficulty_average from climb_stats.
     - 'Playlists are a CruxControl-local construct (no Kilter playlist API): local-first, climb-ID-referenced,
       shareable, board-playable.'
@@ -112,8 +113,9 @@ documents:
       unproven.
     - Kilter community catalog access precedes invited sharing and can ship on Android/web independently
       of native iPhone hardware acceptance.
-    - Locally authored climbs are unrestricted, browser-authoritative aggregates with Draft/Finished status
-      and recoverable Trash; provider publication validation is a separate future boundary.
+    - Locally authored climbs are unrestricted platform-local aggregates with Draft/Finished status and
+      recoverable Trash; web and iOS use IndexedDB, Android uses native SQLite, and provider publication
+      validation is a separate future boundary.
     - Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary
       40-degree drafts without persisting or uploading source images; exact duplicates, including Trash,
       are skipped.
@@ -129,12 +131,14 @@ documents:
       The first older-snapshot Kilter catalog browser is integrated with explicit consent and offline
       access while native iPhone preparation continues. Private library preservation now takes priority:
       independent online backups and portable owner-controlled files must complement offline local authoring.
-      Invited contributions follow with Android and iPhone board control.
+      An experimental Android package now uses native SQLite for local authorship; its synthetic emulator
+      persistence check passes, while physical and independent recovery proofs remain open. Invited contributions
+      follow with Android and iPhone board control.
 
       '
     decisions:
-    - Share product logic across web, Android and iOS; preserve the working web client while proving native
-      iPhone board control.
+    - Share product logic across web, Android and iOS while retaining platform-specific storage and device
+      adapters; preserve the working web client and keep native-device acceptance explicit.
     - 'Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional.'
     - The Fullride 7x10 is the first complete milestone; one app for any supported climbing board is the
       long-term north star.
@@ -364,6 +368,19 @@ documents:
     summary: Test a Capacitor native shell and BLE transport before considering a React Native UI migration.
       Electron targets desktop; native storage, lifecycle, authentication and actual-device behavior remain
       proof obligations for either mobile path.
+  .research/analysis/briefs/native-backup-service-costs.md:
+    summary: 'Firebase supplies a documented native authentication route and granular storage authorization,
+      with usage-based billing and eligible no-cost storage allowances. Billing exposure, token persistence,
+      and actual native recovery remain proof gates; neither Firebase nor Supabase is selected by documentation
+      alone.
+
+      '
+    key_findings:
+    - Firebase storage requires a billing account even within no-cost allowances.
+    - Native authentication does not automatically authenticate a WebView SDK.
+    - Storage create/read can be separated from overwrite/delete permissions.
+    - Storage budget alerts do not provide a hard spending cap.
+    - Native sign-in, renewal, owner isolation and clean-install recovery still need execution evidence.
   .research/analysis/landscapes/climbing-board-ecosystem.md:
     summary: 'Multi-board control is technically demonstrated by Boardsesh and CruxCoach, while
 
