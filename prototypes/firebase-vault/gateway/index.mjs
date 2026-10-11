@@ -5,6 +5,7 @@ import { defineString } from 'firebase-functions/params';
 import { onRequest } from 'firebase-functions/v2/https';
 import { createVaultHandler } from './handler.mjs';
 import { createGcsStore } from './gcs-store.mjs';
+import { ALL_POOLS, PROOF_POOL } from './contract.mjs';
 import { PROJECT_ID, BUCKET, FUNCTION_OPTIONS } from './settings.mjs';
 
 const owner = defineString('VAULT_OWNER_UID');
@@ -35,7 +36,10 @@ export const privateVaultProof = onRequest(FUNCTION_OPTIONS, async (request, res
             throw error;
           }
         },
-        store: createGcsStore(storage.bucket(BUCKET), owner.value()),
+        store: createGcsStore(storage.bucket(BUCKET), owner.value(), PROOF_POOL),
+        stores: Object.fromEntries(ALL_POOLS
+          .filter(pool => pool !== PROOF_POOL)
+          .map(pool => [pool.id, createGcsStore(storage.bucket(BUCKET), owner.value(), pool)])),
       });
     } catch {
       response.status(503).json({ error: 'CONFIGURATION_INVALID' });

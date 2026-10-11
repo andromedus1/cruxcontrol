@@ -49,7 +49,13 @@ await save('resource-plan.json', json({
   runtimeIdentity: SERVICE_ACCOUNT,
   bucketRoles: ['roles/storage.objectCreator', 'roles/storage.objectViewer'],
   projectCustomRole: { id: 'cruxVaultProofAuthReader', includedPermissions: ['firebaseauth.users.get'] },
-  retention: { slots: 32, bytesPerSlot: 25 * 1024 * 1024, automaticPruning: false },
+  retention: {
+    proof: { slots: 32, bytesPerSlot: 25 * 1024 * 1024 },
+    library: { scope: 'library-v1', slots: 512, bytesPerSlot: 25 * 1024 * 1024 },
+    acceptance: { scopes: ['acceptance-v1/r001', 'acceptance-v1/r002', 'acceptance-v1/r003', 'acceptance-v1/r004'],
+      slotsPerScope: 512, bytesPerSlot: 25 * 1024 * 1024 },
+    automaticPruning: false,
+  },
   billingAlerts: { monthlyUsd: 5, thresholds: [0.2, 0.5, 1], hardCap: false },
   deploymentArtifacts: { retentionDays: 7, appliesTo: 'function build images only; never library snapshots' },
 }));

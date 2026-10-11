@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { setImmediate } from 'node:timers/promises';
 import { test } from 'node:test';
 import { createVaultHandler } from './handler.mjs';
-import { MAX_BYTES, digest } from './contract.mjs';
+import { ACCEPTANCE_POOLS, APPLICATION_POOLS, LIBRARY_POOL, MAX_BYTES, digest } from './contract.mjs';
 import { encodeLibraryBackup } from '../../../web/src/library-backup/codec.ts';
 import { draftContent, FIRST_DRAFT_ID } from '../../../web/src/drafts/test-fixtures.ts';
 import { kilterFullride7x10Definition } from '../../../web/src/domain/boards/definitions/kilter-fullride-7x10.ts';
@@ -29,27 +29,35 @@ const payload = Buffer.from(encodeLibraryBackup(library, new Date(date)));
 const different = Buffer.from(encodeLibraryBackup(library, new Date('2026-10-10T01:00:00.000Z')));
 
 async function harness(t) {
-  const objects = new Map();
+  const poolObjects = new Map();
   const counts = { read: 0, list: 0, create: 0 };
-  const store = {
-    async list() { counts.list++; return [...objects.values()].map(value => value.snapshot); },
-    async read(slot) { counts.read++; return objects.get(slot) ?? null; },
-    async create(slot, bytes, sha256) {
-      counts.create++;
-      // Simulate network interleaving, then enforce the store port's atomic create.
-      await setImmediate();
-      if (objects.has(slot)) throw Object.assign(new Error('precondition'), { code: 412 });
-      objects.set(slot, { bytes: Buffer.from(bytes), snapshot: {
-        slot, bytes: bytes.length, sha256, generation: String(objects.size + 1), createdAt: date,
-      } });
-    },
+  const makeStore = pool => {
+    const objects = new Map();
+    poolObjects.set(pool.id, objects);
+    return {
+      objects,
+      async list() { counts.list++; return [...objects.values()].map(value => value.snapshot); },
+      async read(slot) { counts.read++; return objects.get(slot) ?? null; },
+      async create(slot, bytes, sha256, details) {
+        counts.create++;
+        // Simulate network interleaving, then enforce the store port's atomic create.
+        await setImmediate();
+        if (objects.has(slot)) throw Object.assign(new Error('precondition'), { code: 412 });
+        objects.set(slot, { bytes: Buffer.from(bytes), snapshot: {
+          slot, bytes: bytes.length, sha256, generation: String(objects.size + 1), createdAt: date,
+          ...(details ? { exportedAt: details.exportedAt, counts: details.counts } : {}),
+        } });
+      },
+    };
   };
+  const store = makeStore({ id: 'proof' });
+  const stores = Object.fromEntries(APPLICATION_POOLS.map(pool => [pool.id, makeStore(pool)]));
   const verifyToken = async token => {
     if (token === 'unavailable') throw new Error('Provider unavailable');
     if (!['owner', 'other'].includes(token)) throw Object.assign(new Error('Never expose this'), { code: 'auth/id-token-expired' });
     return { uid: token === 'owner' ? ownerUid : 'synthetic-other' };
   };
-  const server = createServer(createVaultHandler({ ownerUid, verifyToken, store }));
+  const server = createServer(createVaultHandler({ ownerUid, verifyToken, store, stores }));
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   t.after(() => new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }));
@@ -60,7 +68,10 @@ async function harness(t) {
   const put = (slot, bytes = payload, headers = {}) => request(`/snapshots/${slot}`, {
     method: 'PUT', body: bytes, headers: { 'Content-Type': 'application/json', 'X-Content-SHA256': digest(bytes), ...headers },
   });
-  return { request, put, objects, store, counts };
+  const putTo = (scope, slot, bytes = payload, headers = {}) => request(`/${scope}/snapshots/${slot}`, {
+    method: 'PUT', body: bytes, headers: { 'Content-Type': 'application/json', 'X-Content-SHA256': digest(bytes), ...headers },
+  });
+  return { request, put, putTo, objects: store.objects, poolObjects, store, stores, counts };
 }
 
 test('independent requests discover and recover exact graded, trashed, effect and playlist bytes', async t => {
@@ -80,7 +91,7 @@ test('independent requests discover and recover exact graded, trashed, effect an
   assert.equal((await h.request('/snapshots/01')).status, 404);
 });
 
-test('competing distinct snapshots have one winner and never replace retained bytes', async t => {
+test('competing distinct proof snapshots have one winner and never replace retained bytes', async t => {
   const h = await harness(t);
   const responses = await Promise.all([h.put('00'), h.put('00', different)]);
   assert.deepEqual(responses.map(r => r.status).sort(), [201, 409]);
@@ -176,4 +187,62 @@ test('no alternate routes, URL credentials, deletes or metadata updates', async 
     assert.equal((await h.request('/snapshots/00', { method })).status, 405);
   }
   assert.deepEqual(h.objects.get('00').bytes, payload);
+});
+
+test('application pool derives canonical history metadata and stays separate from proof and acceptance pools', async t => {
+  const h = await harness(t);
+  const uploaded = await h.putTo('library-v1', '00000');
+  assert.equal(uploaded.status, 201);
+  const receipt = await uploaded.json();
+  assert.deepEqual(receipt.snapshot.counts, { climbs: 1, finished: 0, drafts: 0, trash: 1, playlists: 1 });
+  assert.equal(receipt.snapshot.exportedAt, date);
+  const listing = await (await h.request('/library-v1/snapshots')).json();
+  assert.equal(listing.capacity.slots, 512);
+  assert.equal(listing.snapshots[0].slot, '00000');
+  assert.equal((await h.request('/snapshots')).status, 200);
+  assert.equal((await h.request('/acceptance-v1/r001/snapshots')).status, 200);
+  assert.equal((await h.request('/library-v1/snapshots/00000')).headers.get('x-content-sha256'), digest(payload));
+  assert.equal((await h.request('/acceptance-v1/r001/snapshots/00000')).status, 404);
+  assert.notEqual(h.poolObjects.get('library-v1'), h.poolObjects.get('acceptance-v1/r001'));
+});
+
+test('five-digit application slots admit exactly 512 immutable snapshots', async t => {
+  const h = await harness(t);
+  for (let index = 0; index < 512; index++) {
+    const slot = String(index).padStart(5, '0');
+    assert.equal((await h.putTo('library-v1', slot)).status, 201, `slot ${slot}`);
+  }
+  assert.equal((await h.putTo('library-v1', '00512')).status, 404);
+  assert.equal((await h.putTo('library-v1', '0000')).status, 404);
+  assert.equal(h.poolObjects.get('library-v1').size, 512);
+  const listing = await (await h.request('/library-v1/snapshots')).json();
+  assert.equal(listing.snapshots.length, 512);
+  assert.equal(listing.snapshots.at(-1).slot, '00511');
+  assert.equal((await h.putTo('library-v1', '00000')).status, 200);
+});
+
+test('acceptance run pools share the bounded algorithm while remaining disjoint', async t => {
+  const h = await harness(t);
+  for (const pool of ACCEPTANCE_POOLS) {
+    assert.equal((await h.putTo(pool.id, '00511')).status, 201);
+    assert.equal((await h.request(`/${pool.id}/snapshots/00511`)).status, 200);
+    assert.equal((await h.request(`/${pool.id}/snapshots/0511`)).status, 404);
+  }
+  assert.equal((await h.request('/acceptance-v1/r005/snapshots')).status, 404);
+  assert.equal((await h.request('/acceptance-v1/r001/snapshots/00511')).status, 200);
+  assert.equal((await h.request('/acceptance-v1/r002/snapshots/00511')).status, 200);
+  assert.equal(h.poolObjects.get('acceptance-v1/r001').size, 1);
+  assert.equal(h.poolObjects.get('acceptance-v1/r002').size, 1);
+});
+
+test('malformed application receipt metadata is rejected before listing or download', async t => {
+  const h = await harness(t);
+  assert.equal((await h.putTo('library-v1', '00000')).status, 201);
+  const stored = h.poolObjects.get('library-v1').get('00000');
+  stored.snapshot.counts = { ...stored.snapshot.counts, drafts: '' };
+  assert.equal((await h.request('/library-v1/snapshots')).status, 503);
+  assert.equal((await h.request('/library-v1/snapshots/00000')).status, 503);
+  stored.snapshot.counts = { ...stored.snapshot.counts, drafts: 0 };
+  stored.snapshot.exportedAt = '2026-02-31T00:00:00.000Z';
+  assert.equal((await h.request('/library-v1/snapshots')).status, 503);
 });
