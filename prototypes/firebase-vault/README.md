@@ -11,10 +11,15 @@ after restart; integrated app cloud restore remains unimplemented.
 
 Firebase Auth/Credential Manager and this authenticated GCS gateway are selected
 for Android dogfood using the existing project resources and account-protected
-encryption. Application transport is being implemented; it is not yet verified or
-available in product UI. Automatic-backup design is complete and awaits verified
-private-vault review before implementation. The live evidence below remains the
-bounded operator-assisted proof, not integrated automatic protection or recovery.
+encryption. Native account/file transport is implemented and the application
+service deployed; live acceptance remains ongoing. Product account surfaces are
+not yet available. Automatic-backup design is complete and awaits verified
+private-vault review before implementation. The detailed live evidence below covers
+the bounded operator-assisted proof.
+Application acceptance has also exercised small-copy upload/list/download, exact
+retry, sealed-file retention across restart and a 26,188,396-byte structured upload.
+Independent-installation structured download acceptance is ongoing. None of these
+checks establishes integrated automatic protection or recovery.
 
 Use Node 22 and JDK 21, with `JAVA_HOME` set to the JDK. From the repository root:
 
@@ -88,14 +93,14 @@ identical retries can recover a receipt, while conflicting bytes are rejected.
 The handler verifies exact object readback before returning `verified: true`.
 There is no delete, overwrite, automatic pruning or tokenized download URL API.
 
-The application extension under implementation adds `/library-v1/snapshots` and
+The deployed application extension adds `/library-v1/snapshots` and
 its five-digit slots `00000`–`00511`: 512 retained copies up to 25 MiB each,
 separate from the unchanged legacy proof objects. Four bounded
 `/acceptance-v1/r001/snapshots`–`/acceptance-v1/r004/snapshots` pools use the same
 algorithm for synthetic acceptance outside user history. Capacity exhaustion pauses
-uploads without pruning. Native application transfer is designed around
+uploads without pruning. Native application transfer uses
 `noBackupFilesDir` files and bounded bridge chunks. This is not the proof GET cache
-file/ADB extraction flow and has not yet passed integrated acceptance.
+file/ADB extraction flow; live application acceptance remains ongoing.
 
 Uploads supply CRC32C metadata for GCS server validation. SDK post-upload checksum
 validation is disabled because its failure path can automatically delete an

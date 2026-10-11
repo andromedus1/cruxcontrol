@@ -21,8 +21,8 @@ summary: >
   update checks. Portable-file recovery and bounded operator-assisted cloud recovery
   pass synthetic emulator proofs. Physical-board behavior, full Android feature parity,
   integrated cloud restore and automatic backup remain open. Firebase Auth and the
-  authenticated GCS gateway are selected for Android dogfood; application transport
-  is being implemented and is not yet verified.
+  authenticated GCS gateway are selected for Android dogfood. Native application
+  transport is implemented and the service deployed; live acceptance remains ongoing.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; an optional lazy runtime service opens the local SQLite catalog through a serialized wa-sqlite AccessHandlePoolVFS worker."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
@@ -260,9 +260,11 @@ identify the saved revision represented in an independently verified copy. Nativ
 Firebase Auth with Credential Manager and a narrow authenticated GCS gateway are
 selected for Android dogfood, reusing the existing project resources. The bounded
 proof passes synthetic operator-assisted cloud download and portable-file import
-into an independent installation. Application transport is being implemented; it
-is not yet verified or available through product UI. Integrated app cloud restore
-and automatic backup remain unimplemented.
+into an independent installation. The native account/file transport is implemented
+and the application service deployed; live acceptance remains ongoing. A configured
+`library-v1` release APK passes non-debuggable and proof-surface exclusion checks.
+Product account surfaces, integrated app cloud restore and automatic backup remain
+unimplemented.
 
 The application design separates a `library-v1` namespace with 512 immutable
 25 MiB copies (`00000`–`00511`) from the unchanged 32-slot proof pool. Four bounded
@@ -449,7 +451,8 @@ or network.
   shared database or integrated account system; the
   [private-vault prototype](../prototypes/firebase-vault/README.md) provisions bounded
   Firebase authentication and recovery infrastructure selected for Android dogfood.
-  Application integration is in progress, not a verified product capability.
+  Native application transport is implemented and the service deployed; live
+  acceptance and product integration remain incomplete.
   The PWA and iOS prototype use
   browser-local storage; the experimental Android package uses its app-private SQLite
   library. Each client's local storage remains independent. The current hardware edge

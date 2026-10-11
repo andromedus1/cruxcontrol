@@ -285,8 +285,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   through automatic private online backups and portable owner-controlled files.
   Current exports remain manual; automatic protection is not implemented.
 - Android dogfood selects native Firebase Auth/Credential Manager and the existing
-  authenticated GCS gateway. Application transport is being implemented and is not
-  yet verified or exposed through product UI. Automatic-backup design is complete,
+  authenticated GCS gateway. Native account/file transport is implemented and the
+  service deployed; live acceptance remains ongoing and product UI is absent.
+  Automatic-backup design is complete,
   awaiting verified private-vault review before implementation.
 - Retain up to 512 immutable whole-library copies of at most 25 MiB in the application
   namespace. Pause protection visibly at capacity without pruning older copies.

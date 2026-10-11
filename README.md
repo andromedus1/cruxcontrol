@@ -136,8 +136,9 @@ trip; real-board operation, real-device storage pressure, and authentication rem
 open before iOS support can ship.
 
 Native Firebase Auth and a narrow authenticated GCS gateway are selected for Android
-dogfood after a bounded operator-assisted recovery proof. Application transport is
-being implemented; automatic backup and integrated recovery remain unavailable.
+dogfood after a bounded operator-assisted recovery proof. Native account/file
+transport is implemented and the service deployed; live acceptance remains ongoing.
+Automatic backup, product account surfaces and integrated recovery remain unavailable.
 Their design retains 512 immutable whole-library copies, pauses at capacity without
 pruning, and keeps offline local saving available. Verified automatic protection
 and clean-install recovery remain required before real authored climbs.

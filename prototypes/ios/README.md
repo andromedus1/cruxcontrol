@@ -319,8 +319,10 @@ Missing credentials fail the signed recipe before a build; no debug-key fallback
 set -a
 source /outside/git/private-signing/credentials.env
 set +a
+node prototypes/ios/scripts/prepare-android-vault.mjs \
+  /outside/git/firebase/google-services.json library-v1
 npm --prefix prototypes/ios run build:android:release -- \
-  --catalog /outside/git/kilter-7x10.v1.db.gz --version-code 20
+  --catalog /outside/git/kilter-7x10.v1.db.gz --version-code 22
 ```
 
 The output is `prototypes/ios/android/app/build/outputs/apk/release/app-release.apk`.
@@ -402,9 +404,10 @@ remain required before irreplaceable everyday authoring.
 
 The `signedProof` variant adds an explicit `AuthProofActivity` entry and a
 `NativeAuthProof` bridge with `status`, `signIn`, `verifySession` and `signOut`.
-Firebase Auth, Credential Manager and Google ID dependencies, the activity and
-the configuration asset belong only to this variant; normal release builds use
-neither the proof entry nor these dependencies. The retained signing key and
+The activity, proof bridge and proof configuration asset belong only to this
+variant. Firebase Auth, Credential Manager and Google ID now also support the
+ordinary native application account/vault plugins; release builds exclude the
+proof entry and bridge. The retained signing key and
 application ID stay unchanged. Run this proof only on an isolated synthetic
 emulator with Google Play services and an operator-controlled test Google account.
 The operator runner checks both the emulator serial and `ro.kernel.qemu`;
@@ -506,9 +509,9 @@ before and after app restart. Independent account access passes. The separate
 [storage-policy exploration](../firebase-vault/README.md) records an unresolved
 direct-SDK concurrent-create check; the service's separate live permission and
 atomic-create proof passes.
-Release17 packaging
-verification, with the private proof asset present in the source tree, excluded
-that asset, the proof activity, bridge and Firebase dependencies. This
+Current release packaging checks require `library-v1` configuration and retain
+the application account/vault plugins and Firebase dependencies while excluding
+the proof configuration, activity and bridge. The release is non-debuggable. This
 spike supplies no automatic online library backup or clean-install
 recovery; both remain required before irreplaceable everyday authoring. It does
 not authorize installation on the owner phone or changes to authored library data.
@@ -517,7 +520,8 @@ not authorize installation on the owner phone or changes to authored library dat
 
 Native Firebase Auth/Credential Manager and the authenticated GCS gateway are
 selected for Android dogfood on the existing project resources. The application
-transport is being implemented and is not yet verified or available in product UI.
+account/file transport is implemented and the service deployed; live acceptance
+remains ongoing. Product account surfaces are not yet available.
 It uses a separate 512-copy `library-v1` namespace and native files with bounded
 bridge chunks; the legacy 32-slot operator proof remains separate. Automatic-backup
 design is complete and awaits verified private-vault review before implementation.
@@ -525,6 +529,49 @@ Status, Manage, account, history and integrated recovery remain planned. The
 foreground schedule promises no Android background execution. Physical-phone and
 Fullride parity plus integrated automatic-backup/clean-install recovery remain
 gates before real authoring. iOS continues to use IndexedDB.
+
+### Application vault configuration and packaging
+
+The shared `PrivateVault` port exposes account status/sign-in/sign-out, listing,
+staging, upload/download and staged-file cleanup. Firebase tokens remain native.
+Staged files are bound to account and scope in `noBackupFilesDir`, accept at most
+64 KiB decoded chunks, and seal after size/digest verification. Sealed files survive
+restart; unfinished stages and download temporaries are cleared on startup. The
+TypeScript adapter validates receipts and decoded whole-library contents. It does
+not schedule backups or restore the local database.
+
+Prepare the ignored public application configuration from the existing Android
+registration before building a release (with the signing environment already set):
+
+```bash
+node prototypes/ios/scripts/prepare-android-vault.mjs \
+  /outside/git/firebase/google-services.json library-v1
+npm --prefix prototypes/ios run build:android:release -- \
+  --catalog /outside/git/kilter-7x10.v1.db.gz --version-code 22
+```
+
+Choose a version code above the installed version. Preparation validates the
+existing project/app registration and writes `src/main/assets/vault-config.json`;
+it accepts public app registration, never service keys or CLI credentials. The
+build verifies `library-v1`, a non-debuggable manifest, application plugin presence
+and proof config/activity/plugin exclusion. These packaging checks pass; they do
+not admit real authoring before the recovery gates.
+
+For isolated synthetic emulator acceptance, prepare `acceptance-v1/r001` (or
+`r002`–`r004`) instead and build `build:android:signed-proof`. That configuration
+belongs to `src/signedProof/assets/vault-config.json` and cannot enter a release.
+The `android-vault-proof.mjs` driver exercises the actual TypeScript/native port
+on an emulator and requires an acceptance scope. Keep all its outputs outside Git:
+
+```bash
+node --experimental-strip-types prototypes/ios/scripts/android-vault-proof.mjs \
+  emulator-N status /outside/git/vault-evidence/status.json
+```
+
+Live application acceptance has exercised small-copy upload/list/download and
+exact retry, sealed-file retention across restart, and a 26,188,396-byte structured
+upload. Independent-installation structured download acceptance remains ongoing.
+These checks do not establish automatic scheduling or integrated recovery.
 
 ## Native transport boundary
 
