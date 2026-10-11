@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-private-vault
 kind: feature
-stage: implementing
+stage: review
 tags: [data, security, infra]
 research_refs: [independent-library-preservation, native-backup-service-costs]
 parent: epic-library-preservation
@@ -23,7 +23,7 @@ a project-scoped $5 monthly alert budget. The 25 MiB download proof exposed and
 fixed an Android heap exhaustion in the proof bridge by streaming to a native
 cache file. See the final live-evidence section for limits and reproducible paths.
 
-Stage is **implementing** pending the bounded review fixes: the application vault service and native account/file
+Stage is **review** pending required CI after verified review fixes: the application vault service and native account/file
 transport are implemented and verified on synthetic emulators. Actual adapter
 acceptance covers restart of sealed files, immutable retry/conflict, independent
 account discovery and exact readback for structured and exact-25-MiB libraries.
@@ -988,3 +988,21 @@ No second independent pass is required under standard weight. Root will verify t
 named fix set and document every proposal's final disposition. Automatic-backup
 implementation may continue on its already verified port; release/admission remains
 blocked until the fixes and integrated recovery acceptance pass.
+
+
+## Standard review — verified fix disposition
+
+The one Claude pass and root regression are adjudicated; child review-fixes is
+complete in `8d07975`. Accepted material fixes cover the late account race, metadata
+validation before immutable creation, bounded token/transfer waits, honest storage
+errors, namespace isolation and stale documentation. Their focused tests, signed
+Android builds and live service/native verification pass. The parent returns to
+review only to await CI; standard weight does not require another independent pass.
+
+The abort mock and retention test gap were corrected. Five native boundary tests
+now run in CI. Exact forced-401 retry injection, wider socket failure testing,
+partial-file reclamation and directory-sync exploration are important follow-up
+work parked unbound in `idea-vault-fault-injection`; current impact and evidence
+limits are recorded there. No finding is dismissed merely because the reviewer
+called it low priority. Automatic scheduling/UI recovery and physical hardware
+acceptance remain owned by their existing features.
