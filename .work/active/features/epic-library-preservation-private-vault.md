@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-private-vault
 kind: feature
-stage: review
+stage: done
 tags: [data, security, infra]
 research_refs: [independent-library-preservation, native-backup-service-costs]
 parent: epic-library-preservation
@@ -23,7 +23,7 @@ a project-scoped $5 monthly alert budget. The 25 MiB download proof exposed and
 fixed an Android heap exhaustion in the proof bridge by streaming to a native
 cache file. See the final live-evidence section for limits and reproducible paths.
 
-Stage is **review** pending required CI after verified review fixes: the application vault service and native account/file
+Stage is **done** after verified fixes and required CI: the application vault service and native account/file
 transport are implemented and verified on synthetic emulators. Actual adapter
 acceptance covers restart of sealed files, immutable retry/conflict, independent
 account discovery and exact readback for structured and exact-25-MiB libraries.
@@ -1006,3 +1006,22 @@ work parked unbound in `idea-vault-fault-injection`; current impact and evidence
 limits are recorded there. No finding is dismissed merely because the reviewer
 called it low priority. Automatic scheduling/UI recovery and physical hardware
 acceptance remain owned by their existing features.
+
+
+## Standard review — closure
+
+**Approve with comments.** Effective weight: standard. Independent implementation
+passes: one (Claude Opus, `20261011T162201Z-d5498093`), followed by root adjudication
+and verification of the named fix set; no second independent pass. All material
+current-cycle findings are closed by `8d07975`, with live evidence and limitations
+in its child record. Important follow-up work remains parked unbound.
+
+[CI run 38157083796](https://github.com/andromedus1/cruxcontrol/actions/runs/38157083796)
+passes at `44988b3`: web lint/type/unit/build/browser, prototype browser and unit
+checks, Android compile plus the new Java tests, and authenticated gateway tests.
+The separate legacy Storage SDK policy exploration retains its explicit known-race
+TODO; it is not this feature's immutable-backup acceptance.
+
+The private vault feature is complete. Automatic backup/recovery and physical
+phone/Fullride acceptance remain active dependencies of real-authoring admission;
+this closure is not a dogfood-release or merge claim.
