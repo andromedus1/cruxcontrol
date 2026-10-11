@@ -365,7 +365,7 @@ The model mirrors the official Kilter SQLite schema (see
 - **CatalogProvenance** — source, retrieval time, native payload/version, and usage
   constraints retained with imported data.
 - **LocalClimbDraft** — a schema-versioned, installation- and layout-revision-bound
-  browser aggregate with stable local identity, optimistic revision, unrestricted
+  platform-local aggregate with stable local identity, optimistic revision, unrestricted
   metadata and hold assignments, Draft/Finished status, recoverable deletion metadata,
   and an exact semantic/custom appearance distinction.
 

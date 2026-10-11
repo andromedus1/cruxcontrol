@@ -418,9 +418,9 @@ App runtime ──▶ update coordinator ──▶ prompt-mode Workbox registrat
 Local climb reads and writes are fully offline. Installed catalog reads are local;
 manifest metadata and snapshot download require network only after opening Manage and
 choosing the explicit download action. No background or automatic source refresh runs.
-Only provider adapters and controller transports cross network/device boundaries, so
-domain, rendering, browsing, editing, and logging remain testable without hardware
-or network.
+Network and device I/O stays behind adapters, including catalog providers,
+controller transports, the private vault and native portable-file delivery. Domain,
+rendering, browsing, editing, and logging remain testable without hardware or network.
 
 ## Conventions
 
