@@ -6,8 +6,9 @@ connects through Web Bluetooth, and stores its personal climbs and lists in brow
 storage. An experimental Capacitor package also targets Android with native BLE and
 SQLite-backed authoring. Synthetic emulator preservation and private APK catalog
 checks pass, including offline installation and playlist use of the labeled older
-Kilter snapshot. Physical-board parity and automatic online recovery remain open;
-both are required before native daily use. Local use needs no account or application
+Kilter snapshot. Synthetic automatic backup and separate empty-install app recovery
+checks also pass. Independent review, CI and physical-phone/Fullride parity remain
+required before native daily use. Local use needs no account or application
 server.
 
 ## What works now
@@ -144,8 +145,11 @@ Android foreground automatic backup, account/status/history surfaces and recover
 UI are implemented. Protection identifies the exact saved revision acknowledged by
 server readback; offline edits remain pending with retry available. The service
 retains 512 immutable whole-library copies and pauses at capacity without pruning.
-Integrated empty-install recovery acceptance is in progress. That gate and physical
-phone/Fullride parity remain required before real authored climbs.
+Synthetic acceptance passes automatic edits and playlist order, offline restart and
+reconnection, pending-upload process death, and separate empty-install app recovery.
+Structured cloud recovery, cancellation, conflict blocking and relaunch also pass.
+Independent review, CI and physical-phone/Fullride parity remain required; real
+authored climbs are not yet admitted.
 
 ### Implementation highlights
 

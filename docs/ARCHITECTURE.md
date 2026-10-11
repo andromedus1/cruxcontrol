@@ -19,8 +19,9 @@ summary: >
   browser-managed library storage; Android injects a native SQLite library and has
   passed synthetic emulator restore, edit/save, process-relaunch, and same-signature
   update checks. Portable-file recovery and bounded operator-assisted cloud recovery
-  pass synthetic emulator proofs. Physical-board behavior, full Android feature parity
-  and integrated automatic-backup/recovery acceptance remain open. Firebase Auth and the
+  pass synthetic emulator proofs. Integrated Android automatic backup and app recovery
+  also pass synthetic acceptance; independent review, CI, physical-board behavior
+  and full Android feature parity remain open. Firebase Auth and the
   authenticated GCS gateway are selected for Android dogfood. Native application
   transport is implemented and the service deployed; live transport acceptance passes.
 decisions:
@@ -266,8 +267,11 @@ into an independent installation. The native account/file transport is implement
 and the application service deployed; live transport acceptance passes. A configured
 `library-v1` release APK passes non-debuggable and proof-surface exclusion checks.
 Android account/status/history surfaces, foreground automatic backup and integrated
-cloud recovery UI are implemented. Integrated empty-install recovery acceptance
-remains in progress; these implementations do not yet admit real authoring.
+cloud recovery UI pass synthetic emulator acceptance: automatic edits and order,
+offline restart/reconnection, pending-upload process death, and separate empty-install
+app recovery. Structured cloud recovery, cancellation, conflict blocking and relaunch
+also pass. Independent review, CI and physical-phone/Fullride parity remain open;
+real authoring is not yet admitted.
 
 The application design separates a `library-v1` namespace with 512 immutable
 25 MiB copies (`00000`–`00511`) from the unchanged 32-slot proof pool. Four bounded
@@ -464,7 +468,7 @@ or network.
   Firebase authentication and recovery infrastructure selected for Android dogfood.
   Native application transport is implemented and the service deployed; live
   transport acceptance passes. The Android coordinator and recovery UI are integrated,
-  with empty-install recovery acceptance still in progress.
+  with separate empty-install recovery verified on synthetic emulators.
   The PWA and iOS prototype use
   browser-local storage; the experimental Android package uses its app-private SQLite
   library. Each client's local storage remains independent. The current hardware edge
@@ -490,7 +494,7 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | Web Locks API                               | Shared per-tab admission and exclusive, `ifAvailable` update apply coordination                                                                                                                               |
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
 | Capacitor 8.4.3 + BLE 8.3.0 + App 8.1.1      | Experimental iOS/Android package: bundled shared UI, native byte transport, foreground lifecycle; no background BLE mode                                                                                       |
-| Capacitor Community SQLite 8.1.1             | Android app-private library database behind `AppLibrary`, with serialized revision transactions and a coherent snapshot; physical-board, full-parity, and automatic online recovery remain open                   |
+| Capacitor Community SQLite 8.1.1             | Android app-private library database behind `AppLibrary`, with serialized revision transactions and a coherent snapshot; synthetic automatic backup/app recovery pass; physical-board and full-parity acceptance remain open                   |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |
 | BoardLib (Python)                           | Legacy bootstrap and sync-protocol reference; not a verified current catalog source                                                                                                                            |
 | Kilter sync API                             | Legacy protocol reference; current availability and coverage are unverified                                                                                                                                   |
@@ -512,8 +516,9 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
   honest pending/offline status and verified restore drills. Local persistence
   permission alone is insufficient. Portable-file and bounded operator-assisted cloud
   recovery pass synthetic emulator proofs. Android automatic backup and recovery UI
-  are implemented; integrated empty-install acceptance remains in progress. The local native SQLite store is on the same device
-  and does not meet that independent recovery boundary.
+  pass integrated empty-install acceptance on synthetic emulators; independent review,
+  CI and physical-phone/Fullride parity remain open. The local native SQLite store
+  is on the same device and does not meet that independent recovery boundary.
 
 - **Web Bluetooth reliability** across OS/browser versions — deterministic transport and
   renderer coverage exercises mapping, light/clear, animation, and the existing API-2

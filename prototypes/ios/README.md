@@ -520,8 +520,8 @@ atomic-create proof passes.
 Current release packaging checks require `library-v1` configuration and retain
 the application account/vault plugins and Firebase dependencies while excluding
 the proof configuration, activity and bridge. The release is non-debuggable. This
-spike supplies no automatic online library backup or clean-install
-recovery; both remain required before irreplaceable everyday authoring. It does
+spike is separate from the passing synthetic automatic-backup and clean-install
+app recovery acceptance below. It does
 not authorize installation on the owner phone or changes to authored library data.
 
 ## Android application vault status
@@ -540,9 +540,10 @@ or through bounded 5/15/60-second foreground backoff. No background execution is
 promised. Manage shows retained history and remaining capacity; 512 retained copies
 pause new uploads without pruning or blocking ordinary offline saves. Recovery
 reviews a copy, restores atomically and holds uploads until verification succeeds.
-Integrated empty-install recovery acceptance is in progress. Physical-phone and
-Fullride parity plus integrated automatic-backup/clean-install recovery remain
-gates before real authoring. iOS continues to use IndexedDB.
+Synthetic integrated acceptance passes automatic edits and playlist order, offline
+restart/reconnection, pending-upload process death and recovery through the normal
+Manage UI on a separate empty installation. Independent review, CI and physical-phone/
+Fullride parity still gate real authoring. iOS continues to use IndexedDB.
 
 ### Application vault configuration and packaging
 
@@ -601,8 +602,18 @@ scheduling or integrated recovery; feature review remains separate.
 
 The native library v1-to-v2 upgrade also preserved complete synthetic libraries
 and playlist ordering through emulator restart, including an existing nonempty
-library. This verifies the local migration path; integrated online recovery and
-physical-phone acceptance remain open.
+library. This verifies the local migration path; physical-phone acceptance remains
+open.
+
+The integrated cloud UI also verifies structured recovery to 10,000 climbs, 1,000
+lists and 100,000 ordered memberships, preserving the existing synthetic baseline.
+Cancellation leaves the library and revision unchanged; same-ID conflicts block
+Restore without changing local data or retained history. Complete records and order
+match after confirmed restore and relaunch, and the retained source receipt protects
+the restored revision without a duplicate upload. The large restore and verification
+took about 51 seconds on the synthetic emulator; this is not a physical-phone
+performance claim. These app acceptance checks are separate from transport-only
+fixtures and do not waive independent review, CI or physical-board acceptance.
 
 ## Native transport boundary
 

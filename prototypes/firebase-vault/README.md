@@ -7,16 +7,20 @@ cloud infrastructure and the authenticated function are active. Native snapshot
 transfer, operator-assisted recovery and live runtime-permission verification passed.
 Native account recovery has separately passed on
 an independent fresh emulator with the same UID and forced refresh before and
-after restart; integrated app recovery UI is implemented with empty-install
-acceptance still in progress.
+after restart. Integrated app recovery now also passes separate empty-install
+acceptance on synthetic emulators.
 
 Firebase Auth/Credential Manager and this authenticated GCS gateway are selected
 for Android dogfood using the existing project resources and account-protected
 encryption. Native account/file transport is implemented and the application
 service deployed; live transport acceptance passes. Android durable state, the
 foreground backup coordinator and account/status/history/recovery UI are implemented.
-Integrated empty-install recovery acceptance remains in progress. The detailed live evidence below covers
-the bounded operator-assisted proof.
+Synthetic integrated acceptance passes automatic edits/order, offline restart and
+reconnection, pending-upload process death and separate empty-install app recovery.
+Normal cloud recovery also passes a structured 10,000-climb/1,000-list/100,000-reference
+library, cancellation, conflict blocking and relaunch. Independent review, CI and
+physical-phone/Fullride parity remain open; real authoring is not yet admitted.
+The detailed evidence below covers the separate bounded operator-assisted proof.
 Application transport acceptance passes small-copy upload/list/download, exact
 retry and sealed-file retention across restart. A 26,188,396-byte structured
 library (10,000 climbs, 1,000 playlists and 100,000 ordered memberships) passed

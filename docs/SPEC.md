@@ -284,12 +284,15 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Preserve offline local creation and board use while protecting saved authored work
   through automatic private online backups and portable owner-controlled files.
   Portable exports remain manual. Android foreground automatic backup and recovery
-  UI are implemented; integrated empty-install recovery acceptance is in progress.
+  UI pass synthetic Android acceptance, including automatic saved changes, offline
+  restart/reconnection, pending-upload process death and separate empty-install
+  recovery through the app.
 - Android dogfood selects native Firebase Auth/Credential Manager and the existing
   authenticated GCS gateway. Native account/file transport is implemented and the
   service deployed; live transport acceptance passes. Durable state, the foreground
-  coordinator and product UI are implemented. Integrated recovery and physical
-  phone/Fullride parity must still pass before real authoring.
+  coordinator and product UI are implemented. Structured cloud recovery, cancellation,
+  conflict blocking and relaunch pass on synthetic emulators. Independent review,
+  CI and physical-phone/Fullride parity still gate real authoring.
 - Retain up to 512 immutable whole-library copies of at most 25 MiB in the application
   namespace. Pause protection visibly at capacity without pruning older copies.
   Separate synthetic acceptance pools and legacy proof copies never appear in user
@@ -413,7 +416,7 @@ The model mirrors the official Kilter SQLite schema (see
   feature parity remain unverified. A bounded Firebase proof passes authenticated
   synthetic backup and operator-assisted separate-installation recovery. Android
   automatic backup and integrated recovery UI are implemented; their integrated
-  empty-install acceptance remains in progress. The separately verified private
+  empty-install acceptance passes on synthetic emulators. The separately verified private
   APK catalog flow covers the older snapshot through offline reopen on Android 36 / WebView
   133, not board lighting or general Android acceptance. Android SAF delivery uses
   `ACTION_CREATE_DOCUMENT` and reports success after the provider's UTF-8 stream closes;
@@ -512,8 +515,9 @@ The model mirrors the official Kilter SQLite schema (see
   storage has passed synthetic emulator restore/edit/save/relaunch/update checks, but
   physical-board behavior and complete feature parity remain unverified. Independent
   portable recovery and a bounded operator-assisted cloud recovery proof have passed
-  on isolated Android installations; automatic protection and integrated cloud recovery
-  remain required. The iPhone path must
+  on isolated Android installations. Automatic protection and integrated app recovery
+  also pass synthetic acceptance; independent review, CI and physical-phone/Fullride
+  parity still gate real authoring. The iPhone path must
   prove connection/light/clear, interruption recovery, durable local storage,
   whole-library export/restore and native sign-in before claiming support.
   Unsupported transports degrade explicitly to browse-only; that fallback does not

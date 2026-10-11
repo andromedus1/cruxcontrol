@@ -15,8 +15,9 @@ summary: >
   portable owner-controlled files must complement offline local authoring. An
   experimental Android package now uses native SQLite for local authorship; its
   synthetic emulator persistence, independent portable recovery and bounded
-  operator-assisted cloud recovery checks pass. Android foreground backup and recovery UI are implemented; integrated recovery
-  acceptance and physical-device parity remain open. Invited contributions
+  operator-assisted cloud recovery checks pass. Android foreground backup and
+  integrated recovery pass synthetic emulator acceptance; independent review, CI
+  and physical-device parity remain open. Invited contributions
   follow with Android and iPhone board control.
 decisions:
   - "Share product logic across web, Android and iOS while retaining platform-specific storage and device adapters; preserve the working web client and keep native-device acceptance explicit."
@@ -49,7 +50,8 @@ and verified restoration after browser or device loss. Real authored climbs rema
 gated until automatic private online protection and clean-install recovery from that
 online backup are verified. Owner-controlled portable-file recovery is the independent
 second path, not a substitute for that online gate. Automatic online protection and
-clean-install recovery still require integrated acceptance before real authoring. Whole-library
+clean-install recovery pass synthetic emulator acceptance; independent review, CI
+and physical-phone/Fullride parity still gate real authoring. Whole-library
 exports remain manual; Android's portable-file path has passed synthetic isolated-emulator
 export and empty-install offline recovery checks. A bounded Firebase proof has also
 passed authenticated backup and operator-assisted recovery into a separate Android
@@ -57,8 +59,10 @@ installation. Native Firebase Auth and the narrow authenticated GCS gateway are 
 selected for Android dogfood. Native account/file transport is implemented and the
 service deployed; live transport acceptance passes. Android foreground automatic
 backup, account/status/history surfaces and integrated recovery UI are implemented.
-The integrated empty-install recovery acceptance run remains in progress; physical
-phone and Fullride parity also remain required.
+Synthetic acceptance verifies automatic saved changes, offline restart/reconnection,
+pending-upload process death, and separate empty-install recovery through the app.
+Structured cloud recovery, cancellation, conflict blocking and relaunch also pass.
+Independent review, CI and physical-phone/Fullride parity remain required.
 Local saving and offline access must remain available while automatic
 protection is pending or unavailable.
 The Kilter community catalog first slice is now
