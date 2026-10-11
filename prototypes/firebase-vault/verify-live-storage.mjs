@@ -14,9 +14,10 @@ const { Storage } = gatewayRequire('@google-cloud/storage');
 const { OAuth2Client } = gatewayRequire('google-auth-library');
 const { initializeApp, deleteApp } = gatewayRequire('firebase-admin/app');
 const { getAuth } = gatewayRequire('firebase-admin/auth');
-const [sessionFile, fixtureFile, configFile, output, project] = process.argv.slice(2);
+const [sessionFile, fixtureFile, configFile, output, project, raceSlot = '01'] = process.argv.slice(2);
 assert(sessionFile && fixtureFile && configFile && output && project === PROJECT_ID,
-  'Usage: node --experimental-strip-types verify-live-storage.mjs PRIVATE_NATIVE_SESSION SYNTHETIC_BACKUP PRIVATE_GOOGLE_CONFIG NEW_PRIVATE_EVIDENCE_DIR cruxcontrol-auth-20261010');
+  'Usage: node --experimental-strip-types verify-live-storage.mjs PRIVATE_NATIVE_SESSION SYNTHETIC_BACKUP PRIVATE_GOOGLE_CONFIG NEW_PRIVATE_EVIDENCE_DIR cruxcontrol-auth-20261010 [UNUSED_RACE_SLOT]');
+assert(/^([0-2][0-9]|3[01])$/.test(raceSlot) && !['00', '02'].includes(raceSlot));
 assert(process.env.XDG_CONFIG_HOME, 'Isolated Firebase CLI configuration required');
 const destination = resolve(output);
 const root = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
@@ -36,13 +37,17 @@ const credential = await auth.getAccessToken(operator.tokens.refresh_token, ['ht
 const adminHeaders = { Authorization: `Bearer ${credential.access_token}`, 'Content-Type': 'application/json' };
 async function api(url, body, attempt = 0) {
   assert(['iam.googleapis.com', 'iamcredentials.googleapis.com', 'serviceusage.googleapis.com'].includes(new URL(url).hostname));
-  const response = await fetch(url, { method: body ? 'POST' : 'GET', headers: adminHeaders,
+  const response = await fetch(url, { method: body ? 'POST' : 'GET',
+    headers: { ...adminHeaders, ...(new URL(url).hostname === 'iamcredentials.googleapis.com'
+      ? { 'x-goog-user-project': PROJECT_ID } : {}) },
     redirect: 'error', signal: AbortSignal.timeout(30000), body: body ? JSON.stringify(body) : undefined });
   const data = await response.json();
   // A credential request has no data mutation; allow bounded IAM propagation.
-  if (response.status === 403 && url.endsWith(':generateAccessToken') && attempt < 12) {
+  if (response.status === 403 && url.endsWith(':generateAccessToken') && attempt < 36) {
     await new Promise(resolve => setTimeout(resolve, 5000)); return api(url, body, attempt + 1);
   }
+  if (!response.ok) await writeFile(`${destination}/control-error.json`, JSON.stringify({ status: response.status,
+    host: new URL(url).hostname, error: data.error }, null, 2), { mode: 0o600 });
   assert(response.ok, `Proof control API failed (${response.status}, ${new URL(url).hostname})`);
   return data;
 }
@@ -82,16 +87,16 @@ try {
   assert.equal(permissionResponse.status, 200);
   const allowed = (await permissionResponse.json()).permissions ?? [];
   assert.deepEqual(allowed.sort(), permissions.slice(0, 3).sort()); evidence.runtimePermissions = allowed;
-  assert.equal(await store.read('01'), null, 'Use an unused synthetic proof slot; never reset it');
-  const race = await Promise.allSettled([store.create('01', bytes, digest(bytes)), store.create('01', alternate, digest(alternate))]);
+  assert.equal(await store.read(raceSlot), null, 'Use an unused synthetic proof slot; never reset it');
+  const race = await Promise.allSettled([store.create(raceSlot, bytes, digest(bytes)), store.create(raceSlot, alternate, digest(alternate))]);
   assert.equal(race.filter(r => r.status === 'fulfilled').length, 1);
   const rejected = race.find(r => r.status === 'rejected'); assert([403, 412].includes(rejected.reason.code));
-  const winner = await store.read('01'); assert(winner.bytes.equals(bytes) || winner.bytes.equals(alternate));
-  await assert.rejects(bucket.file(`${prefix}01`).save(Buffer.from('forbidden overwrite'), { resumable: false, validation: false }), e => e.code === 403);
-  await assert.rejects(bucket.file(`${prefix}01`).delete(), e => e.code === 403);
-  const retained = await store.read('01'); assert.deepEqual(retained, winner);
+  const winner = await store.read(raceSlot); assert(winner.bytes.equals(bytes) || winner.bytes.equals(alternate));
+  await assert.rejects(bucket.file(`${prefix}${raceSlot}`).save(Buffer.from('forbidden overwrite'), { resumable: false, validation: false }), e => e.code === 403);
+  await assert.rejects(bucket.file(`${prefix}${raceSlot}`).delete(), e => e.code === 403);
+  const retained = await store.read(raceSlot); assert.deepEqual(retained, winner);
   const original = await store.read('00'); assert(original.bytes.equals(bytes));
-  evidence.atomicCreate = { winners: 1, loserStatus: rejected.reason.code, overwriteDenied: true, deleteDenied: true,
+  evidence.atomicCreate = { slot: raceSlot, winners: 1, loserStatus: rejected.reason.code, overwriteDenied: true, deleteDenied: true,
     retainedSha256: winner.snapshot.sha256, originalUnchanged: true };
 
   // A synthetic Firebase user supplies a genuine, differently owned ID token.
@@ -104,7 +109,9 @@ try {
   const signedIn = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: customToken, returnSecureToken: true }) });
   assert.equal(signedIn.status, 200);
-  const other = await signedIn.json(); assert.equal(other.localId, otherUser); otherCreated = true;
+  otherCreated = true;
+  const other = await signedIn.json();
+  assert.equal((await firebaseAuth.verifyIdToken(other.idToken, true)).uid, otherUser);
   const endpoint = `https://us-central1-${PROJECT_ID}.cloudfunctions.net/privateVaultProof/snapshots`;
   evidence.otherAccount = {};
   for (const method of ['GET', 'PUT']) {

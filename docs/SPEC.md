@@ -390,8 +390,9 @@ The model mirrors the official Kilter SQLite schema (see
   snapshot. Android captures both aggregates through one SQLite read transaction. The
   Android emulator has passed synthetic restore, edit/save, force-stop/relaunch, and
   same-signature update preservation checks; physical-board behavior and full Android
-  feature parity remain unverified. Automatic online backup and recovery also remain
-  unverified. The separately verified private
+  feature parity remain unverified. A bounded Firebase proof passes authenticated
+  synthetic backup and operator-assisted separate-installation recovery; automatic
+  online backup and integrated cloud recovery remain unimplemented. The separately verified private
   APK catalog flow covers the older snapshot through offline reopen on Android 36 / WebView
   133, not board lighting or general Android acceptance. Android SAF delivery uses
   `ACTION_CREATE_DOCUMENT` and reports success after the provider's UTF-8 stream closes;
@@ -488,8 +489,10 @@ The model mirrors the official Kilter SQLite schema (see
   logging must do the same when its future milestone ships. The shared-library
   audience requires direct Android and iPhone board control. Android native library
   storage has passed synthetic emulator restore/edit/save/relaunch/update checks, but
-  physical-board behavior, complete feature parity, and independent recovery remain
-  unverified. The iPhone path must
+  physical-board behavior and complete feature parity remain unverified. Independent
+  portable recovery and a bounded operator-assisted cloud recovery proof have passed
+  on isolated Android installations; automatic protection and integrated cloud recovery
+  remain required. The iPhone path must
   prove connection/light/clear, interruption recovery, durable local storage,
   whole-library export/restore and native sign-in before claiming support.
   Unsupported transports degrade explicitly to browse-only; that fallback does not

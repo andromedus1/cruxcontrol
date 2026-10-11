@@ -50,8 +50,10 @@ online backup are verified. Owner-controlled portable-file recovery is the indep
 second path, not a substitute for that online gate. Automatic online protection and
 clean-install recovery remain intended work, not shipped guarantees. Whole-library
 exports remain manual; Android's portable-file path has passed synthetic isolated-emulator
-export and empty-install offline recovery checks. No cloud destination or online recovery
-has been proven. Local saving and offline access must remain available while automatic
+export and empty-install offline recovery checks. A bounded Firebase proof has also
+passed authenticated backup and operator-assisted recovery into a separate Android
+installation. Automatic protection and integrated cloud recovery are not yet implemented.
+Local saving and offline access must remain available while automatic
 protection is pending or unavailable.
 The Kilter community catalog first slice is now
 integrated in the running app: entry opens the older offline Fullride snapshot when

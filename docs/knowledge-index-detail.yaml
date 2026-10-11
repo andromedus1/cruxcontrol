@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-10T18:47:48Z'
+generated_at: '2026-10-11T02:19:14Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -15,9 +15,10 @@ documents:
       service and retained local copies. An iPhone client proof now precedes further shared-service implementation.
       An experimental Capacitor package uses native BLE on Android and iOS. iOS retains browser-managed
       library storage; Android injects a native SQLite library and has passed synthetic emulator restore,
-      edit/save, process-relaunch, and same-signature update checks. Physical-board behavior, full Android
-      feature parity, and independent recovery remain open. Account-protected online backups and portable
-      files are intended recovery layers; service selection and verified recovery remain open.
+      edit/save, process-relaunch, and same-signature update checks. Portable-file recovery and bounded
+      operator-assisted cloud recovery pass synthetic emulator proofs. Physical-board behavior, full Android
+      feature parity, production service selection, integrated cloud restore and automatic backup remain
+      open.
 
       '
     decisions:

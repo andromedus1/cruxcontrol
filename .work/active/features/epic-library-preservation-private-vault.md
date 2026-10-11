@@ -14,6 +14,21 @@ updated: 2026-10-10
 
 # Access private backups through a recoverable account
 
+## Current checkpoint
+
+The bounded Firebase service proof is deployed and passes live synthetic storage,
+restricted runtime permissions, account isolation, native exact-byte readback and
+operator-assisted recovery into a separate installation. Billing is enabled with
+a project-scoped $5 monthly alert budget. The 25 MiB download proof exposed and
+fixed an Android heap exhaustion in the proof bridge by streaming to a native
+cache file. See the final live-evidence section for limits and reproducible paths.
+
+Stage remains **drafting**: production provider/design admission, automatic backup
+scheduling/revision acknowledgement, retention/capacity behavior and integrated
+account/cloud recovery UI are unfinished. Real authoring is not admitted. Earlier
+setup checkpoints below describe the evidence available at those points; their
+pre-deployment statements are superseded by the live checkpoint.
+
 ## Brief
 
 Prove native Android account sign-in, return, session renewal, owner-only authorization and recovery without the old phone. Select the smallest service implementation supported by that proof, with immutable complete snapshots, independent discovery and authenticated readback. Account-protected service-managed encryption is approved; end-to-end encryption and a separate owner key are not required.
@@ -565,3 +580,95 @@ only to private evidence. The script cannot link billing, upload snapshots,
 delete data or deploy the function; deployment remains a separate explicit CLI
 step using the prepared artifact. The initial inspect pass correctly stops when
 the Budget API is not enabled; only explicit provisioning enables it.
+
+### Live service and native recovery evidence
+
+The Cloud Billing readback confirms the owner-completed upgrade succeeded despite
+the console spinner. Provisioning readbacks confirm a private us-central1 STANDARD
+bucket, uniform access, enforced public-access prevention, seven-day soft deletion
+and no lifecycle deletion. The runtime identity has bucket Object Creator/Viewer
+and only `firebaseauth.users.get` through its project custom role. A live effective
+permission probe confirms create/get/list and absence of update/delete.
+
+Project-scoped monthly current-spend alerts are configured at $1, $2.50 and $5.
+These alerts are not a spending cap. The illustrative $0.485/month usage estimate
+above is not a measured bill. Seven-day cleanup applies only to `gcf-artifacts`
+build images. Cloud snapshots have no automatic cleanup.
+
+`privateVaultProof` is ACTIVE with the planned Node 22, 512 MiB, one CPU,
+concurrency one, min zero/max one instance and 60-second timeout. The deployed
+artifact in private `service-proof-2/` has SHA-256
+`d8b01054025e729c8746a1c80dc37ad7ed3e657ac8f17dc02f466a9a4e82fbd6`.
+It adds bounded verifier diagnostic codes without logging credentials, claims or
+exception text. An initial native list returned 401; requests passed after the
+diagnostic redeployment, but no captured evidence establishes that first failure's
+cause. Do not claim a confirmed propagation or token-verification fix. New API and
+IAM setup also required propagation waits; inspection retries are bounded.
+
+Live native signedProof18 checks using the admitted account:
+
+- Slot 00: empty discovery, PUT 201, authenticated GET 200 with exact whole-library
+  bytes, identical retry 200 with the same receipt/generation, and different-content
+  retry 409 with the original preserved. Synthetic source is 7,993 bytes with SHA-256
+  `5ce68bc0fa45c66379c11a246c2b95bf747769a0c0b5e045d356aaa2d5a7c1a8`.
+- A separate installation began signed out with an empty native library and no
+  copied app credentials. Signing into the same account discovered and downloaded
+  slot 00 independently. The operator carried those returned cloud bytes into the
+  existing actual Android document picker/review/import flow. All eight climbs
+  and three playlists match after import and cold restart, including grades,
+  angles, draft/finished/Trash state, effects and ordered local/provider entries.
+  This is operator-assisted recovery, not an integrated product cloud-restore UI.
+- A valid JSON fixture padded to exactly 25 MiB uploaded successfully to slot 03.
+  Its first native GET received HTTP 200 from the provider but crashed the proof
+  app with an `OutOfMemoryError` while constructing the bridge response. The
+  retained cloud object was unchanged. The GET now streams into an app-private
+  cache file with incremental SHA-256, size bounds and file sync; only file metadata
+  crosses Capacitor. The emulator-only driver extracts the file, checks its size,
+  digest and shared codec, writes private evidence and removes that temporary
+  cache file. It also rejects on WebView disconnect instead of waiting ten minutes.
+- SignedProof19 SHA-256
+  `68d6d86aad984aca5cf9967d24c818d5bdf2984631b1fe9b9fa1fd30c0edbbbf`
+  passes the same retained 26,214,400-byte GET exactly, SHA-256
+  `f44652bb9367a0a71ef49104da9bb810a63b23ea801a9fb22952d71738c6384e`.
+  Forced native session refresh succeeds afterward. A fresh validated whole-library
+  backup and exact post-update comparison bracketed the same-key emulator update.
+  This is an instrumented dirty-source proof build, not a clean release artifact;
+  the padded fixture does not prove maximum-record-count production restore.
+
+`verify-live-storage.mjs` independently exercises real provider permissions and
+atomicity through a short-lived delegated credential for the dedicated runtime
+identity. It temporarily grants only the existing operator token creation on that
+service account, then removes and verifies removal of that membership in `finally`.
+No service-account key is created. Native Google sign-in remains a separate proof.
+
+- Two different simultaneous conditional creates in an unused slot have exactly
+  one winner; the other returns 412. Unconditional overwrite and delete return
+  403. The winner and original slot 00 remain exact.
+- A genuine Firebase ID token for a synthetic different user is verified, then
+  rejected by the live service with 403 for GET and PUT; the target slot remains
+  absent. Anonymous and invalid tokens receive 401. Synthetic account cleanup and
+  temporary operator IAM removal complete successfully.
+- An early operator attempt stopped before storage access on IAM 403 and removed
+  its temporary grant. A subsequent attempt passed IAM/storage but exposed a
+  harness error: custom-token sign-in does not supply the asserted `localId` field.
+  The corrected harness verifies the token's actual UID, cleans up the synthetic
+  identity and reruns using a new unused slot rather than deleting prior evidence.
+  Slots 01 and 04 retain the two race winners. The successful final evidence is
+  private `live-storage-3/summary.json`.
+
+Private evidence under ignored `.private-firebase/` includes provisioning/function
+readbacks, `auth-proof/vault-live-*.json`, `auth-proof/live-recovery-1/summary.json`,
+`auth-proof/vault-live-25mib-get19.json` and the live IAM summary. No owner phone,
+real authored library or original PWA was modified. Tokens, account details, files
+and emulator identifiers remain outside Git. Ten local service tests still pass;
+the known direct-SDK emulator race remains an explicit TODO, not a live-service
+claim. Lost-response behavior is covered locally plus live identical retry; a
+deliberately interrupted live network upload is not claimed.
+
+Next: settle the production vault contract using this evidence, then implement
+native file transport, complete-snapshot revision acknowledgement, automatic
+retry/admission, retention/capacity behavior and account/recovery surfaces in the
+owning features. Test offline creation and subsequent automatic backup, failed or
+interrupted writes, sign-out/account recovery and clean-install restoration through
+the integrated app before admitting real authoring. Phone/Fullride acceptance is
+still separate. The live proof service alone does not fulfill these requirements.

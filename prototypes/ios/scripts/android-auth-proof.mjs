@@ -56,19 +56,27 @@ try {
   let messageId = 0;
   const evaluate = (expression, timeoutMs) => new Promise((resolve, reject) => {
     const id = ++messageId;
-    const timer = setTimeout(() => {
+    const cleanup = () => {
+      clearTimeout(timer);
       socket.removeEventListener("message", onMessage);
+      socket.removeEventListener("close", onClose);
+      socket.removeEventListener("error", onClose);
+    };
+    const onClose = () => { cleanup(); reject(new Error("Native proof WebView disconnected")); };
+    const timer = setTimeout(() => {
+      cleanup();
       reject(new Error("Native auth proof timed out"));
     }, timeoutMs);
     function onMessage(event) {
       const message = JSON.parse(event.data);
       if (message.id !== id) return;
-      clearTimeout(timer);
-      socket.removeEventListener("message", onMessage);
+      cleanup();
       if (message.error || message.result?.exceptionDetails) reject(new Error("Native bridge invocation failed"));
       else resolve(message.result.result.value);
     }
     socket.addEventListener("message", onMessage);
+    socket.addEventListener("close", onClose, { once: true });
+    socket.addEventListener("error", onClose, { once: true });
     socket.send(JSON.stringify({ id, method: "Runtime.evaluate", params: {
       expression, awaitPromise: true, returnByValue: true,
     } }));
@@ -84,6 +92,24 @@ try {
     `window.Capacitor.nativePromise('NativeAuthProof', ${JSON.stringify(vault ? "vaultRequest" : method)}, ${JSON.stringify(options)}).then(value => ({ok:true,value}), error => ({ok:false,code:error.code ?? 'UNKNOWN'}))`,
     10 * 60 * 1000,
   );
+  if (method === "vaultGet" && result.ok) {
+    // ADB retrieves the proof-only cache file; no large payload crosses Capacitor.
+    // Production restore still needs its own native file/codec integration.
+    const name = result.value.downloadFile;
+    assert(/^crux-vault-proof-[a-zA-Z0-9-]+\.json$/.test(name));
+    const path = `cache/${name}`;
+    try {
+      const bytes = execFileSync(adbPath, ["-s", serial, "exec-out", "run-as", appId, "cat", path], {
+        timeout: 60000, maxBuffer: 26 * 1024 * 1024,
+      });
+      assert.equal(bytes.length, result.value.byteLength);
+      assert.equal(createHash("sha256").update(bytes).digest("hex"), result.value.sha256);
+      result.value.responseText = bytes.toString("utf8");
+      decodeLibraryBackup(result.value.responseText);
+    } finally {
+      adb("shell", "run-as", appId, "rm", path);
+    }
+  }
   await mkdir(dirname(evidence), { recursive: true, mode: 0o700 });
   await writeFile(evidence, JSON.stringify({ at: new Date().toISOString(), method, ...result }, null, 2) + "\n", { mode: 0o600 });
   const value = result.value;

@@ -28,6 +28,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.net.URL;
 import javax.net.ssl.HttpsURLConnection;
 import java.security.MessageDigest;
@@ -214,6 +216,8 @@ public class NativeAuthProofPlugin extends Plugin {
             }
             new Thread(() -> {
                 HttpsURLConnection connection = null;
+                File download = null;
+                boolean returnedDownload = false;
                 try {
                     // Fixed proof-project HTTPS origin; callers cannot redirect a token.
                     URL url = new URL("https://us-central1-cruxcontrol-auth-20261010.cloudfunctions.net/privateVaultProof/snapshots"
@@ -240,6 +244,35 @@ public class NativeAuthProofPlugin extends Plugin {
                         fail(call, "VAULT_HTTP_" + status, null);
                         return;
                     }
+                    JSObject result = new JSObject();
+                    result.put("httpStatus", status);
+                    if (!listing && !uploading) {
+                        // Large bodies must not be copied into a JS string: that exhausted
+                        // the Android heap at the admitted 25 MiB boundary in the live proof.
+                        download = File.createTempFile("crux-vault-proof-", ".json", getContext().getCacheDir());
+                        MessageDigest checksum = MessageDigest.getInstance("SHA-256");
+                        int size = 0;
+                        try (InputStream input = connection.getInputStream(); FileOutputStream output = new FileOutputStream(download)) {
+                            byte[] buffer = new byte[8192];
+                            int count;
+                            while ((count = input.read(buffer)) != -1) {
+                                size += count;
+                                if (size > 25 * 1024 * 1024) throw new IllegalStateException("Oversized response");
+                                output.write(buffer, 0, count);
+                                checksum.update(buffer, 0, count);
+                            }
+                            output.getFD().sync();
+                        }
+                        StringBuilder sha256 = new StringBuilder();
+                        for (byte value : checksum.digest()) sha256.append(String.format(Locale.ROOT, "%02x", value & 0xff));
+                        result.put("downloadFile", download.getName());
+                        result.put("byteLength", size);
+                        result.put("sha256", sha256.toString());
+                        busy.set(false);
+                        call.resolve(result);
+                        returnedDownload = true;
+                        return;
+                    }
                     ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                     try (InputStream input = connection.getInputStream()) {
                         byte[] buffer = new byte[8192];
@@ -249,8 +282,6 @@ public class NativeAuthProofPlugin extends Plugin {
                             bytes.write(buffer, 0, count);
                         }
                     }
-                    JSObject result = new JSObject();
-                    result.put("httpStatus", status);
                     result.put("responseText", bytes.toString(StandardCharsets.UTF_8));
                     busy.set(false);
                     call.resolve(result);
@@ -258,6 +289,7 @@ public class NativeAuthProofPlugin extends Plugin {
                     fail(call, "VAULT_REQUEST_FAILED", null);
                 } finally {
                     if (connection != null) connection.disconnect();
+                    if (download != null && !returnedDownload) download.delete();
                 }
             }, "crux-vault-proof").start();
         });
