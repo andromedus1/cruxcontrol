@@ -212,9 +212,11 @@ extraction is proof tooling, not a delivered app restore flow.
 node prototypes/firebase-vault/cost-estimate.mjs
 ```
 
-The script estimates aggregate admitted capacity before free allowances: 32 proof
+The script illustrates full aggregate admitted capacity before free allowances
+(about $1.735/month at its rates checked 2026-10-10): 32 proof
 slots, 512 application copies and four 512-copy acceptance pools, each capped at
-25 MiB. Its other assumptions include 730 hours, 1,000 requests, 2,000 billable
+25 MiB, or 2,592 full-sized copies. This is not expected owner usage; fewer or
+smaller actual dogfood copies consume less storage. Its other assumptions include 730 hours, 1,000 requests, 2,000 billable
 instance seconds at 1 CPU/0.5 GiB, 1,000 class-A/5,000 class-B storage operations,
 1 GiB North America egress, 1 GiB build artifacts and 30 build minutes with a
 100 GiB build disk. This is arithmetic for stated assumptions, not measured
