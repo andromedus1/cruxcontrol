@@ -149,6 +149,37 @@ jobs:
       - name: Compile bundled Android app
         run: npm --prefix prototypes/ios run build:android
 
+  firebase-vault-proof:
+    name: Firebase policy exploration (known race unresolved)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: prototypes/ios/.nvmrc
+          cache: npm
+          cache-dependency-path: prototypes/firebase-vault/package-lock.json
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install proof test tools
+        run: npm --prefix prototypes/firebase-vault ci --ignore-scripts
+
+      - name: Test synthetic storage authorization without cloud credentials
+        run: npm --prefix prototypes/firebase-vault test
+
+      - name: Report incomplete storage acceptance
+        run: |
+          echo '::warning::The executable competing-create TODO remains unresolved. This job is policy exploration, not immutable-backup acceptance.'
+
   ml:
     name: ml (stub lane)
     runs-on: ubuntu-latest

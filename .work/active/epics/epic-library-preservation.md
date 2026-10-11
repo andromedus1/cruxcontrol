@@ -131,7 +131,9 @@ private-backup architecture. The completed [preservation comparison](../../../.r
 Research verification is complete and implementation is underway in the owning
 features. Apply the corrected comparison and settled decisions; do not re-ask
 whether online and portable-file protection are wanted. Native local persistence
-has passed its focused proof and review; provider authentication remains unproven.
+has passed its focused proof and review. Native Firebase sign-in, session renewal,
+sign-out and separate-installation account access have passed the bounded proof;
+live private snapshot storage and full-library cloud recovery remain unproven.
 
 ## Scope boundaries and simplification
 

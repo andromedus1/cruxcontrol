@@ -25,8 +25,9 @@ Nine checks passed, but the competing-create check failed with Storage emulator
 `resource == null`. This is emulator evidence, not a claim about live-service
 behavior. The direct-SDK prototype is **not accepted for immutable backups**.
 The failing assertion remains executable as a test todo linked to the feature
-blocker; a todo is not passing acceptance. The next design must enforce atomic
-object-create preconditions at a trusted boundary and address bearer URLs. No
+blocker; a todo is not passing acceptance. The next proof must establish atomic
+creation and address bearer URLs. A trusted service using Cloud Storage generation
+preconditions is one candidate; no replacement service has been selected. No
 billing activation or deployment approval is requested by this proof.
 
 The policy admits one UID at `owners/<uid>/snapshots/<slot>`, with 32 names

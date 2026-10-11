@@ -98,8 +98,10 @@ Primary documentation checked for this proposal:
 - [Production email limits](https://supabase.com/docs/guides/auth/auth-smtp) and
   [database backup scope](https://supabase.com/docs/guides/platform/backups).
 
-Provider selection and a real native account proof remain open. Do not advance
-this feature to implementation on the strength of storage documentation alone.
+Provider selection remains open. Firebase's real native account proof has now
+passed as recorded below; the Supabase account proposal above is an alternative,
+not an executed proof. Do not advance this feature to implementation on the
+strength of storage documentation alone.
 
 ### Usage-priced candidate
 
@@ -115,7 +117,8 @@ allowances. A US-region bucket can use those allowances; overages are chargeable
 and Storage budget alerts are not a hard cap. No billing account is linked; the
 isolated authentication proof project below has been created. The answered budget question establishes a cheaper-first operating
 constraint, not provider selection or permission to activate billing. The source review passed
-after bounded wording/citation corrections; execution evidence remains pending.
+after bounded wording/citation corrections; native account evidence is recorded
+below, while live storage and library recovery remain pending.
 
 ### Native authentication proof setup
 
@@ -259,7 +262,7 @@ drafting while this feasibility evidence and the full vault design remain incomp
   `8d41fd30eba5b80624ac2adf1d04633374b7fed4880d7a43112c57656a40dd9d`.
   Signature verification matches the retained certificate. It updated only the
   isolated authentication emulator. The native `signIn` call opened Google's
-  account chooser; owner sign-in and session acceptance remain pending. The runner
+  account chooser; completed native acceptance is recorded below. The runner
   now waits for Capacitor's bridge as well as the WebView target after an early
   status invocation failed before sign-in. No native operation is retried by that
   readiness check.
@@ -301,8 +304,88 @@ process exists. That harness timing error is separate from restart persistence.
 A second AVD was created from the installed system image, without copying either
 app data or credentials. Before install, CruxControl and Google accounts were
 absent; after installing the same signedProof17 APK, native status is signed out.
-Andrew has been asked to complete Google sign-in there for independent account
-recovery. The first emulator is stopped with its signed-out state preserved.
-No library snapshot has been uploaded or recovered; those remain separate required
-proofs. Feature stage remains drafting while independent account recovery and the
-complete production vault design are unfinished.
+Andrew completed Google sign-in there. Native status and forced server refresh
+confirm the same Firebase UID and expected account as the first installation;
+forced refresh also passes after a full app restart. The separate-installation
+account-access proof passes. The first emulator is stopped with its signed-out
+state preserved. No library snapshot has been uploaded or recovered; those remain
+separate required proofs. Feature stage remains drafting while live storage
+authorization/readback and the complete production vault design are unfinished.
+
+### Bounded proof: immutable storage authorization
+
+Use the demonstrated native Firebase identity for a small synthetic storage proof
+before selecting the complete production vault. Compare direct native Storage SDK
+plus owner-scoped Rules, an application proxy, and the existing Supabase alternative.
+The direct SDK is the smallest candidate now that native account recovery works;
+a proxy adds a separate authentication/runtime boundary, and Supabase still needs
+its own native proof. None is production-selected until actual storage and recovery
+acceptance pass.
+
+Prepared a reviewable Storage Rules prototype and local emulator tests in
+`prototypes/firebase-vault/` without any billed-service activation. Intended scope:
+one explicitly admitted account, synthetic whole-library JSON only. The proposed
+live bucket has not been created. Intended client rights: create/list/get;
+no update/delete or public download URLs. Limit the proof
+to 32 immutable slots of at most the existing 25 MiB portable-file maximum (800 MiB
+total through these rules). No automatic pruning; exhaustion stops new uploads.
+This deliberately small proof pool is not the dogfood retention policy.
+
+Rules must deny unauthenticated and other-account access, alternate owner paths,
+root enumeration, overwrite/delete, extra path depth, out-of-pool slots, empty or
+oversized uploads and wrong content type. Tests run only against a local
+`demo-cruxcontrol-vault` project with synthetic identities. Local rule tests do not
+substitute for real native readback or live cross-account denial. A local-only
+helper can render an owner UID into private configuration; it does not validate
+the evidence's provenance, authenticate with the cloud or deploy anything. No
+owner-specific storage configuration has been deployed. Native object access and
+exact-byte recovery require resolution of the findings below and the provider's
+billing prerequisite. No billed resource is created by this preparation.
+
+### Storage proof findings and next acceptance gate
+
+The direct-SDK Rules candidate is **not accepted for immutable backups**. Local
+Storage emulator 15.33.0 / rules runtime 1.1.3 produced nine passing checks and one
+failed competing-create check:
+
+- Owner discovery/exact-byte readback, ordinary anonymous/other-account denial,
+  sequential overwrite/metadata/delete denial, path boundaries, 32-slot exhaustion,
+  size/type/metadata shape and local rule-rendering validation pass.
+- `allow create` alone does not prohibit overwriting bytes at an existing name.
+  Adding `resource == null` fixes the sequential case, matching the provider's
+  [documented immutable-file example](https://firebase.google.com/docs/reference/security/storage).
+  Two concurrent uploads to the same empty slot nevertheless both commit in the
+  local emulator. Its upload handler evaluates authorization before replacing the
+  stored object. This is evidence about the emulator, **not a verified live-service
+  race**. The expected single-winner assertion stays executable as a named test
+  todo linked here. A green regression job with this todo does not pass immutable
+  storage acceptance.
+- A separate passing test exposes another boundary: provider download tokens
+  create a bearer URL that reads bytes without account sign-in, even while ordinary
+  anonymous SDK reads fail. The token is handled outside the custom metadata seen
+  by Rules, so filtering allowed metadata names does not eliminate that mechanism.
+  Do not characterize this as a public bucket or claim all reads require identity.
+- Rules check declared content type, size and digest syntax, not valid backup JSON
+  or a matching digest. Recovery must verify actual bytes and the backup schema.
+  The size-boundary test intentionally uses invalid JSON to expose that limit.
+
+Test fixtures use synthetic identities and loopback-only endpoints. Nested fixture
+cleanup is explicit because the pinned rules test helper clears root items only;
+that harness defect was corrected without weakening policy assertions. No owner
+library was used. No billing was linked and no bucket or backup was created.
+
+Next resolve atomic admission and authenticated reads before selecting or deploying
+the storage boundary. A small authenticated service using Google Cloud Storage's
+`ifGenerationMatch=0` is a candidate: the documented precondition rejects writes
+when a live object already exists, including unsafe retries. A service identity
+with bucket-scoped Object Creator and Object Viewer roles can create/list/read
+without delete or overwrite permissions. These are documented building blocks,
+not an implemented or accepted service. See
+[request preconditions](https://docs.cloud.google.com/storage/docs/request-preconditions)
+and [IAM roles](https://docs.cloud.google.com/storage/docs/access-control/iam-roles).
+Compare the added runtime/authentication boundary with testing the direct SDK
+against the live service; retain the existing Supabase alternative. Verify
+identity validation, no bearer URL issuance, atomic concurrent creation,
+interrupted upload/retry, live account isolation and native full-library recovery.
+Prepare concrete deployment configuration and revised costs before requesting
+billing activation. Production vault design and automatic backup remain incomplete.

@@ -459,8 +459,12 @@ and Google provider configured; billing remains disabled. Native sign-in, forced
 session refresh before and after a full app restart, sign-out across restart and
 sign-in cancellation pass on the isolated emulator. Native session records are
 encrypted; inspected native preferences, WebView files, library databases and app
-logs contain no JWT-shaped tokens. A separate fresh emulator starts signed out;
-independent account recovery remains pending. Release17 packaging
+logs contain no JWT-shaped tokens. A separate fresh emulator, without copied app
+or account state, signs into the same Firebase user and refreshes its session
+before and after app restart. Independent account access passes. The separate
+[storage-policy exploration](../firebase-vault/README.md) records an unresolved
+concurrent-create check; immutable cloud storage acceptance remains open.
+Release17 packaging
 verification, with the private proof asset present in the source tree, excluded
 that asset, the proof activity, bridge and Firebase dependencies. This
 spike supplies no automatic online library backup or clean-install
