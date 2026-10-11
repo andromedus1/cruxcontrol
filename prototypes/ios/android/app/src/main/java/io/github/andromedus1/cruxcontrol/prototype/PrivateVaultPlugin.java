@@ -9,10 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HashSet;
@@ -20,6 +17,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,6 +30,7 @@ public final class PrivateVaultPlugin extends Plugin {
     private static final int READ_TIMEOUT_MS = 60_000;
     private static final int MAX_LISTING_BYTES = 512 * 1024;
     private static final int MAX_RECEIPT_BYTES = 64 * 1024;
+    private static final long TRANSFER_TIMEOUT_MS = 180_000;
     private static final String DIGEST = "[0-9a-f]{64}";
     private static final String UUID_PATTERN = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}";
 
@@ -38,6 +38,8 @@ public final class PrivateVaultPlugin extends Plugin {
     private PrivateVaultFileStore files;
     private String installationId;
     private ExecutorService transferQueue;
+    private ScheduledThreadPoolExecutor deadlineQueue;
+    private volatile VaultTransferDeadline activeDeadline;
 
     @Override
     public void load() {
@@ -47,6 +49,12 @@ public final class PrivateVaultPlugin extends Plugin {
             thread.setDaemon(true);
             return thread;
         });
+        deadlineQueue = new ScheduledThreadPoolExecutor(1, runnable -> {
+            Thread thread = new Thread(runnable, "crux-private-vault-deadline");
+            thread.setDaemon(true);
+            return thread;
+        });
+        deadlineQueue.setRemoveOnCancelPolicy(true);
         try {
             installationId = PrivateVaultFileStore.installationId(getContext());
             files = new PrivateVaultFileStore(getContext());
@@ -59,7 +67,10 @@ public final class PrivateVaultPlugin extends Plugin {
 
     @Override
     protected void handleOnDestroy() {
+        VaultTransferDeadline deadline = activeDeadline;
+        if (deadline != null) deadline.cancel();
         if (transferQueue != null) transferQueue.shutdownNow();
+        if (deadlineQueue != null) deadlineQueue.shutdownNow();
         super.handleOnDestroy();
     }
 
@@ -296,12 +307,23 @@ public final class PrivateVaultPlugin extends Plugin {
 
     private void streamDownload(String uid, long epoch, String slot, PrivateVaultFileStore.DownloadFile download)
         throws Exception {
+        boundedTransfer(deadline -> {
+            streamDownload(uid, epoch, slot, download, deadline);
+            return null;
+        });
+    }
+
+    private void streamDownload(String uid, long epoch, String slot, PrivateVaultFileStore.DownloadFile download,
+        VaultTransferDeadline deadline) throws Exception {
         for (int attempt = 0; attempt < 2; attempt++) {
+            deadline.check();
             String token = session.tokenFor(uid, epoch, attempt > 0);
             HttpsURLConnection connection = null;
             try {
-                connection = connection(route(slot), "GET", token);
-                int status = connection.getResponseCode();
+                connection = connection(route(slot), "GET", token, deadline);
+                int status;
+                try { status = connection.getResponseCode(); }
+                catch (java.io.IOException error) { throw new NetworkException(error); }
                 if (!session.isCurrent(uid, epoch)) throw new NativeAccountSession.SessionException("AUTH_CHANGED");
                 if (status == 401 && attempt == 0) continue;
                 if (status < 200 || status >= 300) throw new HttpException(status);
@@ -316,19 +338,39 @@ public final class PrivateVaultPlugin extends Plugin {
                 }
                 MessageDigest checksum = MessageDigest.getInstance("SHA-256");
                 int total = 0;
-                try (InputStream input = connection.getInputStream();
-                     FileOutputStream output = new FileOutputStream(download.file, false)) {
-                    byte[] buffer = new byte[8192];
-                    int count;
-                    while ((count = input.read(buffer)) != -1) {
-                        total += count;
-                        if (total > download.bytes || total > PrivateVaultFileStore.MAX_BYTES) {
-                            throw new PrivateVaultFileStore.FileStoreException("DOWNLOAD_INVALID");
+                InputStream networkInput;
+                try { networkInput = connection.getInputStream(); }
+                catch (java.io.IOException error) { throw new NetworkException(error); }
+                try (InputStream input = networkInput) {
+                    FileOutputStream fileOutput;
+                    try { fileOutput = new FileOutputStream(download.file, false); }
+                    catch (java.io.IOException error) { throw storageFailure(error); }
+                    try (FileOutputStream output = fileOutput) {
+                        byte[] buffer = new byte[8192];
+                        int count;
+                        while (true) {
+                            try { count = input.read(buffer); }
+                            catch (java.io.IOException error) { throw new NetworkException(error); }
+                            if (count == -1) break;
+                            total += count;
+                            if (total > download.bytes || total > PrivateVaultFileStore.MAX_BYTES) {
+                                throw new PrivateVaultFileStore.FileStoreException("DOWNLOAD_INVALID");
+                            }
+                            try { output.write(buffer, 0, count); }
+                            catch (java.io.IOException error) { throw storageFailure(error); }
+                            checksum.update(buffer, 0, count);
                         }
-                        output.write(buffer, 0, count);
-                        checksum.update(buffer, 0, count);
+                        try { output.getFD().sync(); }
+                        catch (java.io.IOException error) { throw storageFailure(error); }
+                    } catch (NetworkException | PrivateVaultFileStore.FileStoreException error) {
+                        throw error;
+                    } catch (java.io.IOException error) {
+                        throw storageFailure(error);
                     }
-                    output.getFD().sync();
+                } catch (NetworkException | PrivateVaultFileStore.FileStoreException error) {
+                    throw error;
+                } catch (java.io.IOException error) {
+                    throw new NetworkException(error);
                 }
                 if (total != download.bytes || !hex(checksum.digest()).equals(download.sha256)) {
                     throw new PrivateVaultFileStore.FileStoreException("DOWNLOAD_INVALID");
@@ -343,28 +385,63 @@ public final class PrivateVaultPlugin extends Plugin {
 
     private HttpResult request(String uid, long epoch, String method, String path,
         PrivateVaultFileStore.SealedFile body, String digest, int maximumResponse) throws Exception {
+        return boundedTransfer(deadline -> request(uid, epoch, method, path, body, digest, maximumResponse, deadline));
+    }
+
+    private HttpResult request(String uid, long epoch, String method, String path,
+        PrivateVaultFileStore.SealedFile body, String digest, int maximumResponse,
+        VaultTransferDeadline deadline) throws Exception {
         for (int attempt = 0; attempt < 2; attempt++) {
+            deadline.check();
             String token = session.tokenFor(uid, epoch, attempt > 0);
             HttpsURLConnection connection = null;
             try {
-                connection = connection(path, method, token);
+                connection = connection(path, method, token, deadline);
                 if (body != null) {
                     connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
                     connection.setRequestProperty("X-Content-SHA256", digest);
                     connection.setDoOutput(true);
                     connection.setFixedLengthStreamingMode(body.bytes);
-                    try (FileInputStream input = files.payloadStream(body);
-                         OutputStream output = connection.getOutputStream()) {
-                        copyAndVerify(input, output, body.bytes, digest);
+                    FileInputStream payload;
+                    try { payload = files.payloadStream(body); }
+                    catch (java.io.IOException error) {
+                        throw body.file.isFile()
+                            ? storageFailure(error)
+                            : new PrivateVaultFileStore.FileStoreException("STAGING_MISSING", error);
+                    }
+                    try (FileInputStream input = payload) {
+                        OutputStream networkOutput;
+                        try { networkOutput = connection.getOutputStream(); }
+                        catch (java.io.IOException error) { throw new NetworkException(error); }
+                        try (OutputStream output = networkOutput) {
+                            copyAndVerify(input, output, body.bytes, digest);
+                        } catch (NetworkException | PrivateVaultFileStore.FileStoreException error) {
+                            throw error;
+                        } catch (java.io.IOException error) {
+                            throw new NetworkException(error);
+                        }
+                    } catch (NetworkException | PrivateVaultFileStore.FileStoreException error) {
+                        throw error;
+                    } catch (java.io.IOException error) {
+                        throw storageFailure(error);
                     }
                 }
-                int status = connection.getResponseCode();
+                int status;
+                try { status = connection.getResponseCode(); }
+                catch (java.io.IOException error) { throw new NetworkException(error); }
                 if (!session.isCurrent(uid, epoch)) throw new NativeAccountSession.SessionException("AUTH_CHANGED");
                 if (status == 401 && attempt == 0) continue;
                 if (status < 200 || status >= 300) throw new HttpException(status);
-                byte[] bytes = readBounded(connection.getInputStream(), maximumResponse);
+                InputStream response;
+                try { response = connection.getInputStream(); }
+                catch (java.io.IOException error) { throw new NetworkException(error); }
+                byte[] bytes = readBounded(response, maximumResponse);
                 if (!session.isCurrent(uid, epoch)) throw new NativeAccountSession.SessionException("AUTH_CHANGED");
                 return new HttpResult(status, bytes);
+            } catch (NetworkException | PrivateVaultFileStore.FileStoreException error) {
+                throw error;
+            } catch (java.io.IOException error) {
+                throw new NetworkException(error);
             } finally {
                 if (connection != null) connection.disconnect();
             }
@@ -372,7 +449,8 @@ public final class PrivateVaultPlugin extends Plugin {
         throw new HttpException(401);
     }
 
-    private HttpsURLConnection connection(String path, String method, String token) throws Exception {
+    private HttpsURLConnection connection(String path, String method, String token, VaultTransferDeadline deadline)
+        throws Exception {
         URL url = new URL(NativeAccountSession.VAULT_ENDPOINT + path);
         HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
         connection.setInstanceFollowRedirects(false);
@@ -382,7 +460,29 @@ public final class PrivateVaultPlugin extends Plugin {
         connection.setRequestProperty("Authorization", "Bearer " + token);
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("Cache-Control", "no-store");
+        deadline.attach(connection::disconnect);
+        deadline.check();
         return connection;
+    }
+
+    private <T> T boundedTransfer(TransferWork<T> work) throws Exception {
+        if (deadlineQueue == null || deadlineQueue.isShutdown()) {
+            throw new IllegalStateException("Vault transfer deadline is unavailable");
+        }
+        VaultTransferDeadline deadline = new VaultTransferDeadline(deadlineQueue, TRANSFER_TIMEOUT_MS,
+            TimeUnit.MILLISECONDS);
+        activeDeadline = deadline;
+        try {
+            T value = work.run(deadline);
+            deadline.check();
+            return value;
+        } catch (Exception error) {
+            if (deadline.isExpired()) throw new VaultTransferDeadline.DeadlineExceededException();
+            throw error;
+        } finally {
+            deadline.close();
+            if (activeDeadline == deadline) activeDeadline = null;
+        }
     }
 
     private String route(String slot) {
@@ -459,17 +559,24 @@ public final class PrivateVaultPlugin extends Plugin {
         call.reject(message, code);
     }
 
-    private static String errorCode(Exception error) {
+    static String errorCode(Exception error) {
         Throwable cause = error;
         while (cause != null) {
             if (cause instanceof NativeAccountSession.SessionException) return ((NativeAccountSession.SessionException) cause).code;
             if (cause instanceof PrivateVaultFileStore.FileStoreException) return ((PrivateVaultFileStore.FileStoreException) cause).code;
             if (cause instanceof HttpException) return "VAULT_HTTP_" + ((HttpException) cause).status;
+            if (cause instanceof NetworkException || cause instanceof VaultTransferDeadline.DeadlineExceededException) {
+                return "NETWORK_UNAVAILABLE";
+            }
             cause = cause.getCause();
         }
-        if (error instanceof UnknownHostException || error instanceof ConnectException || error instanceof SocketTimeoutException) return "NETWORK_UNAVAILABLE";
-        if (error instanceof java.io.IOException) return "NETWORK_UNAVAILABLE";
+        // Untagged I/O comes from local storage or setup; only HTTP-boundary I/O is offline.
+        if (error instanceof java.io.IOException) return "VAULT_UNAVAILABLE";
         return "VAULT_UNAVAILABLE";
+    }
+
+    private static PrivateVaultFileStore.FileStoreException storageFailure(java.io.IOException cause) {
+        return new PrivateVaultFileStore.FileStoreException("VAULT_UNAVAILABLE", cause);
     }
 
     private static byte[] readBounded(InputStream input, int maximum) throws Exception {
@@ -490,13 +597,19 @@ public final class PrivateVaultPlugin extends Plugin {
         byte[] buffer = new byte[8192];
         int remaining = size;
         while (remaining > 0) {
-            int count = input.read(buffer, 0, Math.min(buffer.length, remaining));
+            int count;
+            try { count = input.read(buffer, 0, Math.min(buffer.length, remaining)); }
+            catch (java.io.IOException error) { throw storageFailure(error); }
             if (count < 0) throw new PrivateVaultFileStore.FileStoreException("STAGING_CORRUPT");
-            output.write(buffer, 0, count);
+            try { output.write(buffer, 0, count); }
+            catch (java.io.IOException error) { throw new NetworkException(error); }
             digest.update(buffer, 0, count);
             remaining -= count;
         }
-        if (input.read() != -1 || !hex(digest.digest()).equals(expectedDigest)) {
+        int trailing;
+        try { trailing = input.read(); }
+        catch (java.io.IOException error) { throw storageFailure(error); }
+        if (trailing != -1 || !hex(digest.digest()).equals(expectedDigest)) {
             throw new PrivateVaultFileStore.FileStoreException("STAGING_CORRUPT");
         }
     }
@@ -508,6 +621,7 @@ public final class PrivateVaultPlugin extends Plugin {
     }
 
     private interface Work { void run() throws Exception; }
+    private interface TransferWork<T> { T run(VaultTransferDeadline deadline) throws Exception; }
 
     private static final class HttpResult {
         final int status;
@@ -518,5 +632,9 @@ public final class PrivateVaultPlugin extends Plugin {
     private static final class HttpException extends Exception {
         final int status;
         HttpException(int status) { super("HTTP " + status); this.status = status; }
+    }
+
+    static final class NetworkException extends Exception {
+        NetworkException(java.io.IOException cause) { super("Vault network request failed", cause); }
     }
 }

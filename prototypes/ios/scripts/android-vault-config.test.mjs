@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { androidVaultConfig, validateAndroidVaultConfig, VAULT_PROJECT, VAULT_APP_ID, ANDROID_PACKAGE } from './android-vault-config.mjs';
+import { androidVaultConfig, validateAndroidVaultConfig, validateAndroidVaultBuildConfig, VAULT_PROJECT, VAULT_APP_ID, ANDROID_PACKAGE } from './android-vault-config.mjs';
 const source = { project_info: { project_id: VAULT_PROJECT }, client: [{
   client_info: { mobilesdk_app_id: VAULT_APP_ID, android_client_info: { package_name: ANDROID_PACKAGE } },
   api_key: [{ current_key: `AIza${'a'.repeat(35)}` }],
@@ -27,4 +27,17 @@ test('acceptance pools are finite and cannot pass ordinary build validation', ()
   for (const scope of ['acceptance-v1/r000', 'acceptance-v1/r005', 'acceptance-v1', 'acceptance-v1/r001/../r002', 'proof']) {
     assert.throws(() => androidVaultConfig(source, scope));
   }
+});
+
+
+test('build variants isolate the owner namespace from every debuggable APK', () => {
+  const production = androidVaultConfig(source, 'library-v1');
+  const acceptance = androidVaultConfig(source, 'acceptance-v1/r001');
+  assert.equal(validateAndroidVaultBuildConfig(production, 'release').scope, 'library-v1');
+  assert.equal(validateAndroidVaultBuildConfig(acceptance, 'signedProof').scope, 'acceptance-v1/r001');
+  assert.equal(validateAndroidVaultBuildConfig(null, 'debug'), null);
+  for (const [config, variant] of [
+    [production, 'signedProof'], [production, 'debug'], [acceptance, 'debug'],
+    [acceptance, 'release'], [null, 'signedProof'], [null, 'release'], [null, 'unexpected'],
+  ]) assert.throws(() => validateAndroidVaultBuildConfig(config, variant));
 });

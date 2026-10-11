@@ -26,17 +26,22 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.android.gms.tasks.Tasks;
+import com.google.android.gms.tasks.Task;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONObject;
 
 /** One Firebase account/session boundary shared by the application vault and legacy proof. */
 public final class NativeAccountSession {
+    static final long TOKEN_ACQUISITION_TIMEOUT_MS = 30_000;
     public static final String PROJECT_ID = "cruxcontrol-auth-20261010";
     public static final String APP_ID = "1:839726977905:android:d266860e8e4d6b67a45cd0";
     public static final String VAULT_ENDPOINT =
@@ -93,7 +98,10 @@ public final class NativeAccountSession {
                 || !APP_ID.equals(appId)
                 || !apiKey.matches("AIza[0-9A-Za-z_-]{35}")
                 || !webClientId.matches("839726977905-[A-Za-z0-9]+\\.apps\\.googleusercontent\\.com")
-                || !validScope(configuredScope)) return;
+                || !validScope(configuredScope,
+                    BuildConfig.DEBUG,
+                    BuildConfig.BUILD_TYPE,
+                    (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0)) return;
 
             FirebaseOptions options = new FirebaseOptions.Builder()
                 .setApiKey(apiKey)
@@ -119,11 +127,12 @@ public final class NativeAccountSession {
         }
     }
 
-    private boolean validScope(String value) {
-        if ("library-v1".equals(value)) return true;
-        if (!value.matches("acceptance-v1/r00[1-4]")) return false;
-        boolean debuggable = (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-        return BuildConfig.DEBUG && "signedProof".equals(BuildConfig.BUILD_TYPE) && debuggable;
+    static boolean validScope(String value, boolean buildDebug, String buildType, boolean manifestDebuggable) {
+        if ("library-v1".equals(value)) {
+            return !buildDebug && "release".equals(buildType) && !manifestDebuggable;
+        }
+        return value != null && value.matches("acceptance-v1/r00[1-4]")
+            && buildDebug && "signedProof".equals(buildType) && manifestDebuggable;
     }
 
     private static String readBounded(InputStream stream, int maximum) throws Exception {
@@ -376,13 +385,33 @@ public final class NativeAccountSession {
         if (!isCurrent(uid, expectedEpoch)) throw new SessionException("AUTH_CHANGED");
         FirebaseUser user = auth.getCurrentUser();
         GetTokenResult result;
-        try { result = Tasks.await(user.getIdToken(forceRefresh)); }
+        try { result = awaitTokenTask(user.getIdToken(forceRefresh)); }
         catch (Exception error) {
+            if (error instanceof InterruptedException) Thread.currentThread().interrupt();
             if (!isCurrent(uid, expectedEpoch)) throw new SessionException("AUTH_CHANGED");
             throw new SessionException("AUTH_REFRESH_FAILED");
         }
         if (!isCurrent(uid, expectedEpoch)) throw new SessionException("AUTH_CHANGED");
         return result.getToken();
+    }
+
+    static <T> T awaitTokenTask(Task<T> task) throws Exception {
+        return awaitTokenTask(task, TOKEN_ACQUISITION_TIMEOUT_MS);
+    }
+
+    static <T> T awaitTokenTask(Task<T> task, long timeoutMs) throws Exception {
+        CountDownLatch completed = new CountDownLatch(1);
+        AtomicReference<Task<T>> result = new AtomicReference<>();
+        task.addOnCompleteListener(Runnable::run, completedTask -> {
+            result.set(completedTask);
+            completed.countDown();
+        });
+        if (!completed.await(timeoutMs, TimeUnit.MILLISECONDS)) throw new TimeoutException("Native token request timed out");
+        Task<T> finished = result.get();
+        if (finished.isSuccessful()) return finished.getResult();
+        Exception failure = finished.getException();
+        if (failure != null) throw failure;
+        throw new java.util.concurrent.CancellationException("Native token request was cancelled");
     }
 
     static final class SessionException extends Exception {

@@ -2,20 +2,16 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { validateAndroidVaultConfig } from './android-vault-config.mjs';
+import { validateAndroidVaultBuildConfig } from './android-vault-config.mjs';
 
 export async function checkAndroidVaultApk(apk, variant) {
   const entries = execFileSync('unzip', ['-Z1', apk], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }).trim().split('\n');
   assert.equal(new Set(entries).size, entries.length, 'Duplicate APK entries');
   const configPath = 'assets/vault-config.json';
   const configured = entries.includes(configPath);
-  assert(variant !== 'release' || configured, 'A daily-use release requires the production vault configuration');
-  let scope = null;
-  if (configured) {
-    const config = JSON.parse(execFileSync('unzip', ['-p', apk, configPath], { encoding: 'utf8', maxBuffer: 16 * 1024 }));
-    validateAndroidVaultConfig(config, variant === 'signedProof');
-    scope = config.scope;
-  }
+  const config = configured ? JSON.parse(execFileSync('unzip', ['-p', apk, configPath],
+    { encoding: 'utf8', maxBuffer: 16 * 1024 })) : null;
+  const scope = validateAndroidVaultBuildConfig(config, variant)?.scope ?? null;
   const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
   assert(sdk, 'ANDROID_HOME is required for APK isolation validation');
   const versions = (await readdir(join(sdk, 'build-tools'))).filter(value => /^\d+(?:\.\d+)+$/.test(value))

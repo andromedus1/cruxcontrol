@@ -99,7 +99,7 @@ function createHarness(text = backupText()) {
       snapshot.sha256 = actual;
       return { id, bytes: complete.byteLength, sha256: actual, epoch };
     },
-    stageAbort: async ({ id }: { id: string }) => { active.delete(id); sealed.delete(id); return {}; },
+    stageAbort: async ({ id }: { id: string }) => { active.delete(id); return {}; },
     list: async ({ epoch: requestedEpoch }: { epoch: number }) => {
       if (interceptNextList) return await new Promise(resolve => {
         interceptNextList = false;
@@ -169,6 +169,52 @@ describe('native private-vault adapter', () => {
     const receipt = await restartedAdapter.upload(OWNER, '00017', staged);
     expect(receipt.snapshot.sha256).toBe(staged.sha256);
     expect(harness.calls.uploadCalls).toBe(1);
+  });
+
+  it.each(['adapter sign-out', 'native same-owner reauthentication'])('rejects a completed download after %s during cleanup', async mode => {
+    const text = backupText('Synthetic cleanup race');
+    const harness = createHarness(text);
+    await createNativePrivateVault(harness.bridges).stage(OWNER, text);
+    let releaseCleanup!: () => void;
+    let notifyCleanup!: () => void;
+    const cleanupStarted = new Promise<void>(resolve => { notifyCleanup = resolve; });
+    const cleanupRelease = new Promise<void>(resolve => { releaseCleanup = resolve; });
+    const adapter = createNativePrivateVault({
+      ...harness.bridges,
+      vault: {
+        ...harness.bridges.vault,
+        async downloadFinish(options) {
+          const result = await harness.bridges.vault.downloadFinish(options);
+          notifyCleanup();
+          await cleanupRelease;
+          return result;
+        },
+      },
+    });
+    const outcome = adapter.download(OWNER, harness.snapshot).then(
+      () => 'returned-stale-content',
+      (error: unknown) => typeof error === 'object' && error !== null && 'code' in error ? error.code : 'unexpected-error',
+    );
+    await cleanupStarted;
+    if (mode === 'adapter sign-out') await adapter.signOut();
+    else harness.signBackIn();
+    releaseCleanup();
+    expect(await outcome).toBe('account-changed');
+    expect(harness.calls.downloadFinish).toBe(1);
+  });
+
+  it('retains the authoritative pending stage and discards only unreferenced stages', async () => {
+    const harness = createHarness();
+    const adapter = createNativePrivateVault(harness.bridges);
+    const pending = await adapter.stage(OWNER, backupText());
+    const orphan = await adapter.stage(OWNER, backupText());
+    await adapter.retainStaged(OWNER, [pending.id]);
+    expect(harness.sealed.has(pending.id)).toBe(true);
+    expect(harness.sealed.has(orphan.id)).toBe(false);
+    expect((await adapter.upload(OWNER, '00017', pending)).verified).toBe(true);
+    await adapter.signOut();
+    await expect(adapter.retainStaged(OWNER, [])).rejects.toMatchObject({ code: 'signed-out' });
+    expect(harness.sealed.has(pending.id)).toBe(true);
   });
 
   it('incrementally decodes multibyte downloads and verifies the complete backup and receipt metadata', async () => {

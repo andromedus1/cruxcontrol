@@ -1,6 +1,6 @@
 import {
   APPLICATION_POOLS, MAX_BYTES, PROOF_POOL, digest, backupCounts, routePool,
-  isPoolSlot, validateBackup, validateOwner, validateSnapshot, validateStored,
+  isPoolSlot, validateBackup, validateOwner, validateSnapshot, validateStored, validateApplicationDetails,
 } from './contract.mjs';
 
 class RequestError extends Error {
@@ -87,6 +87,9 @@ export function createVaultHandler({ ownerUid, verifyToken, store, stores = {} }
       if (digest(bytes) !== sha256) reject(400, 'DIGEST_MISMATCH');
       const appPool = pool.id !== PROOF_POOL.id;
       const details = appPool ? { exportedAt: backup.exportedAt, counts: backupCounts(backup) } : null;
+      if (details) {
+        try { validateApplicationDetails(details); } catch { reject(400, 'INVALID_BACKUP'); }
+      }
 
       const receipt = (stored, created) => {
         if (!stored.bytes.equals(bytes)) {

@@ -149,6 +149,10 @@ jobs:
       - name: Compile bundled Android app
         run: npm --prefix prototypes/ios run build:android
 
+      - name: Verify native vault deadlines and boundaries
+        working-directory: prototypes/ios/android
+        run: ./gradlew :app:testDebugUnitTest
+
   firebase-vault-proof:
     name: Firebase policy exploration (known race unresolved)
     runs-on: ubuntu-latest

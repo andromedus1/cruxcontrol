@@ -310,6 +310,7 @@ export function createNativePrivateVault(bridges: NativeVaultBridges = nativeVau
       const generation = operationGeneration;
       const { epoch } = await current(uid, generation);
       let transferId: string | null = null;
+      let verifiedText: string;
       try {
         const start = object(await bridges.vault.download({
           uid, epoch, slot: snapshot.slot, generation: snapshot.generation,
@@ -352,7 +353,7 @@ export function createNativePrivateVault(bridges: NativeVaultBridges = nativeVau
           || Object.keys(counts).some(key => counts[key as keyof typeof counts] !== snapshot.counts[key as keyof typeof snapshot.counts])) {
           throw new VaultError('invalid-response');
         }
-        return text;
+        verifiedText = text;
       } catch (error) {
         throw toVaultError(error);
       } finally {
@@ -360,6 +361,14 @@ export function createNativePrivateVault(bridges: NativeVaultBridges = nativeVau
           try { await bridges.vault.downloadFinish({ uid, epoch, id: transferId }); } catch { /* Startup removes abandoned native download files. */ }
         }
       }
+      // Hashing and native cleanup yield after the final chunk check. Validate
+      // again at the return boundary, including native-only same-UID reauth.
+      assertGeneration(generation);
+      const completed = await current(undefined, generation);
+      if (completed.status.account?.uid !== uid || completed.epoch !== epoch) {
+        throw new VaultError('account-changed');
+      }
+      return verifiedText;
     },
 
     async discard(uid, stagedId) {

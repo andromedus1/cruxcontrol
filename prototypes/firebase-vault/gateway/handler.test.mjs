@@ -246,3 +246,18 @@ test('malformed application receipt metadata is rejected before listing or downl
   stored.snapshot.exportedAt = '2026-02-31T00:00:00.000Z';
   assert.equal((await h.request('/library-v1/snapshots')).status, 503);
 });
+
+test('invalid derived application metadata cannot create an immutable object or poison history', async t => {
+  const h = await harness(t);
+  assert.equal((await h.putTo('library-v1', '00000')).status, 201);
+  const createsBefore = h.counts.create;
+  const extendedYear = Buffer.from(encodeLibraryBackup(library, new Date('+010000-01-01T00:00:00.000Z')));
+  const rejected = await h.putTo('library-v1', '00001', extendedYear);
+  assert.equal(rejected.status, 400);
+  assert.deepEqual(await rejected.json(), { error: 'INVALID_BACKUP' });
+  assert.equal(h.counts.create, createsBefore, 'Validation must precede the irreversible create');
+  assert.equal(h.poolObjects.get('library-v1').has('00001'), false);
+  const listing = await h.request('/library-v1/snapshots');
+  assert.equal(listing.status, 200);
+  assert.equal((await listing.json()).snapshots.length, 1);
+});

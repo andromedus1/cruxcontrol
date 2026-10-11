@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-private-vault-review-fixes
 kind: story
-stage: implementing
+stage: done
 tags: [security, data, infra]
 parent: epic-library-preservation-private-vault
 depends_on: [epic-library-preservation-private-vault-acceptance]
@@ -51,3 +51,42 @@ Automatic-backup worker remains on disjoint library/coordinator/UI files. No
 private data, secrets or device identifiers enter Git. Keep one completion commit
 for this checkpoint; standard feature review needs fix verification, not another
 independent pass.
+
+## Verified completion
+
+- Late download completion rechecks both adapter generation and native account
+  epoch after cleanup. Deferred sign-out and same-owner reauthentication regressions
+  pass; the original failing assertion returned stale content.
+- Application metadata is checked before immutable creation. Gateway 17 tests pass,
+  including the formerly failing extended-year regression. The updated artifact
+  `9cd3b6d59b867435d4766d9bc1e6c9efdfa5fb8c47ffd3dc20926f9b446f2dee`
+  is deployed and read back ACTIVE with unchanged service bounds. Live native
+  upload rejects that timestamp and preserves all three prior copies and hashes.
+- Native token waits have a 30-second bound; each request/download has a
+  180-second watchdog that disconnects its HTTP connection and interrupts the
+  current worker. Disarming prevents an old watchdog interrupting subsequent work.
+  Five JVM tests and debug Java compilation pass; CI now runs those tests.
+  Android's [HTTP implementation](https://android.googlesource.com/platform/prebuilts/fullsdk/sources/+/refs/heads/androidx-constraintlayout-release/android-35/com/android/okhttp/internal/huc/HttpURLConnectionImpl.java)
+  routes disconnect to engine cancellation. Callback tests establish deadline
+  ownership and reuse, not every possible real socket failure.
+- Local file and HTTP errors have separate bounded mappings. Stream acquisition
+  failures close earlier resources. Test abort preserves sealed stages, and
+  authoritative retention has explicit adapter coverage.
+- Native configuration, package validators and tests reject production scope in
+  debuggable builds. SignedProof22 selects isolated r001; non-debuggable release23
+  selects library-v1 and excludes proof activity/plugin/config. Both builds pass.
+- Prototype lint/typecheck, 109 prototype tests and 11 package/config tests pass.
+  Fresh external backups were compared with both emulators after upgrade; empty
+  and eight-climb/three-playlist libraries remain exact through v2 migration and
+  relaunch. The retained native stage retries with its original immutable receipt;
+  structured readback again verifies 26,188,396 bytes, 10,000 climbs and 1,000 lists.
+- Foundation wording is corrected in `744b0cc`. Remaining native fault-injection,
+  partial cleanup and directory-sync concerns are parked in
+  `idea-vault-fault-injection` with their bounded current impact, not silently
+  counted as verified. Integrated automatic recovery and physical board gates
+  remain separate and unfinished.
+
+Private evidence: `.private-firebase/review-update-acceptance/` and
+`.private-firebase/application-service-2/`. No phone, user records or real backup
+namespace was modified. Standard review fix verification is complete; the parent
+awaits the required CI result before final review closure.

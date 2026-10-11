@@ -72,6 +72,20 @@ export function validateOwner(ownerUid) {
   }
 }
 
+// These fields are derived from caller bytes, so validate them BEFORE the
+// immutable create as well as on readback. A codec-valid extended year must not
+// leave an object that permanently makes its history listing unreadable.
+export function validateApplicationDetails({ exportedAt, counts }) {
+  if (!validUtcTimestamp(exportedAt, true)
+    || !counts || Object.keys(counts).sort().join(',') !== 'climbs,drafts,finished,playlists,trash'
+    || Object.values(counts).some(value => typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0)
+    || counts.finished + counts.drafts + counts.trash !== counts.climbs
+    || counts.climbs > LIBRARY_BACKUP_LIMITS.climbs
+    || counts.playlists > LIBRARY_BACKUP_LIMITS.playlists) {
+    throw new Error('Invalid application snapshot metadata');
+  }
+}
+
 export function validateSnapshot(snapshot, pool = PROOF_POOL) {
   const appPool = pool !== PROOF_POOL;
   const snapshotKeys = appPool
@@ -86,17 +100,7 @@ export function validateSnapshot(snapshot, pool = PROOF_POOL) {
     || !validUtcTimestamp(snapshot.createdAt)) {
     throw new Error('Invalid stored snapshot metadata');
   }
-  if (appPool) {
-    const counts = snapshot.counts;
-    if (!validUtcTimestamp(snapshot.exportedAt, true)
-      || !counts || Object.keys(counts).sort().join(',') !== 'climbs,drafts,finished,playlists,trash'
-      || Object.values(counts).some(value => typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0)
-      || counts.finished + counts.drafts + counts.trash !== counts.climbs
-      || counts.climbs > LIBRARY_BACKUP_LIMITS.climbs
-      || counts.playlists > LIBRARY_BACKUP_LIMITS.playlists) {
-      throw new Error('Invalid stored application snapshot metadata');
-    }
-  }
+  if (appPool) validateApplicationDetails(snapshot);
   return snapshot;
 }
 

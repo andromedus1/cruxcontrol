@@ -404,5 +404,6 @@ final class PrivateVaultFileStore {
     static final class FileStoreException extends Exception {
         final String code;
         FileStoreException(String code) { super(code); this.code = code; }
+        FileStoreException(String code, Throwable cause) { super(code, cause); this.code = code; }
     }
 }

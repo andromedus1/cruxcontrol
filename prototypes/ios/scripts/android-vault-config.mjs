@@ -27,3 +27,18 @@ export function androidVaultConfig(source, scope) {
     appId: client.client_info.mobilesdk_app_id, apiKey: client.api_key?.[0]?.current_key,
     webClientId: webClients[0].client_id, scope }, acceptance.test(scope));
 }
+
+// A debuggable APK must never select the owner's real immutable namespace.
+// Compile-only CI is unconfigured; only signedProof may select a bounded test pool.
+export function validateAndroidVaultBuildConfig(config, variant) {
+  assert(['debug', 'release', 'signedProof'].includes(variant), 'Unknown Android build variant');
+  if (variant === 'debug') {
+    assert(config === null, 'Compile-only debug builds must not contain vault configuration');
+    return null;
+  }
+  assert(config !== null, 'Signed application/proof builds require explicit vault configuration');
+  const checked = validateAndroidVaultConfig(config, variant === 'signedProof');
+  assert.equal(checked.scope === 'library-v1', variant === 'release',
+    'Only a non-debuggable release may select the production library namespace');
+  return checked;
+}
