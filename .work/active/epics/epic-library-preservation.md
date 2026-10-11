@@ -9,7 +9,7 @@ depends_on: [story-phone-library-recovery]
 release_binding: null
 gate_origin: null
 created: 2026-10-09
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # Preserve private libraries across browser and device loss
@@ -394,13 +394,28 @@ hosted-account setup. Daily-use admission remains the aggregate epic gate.
 ## Current delivery entry
 
 Native-library, portable-file recovery and Android-catalog features have completed
-focused verification, standard independent review and required CI. Finish the
-remaining physical phone/Fullride acceptance and parity review in its existing
-feature owner. Local Android interaction proofs and independent signing-key recovery
-are verified in that item. Account access, automatic protection and clean-install online recovery remain
-the admission-critical path. Budget direction is settled in the private-vault item:
-prefer cheaper, with a concrete justification required for USD 25/month. An actual
-native account proof is still required before provider selection. Service setup and phone/board availability
-determine timing; do not promise a fixed delivery date before those proofs. No further
-current-PWA preservation release is a prerequisite. Query the child items for current
-stages and evidence rather than treating this sequence as completed dogfood admission.
+focused verification, standard independent review and required CI. Android parity
+has verified emulator interaction and independent signing-key recovery; physical
+phone/Fullride acceptance and its feature review remain open.
+
+The native account and private snapshot proof now passes sign-in/renewal, immutable
+upload/readback/retry, restricted runtime permissions, account isolation and
+operator-assisted recovery into a separate installation. The earlier statements
+that live storage was unproven are superseded by this checkpoint. Billing is linked
+with project-scoped $5 alerts, which are not spending caps.
+
+**Provider admission (2026-10-11):** choose the demonstrated native Firebase account
+and narrow authenticated GCS gateway for Android dogfood. The private-vault feature
+is implementing the application transport and isolated acceptance pools. Automatic
+backup has a completed design and waits for that dependency's integrated verification
+before implementation. Its durable revision acknowledgement, status/account surfaces
+and fully in-app clean-install recovery remain admission-critical work. Existing
+proof tooling does not fulfill those product acceptance gates.
+
+Retain all admitted copies and pause at capacity for the first dogfood release;
+no automatic pruning or background-execution guarantee. The owning feature carries
+limits and costs. Prefer cheaper hosting; no fixed USD 25/month plan was selected.
+Account setup no longer blocks engineering. Physical hardware availability still
+affects final acceptance; no real authoring before the aggregate protection and
+parity gates pass. Current-PWA protection is not a prerequisite. Query child items
+for exact stages and evidence rather than treating this sequence as dogfood admission.
