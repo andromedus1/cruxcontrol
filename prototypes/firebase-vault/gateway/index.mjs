@@ -22,7 +22,19 @@ export const privateVaultProof = onRequest(FUNCTION_OPTIONS, async (request, res
       const auth = getAuth(app);
       const storage = new Storage({ projectId: PROJECT_ID });
       handler = createVaultHandler({ ownerUid: owner.value(),
-        verifyToken: token => auth.verifyIdToken(token, true),
+        verifyToken: async token => {
+          try { return await auth.verifyIdToken(token, true); }
+          catch (error) {
+            const known = ['auth/argument-error', 'auth/invalid-id-token', 'auth/id-token-expired',
+              'auth/id-token-revoked', 'auth/user-disabled', 'auth/user-not-found',
+              'auth/insufficient-permission', 'auth/internal-error'];
+            // Bounded diagnostics only: never log exception text, tokens or claims.
+            console.warn(JSON.stringify({ event: 'vault-auth-rejected',
+              code: known.includes(error?.code) ? error.code : 'auth/provider-error',
+              signatureRemoved: token.endsWith('.SIGNATURE_REMOVED_BY_GOOGLE') }));
+            throw error;
+          }
+        },
         store: createGcsStore(storage.bucket(BUCKET), owner.value()),
       });
     } catch {

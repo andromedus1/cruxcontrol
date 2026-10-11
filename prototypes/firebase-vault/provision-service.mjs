@@ -27,7 +27,7 @@ const token = await auth.getAccessToken(account.tokens.refresh_token, ['https://
 const permitted = new Set(['cloudbilling.googleapis.com', 'cloudresourcemanager.googleapis.com',
   'serviceusage.googleapis.com', 'billingbudgets.googleapis.com', 'iam.googleapis.com', 'storage.googleapis.com']);
 const evidence = { at: new Date().toISOString(), projectId: PROJECT_ID, mode };
-async function api(url, method = 'GET', body, missing = false) {
+async function api(url, method = 'GET', body, missing = false, attempt = 0) {
   assert(permitted.has(new URL(url).hostname));
   const response = await fetch(url, { method, redirect: 'error', signal: AbortSignal.timeout(60000),
     headers: { Authorization: `Bearer ${token.access_token}`, 'Content-Type': 'application/json',
@@ -36,6 +36,13 @@ async function api(url, method = 'GET', body, missing = false) {
   if (missing && response.status === 404) return null;
   const data = await response.json();
   if (!response.ok) {
+    // Service enablement propagates independently of its successful operation.
+    // Retry only reads with that explicit provider reason, never arbitrary writes.
+    if (method === 'GET' && attempt < 12 && response.status === 403
+      && data.error?.details?.some(detail => detail.reason === 'SERVICE_DISABLED')) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      return api(url, method, body, missing, attempt + 1);
+    }
     // Keep provider details private; tokens are never included in evidence.
     await writeFile(`${destination}/provision-error.json`, JSON.stringify({ method,
       host: new URL(url).hostname, status: response.status, error: data.error }, null, 2), { mode: 0o600 });
