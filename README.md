@@ -7,7 +7,7 @@ storage. An experimental Capacitor package also targets Android with native BLE 
 SQLite-backed authoring. Synthetic emulator preservation and private APK catalog
 checks pass, including offline installation and playlist use of the labeled older
 Kilter snapshot. Synthetic automatic backup and separate empty-install app recovery
-checks also pass. Independent review, CI and physical-phone/Fullride parity remain
+checks also pass. Physical owner-phone/Fullride parity remain
 required before native daily use. Local use needs no account or application
 server.
 
@@ -148,7 +148,7 @@ retains 512 immutable whole-library copies and pauses at capacity without prunin
 Synthetic acceptance passes automatic edits and playlist order, offline restart and
 reconnection, pending-upload process death, and separate empty-install app recovery.
 Structured cloud recovery, cancellation, conflict blocking and relaunch also pass.
-Independent review, CI and physical-phone/Fullride parity remain required; real
+Physical owner-phone/Fullride parity remain required; real
 authored climbs are not yet admitted.
 
 ### Implementation highlights

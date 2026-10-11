@@ -20,7 +20,7 @@ summary: >
   passed synthetic emulator restore, edit/save, process-relaunch, and same-signature
   update checks. Portable-file recovery and bounded operator-assisted cloud recovery
   pass synthetic emulator proofs. Integrated Android automatic backup and app recovery
-  also pass synthetic acceptance; independent review, CI, physical-board behavior
+  also pass synthetic acceptance; physical owner-phone/Fullride behavior
   and full Android feature parity remain open. Firebase Auth and the
   authenticated GCS gateway are selected for Android dogfood. Native application
   transport is implemented and the service deployed; live transport acceptance passes.
@@ -35,7 +35,7 @@ decisions:
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use the platform library adapter: independent versioned IndexedDB repositories on web and iOS, and one native SQLite database on Android; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
-  - "Current backup is a manual bounded file with missing-only restore (atomic on Android, per-store on web/iOS); real authored climbs require verified account-protected online backup and clean-install recovery, with portable files as a separate second path."
+  - "Portable backup uses a manual bounded file with missing-only restore (atomic on Android, per-store on web/iOS); real authored climbs require verified account-protected online backup, clean-install recovery and physical owner-phone/Fullride acceptance, with portable files as a separate second path."
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
   - "PWA updates use an app-owned prompt-mode Workbox registration, shared Web Locks admission, and explicit safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes."
   - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
@@ -270,7 +270,7 @@ Android account/status/history surfaces, foreground automatic backup and integra
 cloud recovery UI pass synthetic emulator acceptance: automatic edits and order,
 offline restart/reconnection, pending-upload process death, and separate empty-install
 app recovery. Structured cloud recovery, cancellation, conflict blocking and relaunch
-also pass. Independent review, CI and physical-phone/Fullride parity remain open;
+also pass. Physical owner-phone/Fullride parity remain open;
 real authoring is not yet admitted.
 
 The application design separates a `library-v1` namespace with 512 immutable
@@ -307,7 +307,8 @@ until deliberate account or portable-file recovery resolves it; it cannot author
 upload.
 
 Everyday use with real authored climbs remains gated until automatic private online
-protection and clean-install recovery from that online backup are verified. Owner-controlled
+protection and clean-install recovery from that online backup are verified and
+physical owner-phone/Fullride acceptance passes. Owner-controlled
 portable-file recovery is an independent second path and does not satisfy the online gate
 by itself.
 
@@ -516,8 +517,7 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
   honest pending/offline status and verified restore drills. Local persistence
   permission alone is insufficient. Portable-file and bounded operator-assisted cloud
   recovery pass synthetic emulator proofs. Android automatic backup and recovery UI
-  pass integrated empty-install acceptance on synthetic emulators; independent review,
-  CI and physical-phone/Fullride parity remain open. The local native SQLite store
+  pass integrated empty-install acceptance on synthetic emulators; physical owner-phone/Fullride parity remain open. The local native SQLite store
   is on the same device and does not meet that independent recovery boundary.
 
 - **Web Bluetooth reliability** across OS/browser versions — deterministic transport and

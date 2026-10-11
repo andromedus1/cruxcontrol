@@ -23,7 +23,7 @@ decisions:
   - "Kilter community catalog access precedes invited sharing and can ship on Android/web independently of native iPhone hardware acceptance."
   - "Locally authored climbs are unrestricted platform-local aggregates with Draft/Finished status and recoverable Trash; web and iOS use IndexedDB, Android uses native SQLite, and provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
-  - "Current whole-library export is manual and restore is missing-only (atomic on Android, per-store on web/iOS); everyday real authoring requires verified automatic online backup and clean-install recovery, with portable files as an independent second path."
+  - "Current whole-library export is manual and restore is missing-only (atomic on Android, per-store on web/iOS); everyday real authoring requires verified automatic online backup, clean-install recovery and physical owner-phone/Fullride acceptance, with portable files as an independent second path."
   - "PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs, and workspace, mutation, play-through, and BLE session gates protect local work before activation."
 ---
 
@@ -291,8 +291,7 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   authenticated GCS gateway. Native account/file transport is implemented and the
   service deployed; live transport acceptance passes. Durable state, the foreground
   coordinator and product UI are implemented. Structured cloud recovery, cancellation,
-  conflict blocking and relaunch pass on synthetic emulators. Independent review,
-  CI and physical-phone/Fullride parity still gate real authoring.
+  conflict blocking and relaunch pass on synthetic emulators. Physical owner-phone/Fullride parity still gate real authoring.
 - Retain up to 512 immutable whole-library copies of at most 25 MiB in the application
   namespace. Pause protection visibly at capacity without pruning older copies.
   Separate synthetic acceptance pools and legacy proof copies never appear in user
@@ -324,7 +323,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Recover on a clean client without relying on credentials or keys kept only inside
   the lost browser origin. Preserve private access isolation from invited sharing.
 - Everyday use with real authored climbs remains gated until automatic private online
-  protection and clean-install recovery from that online backup are verified. Verified
+  protection and clean-install recovery from that online backup are verified and
+  physical owner-phone/Fullride acceptance passes. Verified
   owner-controlled portable-file restoration is a required independent second path; it
   does not substitute for the online gate.
 - Private backups may use service-managed encryption and recovery through the
@@ -516,7 +516,7 @@ The model mirrors the official Kilter SQLite schema (see
   physical-board behavior and complete feature parity remain unverified. Independent
   portable recovery and a bounded operator-assisted cloud recovery proof have passed
   on isolated Android installations. Automatic protection and integrated app recovery
-  also pass synthetic acceptance; independent review, CI and physical-phone/Fullride
+  also pass synthetic acceptance; physical owner-phone/Fullride
   parity still gate real authoring. The iPhone path must
   prove connection/light/clear, interruption recovery, durable local storage,
   whole-library export/restore and native sign-in before claiming support.

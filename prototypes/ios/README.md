@@ -191,7 +191,8 @@ built from clean tracked commit `3a2e466636080582b92873bdcdf01e3fc7c32317`.
 This proves local provider save/readback and isolated offline recovery, not a
 cloud-backed provider upload, remote retention, owner-phone recovery or the
 required automatic online backup. Verify any remote copy independently; automatic
-online backup remains required before real authoring.
+online backup and physical owner-phone/Fullride acceptance remain required before
+real authoring.
 
 The APK11 follow-up did not repeat restore or cancellation. It rebooted the retained
 graded recovery emulator, exported its current library through SAF, installed the
@@ -404,7 +405,8 @@ Physical phone permissions, Fullride lighting/clear,
 effects, pause/interruption and explicit reconnect remain required acceptance.
 The parity feature stays implementing until these actions and independent key
 retention pass. Automatic online backup and clean-install online recovery also
-remain required before irreplaceable everyday authoring.
+remain required alongside physical owner-phone/Fullride acceptance before
+irreplaceable everyday authoring.
 
 ### Native Android authentication feasibility proof
 
@@ -542,8 +544,7 @@ pause new uploads without pruning or blocking ordinary offline saves. Recovery
 reviews a copy, restores atomically and holds uploads until verification succeeds.
 Synthetic integrated acceptance passes automatic edits and playlist order, offline
 restart/reconnection, pending-upload process death and recovery through the normal
-Manage UI on a separate empty installation. Independent review, CI and physical-phone/
-Fullride parity still gate real authoring. iOS continues to use IndexedDB.
+Manage UI on a separate empty installation. Physical owner-phone/Fullride parity still gate real authoring. iOS continues to use IndexedDB.
 
 ### Application vault configuration and packaging
 
@@ -578,7 +579,7 @@ existing project/app registration and writes `src/main/assets/vault-config.json`
 it accepts public app registration, never service keys or CLI credentials. The
 build allows `library-v1` only in a non-debuggable release and verifies application
 plugin presence and proof config/activity/plugin exclusion. These packaging checks pass; they do
-not admit real authoring before the recovery gates.
+not admit real authoring before recovery and physical owner-phone/Fullride acceptance.
 
 For isolated synthetic emulator acceptance, `signedProof` requires an explicit
 `acceptance-v1/r001` (or `r002`–`r004`) configuration; an absent configuration or
@@ -613,7 +614,7 @@ match after confirmed restore and relaunch, and the retained source receipt prot
 the restored revision without a duplicate upload. The large restore and verification
 took about 51 seconds on the synthetic emulator; this is not a physical-phone
 performance claim. These app acceptance checks are separate from transport-only
-fixtures and do not waive independent review, CI or physical-board acceptance.
+fixtures and do not waive physical owner-phone/Fullride acceptance.
 
 ## Native transport boundary
 

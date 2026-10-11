@@ -18,8 +18,7 @@ foreground backup coordinator and account/status/history/recovery UI are impleme
 Synthetic integrated acceptance passes automatic edits/order, offline restart and
 reconnection, pending-upload process death and separate empty-install app recovery.
 Normal cloud recovery also passes a structured 10,000-climb/1,000-list/100,000-reference
-library, cancellation, conflict blocking and relaunch. Independent review, CI and
-physical-phone/Fullride parity remain open; real authoring is not yet admitted.
+library, cancellation, conflict blocking and relaunch. Physical owner-phone/Fullride parity remain open; real authoring is not yet admitted.
 The detailed evidence below covers the separate bounded operator-assisted proof.
 Application transport acceptance passes small-copy upload/list/download, exact
 retry and sealed-file retention across restart. A 26,188,396-byte structured
