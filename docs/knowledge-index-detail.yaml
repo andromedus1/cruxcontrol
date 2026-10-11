@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-11T16:28:27Z'
+generated_at: '2026-10-11T17:34:33Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -16,10 +16,11 @@ documents:
       An experimental Capacitor package uses native BLE on Android and iOS. iOS retains browser-managed
       library storage; Android injects a native SQLite library and has passed synthetic emulator restore,
       edit/save, process-relaunch, and same-signature update checks. Portable-file recovery and bounded
-      operator-assisted cloud recovery pass synthetic emulator proofs. Physical-board behavior, full Android
-      feature parity, integrated cloud restore and automatic backup remain open. Firebase Auth and the
-      authenticated GCS gateway are selected for Android dogfood. Native application transport is implemented
-      and the service deployed; live acceptance remains ongoing.
+      operator-assisted cloud recovery pass synthetic emulator proofs. Integrated Android automatic backup
+      and app recovery also pass synthetic acceptance; physical owner-phone/Fullride behavior and full
+      Android feature parity remain open. Firebase Auth and the authenticated GCS gateway are selected
+      for Android dogfood. Native application transport is implemented and the service deployed; live
+      transport acceptance passes.
 
       '
     decisions:
@@ -49,9 +50,10 @@ documents:
       Draft/Finished and recoverable-Trash lifecycle outside provider catalogs.'
     - Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports
       preview before creating fresh local records and compensate partial failures.
-    - Current backup is a manual bounded file with missing-only per-store restore; real authored climbs
-      require verified account-protected online backup and clean-install recovery, with portable files
-      as a separate second path.
+    - Portable backup uses a manual bounded file with missing-only restore (atomic on Android, per-store
+      on web/iOS); real authored climbs require verified account-protected online backup, clean-install
+      recovery and physical owner-phone/Fullride acceptance, with portable files as a separate second
+      path.
     - Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped
       holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active
       climbs and Trash.
@@ -121,9 +123,9 @@ documents:
     - Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary
       40-degree drafts without persisting or uploading source images; exact duplicates, including Trash,
       are skipped.
-    - Current whole-library export is manual and restore is missing-only per store; everyday real authoring
-      requires verified automatic online backup and clean-install recovery, with portable files as an
-      independent second path.
+    - Current whole-library export is manual and restore is missing-only (atomic on Android, per-store
+      on web/iOS); everyday real authoring requires verified automatic online backup, clean-install recovery
+      and physical owner-phone/Fullride acceptance, with portable files as an independent second path.
     - PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs,
       and workspace, mutation, play-through, and BLE session gates protect local work before activation.
   docs/VISION.md:
@@ -135,8 +137,8 @@ documents:
       independent online backups and portable owner-controlled files must complement offline local authoring.
       An experimental Android package now uses native SQLite for local authorship; its synthetic emulator
       persistence, independent portable recovery and bounded operator-assisted cloud recovery checks pass.
-      Physical acceptance, automatic online backup and integrated cloud recovery remain open. Invited
-      contributions follow with Android and iPhone board control.
+      Android foreground backup and integrated recovery pass synthetic emulator acceptance; physical owner-phone/Fullride
+      parity remain open. Invited contributions follow with Android and iPhone board control.
 
       '
     decisions:
@@ -154,8 +156,8 @@ documents:
       explicitly older offline snapshot, and native iPhone preparation continues independently, with a
       logbook, broader providers, grade prediction and personalized training retained afterward.
     - Private authoring and playlists stay locally usable; everyday real authoring waits for verified
-      automatic online backup and clean-install recovery, with portable owner-controlled files as an independent
-      second path.
+      automatic online backup, clean-install recovery and physical owner-phone/Fullride acceptance, with
+      portable owner-controlled files as an independent second path.
     - Invited partner and friends need Android and iPhone board control; establish the iOS path before
       advancing shared-library implementation.
   docs/architecture/history/north-star.md:

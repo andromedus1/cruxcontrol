@@ -223,3 +223,14 @@ agent for adjudication. Per delegated scope, this pass changes only the report:
 no foundation docs, code, work items or knowledge indexes were edited, and no
 peer review was delegated. Existing index changes were left untouched. The report
 does not close automatic implementation review, PR CI, or physical acceptance.
+
+### Receiving-agent resolution
+
+Both Medium findings are accepted and corrected in `1087d73`: the data-flow
+statement now describes the adapter boundary including private vault and native
+file delivery, and `LocalClimbDraft` is described as platform-local. Root verified
+both narrow corrections against the report and source. No unresolved material
+documentation finding remains. Provenance counts and original dates were also
+independently checked against frontmatter; no research was redated or refreshed.
+The index regeneration reports zero errors and the two existing advisory
+decision-count warnings. No Critical/High finding requires a repeated audit.
