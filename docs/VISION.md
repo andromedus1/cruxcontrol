@@ -14,9 +14,10 @@ summary: >
   Private library preservation now takes priority: independent online backups and
   portable owner-controlled files must complement offline local authoring. An
   experimental Android package now uses native SQLite for local authorship; its
-  synthetic emulator persistence check passes, while physical and independent
-  recovery proofs remain open. Invited contributions follow with Android and iPhone
-  board control.
+  synthetic emulator persistence, independent portable recovery and bounded
+  operator-assisted cloud recovery checks pass. Physical acceptance, automatic
+  online backup and integrated cloud recovery remain open. Invited contributions
+  follow with Android and iPhone board control.
 decisions:
   - "Share product logic across web, Android and iOS while retaining platform-specific storage and device adapters; preserve the working web client and keep native-device acceptance explicit."
   - "Data ownership is a first principle: the logbook lives locally, sync to Kilter is optional."

@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-11T02:19:14Z'
+generated_at: '2026-10-11T02:19:45Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -133,8 +133,9 @@ documents:
       access while native iPhone preparation continues. Private library preservation now takes priority:
       independent online backups and portable owner-controlled files must complement offline local authoring.
       An experimental Android package now uses native SQLite for local authorship; its synthetic emulator
-      persistence check passes, while physical and independent recovery proofs remain open. Invited contributions
-      follow with Android and iPhone board control.
+      persistence, independent portable recovery and bounded operator-assisted cloud recovery checks pass.
+      Physical acceptance, automatic online backup and integrated cloud recovery remain open. Invited
+      contributions follow with Android and iPhone board control.
 
       '
     decisions:
