@@ -20,6 +20,29 @@ export interface LibraryBackupStore {
   readPlaylists(): Promise<readonly LocalPlaylist[]>;
   restoreMissingDrafts(records: readonly LocalClimbDraft[]): Promise<RestoreBatchResult>;
   restoreMissingPlaylists(records: readonly LocalPlaylist[]): Promise<RestoreBatchResult>;
+  /** One all-or-nothing restore when the storage adapter can span both aggregates. */
+  restoreMissingSnapshot?(snapshot: LibrarySnapshot): Promise<Readonly<{
+    drafts: RestoreBatchResult;
+    playlists: RestoreBatchResult;
+  }>>;
+}
+
+export class LibraryRestoreVerificationError extends Error {
+  readonly drafts: RestoreBatchResult;
+  readonly playlists: RestoreBatchResult;
+  override readonly cause?: unknown;
+
+  constructor(
+    drafts: RestoreBatchResult,
+    playlists: RestoreBatchResult,
+    options?: { readonly cause?: unknown },
+  ) {
+    super('The records were saved, but recovery verification is incomplete', options);
+    this.name = 'LibraryRestoreVerificationError';
+    this.drafts = drafts;
+    this.playlists = playlists;
+    this.cause = options?.cause;
+  }
 }
 
 export type BackupConflict =

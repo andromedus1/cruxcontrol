@@ -14,7 +14,9 @@ import {
   draftContent,
 } from "../../../web/src/drafts/test-fixtures.ts";
 import { draftContentOf } from "../../../web/src/drafts/record.ts";
+import { encodeStoredDraft } from "../../../web/src/drafts/codec.ts";
 import { localDraftId } from "../../../web/src/drafts/codec.ts";
+import { encodeStoredPlaylist } from "../../../web/src/playlists/codec.ts";
 import {
   canonicalSnapshot,
   decodeLibraryBackup,
@@ -281,6 +283,7 @@ describe("native library against real SQLite", () => {
         draftContent({ name: "Unsaved" }),
       ),
     ).rejects.toMatchObject({ code: "unavailable" });
+    expect((await library.preservation!.read()).revision).toBe(1);
     expect(await library.drafts.get(original.id)).toEqual(original);
     expect(
       (
@@ -301,6 +304,7 @@ describe("native library against real SQLite", () => {
       "BEGIN IMMEDIATE",
     ]) {
       const { library, database } = await open();
+      const baselineRuns = vi.mocked(database.run).mock.calls.length;
       const execute = database.execute;
       const failure = new Error(`lost ${failedStatement}`);
       database.execute = vi.fn(async (statement) => {
@@ -325,7 +329,7 @@ describe("native library against real SQLite", () => {
         "reopen",
       );
       expect(database.run).toHaveBeenCalledTimes(
-        failedStatement === "BEGIN IMMEDIATE" ? 0 : 1,
+        baselineRuns + (failedStatement === "BEGIN IMMEDIATE" ? 0 : failedStatement === "ROLLBACK" ? 1 : 2),
       );
     }
   });
@@ -334,21 +338,25 @@ describe("native library against real SQLite", () => {
     const { library, database } = await open();
     const service = new LibraryBackupService(library.backupStore);
     await service.restore(fixture);
+    const before = await library.playlists.get(fixture.playlists[0]!.id);
+    expect(before).not.toBeNull();
     const query = database.query;
     let queued: Promise<unknown> | undefined;
     database.query = vi.fn(async (statement, values) => {
       const rows = await query(statement, values);
-      if (statement === "SELECT id, payload FROM climbs")
+      if (!queued && statement.includes("FROM climbs") && statement.includes("ORDER BY id LIMIT"))
         queued = library.playlists.update(
-          fixture.playlists[0]!.id,
-          fixture.playlists[0]!.revision,
-          { ...fixture.playlists[0]!, name: "After capture" },
+          before!.id,
+          before!.revision,
+          { ...before!, name: "After capture" },
         );
       return rows;
     });
-    const captured = decodeLibraryBackup((await service.exportFile()).text);
-    expect(canonicalSnapshot(captured)).toBe(canonicalSnapshot(fixture));
+    const captured = await library.preservation!.capture();
+    expect(captured.revision).toBe(1);
+    expect(canonicalSnapshot(captured.snapshot)).toBe(canonicalSnapshot(fixture));
     await queued;
+    expect((await library.preservation!.read()).revision).toBe(2);
     expect((await library.playlists.get(fixture.playlists[0]!.id))?.name).toBe(
       "After capture",
     );
@@ -440,5 +448,167 @@ describe("native library against real SQLite", () => {
     release();
     await expect(pending).resolves.toMatchObject({ revision: 1 });
     await vi.waitFor(() => expect(database.close).toHaveBeenCalledOnce());
+  });
+
+  it("migrates a populated v1 schema without rewriting authored rows", async () => {
+    const { sql, database } = sqlDatabase();
+    sql.exec("PRAGMA user_version = 1;");
+    sql.exec("CREATE TABLE climbs (id TEXT PRIMARY KEY NOT NULL, payload TEXT NOT NULL); CREATE TABLE playlists (id TEXT PRIMARY KEY NOT NULL, payload TEXT NOT NULL);");
+    const draft = fixture.drafts[0]!;
+    const playlist = fixture.playlists[0]!;
+    const draftPayload = JSON.stringify(encodeStoredDraft(draft));
+    const playlistPayload = JSON.stringify(encodeStoredPlaylist(playlist));
+    sql.prepare("INSERT INTO climbs (id, payload) VALUES (?, ?)").run(draft.id, draftPayload);
+    sql.prepare("INSERT INTO playlists (id, payload) VALUES (?, ?)").run(playlist.id, playlistPayload);
+
+    const migrated = await createNativeLibrary(database);
+    expect(sql.prepare("PRAGMA user_version").get()).toEqual({ user_version: 2 });
+    expect(sql.prepare("SELECT payload FROM climbs WHERE id = ?").get(draft.id)?.payload).toBe(draftPayload);
+    expect(sql.prepare("SELECT payload FROM playlists WHERE id = ?").get(playlist.id)?.payload).toBe(playlistPayload);
+    expect(await migrated.preservation!.read()).toMatchObject({ revision: 0, version: 0, recovery: null });
+    expect(canonicalSnapshot(await migrated.backupStore.readSnapshot!())).toBe(canonicalSnapshot({ drafts: [draft], playlists: [playlist] }));
+  });
+
+  it("increments one aggregate revision per committed content mutation and keeps CAS separate", async () => {
+    const { library } = await open();
+    const events: string[] = [];
+    const unsubscribe = library.preservation!.subscribe((event) => events.push(event));
+    const capture = await library.preservation!.capture();
+    expect(capture).toMatchObject({ revision: 0, snapshot: { drafts: [], playlists: [] } });
+    await library.backupStore.readSnapshot!();
+    expect((await library.preservation!.read()).revision).toBe(0);
+
+    const draft = await library.drafts.create(draftContent());
+    expect((await library.preservation!.read()).revision).toBe(1);
+    const updated = await library.drafts.update(draft.id, draft.revision, draftContent({ name: "Updated" }));
+    expect((await library.preservation!.read()).revision).toBe(2);
+    const trashed = await library.drafts.trash(updated.id, updated.revision);
+    const restored = await library.drafts.restore(trashed.id, trashed.revision);
+    await library.drafts.deletePermanently(restored.id, restored.revision);
+    expect((await library.preservation!.read()).revision).toBe(5);
+
+    const playlist = await library.playlists.create({ name: "Order", notes: "", entries: fixture.playlists[0]!.entries });
+    const reordered = await library.playlists.update(playlist.id, playlist.revision, { ...playlist, entries: [...playlist.entries].reverse() });
+    await library.playlists.delete(reordered.id, reordered.revision);
+    expect((await library.preservation!.read()).revision).toBe(8);
+    await expect(library.drafts.update(restored.id, restored.revision, draftContent())).rejects.toHaveProperty("code", "not-found");
+    expect((await library.preservation!.read()).revision).toBe(8);
+
+    const beforeCas = await library.preservation!.read();
+    const casResults = await Promise.all([
+      library.preservation!.compareAndSet(beforeCas.version, beforeCas.control),
+      library.preservation!.compareAndSet(beforeCas.version, beforeCas.control),
+    ]);
+    expect(casResults.sort()).toEqual([false, true]);
+    expect(await library.preservation!.read()).toMatchObject({ revision: 8, version: 1 });
+    unsubscribe();
+    expect(events.filter((event) => event === "committed")).toHaveLength(8);
+    expect(events.at(-1)).toBe("write-failed");
+  });
+
+  it("restores both aggregates atomically and verifies the merged library behind a durable hold", async () => {
+    const { library, database } = await open();
+    const service = new LibraryBackupService(library.backupStore);
+    let recoveryWritten = false;
+    let restoreCommitted = false;
+    const run = database.run;
+    database.run = vi.fn(async (statement, values) => {
+      await run(statement, values);
+      if (statement.includes("recovery_sha256")) recoveryWritten = true;
+    });
+    const execute = database.execute;
+    database.execute = vi.fn(async (statement) => {
+      await execute(statement);
+      if (recoveryWritten && statement === "COMMIT") restoreCommitted = true;
+    });
+    const query = database.query;
+    let failVerificationOnce = true;
+    database.query = vi.fn(async (statement, values) => {
+      if (restoreCommitted && failVerificationOnce && statement === "SELECT * FROM library_preservation") {
+        failVerificationOnce = false;
+        throw new Error("injected post-commit verification read failure");
+      }
+      return query(statement, values);
+    });
+
+    const result = await service.restore(fixture);
+    expect(result).toMatchObject({
+      status: "failed",
+      phase: "verification",
+      drafts: { added: 4, unchanged: 0 },
+      playlists: { added: 2, unchanged: 0 },
+    });
+    const held = await library.preservation!.read();
+    expect(held.revision).toBe(1);
+    expect(held.recovery).toMatchObject({ revision: 1, sha256: expect.stringMatching(/^[0-9a-f]{64}$/) });
+    await expect(library.preservation!.capture()).rejects.toThrow("verification is pending");
+    await expect(library.drafts.create(draftContent())).rejects.toHaveProperty("code", "unavailable");
+    expect(canonicalSnapshot(await library.backupStore.readSnapshot!())).toBe(canonicalSnapshot(fixture));
+
+    await library.preservation!.verifyRecovery();
+    expect((await library.preservation!.read()).recovery).toBeNull();
+    await expect(library.preservation!.capture()).resolves.toMatchObject({ revision: 1 });
+    expect((await library.drafts.create(draftContent({ name: "After verified recovery" }))).revision).toBe(1);
+  });
+
+  it("keeps whole-library restore all-or-nothing when either table contains an ID conflict", async () => {
+    const { library } = await open({ createId: () => fixture.drafts[0]!.id });
+    const local = await library.drafts.create(draftContent({ name: "Local conflict" }));
+    expect(local.id).toBe(fixture.drafts[0]!.id);
+    await expect(library.backupStore.restoreMissingSnapshot!(fixture)).rejects.toMatchObject({ name: "BackupConflictError" });
+    expect(await library.backupStore.readDrafts()).toEqual([local]);
+    expect(await library.backupStore.readPlaylists()).toEqual([]);
+    expect((await library.preservation!.read()).revision).toBe(1);
+  });
+
+  it("uses bounded pages and surrogate-safe chunked writes for large records", async () => {
+    let nextId = 0;
+    const { library, database } = await open({
+      createId: () => `00000000-0000-4000-8000-${String(++nextId).padStart(12, "0")}`,
+    });
+    const pageSizes: number[] = [];
+    const query = database.query;
+    database.query = vi.fn(async (statement, values) => {
+      const rows = await query(statement, values);
+      if (statement.includes("ORDER BY id LIMIT")) pageSizes.push(rows.length);
+      return rows;
+    });
+    for (let index = 0; index < 70; index += 1) {
+      await library.drafts.create(draftContent({ name: `Page ${index}` }));
+    }
+    expect((await library.preservation!.capture()).snapshot.drafts).toHaveLength(70);
+    expect(pageSizes.length).toBeGreaterThanOrEqual(3);
+    expect(Math.max(...pageSizes)).toBeLessThanOrEqual(32);
+
+    const large = `${"a".repeat(16_383)}😀${"b".repeat(50_000)}`;
+    const beforeRuns = vi.mocked(database.run).mock.calls.length;
+    const created = await library.drafts.create(draftContent({ metadata: { setterNotes: large } }));
+    const calls = vi.mocked(database.run).mock.calls.slice(beforeRuns)
+      .filter(([statement]) => String(statement).includes("climbs") && String(statement).includes("payload"));
+    const chunks = calls.map(([statement, values]) => String(statement).startsWith("INSERT") ? String(values[1]) : String(values[0]));
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.every((chunk) => chunk.length <= 16 * 1024)).toBe(true);
+    for (let index = 0; index < chunks.length - 1; index += 1) {
+      const left = chunks[index]!.charCodeAt(chunks[index]!.length - 1);
+      const right = chunks[index + 1]!.charCodeAt(0);
+      expect(left >= 0xd800 && left <= 0xdbff && right >= 0xdc00 && right <= 0xdfff).toBe(false);
+    }
+    expect((await library.drafts.get(created.id))?.metadata.setterNotes).toBe(large);
+    expect((await library.preservation!.capture()).snapshot.drafts.find(({ id }) => id === created.id)?.metadata.setterNotes).toBe(large);
+  });
+
+  it("fails a complete capture when a large record byte range is truncated", async () => {
+    const { library, database } = await open();
+    const large = await library.drafts.create(draftContent({ metadata: { setterNotes: "x".repeat(40_000) } }));
+    expect(large.id).toBe(FIRST_DRAFT_ID);
+    const query = database.query;
+    database.query = vi.fn(async (statement, values) => {
+      const rows = await query(statement, values);
+      if (statement.includes("hex(substr") && rows[0]?.chunk) {
+        return [{ ...rows[0], chunk: String(rows[0].chunk).slice(2) }];
+      }
+      return rows;
+    });
+    await expect(library.preservation!.capture()).rejects.toThrow("truncated payload range");
   });
 });

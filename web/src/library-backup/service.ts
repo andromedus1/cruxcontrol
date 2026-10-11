@@ -6,6 +6,7 @@ import type {
   LibrarySnapshot,
   RestoreBatchResult,
 } from './types.ts';
+import { LibraryRestoreVerificationError } from './types.ts';
 
 export type LibraryRestoreOutcome =
   | Readonly<{
@@ -19,6 +20,20 @@ export type LibraryRestoreOutcome =
       phase: 'preflight' | 'drafts' | 'playlists';
       drafts: RestoreBatchResult | null;
       error: Error;
+    }>
+  | Readonly<{
+      status: 'failed';
+      phase: 'restore';
+      drafts: null;
+      playlists: null;
+      error: Error;
+    }>
+  | Readonly<{
+      status: 'failed';
+      phase: 'verification';
+      drafts: RestoreBatchResult;
+      playlists: RestoreBatchResult;
+      error: LibraryRestoreVerificationError;
     }>;
 
 function asError(cause: unknown): Error {
@@ -94,6 +109,30 @@ export class LibraryBackupService {
       return { status: 'failed', phase: 'preflight', drafts: null, error: asError(cause) };
     }
     if (review.conflicts.length > 0) return { status: 'blocked', review };
+
+    if (this.#store.restoreMissingSnapshot) {
+      try {
+        const result = await this.#store.restoreMissingSnapshot(backup);
+        return { status: 'complete', ...result };
+      } catch (cause) {
+        if (cause instanceof LibraryRestoreVerificationError) {
+          return {
+            status: 'failed',
+            phase: 'verification',
+            drafts: cause.drafts,
+            playlists: cause.playlists,
+            error: cause,
+          };
+        }
+        return {
+          status: 'failed',
+          phase: 'restore',
+          drafts: null,
+          playlists: null,
+          error: asError(cause),
+        };
+      }
+    }
 
     let drafts: RestoreBatchResult;
     try {

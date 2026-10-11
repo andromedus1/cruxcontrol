@@ -302,7 +302,9 @@ export function LibraryBackupDialog({
           ? 'Recovery could not start. No records were added.'
           : result.phase === 'drafts'
             ? 'No records were added. Climb recovery failed before committing; playlists were not changed.'
-            : `${result.drafts?.added ?? 0} climbs were added and ${result.drafts?.unchanged ?? 0} existing climbs were unchanged. No playlists were added.`}</p>
+            : result.phase === 'verification'
+              ? `${result.drafts.added} climbs and ${result.playlists.added} playlists were saved, but recovery verification is incomplete.`
+              : `${result.drafts?.added ?? 0} climbs were added and ${result.drafts?.unchanged ?? 0} existing climbs were unchanged. No playlists were added.`}</p>
           : <p>Recovery did not finish. Review this file again to check the current library.</p>}
         {error && <p role="alert">{error}</p>}
         <p>Keep this file. Review and retry after checking device storage or other tabs; records already recovered will be recognized.</p>

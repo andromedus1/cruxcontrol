@@ -9,11 +9,13 @@ import {
   type LocalPlaylistRepository,
 } from '../playlists';
 import { IndexedDbLibraryBackupStore, type LibraryBackupStore } from '../library-backup';
+import type { LibraryPreservation } from '../automatic-backup/types.ts';
 
 export interface AppLibrary {
   readonly drafts: LocalDraftRepository;
   readonly playlists: LocalPlaylistRepository;
   readonly backupStore: LibraryBackupStore;
+  readonly preservation?: LibraryPreservation;
   close(): void;
 }
 

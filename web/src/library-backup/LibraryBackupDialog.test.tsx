@@ -9,7 +9,7 @@ import type { LocalPlaylist } from '../playlists/types.ts';
 import { LibraryBackupDialog } from './LibraryBackupDialog.tsx';
 import { LibraryBackupService } from './service.ts';
 import type { LibraryBackupDelivery, LibraryBackupDeliveryResult } from './delivery.ts';
-import type { LibraryBackupStore } from './types.ts';
+import { LibraryRestoreVerificationError, type LibraryBackupStore } from './types.ts';
 
 const id = localDraftId('00000000-0000-4000-8000-000000000501');
 function climb(): LocalClimbDraft {
@@ -98,11 +98,15 @@ describe('recovery failure and async boundaries', () => {
   it.each([
     { phase: 'preflight' as const, drafts: null, message: 'Recovery could not start. No records were added.' },
     { phase: 'drafts' as const, drafts: null, message: 'No records were added. Climb recovery failed before committing; playlists were not changed.' },
+    { phase: 'verification' as const, drafts: { added: 1, unchanged: 0 }, playlists: { added: 1, unchanged: 0 }, message: '1 climbs and 1 playlists were saved, but recovery verification is incomplete.' },
     { phase: 'playlists' as const, drafts: { added: 1, unchanged: 0 }, message: '1 climbs were added and 0 existing climbs were unchanged. No playlists were added.' },
     { phase: 'playlists' as const, drafts: { added: 0, unchanged: 1 }, message: '0 climbs were added and 1 existing climbs were unchanged. No playlists were added.' },
-  ])('reports the exact $phase outcome with $drafts', async ({ phase, drafts, message }) => {
+  ])('reports the exact $phase outcome with $drafts', async ({ phase, drafts, playlists, message }) => {
     const service = new LibraryBackupService(store());
-    vi.spyOn(service, 'restore').mockResolvedValue({ status: 'failed', phase, drafts, error: new Error('Storage unavailable') });
+    const result = phase === 'verification'
+      ? { status: 'failed' as const, phase, drafts: drafts!, playlists: playlists!, error: new LibraryRestoreVerificationError(drafts!, playlists!) }
+      : { status: 'failed' as const, phase, drafts, error: new Error('Storage unavailable') };
+    vi.spyOn(service, 'restore').mockResolvedValue(result);
     render(<LibraryBackupDialog service={service} onClose={vi.fn()} onRestored={vi.fn()} readFileText={async () => fileText()} />);
     choose();
     fireEvent.click(await screen.findByRole('button', { name: /Add 1 climbs/ }));
