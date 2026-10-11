@@ -27,9 +27,15 @@
   overflow-wrap: anywhere;
 }
 
-.automatic-backup-status .button {
+.automatic-backup-status > .button {
   flex: none;
   min-height: 44px;
+}
+
+/* Portable actions fill the mobile toolbar; this adjacent status action must
+   leave room for the saved/protected explanation regardless of import order. */
+.workspace-library-actions .automatic-backup-status > .button {
+  width: auto;
 }
 
 .automatic-backup-manage {
