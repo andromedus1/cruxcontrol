@@ -408,7 +408,16 @@ dogfood tradeoffs; no promise relies on inactive/background callbacks.
 
 ### Implementation readiness
 
-Design is complete; stage is implementing, but the private-vault dependency is
-not yet verified. No worker is admitted for this feature until that dependency
-reaches verified review/done. Four sequential checkpoint stories expose the
+Private vault reached verified review at `fd261f8` after all three checkpoints
+and integrated native/cloud acceptance passed. The implementation dependency is
+satisfied while its standard Claude review runs. Four sequential stories expose
 durable-state → coordinator → surfaces → integrated-acceptance order.
+
+Dispatch: one fresh feature-owning GPT-6 Luna worker at xhigh (the workflow's
+older default GPT-5.6 Luna is unavailable) implements the first three checkpoints
+sequentially, preserving store/coordinator/UI context. Root owns synthetic live
+acceptance, packaging, private credentials and final review. Worker owns feature
+production code/tests and checkpoint records; root owns foundation documentation
+coordination and any disjoint vault-review fixes. No overlapping edits, deployment,
+physical device operations, or pushes by the worker. Existing approved preservation
+mocks are the UI baseline. Standard feature review follows integrated acceptance.
