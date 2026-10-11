@@ -2,10 +2,12 @@
 
 This isolated prototype explores direct Storage Rules and an authenticated
 service using synthetic backup bytes. It does not implement scheduled app backup
-or full cloud library restore, enable billing, create a bucket or deploy code.
+or full cloud library restore. The owner has linked billing, and bounded private
+cloud infrastructure and the authenticated function are active. Native snapshot
+transfer, operator-assisted recovery and live runtime-permission verification passed.
 Native account recovery has separately passed on
 an independent fresh emulator with the same UID and forced refresh before and
-after restart; cloud library recovery remains unimplemented.
+after restart; integrated app cloud restore remains unimplemented.
 
 Use Node 22 and JDK 21, with `JAVA_HOME` set to the JDK. From the repository root:
 
@@ -28,8 +30,8 @@ behavior. The direct-SDK prototype is **not accepted for immutable backups**.
 The failing assertion remains executable as a test todo linked to the feature
 blocker; a todo is not passing acceptance. The next proof must establish atomic
 creation and address bearer URLs. The service candidate below explores that
-boundary; no production app or provider has been selected. No billing activation
-or deployment approval is requested by this proof.
+boundary; no production app or provider has been selected. Billing and cloud
+provisioning belong to the separate explicitly authorized service proof.
 
 The policy admits one UID at `owners/<uid>/snapshots/<slot>`, with 32 names
 `00`–`31`. The owner can list and read those snapshots and create a nonempty
@@ -106,13 +108,90 @@ service access. The original direct-SDK race todo remains unresolved.
 Preparation requires a new private output directory and successful native
 `verifySession` evidence. It packages the built service with the bundled backup
 codec, dependency lock, local UID configuration, `firebase.json` and
-`resource-plan.json`. The resource plan records proposed restricted IAM, bucket
-access controls and a finite snapshot pool; these are plans, not provisioned
-resources. Preparation makes no cloud authentication, provenance-verification,
+`resource-plan.json`. The resource plan records restricted IAM, bucket access
+controls and a finite snapshot pool; preparation alone provisions none of these.
+Preparation makes no cloud authentication, provenance-verification,
 deployment or billing calls. Keep the complete package and evidence outside Git.
-Billing is still disabled. SignedProof18 compiled with the native service bridge;
-native live-service acceptance remains pending. No emulator installation or live
-service call occurred for this build.
+SignedProof18 compiled with the native service bridge. Its in-place update on an
+isolated emulator preserved the verified empty whole library, and the same UID's
+forced refresh passed. No owner phone was touched.
+
+### Explicit cloud provisioning
+
+`provision-service.mjs` requires the prepared private package, the exact project,
+an already signed-in isolated Firebase CLI configuration and owner-linked billing.
+It checks bundle/lock hashes before cloud access. Inspect is the default; the
+explicit provision mode creates or reconciles the bounded infrastructure:
+
+```bash
+XDG_CONFIG_HOME=/outside/git/firebase-cli-config node prototypes/firebase-vault/provision-service.mjs \
+  /outside/git/new-vault-service-proof cruxcontrol-auth-20261010 inspect
+XDG_CONFIG_HOME=/outside/git/firebase-cli-config node prototypes/firebase-vault/provision-service.mjs \
+  /outside/git/new-vault-service-proof cruxcontrol-auth-20261010 provision
+```
+
+Provisioning configures a $5 monthly project budget with $1/$2.50/$5 alerts,
+a runtime service account with only `firebaseauth.users.get` at project scope,
+and Object Creator/Viewer on a private Standard bucket in `us-central1`.
+The bucket enforces uniform access and public-access prevention, has seven-day
+soft delete and no lifecycle deletion. Policy and configuration readbacks reject
+unexpected public access or runtime permissions. Transient API-enablement
+`SERVICE_DISABLED` errors receive bounded read retries; writes are not blindly
+retried. Private inspection/provision evidence stays with the package.
+
+The owner linked billing and provision readback passed. The function is active
+with Node 22, 512 MiB, 1 CPU, concurrency/max-instances 1, a 60-second timeout and
+the dedicated runtime identity. Seven-day cleanup applies only to function build
+artifacts, never library snapshots. This provisioning command does not link
+billing, deploy the function or upload snapshots. Budget alerts are notifications,
+not spending caps.
+
+### Live proof and recovery boundary
+
+Native upload of a 7,993-byte synthetic eight-climb/three-playlist backup to slot
+`00` returned 201 with verified readback. Native download returned exact bytes;
+an identical retry returned 200 with the same receipt/generation and a conflicting
+replacement returned 409. An independent empty emulator selected the existing
+authorized Google account, signed into the same UID, discovered/downloaded the
+snapshot and imported it through Android DocumentsUI. Complete library contents
+matched after import and cold restart. This was **operator-assisted cloud download
+followed by portable-file restore**, not integrated app cloud restore or automatic
+scheduling. An initial native list returned 401 for an unestablished cause;
+after a diagnostic redeploy it returned 200, without an auth-validation change.
+
+The live-storage verifier additionally checks runtime IAM, competing GCS creates,
+forbidden overwrite/delete and genuine other-account/anonymous denial. It needs
+explicit authorization: it temporarily grants the admitted operator token-creator
+permission on the dedicated runtime identity, writes to an unused synthetic race
+slot, and creates a temporary synthetic Firebase user. Its `finally` cleanup
+removes the added operator grant and temporary user; snapshots are retained.
+
+```bash
+XDG_CONFIG_HOME=/outside/git/firebase-cli-config node --experimental-strip-types prototypes/firebase-vault/verify-live-storage.mjs \
+  /outside/git/auth-evidence/session.json /outside/git/synthetic-library.json \
+  /outside/git/firebase/google-services.json /outside/git/new-live-storage-evidence \
+  cruxcontrol-auth-20261010 04
+```
+
+The output directory must be new, the operator must match the admitted account,
+and the optional race slot (default `01`) must be unused; `00`/`02` are forbidden
+race slots and `02` must remain empty for the denied-upload check. The script never
+resets retained snapshots. The final live run passed: runtime permissions were
+exactly create/get/list; competing distinct creates had one winner and one 412;
+overwrite/delete returned 403 and the original slot `00` was unchanged. A genuine
+different Firebase user's verified token received 403 for discovery/upload;
+anonymous/invalid tokens received 401. The temporary operator grant was removed,
+and synthetic test identities were cleaned up. Keep all evidence outside Git.
+
+A 25 MiB upload returned 201, but the original native download exhausted memory
+while converting the payload for JavaScript. SignedProof19 fixes this by streaming
+GET to a private native cache file and returning filename/digest/size metadata.
+The emulator driver uses ADB to extract that exact file, checks size, SHA-256 and
+the strict backup codec, saves the response in private evidence and removes only
+the temporary cache file. The full 26,214,400-byte round trip passed with exact
+fixture equality; subsequent forced refresh succeeded with the app alive. The
+same-key update preserved the backed-up library without resetting storage. ADB
+extraction is proof tooling, not a delivered app restore flow.
 
 ```bash
 node prototypes/firebase-vault/cost-estimate.mjs
@@ -124,4 +203,4 @@ instance seconds at 1 CPU/0.5 GiB, 1,000 class-A/5,000 class-B storage operation
 1 GiB North America egress, 1 GiB build artifacts and 30 build minutes with a
 100 GiB build disk. This is arithmetic for stated assumptions, not measured
 spending, a cap or a readiness claim; taxes, unrelated usage and usage beyond
-those assumptions are excluded. Proposed billing alerts are not hard caps.
+those assumptions are excluded. Configured billing alerts are not hard caps.

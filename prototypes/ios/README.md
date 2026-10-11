@@ -410,7 +410,7 @@ emulator with Google Play services and an operator-controlled test Google accoun
 The operator runner checks both the emulator serial and `ro.kernel.qemu`;
 the activity itself does not enforce an emulator check.
 
-First finish owner-console Firebase onboarding for a dedicated, billing-disabled
+First finish owner-console Firebase onboarding for a dedicated
 `cruxcontrol-auth-*` project. Register Android package
 `io.github.andromedus1.cruxcontrol.prototype` with the retained signing
 certificate's SHA fingerprints, enable the Google sign-in provider and download
@@ -458,8 +458,8 @@ Proof-only `vaultList`, `vaultGet` and `vaultPut` operator commands call the
 [authenticated service candidate](../firebase-vault/README.md#authenticated-service-candidate)
 at its fixed proof-project HTTPS endpoint. Native code supplies the Firebase
 token without sending it through JavaScript and refuses redirects. After signing
-in, the following commands are for future authorized synthetic service checks;
-the endpoint is not deployed and native service acceptance remains pending:
+in, the following commands exercise the explicitly authorized synthetic proof.
+The function is active, and native snapshot upload/download checks have passed:
 
 ```bash
 node --experimental-strip-types prototypes/ios/scripts/android-auth-proof.mjs emulator-N vaultList /outside/git/auth-evidence/vault-list.json
@@ -470,14 +470,33 @@ node --experimental-strip-types prototypes/ios/scripts/android-auth-proof.mjs em
 `vaultPut` validates the synthetic whole-library backup with the app codec before
 invocation. Private evidence contains the service response, including backup
 contents for `vaultGet`; console output contains only status and response digest.
-These commands do not import records into the app or schedule backups.
+`vaultGet` streams into a private native cache file; JavaScript receives only
+filename/digest/size metadata. The emulator driver extracts the exact file through
+ADB, validates size/digest/backup codec, writes private evidence and removes only
+that temporary file. These commands do not import records into the app or schedule backups.
 SignedProof18 compiled with the new service bridge and validated private catalog,
 and its signature matches the retained certificate. This build used a tracked
-dirty checkout; it is not clean-source evidence. No emulator installation or live
-service call occurred, so native live-service acceptance remains pending.
+dirty checkout; it is not clean-source evidence. Its in-place update on an isolated
+emulator preserved a verified empty whole library and passed same-UID forced
+refresh. Billing is owner-linked and private cloud infrastructure readback passed.
+Native upload of a 7,993-byte synthetic eight-climb/three-playlist library returned
+201 with verified readback; download matched exact bytes, identical retry returned
+200 with the same generation and conflicting replacement returned 409. A separate
+empty emulator signed into the same authorized account, discovered/downloaded the
+snapshot and restored it through Android DocumentsUI, with exact whole-library
+equality after import and cold restart. This is operator-assisted cloud download
+and portable-file restore; integrated app cloud restore and automatic scheduling
+remain unimplemented. Live runtime create/get/list-only IAM, atomic concurrent
+creation, denied overwrite/delete and other-account/anonymous denial checks pass.
+The initial 25 MiB download exhausted memory during conversion to JavaScript;
+SignedProof19's streaming path passed an exact 26,214,400-byte round trip and
+subsequent forced refresh. Its same-key update preserved the freshly backed-up
+whole library without resetting storage. ADB extraction remains operator proof
+tooling rather than integrated recovery.
+No owner phone was touched.
 
 SignedProof17 compiled with the dedicated Firebase project's Android registration
-and Google provider configured; billing remains disabled. Native sign-in, forced
+and Google provider configured. Native sign-in, forced
 session refresh before and after a full app restart, sign-out across restart and
 sign-in cancellation pass on the isolated emulator. Native session records are
 encrypted; inspected native preferences, WebView files, library databases and app
@@ -485,7 +504,8 @@ logs contain no JWT-shaped tokens. A separate fresh emulator, without copied app
 or account state, signs into the same Firebase user and refreshes its session
 before and after app restart. Independent account access passes. The separate
 [storage-policy exploration](../firebase-vault/README.md) records an unresolved
-concurrent-create check; immutable cloud storage acceptance remains open.
+direct-SDK concurrent-create check; the service's separate live permission and
+atomic-create proof passes.
 Release17 packaging
 verification, with the private proof asset present in the source tree, excluded
 that asset, the proof activity, bridge and Firebase dependencies. This

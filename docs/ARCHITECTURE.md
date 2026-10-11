@@ -18,9 +18,9 @@ summary: >
   An experimental Capacitor package uses native BLE on Android and iOS. iOS retains
   browser-managed library storage; Android injects a native SQLite library and has
   passed synthetic emulator restore, edit/save, process-relaunch, and same-signature
-  update checks. Physical-board behavior, full Android feature parity, and independent
-  recovery remain open. Account-protected online backups and portable files are intended
-  recovery layers; service selection and verified recovery remain open.
+  update checks. Portable-file recovery and bounded operator-assisted cloud recovery
+  pass synthetic emulator proofs. Physical-board behavior, full Android feature parity,
+  production service selection, integrated cloud restore and automatic backup remain open.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; an optional lazy runtime service opens the local SQLite catalog through a serialized wa-sqlite AccessHandlePoolVFS worker."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
@@ -253,8 +253,10 @@ authoring remains authoritative for offline work: browser-managed IndexedDB on t
 and iOS, and app-private SQLite on Android. Android's native database provides a coherent
 local snapshot, but a copy on the same device is not independent recovery. Backup
 availability and sign-in cannot gate local reads or saves. Acknowledged protection must
-identify the saved revision represented in an independently verified copy. No service,
-account system, or automatic-backup implementation is selected or provisioned yet.
+identify the saved revision represented in an independently verified copy. Production
+service selection and automatic backup remain open. A bounded Firebase native-account
+and private-vault proof is provisioned; synthetic recovery passes through operator-assisted
+cloud download and portable-file import, while integrated app cloud restore remains unimplemented.
 Browser/native file-delivery and scheduling limits need proof before promising automatic
 file copies.
 
@@ -420,8 +422,10 @@ or network.
   storage or network I/O; only the confirmed climb aggregate reaches IndexedDB.
 - **Static-first distribution.** The web app is a client-side, installable PWA
   configured for future static hosting on Cloudflare Workers (Static Assets); live
-  deployment still requires operator setup and acceptance. There is no application
-  server, account system, or shared database. The PWA and iOS prototype use
+  deployment still requires operator setup and acceptance. The production app has no
+  application server, account system, or shared database; a separate
+  [private-vault prototype](../prototypes/firebase-vault/README.md) provisions bounded
+  Firebase authentication and recovery infrastructure. The PWA and iOS prototype use
   browser-local storage; the experimental Android package uses its app-private SQLite
   library. Each client's local storage remains independent. The current hardware edge
   is the board over BLE. A
@@ -466,9 +470,10 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
   loss or failed migration.
   Intended protection combines independent versioned online backup, portable files,
   honest pending/offline status and verified restore drills. Local persistence
-  permission alone is insufficient. Automatic online backup and independently verified
-  recovery remain unimplemented; the local native SQLite store is on the same device and
-  does not meet that recovery boundary.
+  permission alone is insufficient. Portable-file and bounded operator-assisted cloud
+  recovery pass synthetic emulator proofs; integrated automatic production backup and
+  recovery remain unimplemented. The local native SQLite store is on the same device
+  and does not meet that independent recovery boundary.
 
 - **Web Bluetooth reliability** across OS/browser versions — deterministic transport and
   renderer coverage exercises mapping, light/clear, animation, and the existing API-2
