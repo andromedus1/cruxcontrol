@@ -14,9 +14,17 @@ const native = vi.hoisted(() => ({
   share: vi.fn(),
   saveFile: vi.fn(),
   openLibrary: vi.fn(),
+  createAutomaticBackup: vi.fn(),
+  createNativePrivateVault: vi.fn(),
 }));
 vi.mock("./open-native-library.ts", () => ({
   openNativeLibrary: native.openLibrary,
+}));
+vi.mock("../../../web/src/automatic-backup/coordinator.ts", () => ({
+  createAutomaticBackup: native.createAutomaticBackup,
+}));
+vi.mock("./native-private-vault.ts", () => ({
+  createNativePrivateVault: native.createNativePrivateVault,
 }));
 vi.mock("@capacitor/core", () => ({
   Capacitor: { getPlatform: native.platform },
@@ -40,11 +48,20 @@ vi.mock("./library-backup-file-plugin.ts", () => ({
 
 const callbacks = new Map<string, (...args: unknown[]) => void>();
 const removals: ReturnType<typeof vi.fn>[] = [];
+const automaticBackup = {
+  start: vi.fn(),
+  close: vi.fn(),
+  setForeground: vi.fn(),
+  retry: vi.fn(async () => undefined),
+};
 beforeEach(() => {
   vi.clearAllMocks();
   native.platform.mockReturnValue("ios");
   callbacks.clear();
   removals.length = 0;
+  vi.stubGlobal("window", undefined);
+  native.createAutomaticBackup.mockReturnValue(automaticBackup);
+  native.createNativePrivateVault.mockReturnValue({});
   native.addListener.mockImplementation(
     async (event: string, callback: (...args: unknown[]) => void) => {
       callbacks.set(event, callback);
@@ -84,6 +101,42 @@ describe("prototype runtime composition and lifetime", () => {
     runtime.close();
     expect(library.close).toHaveBeenCalledOnce();
     browserOpen.mockRestore();
+  });
+
+  it("composes automatic backup on Android only and binds it to foreground and connectivity", async () => {
+    native.platform.mockReturnValue("android");
+    const library = {
+      drafts: {},
+      playlists: {},
+      backupStore: {},
+      preservation: { read: vi.fn() },
+      close: vi.fn(),
+    };
+    native.openLibrary.mockResolvedValueOnce(library);
+    const windowEvents = new EventTarget();
+    vi.stubGlobal("window", windowEvents);
+    const runtime = await createPrototypeRuntime();
+
+    expect(native.createAutomaticBackup).toHaveBeenCalledOnce();
+    expect(native.createAutomaticBackup).toHaveBeenCalledWith(expect.objectContaining({
+      preservation: library.preservation,
+      backupService: runtime.backup,
+      vault: expect.any(Object),
+    }));
+    expect(automaticBackup.start).toHaveBeenCalledOnce();
+    callbacks.get("pause")!();
+    callbacks.get("resume")!();
+    expect(automaticBackup.setForeground.mock.calls).toEqual([[false], [true]]);
+    windowEvents.dispatchEvent(new Event("online"));
+    windowEvents.dispatchEvent(new Event("offline"));
+    expect(automaticBackup.retry).toHaveBeenCalledTimes(2);
+
+    runtime.close();
+    windowEvents.dispatchEvent(new Event("online"));
+    expect(automaticBackup.retry).toHaveBeenCalledTimes(2);
+    expect(automaticBackup.setForeground.mock.calls.at(-1)).toEqual([false]);
+    expect(automaticBackup.close).toHaveBeenCalledOnce();
+    vi.unstubAllGlobals();
   });
 
   it("retains only failed LibraryBackupFile save results from Android app restoration", async () => {

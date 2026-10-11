@@ -10,6 +10,8 @@ import type { LocalPlaylist, PlaylistClimbReference } from '../playlists/types';
 import { RouteEditorWorkspace } from '../route-editor/RouteEditorWorkspace';
 import { KilterScreenshotImportDialog } from '../screenshot-import/KilterScreenshotImportDialog';
 import { LibraryBackupDialog } from '../library-backup';
+import { BackupManageDialog } from '../automatic-backup/BackupManageDialog.tsx';
+import { BackupStatusLine } from '../automatic-backup/BackupStatusLine.tsx';
 import type { CruxControlRuntime } from './create-runtime';
 import { AppUpdateControl } from '../pwa/AppUpdateControl.tsx';
 import type { AppUpdateService, AppUpdateSnapshot } from '../pwa/update-service.ts';
@@ -144,6 +146,8 @@ function Workspace({ runtime, updateService }: CruxControlWorkspaceProps) {
   } | null>(null);
   const [importingScreenshots, setImportingScreenshots] = useState(false);
   const [backingUp, setBackingUp] = useState(false);
+  const [managingAutomaticBackup, setManagingAutomaticBackup] = useState(false);
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
   const [restoredFileSaveFailure, setRestoredFileSaveFailure] = useState<string | null>(null);
   const backupButtonRef = useRef<HTMLButtonElement>(null);
   const [error, setError] = useState('');
@@ -353,10 +357,27 @@ function Workspace({ runtime, updateService }: CruxControlWorkspaceProps) {
     }
     return null;
   })();
+  const recoveryBlockReason = editing
+    ? 'Finish saving your climb and return to the library before recovery.'
+    : pendingOperations > 0 || playlistSafety.pendingOperations > 0
+      ? 'Wait for the current library change to finish before recovery.'
+      : playlistSafety.dirty
+        ? 'Save your list changes before recovery.'
+        : playlistSafety.playing
+          ? 'Finish the list play-through before recovery.'
+          : playlistSafety.modalOpen
+            ? 'Finish the open list task before recovery.'
+            : membership
+              ? 'Finish updating list memberships before recovery.'
+              : importingScreenshots
+                ? 'Finish importing screenshots before recovery.'
+                : boardBlockReason?.replace(' before updating.', ' before recovery.') ?? null;
   const workspaceBlockReason = editing
     ? 'Finish saving your climb and return to the library before updating.'
     : backingUp
       ? 'Wait for your backup or restore to finish before updating.'
+      : recoveryBusy
+        ? 'Wait for library recovery to finish before updating.'
       : importingScreenshots
         ? 'Finish importing screenshots before updating.'
         : membership
@@ -575,9 +596,15 @@ function Workspace({ runtime, updateService }: CruxControlWorkspaceProps) {
       </nav>
       {runtime.backup && (
         <div className="workspace-library-actions">
-          <button ref={backupButtonRef} className="button button--secondary" type="button" onClick={() => setBackingUp(true)}>
-            Back up &amp; restore
-          </button>
+          {runtime.automaticBackup
+            ? <BackupStatusLine
+                automaticBackup={runtime.automaticBackup}
+                onManage={() => setManagingAutomaticBackup(true)}
+                manageButtonRef={backupButtonRef}
+              />
+            : <button ref={backupButtonRef} className="button button--secondary" type="button" onClick={() => setBackingUp(true)}>
+                Back up &amp; restore
+              </button>}
         </div>
       )}
       {error && (
@@ -804,6 +831,23 @@ function Workspace({ runtime, updateService }: CruxControlWorkspaceProps) {
             queueMicrotask(() => backupButtonRef.current?.focus());
           }}
           onRestored={() => refresh(true)}
+        />
+      )}
+      {managingAutomaticBackup && runtime.automaticBackup && (
+        <BackupManageDialog
+          automaticBackup={runtime.automaticBackup}
+          localCounts={{ climbs: drafts.length, lists: playlists.length }}
+          recoveryBlockReason={recoveryBlockReason}
+          onClose={() => {
+            setManagingAutomaticBackup(false);
+            queueMicrotask(() => backupButtonRef.current?.focus());
+          }}
+          onPortableBackup={() => {
+            setManagingAutomaticBackup(false);
+            setBackingUp(true);
+          }}
+          onRestored={() => refresh(true)}
+          onRecoveryBusyChange={setRecoveryBusy}
         />
       )}
       </main>

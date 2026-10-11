@@ -14,6 +14,8 @@ import { SqliteCatalogPort } from '../data/sqlite/sqlite-catalog-port.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
 import type { NativePlaylistSharing } from '../playlists/portable-transports.ts';
 import type { BackNavigationPort } from './back-navigation.ts';
+import type { AutomaticBackup } from '../automatic-backup/coordinator.ts';
+import type { LibraryPreservation } from '../automatic-backup/types.ts';
 
 export interface RestoredFileSaveFailureNotice {
   subscribe(listener: () => void): () => void;
@@ -26,6 +28,7 @@ export interface CruxControlRuntime {
   readonly playlists: LocalPlaylistRepository;
   readonly backup?: LibraryBackupService;
   readonly backupDelivery?: LibraryBackupDelivery;
+  readonly automaticBackup?: AutomaticBackup;
   readonly restoredFileSaveFailure?: RestoredFileSaveFailureNotice;
   readonly playlistSharing?: NativePlaylistSharing;
   readonly backNavigation?: BackNavigationPort;
@@ -40,6 +43,10 @@ export interface CruxControlRuntimeDependencies {
   readonly openPlaylists?: () => Promise<IDBDatabase>;
   readonly getInstallation?: () => ConfiguredBoardInstallation;
   readonly backupDelivery?: LibraryBackupDelivery;
+  readonly createAutomaticBackup?: (options: Readonly<{
+    preservation: LibraryPreservation;
+    backupService: LibraryBackupService;
+  }>) => AutomaticBackup;
   readonly restoredFileSaveFailure?: RestoredFileSaveFailureNotice;
   readonly playlistSharing?: NativePlaylistSharing;
   readonly backNavigation?: BackNavigationPort;
@@ -51,10 +58,14 @@ export async function createCruxControlRuntime(
 ): Promise<CruxControlRuntime> {
   let library: AppLibrary | null = null;
   let catalog: CatalogService | null = null;
+  let automaticBackup: AutomaticBackup | null = null;
   try {
     library = await (dependencies.openLibrary ?? (() => openBrowserLibrary(dependencies)))();
     const { drafts, playlists } = library;
     const backup = new LibraryBackupService(library.backupStore);
+    if (library.preservation && dependencies.createAutomaticBackup) {
+      automaticBackup = dependencies.createAutomaticBackup({ preservation: library.preservation, backupService: backup });
+    }
     const installation = (
       dependencies.getInstallation ??
       (() => createAppInstallationRegistry().require(activeInstallationId))
@@ -68,7 +79,7 @@ export async function createCruxControlRuntime(
         }))
     )(installation.definition);
     let closed = false;
-    return Object.freeze({
+    const runtime = Object.freeze({
       installation,
       drafts,
       playlists,
@@ -77,6 +88,7 @@ export async function createCruxControlRuntime(
       ...(dependencies.restoredFileSaveFailure
         ? { restoredFileSaveFailure: dependencies.restoredFileSaveFailure }
         : {}),
+      ...(automaticBackup ? { automaticBackup } : {}),
       playlistSharing: dependencies.playlistSharing,
       backNavigation: dependencies.backNavigation,
       catalog,
@@ -84,11 +96,15 @@ export async function createCruxControlRuntime(
       close: () => {
         if (closed) return;
         closed = true;
+        automaticBackup?.close();
         void catalog?.close().catch(() => undefined);
         library?.close();
       },
     });
+    automaticBackup?.start();
+    return runtime;
   } catch (error) {
+    automaticBackup?.close();
     void catalog?.close().catch(() => undefined);
     library?.close();
     throw error;

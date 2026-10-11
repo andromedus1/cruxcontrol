@@ -22,6 +22,10 @@ import { LibraryBackupService } from '../library-backup/service';
 import type { LibraryBackupDelivery } from '../library-backup/delivery';
 import type { CatalogService, CatalogServiceSnapshot } from '../catalog/service.ts';
 import type { CatalogClimb } from '../catalog/types.ts';
+import type { AutomaticBackup } from '../automatic-backup/coordinator.ts';
+import type { BackupStatus, OnlineBackupReview } from '../automatic-backup/types.ts';
+import type { VaultListing, VaultSnapshot } from '../private-vault/types.ts';
+import type { LibraryRestoreOutcome } from '../library-backup/service.ts';
 import { providerClimbViewKey } from '../climb-browser/types.ts';
 import { providerSourceId } from '../domain/boards/identity.ts';
 import { KILTER_PROVIDER_ID } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
@@ -124,6 +128,46 @@ function updateServiceFor(snapshot: AppUpdateSnapshot): AppUpdateService {
     setBlocked: vi.fn(),
     reload: vi.fn(),
     dispose: vi.fn(),
+  };
+}
+
+const onlineCopy: VaultSnapshot = {
+  slot: '00000', bytes: 512, sha256: 'b'.repeat(64), generation: 'copy-1',
+  createdAt: '2026-10-11T10:00:00.000Z', exportedAt: '2026-10-11T09:59:00.000Z',
+  counts: { climbs: 1, finished: 1, drafts: 0, trash: 0, playlists: 0 },
+};
+const onlineListing: VaultListing = { snapshots: [onlineCopy], capacity: { slots: 512, bytesPerSlot: 25 * 1024 * 1024 } };
+const onlineReview: OnlineBackupReview = {
+  snapshot: onlineCopy,
+  backup: { exportedAt: onlineCopy.exportedAt, drafts: [original], playlists: [] },
+  review: { add: { climbs: 1, playlists: 0 }, unchanged: { climbs: 0, playlists: 0 }, conflicts: [], trashClimbs: 0, unavailableLocalReferences: 0 },
+};
+
+function automaticBackupFor(initial: BackupStatus, overrides: Partial<Pick<AutomaticBackup,
+  'history' | 'review' | 'restore' | 'useLocalLibrary' | 'retry' | 'signIn' | 'signOut'>> = {}) {
+  let status = initial;
+  const listeners = new Set<() => void>();
+  const automatic: AutomaticBackup = {
+    getSnapshot: () => status,
+    subscribe: (listener) => { listeners.add(listener); return () => listeners.delete(listener); },
+    start: vi.fn(),
+    setForeground: vi.fn(),
+    retry: vi.fn(async () => undefined),
+    signIn: vi.fn(async () => undefined),
+    signOut: vi.fn(async () => undefined),
+    history: vi.fn(async () => onlineListing),
+    review: vi.fn(async () => onlineReview),
+    restore: vi.fn(async (): Promise<LibraryRestoreOutcome> => ({ status: 'complete', drafts: { added: 1, unchanged: 0 }, playlists: { added: 0, unchanged: 0 } })),
+    useLocalLibrary: vi.fn(async () => undefined),
+    close: vi.fn(),
+    ...overrides,
+  };
+  return {
+    automatic,
+    publish(next: BackupStatus) {
+      status = next;
+      for (const listener of [...listeners]) listener();
+    },
   };
 }
 
@@ -342,6 +386,65 @@ describe('CruxControlWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back up & restore' }));
     expect(await screen.findByRole('heading', { name: 'Save a backup' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save or share library backup' })).toBeInTheDocument();
+  });
+
+  it('shows native automatic backup as a compact status, keeps ordinary cloud work update-safe, and returns focus', async () => {
+    const runtime = runtimeWith();
+    const backup = new LibraryBackupService({
+      readDrafts: async () => [], readPlaylists: async () => [],
+      restoreMissingDrafts: async () => ({ added: 0, unchanged: 0 }),
+      restoreMissingPlaylists: async () => ({ added: 0, unchanged: 0 }),
+    });
+    const automatic = automaticBackupFor({
+      phase: 'pending',
+      account: { uid: 'test-user', email: 'climber@example.test' },
+      revision: 1,
+      protectedRevision: null,
+      localSaveFailed: false,
+      error: 'New changes are waiting for an online backup.',
+    });
+    const service = updateServiceFor({ status: 'current', phase: 'current', message: '', updateAvailable: false, blockedReason: null, canApply: false, dismissed: false });
+    render(<CruxControlWorkspace runtime={{ ...runtime, backup, automaticBackup: automatic.automatic }} updateService={service} />);
+
+    expect(await screen.findByText('Saved on this phone')).toBeInTheDocument();
+    const manage = screen.getByRole('button', { name: 'Manage' });
+    fireEvent.click(manage);
+    expect(await screen.findByRole('heading', { name: 'Private backup' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Review backup saved/ })).toBeInTheDocument();
+    await waitFor(() => expect(service.setBlocked).toHaveBeenLastCalledWith(null));
+    fireEvent.click(screen.getByRole('button', { name: 'Close private backup' }));
+    await waitFor(() => expect(document.activeElement).toBe(manage));
+  });
+
+  it('blocks app updates while recovery commits, then releases the update guard', async () => {
+    const runtime = runtimeWith();
+    const backup = new LibraryBackupService({
+      readDrafts: async () => [], readPlaylists: async () => [],
+      restoreMissingDrafts: async () => ({ added: 0, unchanged: 0 }),
+      restoreMissingPlaylists: async () => ({ added: 0, unchanged: 0 }),
+    });
+    const automatic = automaticBackupFor({
+      phase: 'recovery-required',
+      account: { uid: 'test-user', email: 'climber@example.test' },
+      revision: 0,
+      protectedRevision: null,
+      localSaveFailed: false,
+      error: 'Retained backups are available to review.',
+    });
+    let finishRestore!: (value: Awaited<ReturnType<AutomaticBackup['restore']>>) => void;
+    automatic.automatic.restore = vi.fn(() => new Promise<LibraryRestoreOutcome>((resolve) => { finishRestore = resolve; }));
+    const service = updateServiceFor({ status: 'current', phase: 'current', message: '', updateAvailable: false, blockedReason: null, canApply: false, dismissed: false });
+    render(<CruxControlWorkspace runtime={{ ...runtime, backup, automaticBackup: automatic.automatic }} updateService={service} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Manage' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Review backup saved/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore 1 climbs and 0 lists' }));
+    await waitFor(() => expect(service.setBlocked).toHaveBeenLastCalledWith('Wait for library recovery to finish before updating.'));
+    expect(screen.getByRole('button', { name: 'Close private backup' })).toBeDisabled();
+
+    finishRestore({ status: 'complete', drafts: { added: 1, unchanged: 0 }, playlists: { added: 0, unchanged: 0 } });
+    expect(await screen.findByRole('heading', { name: 'Recovery saved' })).toBeInTheDocument();
+    await waitFor(() => expect(service.setBlocked).toHaveBeenLastCalledWith(null));
   });
 
   it('retains a restored native file-save failure in the existing workspace alert', async () => {

@@ -17,6 +17,9 @@ import { openNativeLibrary } from "./open-native-library.ts";
 import { createNativePlaylistDelivery } from "./native-playlist-delivery.ts";
 import { createBackNavigation } from "../../../web/src/app/back-navigation.ts";
 import { bindAndroidBack } from "./native-back-navigation.ts";
+import { createAutomaticBackup } from "../../../web/src/automatic-backup/coordinator.ts";
+import type { AutomaticBackup } from "../../../web/src/automatic-backup/coordinator.ts";
+import { createNativePrivateVault } from "./native-private-vault.ts";
 
 const interruptedFileSaveMessage =
   "The file save was interrupted. Your library is unchanged; an empty or partial file may remain in the chosen location. Please try saving again.";
@@ -52,6 +55,7 @@ export async function bindNativeLifecycle(
   transport: NativeBleByteTransport,
   app: Pick<AppPlugin, "addListener">,
   onRestoredFileSaveFailure?: (event: RestoredListenerEvent) => void,
+  automaticBackup?: Pick<AutomaticBackup, "setForeground" | "retry">,
 ): Promise<() => void> {
   const handles: PluginListenerHandle[] = [];
   let disposed = false;
@@ -60,12 +64,18 @@ export async function bindNativeLifecycle(
   try {
     handles.push(
       await app.addListener("pause", () => {
-        if (!disposed) transport.setForeground(false);
+        if (!disposed) {
+          transport.setForeground(false);
+          automaticBackup?.setForeground(false);
+        }
       }),
     );
     handles.push(
       await app.addListener("resume", () => {
-        if (!disposed) transport.setForeground(true);
+        if (!disposed) {
+          transport.setForeground(true);
+          automaticBackup?.setForeground(true);
+        }
       }),
     );
     if (onRestoredFileSaveFailure) {
@@ -75,15 +85,29 @@ export async function bindNativeLifecycle(
         }),
       );
     }
+    if (automaticBackup && typeof window !== "undefined") {
+      const online = () => { void automaticBackup.retry(); };
+      const offline = () => { void automaticBackup.retry(); };
+      window.addEventListener("online", online);
+      window.addEventListener("offline", offline);
+      handles.push({
+        remove: async () => {
+          window.removeEventListener("online", online);
+          window.removeEventListener("offline", offline);
+        },
+      });
+    }
   } catch (cause) {
     disposed = true;
     transport.setForeground(false);
+    automaticBackup?.setForeground(false);
     await removeListeners();
     throw cause;
   }
   return () => {
     disposed = true;
     transport.setForeground(false);
+    automaticBackup?.setForeground(false);
     void removeListeners();
   };
 }
@@ -96,16 +120,21 @@ export async function createPrototypeRuntime() {
     : undefined;
   if (native) BleClient.disableQueue(); // adapter owns FIFO; emergency disconnect bypasses it
   const transport = new NativeBleByteTransport(native ? BleClient : null);
-  const dispose = native
-    ? await bindNativeLifecycle(transport, App, restoredFileSaveFailure?.publish)
-    : () => transport.forceDisconnect();
   const backNavigation = platform === "android" ? createBackNavigation() : undefined;
+  let disposeLifecycle = () => {};
   let disposeBack = () => {};
+  let createdRuntime: Awaited<ReturnType<typeof createCruxControlRuntime>> | null = null;
   try {
-    if (backNavigation) disposeBack = await bindAndroidBack(backNavigation, App);
     const runtime = await createCruxControlRuntime({
       backNavigation,
       ...(platform === "android" ? { openLibrary: openNativeLibrary } : {}),
+      ...(platform === "android" ? {
+        createAutomaticBackup: ({ preservation, backupService }) => createAutomaticBackup({
+          preservation,
+          backupService,
+          vault: createNativePrivateVault(),
+        }),
+      } : {}),
       ...(restoredFileSaveFailure
         ? { restoredFileSaveFailure: restoredFileSaveFailure.notice }
         : {}),
@@ -127,20 +156,29 @@ export async function createPrototypeRuntime() {
             }
           : {}),
     });
+    createdRuntime = runtime;
+    if (native) {
+      disposeLifecycle = await bindNativeLifecycle(
+        transport, App, restoredFileSaveFailure?.publish, runtime.automaticBackup,
+      );
+    }
+    if (backNavigation) disposeBack = await bindAndroidBack(backNavigation, App);
     let closed = false;
     return {
       ...runtime,
       close: () => {
         if (closed) return;
         closed = true;
-        dispose();
+        disposeLifecycle();
         disposeBack();
         runtime.close();
       },
     };
   } catch (cause) {
-    dispose();
+    disposeLifecycle();
     disposeBack();
+    createdRuntime?.close();
+    if (!native) transport.forceDisconnect();
     throw cause;
   }
 }
