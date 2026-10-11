@@ -702,12 +702,14 @@ native file lifetime, identity changes and recovery receipts cross trust boundar
    does not resolve the native heap/large-transfer issue.
 
 Keep the existing proof routes/data intact. Add `/library-v1/snapshots` and
-`/library-v1/snapshots/<slot>` to the same function. Application slots are three
-ASCII decimal digits `000` through `511`, exactly 512 immutable objects of at most
+`/library-v1/snapshots/<slot>` to the same function. Application slots are five
+ASCII decimal digits `00000` through `00511`, exactly 512 immutable objects of at most
 25 MiB (12.5 GiB maximum admitted application bytes); proof slots remain separate.
 Application objects live at `owners/<uid>/library-v1/snapshots/<slot>`, disjoint
-from proof data. Add an explicit `/acceptance-v1/snapshots` pool with the identical
-512-slot policy and algorithm at `owners/<uid>/acceptance-v1/snapshots/<slot>`.
+from proof data. Add four explicitly admitted `/acceptance-v1/r00N/snapshots` pools (`N` is 1–4)
+with the identical 512-slot policy/algorithm under the matching owner prefix.
+Separate runs allow clean-empty and retained-history acceptance without deleting
+immutable test objects; arbitrary run names are denied.
 Only a debuggable signed-proof build may select this pool through its ignored
 variant-specific configuration; ordinary release configuration must select
 `library-v1`. Status returns the scope so durable backup state cannot cross pools.
@@ -730,12 +732,15 @@ export interface VaultAccount { readonly uid: string; readonly email: string | n
 export interface VaultStatus {
   readonly configured: boolean;
   readonly installationId: string;
-  readonly scope: 'library-v1' | 'acceptance-v1';
+  readonly scope: 'library-v1' | `acceptance-v1/r00${1 | 2 | 3 | 4}`;
   readonly account: VaultAccount | null;
 }
 export interface VaultSnapshot {
   readonly slot: string; readonly bytes: number; readonly sha256: string;
   readonly generation: string; readonly createdAt: string;
+  readonly exportedAt: string;
+  readonly counts: Readonly<{ climbs: number; finished: number; drafts: number;
+    trash: number; playlists: number }>;
 }
 export interface StagedBackup { readonly id: string; readonly bytes: number; readonly sha256: string }
 export interface VaultListing {
@@ -776,6 +781,11 @@ back into the same UID: capture and recheck a native session epoch as well as UI
    fork the security logic. Validate path/slot/prefix from the selected pool, preserve
    current proof defaults/tests, and route the application prefix explicitly.
    A bounded listing of at most 513 objects detects excess/duplicate metadata.
+   The application/acceptance metadata includes server-derived exportedAt and
+   counts computed from the decoded backup at creation; finished/draft counts exclude
+   Trash, and their sum with Trash equals all climbs. Reject inconsistent counts or
+   byte/codec/count limits. Do not require a history viewer to download every full
+   copy to learn counts. Keep legacy proof metadata unchanged.
    Continue generation-zero creates, server CRC metadata and independently verified
    readback. Deny unknown methods/queries, anonymous/different accounts, overwrite
    and delete. Application and proof routes cannot cross namespaces. Build bundles
@@ -795,7 +805,9 @@ back into the same UID: capture and recheck a native session epoch as well as UI
 
    The hardest unit is durable upload staging without large bridge strings.
    Stage strictly decoded UTF-8 backup bytes in bounded chunks (at most 64 KiB
-   decoded per call); require ordered offsets, exact declared size/digest, file sync
+   decoded per call), base64-encoding UTF-8 byte ranges in both directions rather
+   than splitting strings/surrogate pairs; require ordered offsets, exact declared
+   size/digest, file sync
    and atomic sealing before returning an opaque UUID. Keep sealed uploads in an
    app-private `noBackupFilesDir` subdirectory, bound to the native account. Never
    accept arbitrary paths/URLs. A native installation UUID also lives in this
@@ -813,7 +825,12 @@ back into the same UID: capture and recheck a native session epoch as well as UI
    returned generation/digest against the selected snapshot. Read that file across
    the bridge in bounded chunks; incremental fatal UTF-8 decoding and the shared
    backup codec validate it before returning text. Clean only the temporary download
-   after transfer. Serialize file operations; do not allow account changes to mix
+   after transfer. Download temporaries use a dedicated noBackupFilesDir directory,
+   not the evictable cache. Plugin load removes partial staging/download remnants,
+   never sealed files. Each append has its own ID/offset; no busy lock spans bridge
+   calls. Serialize file/transfer operations separately from account operations so
+   sign-out immediately invalidates the session epoch during a long transfer.
+   Do not allow account changes to mix
    chunks or receipts. No 25 MiB Java String/Base64/JSONObject response is permitted.
 
 3. **Packaging and integrated transport evidence** —
@@ -879,3 +896,40 @@ work. Root owns design adjudication, integration verification and the standard
 one-pass Claude review. The worker may not deploy, read private account evidence,
 change real device state, or push. Shared working tree ownership excludes the
 automatic-backup feature and unrelated untracked documentation.
+
+## Other agent review — application design advisory
+
+Claude Opus xhigh, read-only peer job `20261011T153611Z-e20f1bfa`, completed
+2026-10-11 with seven material suggestions. This advisory is not feature approval.
+Receiver adjudication:
+
+- Accepted paged native SQLite reads and a structured maximum-library memory proof;
+  the automatic-backup feature owns that capture/restore seam. A padded 25 MiB
+  transport proof alone is insufficient. Add a constrained-heap gateway fixture.
+- Accepted server-derived per-copy counts/exportedAt and five-digit slot names
+  before any application object is created. Initial admission remains 512 copies;
+  larger policy requires separately tested listing/cost changes. Legacy proof
+  metadata/paths stay stable.
+- Accepted separate bounded acceptance run prefixes, with four admitted runs rather
+  than the suggested 1,000, to keep aggregate storage exposure bounded.
+- Accepted durable target-slot identity, independent known history, missing-stage
+  reconciliation and atomic recovery hold/digest. The dependent design already
+  carries most; clarify that restored equal content becomes a protected baseline
+  without a duplicate exportedAt-only upload.
+- Accepted immediate auth-epoch invalidation, per-call staging offsets, UTF-8 byte
+  chunks and non-evictable download temporaries. Retain native owner/pool file
+  binding rather than the proposed unbound files because it catches cross-scope
+  misuse independently of caller metadata.
+- Keep the deliberately short foreground capture interval for the first dogfood
+  protection target; do not depend on an inactive callback or claim execution after
+  suspension. 512 copies may last only roughly 10–25 active setting sessions.
+  Expose remaining capacity and retained-copy pause; future retention/capacity work
+  is required before promising indefinite daily use. Five-digit naming keeps a
+  later bounded increase possible. No silent pruning permission is inferred.
+- Keep explicit mutation-transaction revision increments with full write-surface
+  tests rather than adding trigger-based per-row revisions: the current serialized
+  adapter is the only write owner and one revision describes one committed change.
+
+A 60-second service timeout still limits very slow 25 MiB uplinks; failed transfers
+remain pending and retry idempotently. Smaller normal backups do not prove that
+upper-size/slow-network combination.
