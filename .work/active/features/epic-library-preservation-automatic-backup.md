@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-automatic-backup
 kind: feature
-stage: implementing
+stage: review
 tags: [data, security, ui]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -421,3 +421,19 @@ production code/tests and checkpoint records; root owns foundation documentation
 coordination and any disjoint vault-review fixes. No overlapping edits, deployment,
 physical device operations, or pushes by the worker. Existing approved preservation
 mocks are the UI baseline. Standard feature review follows integrated acceptance.
+
+## Verified implementation ready for review
+
+All five child checkpoints are done: native revision/atomic recovery state,
+automatic coordinator, account/status/Manage surfaces, the bounded mobile layout
+correction, and integrated acceptance. Primary implementation commits are
+`76bd505`, `4605838`, `6d0ac64` and `de8421b`. The acceptance story owns exact
+tool evidence: automatic edits/order changes, offline restart/reconnect, pending
+staging process death, separate empty-install in-app recovery, conflict/cancel
+preservation, and exact 10,000-climb/1,000-list/100,000-membership cloud UI restore
+after relaunch. Local unit/typecheck/lint, relevant browser checks and signed
+packaging pass. Real `library-v1` and physical hardware remain untouched.
+
+Standard review is one independent Claude pass through the installed peeragent
+wrapper, followed by root adjudication and verification of accepted material
+fixes without a second pass. PR CI must also pass before feature closure.

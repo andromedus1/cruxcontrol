@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-automatic-backup-acceptance
 kind: story
-stage: implementing
+stage: done
 tags: [data, security, ui]
 parent: epic-library-preservation-automatic-backup
 depends_on: [epic-library-preservation-automatic-backup-surfaces]
@@ -85,6 +85,33 @@ non-debuggable release25 `library-v1` isolation, packaged-browser smoke (one tes
 and six Playwright library backup/editor/read-resilience checks pass. No physical
 phone or board is included in these results.
 
-Next verify older-copy conflict/cancel preservation and the preserving 10,000-
-climb/1,000-list cloud UI recovery, then complete standard feature review. No
-operator import counts as cloud recovery.
+## Conflict and maximum structured recovery verified
+
+SignedProof26's normal Manage flow reviews an actual earlier eight-climb copy
+against the later V7 grade and reordered list. It reports both same-ID conflicts,
+offers no Restore action, and leaves the complete local library/revision and
+freshly listed full cloud receipt history identical after close and relaunch.
+Evidence: `conflict-ui26/result.json` in the private acceptance directory.
+
+The large continuation preserves all eight existing climbs and three lists while
+adding 9,992 climbs and 997 lists through the normal cloud recovery UI. Review
+counts match, cancellation leaves the prior canonical library and revision
+unchanged, and confirmed restore/reverification takes 51,141 ms on the synthetic
+emulator. Final totals are 10,000 climbs, 1,000 lists, 100,000 memberships, and
+2,499 Trash climbs in 26,178,915 encoded bytes; one playlist exceeds 32 KiB.
+Complete canonical SHA-256 before and after relaunch is
+`ec5c70c5ce50774c0fbcaeb47eb1d1715623bc05844cd705e8456500dcabbfad`.
+Aggregate revision is six and recovery verification is clear. The original
+source receipt remains the protected copy; full retained history is still six
+copies after relaunch, explicit remote refresh and a 65-second scheduling window.
+Evidence: `large-ui26/result.json`, with the exact synthetic fixture and native
+upload receipts outside Git. This is actual WebView/SQLite/cloud UI recovery,
+not an operator import or a padded-body-only transport test. Timing is not a
+physical-phone performance claim.
+
+Release27 includes the mobile layout correction and again passes signing,
+catalog/worker/WASM packaging and non-debuggable `library-v1` isolation checks.
+No real application pool or physical phone was used. All acceptance checkpoints
+are verified; this child closes directly to done, and the parent proceeds to its
+one standard independent implementation review. Phone/Fullride parity remains
+required before real authoring.
