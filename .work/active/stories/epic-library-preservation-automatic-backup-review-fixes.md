@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-automatic-backup-review-fixes
 kind: story
-stage: implementing
+stage: done
 tags: [data, security, ui]
 parent: epic-library-preservation-automatic-backup
 depends_on: [epic-library-preservation-automatic-backup-acceptance]
@@ -59,3 +59,32 @@ deployment is authorized to the worker. Product UI reuses the approved surfaces;
 these state/copy corrections do not need new mockups. Close this child directly on
 verified completion. Standard parent review requires fix verification only, not
 a second independent pass.
+
+## Implementation notes
+
+- Foreground start and retry now verify the local recovery barrier before checking
+  connectivity or requesting account state. A failed or mismatched verification
+  keeps the coordinator in `verifying-recovery`; Manage offers a local verification
+  retry even while signed out.
+- The final coordinator refresh reads only the preservation record and checks the
+  session epoch before publishing. Pending reconciliation carries its refreshed
+  listing into the next capture. An active, empty library with retained history is
+  persisted back to discovery and recovery-required status.
+- Account `not-admitted` guidance now explains that the connected account is not
+  enabled for private backup. A failed pending recovery returns a separate local
+  pending error rather than reusing the account policy error.
+- Regression coverage also checks copied installation and pool bindings, a
+  different account, remote commit followed by local CAS acknowledgement failure,
+  corrupt staged metadata, and late sign-out/close completions.
+
+## Verification
+
+- Before production edits, the focused coordinator suite reproduced six failures
+  across offline verification, empty-library admission, late sign-out publication,
+  stale pending history, account-policy copy, and unresolved pending recovery.
+- After the fixes, the focused coordinator and Manage suites passed: 40 tests.
+- Full web suite passed: 102 files, 892 tests. Web typecheck and lint passed.
+- Native prototype suite passed: 110 tests plus 11 Android package tests. Prototype
+  typecheck and lint passed.
+- Root owns signed packaging and live emulator acceptance; this child made no
+  device, build, or deployment changes.

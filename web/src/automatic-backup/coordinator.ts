@@ -729,6 +729,13 @@ export function createAutomaticBackup(options: AutomaticBackupOptions): Automati
         }
         return;
       }
+      try {
+        if (!isOnline()) throw new VaultError('offline');
+      } catch (cause) {
+        record = await currentRecord().catch(() => undefined);
+        publishError(cause, epoch, record);
+        return;
+      }
       const status = await accountStatus(epoch);
       if (!status || !status.account) return;
       const binding = bindingFrom(status);
@@ -745,7 +752,7 @@ export function createAutomaticBackup(options: AutomaticBackupOptions): Automati
         throw cause;
       }
       assertEpoch(epoch);
-      const listing = decodeVaultListing(await vault.list(binding.uid));
+      let listing = decodeVaultListing(await vault.list(binding.uid));
       assertEpoch(epoch);
       const identityMatches = sameBinding(record.control.binding, binding);
       if (!identityMatches) {
@@ -784,6 +791,15 @@ export function createAutomaticBackup(options: AutomaticBackupOptions): Automati
             : 'Backup history changed. Review it or choose to use this phone’s library.');
         return;
       }
+      if (record.control.admission === 'active' && emptyLibrary(captured.snapshot)
+        && listing.snapshots.length > 0) {
+        record = await persistDiscovery(epoch, binding, listing,
+          conflictingPendingSlot(listing, record.control));
+        await safeRetainStaged(binding.uid, record.control.pending ? [record.control.pending.id] : [], epoch);
+        publishFromRecord('recovery-required', record, status.account,
+          'This phone has no saved climbs. Retained backups are available to review and recover.');
+        return;
+      }
       if (record.control.admission !== 'active') {
         const phase = listing.snapshots.length > 0 && emptyLibrary(captured.snapshot)
           ? 'recovery-required' : 'discovery';
@@ -797,6 +813,7 @@ export function createAutomaticBackup(options: AutomaticBackupOptions): Automati
       if (record.control.pending) {
         const resolved = await recoverOrUploadPending(epoch, binding, record.control.pending, listing);
         record = resolved.record;
+        listing = resolved.listing;
         if (resolved.discovery) {
           publishFromRecord('discovery', record, status.account,
             'Backup history changed. Review it before continuing.');
@@ -812,14 +829,15 @@ export function createAutomaticBackup(options: AutomaticBackupOptions): Automati
       const result = await captureAndUpload(epoch, binding, record, listing);
       record = result.record;
       if (!result.attempted) return;
-      const latestCapture = await preservation.capture();
-      if (record.control.protected?.revision === latestCapture.revision) {
-        publishFromRecord('protected', { ...record, revision: latestCapture.revision }, status.account);
+      const latest = await preservation.read();
+      assertEpoch(epoch);
+      if (record.control.protected?.revision === latest.revision) {
+        publishFromRecord('protected', latest, status.account);
         return;
       }
       // A receipt for R never stands in for R+1. A newer commit remains pending
       // until the normal coalescing timer or an explicit foreground retry.
-      publishFromRecord('pending', { ...record, revision: latestCapture.revision }, status.account);
+      publishFromRecord('pending', latest, status.account);
       scheduleCommittedChange();
     } catch (cause) {
       if (cause instanceof StaleSessionError || closed || epoch !== sessionEpoch) return;
@@ -830,13 +848,6 @@ export function createAutomaticBackup(options: AutomaticBackupOptions): Automati
   async function drive(epoch: number): Promise<void> {
     if (closed || epoch !== sessionEpoch) return;
     if (!foreground) return;
-    try {
-      if (!isOnline()) throw new VaultError('offline');
-    } catch (cause) {
-      const record = await currentRecord().catch(() => undefined);
-      publishError(cause, epoch, record);
-      return;
-    }
     publish({ ...current, phase: 'checking', error: null });
     await refreshAndDrive(epoch);
     if (epoch === sessionEpoch && current.phase !== 'error' && current.phase !== 'offline') retryIndex = 0;
@@ -1026,7 +1037,7 @@ export function createAutomaticBackup(options: AutomaticBackupOptions): Automati
             if (resolved.discovery || record.control.pending) {
               publishFromRecord('discovery', record, status.account,
                 'A pending backup must be resolved before recovery can change this library.');
-              return rejectRestore(new VaultError('not-admitted'));
+              return rejectRestore(new Error('A pending backup must be resolved before recovery can change this library.'));
             }
           }
           const outcome = await backupService.restore(review.backup);

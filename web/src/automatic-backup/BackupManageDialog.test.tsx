@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { AutomaticBackup } from './coordinator.ts';
 import { BackupManageDialog } from './BackupManageDialog.tsx';
@@ -108,6 +108,23 @@ describe('BackupManageDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh history' }));
     await waitFor(() => expect(history).toHaveBeenCalledTimes(2));
     expect(screen.getByRole('button', { name: 'Close private backup' })).toBeEnabled();
+  });
+
+  it('offers local verification retry even without a connected account', async () => {
+    const automatic = automaticBackup({
+      phase: 'verifying-recovery',
+      account: null,
+      revision: 4,
+      protectedRevision: null,
+      localSaveFailed: false,
+      error: 'Library recovery verification is still pending.',
+    });
+    renderManage(automatic);
+
+    const retry = screen.getByRole('button', { name: 'Retry local verification' });
+    expect(retry).toBeEnabled();
+    await act(async () => { fireEvent.click(retry); });
+    expect(automatic.retry).toHaveBeenCalledOnce();
   });
 
   it('shows server copy details and an honest capacity count without exposing internal slot IDs', async () => {

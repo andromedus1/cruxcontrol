@@ -54,8 +54,14 @@ class FakePreservation implements LibraryPreservation {
   readonly listeners = new Set<(event: 'committed' | 'write-failed') => void>();
   casAttempts = 0;
   rejectNextCas = false;
+  throwNextCas = false;
   recoveryError: Error | null = null;
   afterRestore: (() => void) | null = null;
+  captureCalls = 0;
+  beforeCapture: ((call: number) => Promise<void>) | null = null;
+  readCalls = 0;
+  beforeRead: ((record: PreservationRecord, call: number) => Promise<void>) | null = null;
+  verifyCalls = 0;
   readonly store: LibraryBackupStore;
 
   constructor(drafts: readonly LocalClimbDraft[] = []) {
@@ -94,12 +100,22 @@ class FakePreservation implements LibraryPreservation {
     this.listeners.forEach((listener) => listener('committed'));
   }
 
-  async read(): Promise<PreservationRecord> { return this.record; }
+  async read(): Promise<PreservationRecord> {
+    this.readCalls += 1;
+    if (this.beforeRead) await this.beforeRead(this.record, this.readCalls);
+    return this.record;
+  }
   async capture() {
+    this.captureCalls += 1;
+    if (this.beforeCapture) await this.beforeCapture(this.captureCalls);
     return Object.freeze({ revision: this.record.revision, snapshot: this.snapshot() });
   }
   async compareAndSet(version: number, control: BackupControl): Promise<boolean> {
     this.casAttempts += 1;
+    if (this.throwNextCas) {
+      this.throwNextCas = false;
+      throw new Error('local control acknowledgement failed');
+    }
     if (this.rejectNextCas) {
       this.rejectNextCas = false;
       this.record = Object.freeze({ ...this.record, version: this.record.version + 1 });
@@ -110,6 +126,7 @@ class FakePreservation implements LibraryPreservation {
     return true;
   }
   async verifyRecovery(): Promise<void> {
+    this.verifyCalls += 1;
     if (this.recoveryError) throw this.recoveryError;
   }
   subscribe(listener: (event: 'committed' | 'write-failed') => void): () => void {
@@ -131,6 +148,7 @@ class FakeVault implements PrivateVault {
   readonly staged = new Map<string, string>();
   readonly remote = new Map<string, RemoteFile>();
   stageCalls = 0;
+  statusCalls = 0;
   uploadCalls: Readonly<{ slot: string; staged: StagedBackup }>[] = [];
   downloadCalls = 0;
   retainedIds: readonly string[] = [];
@@ -138,9 +156,12 @@ class FakeVault implements PrivateVault {
   failNextUpload: VaultError | null = null;
   failNextList: VaultError | null = null;
   beforeUpload: (() => Promise<void>) | null = null;
+  afterRemoteCommit: (() => void) | null = null;
+  corruptNextStage = false;
   generation = 1;
 
   async status(): Promise<VaultStatus> {
+    this.statusCalls += 1;
     return Object.freeze({ configured: this.configured, installationId: this.nativeInstallationId,
       scope: this.scope, account: this.configured ? this.statusAccount : null });
   }
@@ -161,7 +182,9 @@ class FakeVault implements PrivateVault {
     const id = `00000000-0000-4000-8000-${String(900 + ++this.stageCalls).padStart(12, '0')}`;
     const staged = Object.freeze({ id, bytes: new TextEncoder().encode(text).byteLength, sha256: await digest(text) });
     this.staged.set(id, text);
-    return staged;
+    if (!this.corruptNextStage) return staged;
+    this.corruptNextStage = false;
+    return Object.freeze({ ...staged, sha256: 'f'.repeat(64) });
   }
   async upload(uid: string, slot: string, staged: StagedBackup): Promise<VaultReceipt> {
     if (this.statusAccount?.uid !== uid) throw new VaultError('account-changed');
@@ -192,6 +215,7 @@ class FakeVault implements PrivateVault {
       counts: countsForBackup(JSON.parse(text) as ReturnType<typeof import('../library-backup/codec.ts').decodeLibraryBackup>),
     });
     this.remote.set(slot, Object.freeze({ snapshot, text }));
+    this.afterRemoteCommit?.();
     if (this.loseNextUploadResponse) {
       this.loseNextUploadResponse = false;
       throw new VaultError('unavailable');
@@ -290,6 +314,173 @@ describe('automatic backup coordinator', () => {
     expect(coordinator.getSnapshot().phase).toBe('recovery-required');
     expect(preservation.record.control.admission).toBe('discovery');
     expect(vault.uploadCalls).toHaveLength(0);
+    coordinator.close();
+  });
+
+  it('moves an admitted library emptied by deletion back to recovery discovery', async () => {
+    const prior = climb('Deleted after backup');
+    const vault = new FakeVault();
+    const source = await vault.seed(encodeLibraryBackup({ drafts: [prior], playlists: [] }, new Date(stableDate)), '00000');
+    const { preservation, coordinator } = setup({ vault });
+    preservation.record = Object.freeze({ revision: 1, version: 1, recovery: null,
+      control: decodeBackupControl({
+        binding: { uid: account.uid, installationId, scope: 'library-v1' },
+        admission: 'active', history: [source], pending: null,
+        protected: { revision: 0, snapshot: source, verifiedAt: stableDate },
+      }) });
+
+    await coordinator.retry();
+
+    expect(coordinator.getSnapshot().phase).toBe('recovery-required');
+    expect(preservation.record.control).toMatchObject({ admission: 'discovery', history: [source], pending: null });
+    expect(vault.remote.size).toBe(1);
+    expect(vault.uploadCalls).toHaveLength(0);
+    coordinator.close();
+  });
+
+  it.each([
+    ['copied native installation', (vault: FakeVault) => { vault.nativeInstallationId = '00000000-0000-4000-8000-000000000777'; }],
+    ['changed backup pool', (vault: FakeVault) => { vault.scope = 'acceptance-v1/r002'; }],
+  ])('does not admit copied active state after a %s change', async (_label, changeBinding) => {
+    const source = climb('Prior installation copy');
+    const vault = new FakeVault();
+    const snapshot = await vault.seed(encodeLibraryBackup({ drafts: [source], playlists: [] }, new Date(stableDate)), '00000');
+    changeBinding(vault);
+    const { preservation, coordinator } = setup({ drafts: [climb('Local records')], vault });
+    bindControl(preservation, { uid: account.uid, installationId, scope: 'library-v1' }, [snapshot]);
+
+    await coordinator.retry();
+
+    expect(coordinator.getSnapshot().phase).toBe('discovery');
+    expect(preservation.record.control).toMatchObject({ admission: 'discovery', binding: {
+      uid: account.uid, installationId: vault.nativeInstallationId, scope: vault.scope,
+    } });
+    expect(vault.uploadCalls).toHaveLength(0);
+    coordinator.close();
+  });
+
+  it('does not upload a copied pending stage under a new native installation binding', async () => {
+    const vault = new FakeVault();
+    const local = climb('Copied pending library');
+    const staged = await vault.stage(account.uid,
+      encodeLibraryBackup({ drafts: [local], playlists: [] }, new Date(stableDate)));
+    vault.nativeInstallationId = '00000000-0000-4000-8000-000000000778';
+    const { preservation, coordinator } = setup({ drafts: [local], vault });
+    preservation.record = Object.freeze({ ...preservation.record, version: 1,
+      control: decodeBackupControl({ binding: { uid: account.uid, installationId, scope: 'library-v1' },
+        admission: 'active', history: [], pending: { id: staged.id, revision: 0, slot: '00000', staged,
+          capturedAt: stableDate }, protected: null }) });
+
+    await coordinator.retry();
+
+    expect(coordinator.getSnapshot().phase).toBe('discovery');
+    expect(preservation.record.control).toMatchObject({ admission: 'discovery', pending: null,
+      binding: { installationId: vault.nativeInstallationId } });
+    expect(vault.uploadCalls).toHaveLength(0);
+    coordinator.close();
+  });
+
+  it('treats a different account as a fresh discovery boundary', async () => {
+    const otherAccount: VaultAccount = { uid: 'climber_2', email: null };
+    const vault = new FakeVault();
+    const source = climb('Other account retained copy');
+    const snapshot = await vault.seed(encodeLibraryBackup({ drafts: [source], playlists: [] }, new Date(stableDate)), '00000');
+    vault.statusAccount = otherAccount;
+    const { preservation, coordinator } = setup({ drafts: [climb('Local library')], vault });
+    bindControl(preservation, { uid: account.uid, installationId, scope: 'library-v1' }, []);
+
+    await coordinator.retry();
+
+    expect(coordinator.getSnapshot().phase).toBe('discovery');
+    expect(preservation.record.control).toMatchObject({ admission: 'discovery', binding: { uid: otherAccount.uid }, history: [snapshot] });
+    expect(vault.uploadCalls).toHaveLength(0);
+    coordinator.close();
+  });
+
+  it('checks the local recovery barrier before the offline gate and keeps failures retryable', async () => {
+    let online = false;
+    const { preservation, vault, coordinator } = setup({ online: () => online });
+    preservation.recoveryError = new Error('Library recovery verification mismatch: canonical records differ');
+
+    await coordinator.retry();
+    expect(preservation.verifyCalls).toBe(1);
+    expect(vault.statusCalls).toBe(0);
+    expect(coordinator.getSnapshot()).toMatchObject({ phase: 'verifying-recovery' });
+
+    preservation.recoveryError = null;
+    await coordinator.retry();
+    expect(preservation.verifyCalls).toBe(2);
+    expect(vault.statusCalls).toBe(0);
+    expect(coordinator.getSnapshot().phase).toBe('offline');
+
+    online = true;
+    await coordinator.retry();
+    expect(preservation.verifyCalls).toBe(3);
+    expect(vault.statusCalls).toBeGreaterThan(0);
+    expect(coordinator.getSnapshot().phase).toBe('pending');
+    coordinator.close();
+  });
+
+  it.each(['sign-out', 'close'] as const)(
+    'does not publish a late final preservation read after %s', async (boundary) => {
+      let releaseRead!: () => void;
+      let readStarted!: () => void;
+      let protectedReads = 0;
+      const waiting = new Promise<void>((resolve) => { releaseRead = resolve; });
+      const started = new Promise<void>((resolve) => { readStarted = resolve; });
+      const { preservation, coordinator } = setup({ drafts: [climb(`Late ${boundary}`)] });
+      await coordinator.retry();
+      preservation.beforeRead = async (record) => {
+        if (record.control.protected?.revision === 0 && ++protectedReads === 3) {
+          readStarted();
+          await waiting;
+        }
+      };
+      const adoption = coordinator.useLocalLibrary();
+      await started;
+
+      if (boundary === 'sign-out') {
+        const signingOut = coordinator.signOut();
+        releaseRead();
+        await Promise.all([adoption, signingOut]);
+        expect(coordinator.getSnapshot().phase).toBe('signed-out');
+      } else {
+        const beforeClose = coordinator.getSnapshot();
+        coordinator.close();
+        releaseRead();
+        await adoption;
+        expect(coordinator.getSnapshot()).toEqual(beforeClose);
+      }
+      coordinator.close();
+    },
+  );
+
+  it('uses refreshed pending history when a save arrives during pending resolution', async () => {
+    const vault = new FakeVault();
+    const initial = climb('Pending upload');
+    const staged = await vault.stage(account.uid,
+      encodeLibraryBackup({ drafts: [initial], playlists: [] }, new Date(stableDate)));
+    const { preservation, coordinator } = setup({ drafts: [initial], vault });
+    preservation.record = Object.freeze({ ...preservation.record, version: 1,
+      control: decodeBackupControl({ binding: { uid: account.uid, installationId, scope: 'library-v1' },
+        admission: 'active', history: [], pending: { id: staged.id, revision: 0, slot: '00000', staged,
+          capturedAt: stableDate }, protected: null }) });
+    preservation.beforeCapture = async (call) => {
+      if (call === 2) preservation.commit(climb('Saved during pending resolution'));
+    };
+
+    await coordinator.retry();
+
+    expect(vault.remote.size).toBe(2);
+    expect(vault.remote.has('00000')).toBe(true);
+    expect(vault.remote.has('00001')).toBe(true);
+    expect(vault.stageCalls).toBe(2);
+    expect(preservation.record.control).toMatchObject({
+      admission: 'active',
+      pending: null,
+      protected: { revision: 1, snapshot: { slot: '00001' } },
+    });
+    expect(coordinator.getSnapshot()).toMatchObject({ phase: 'protected', revision: 1 });
     coordinator.close();
   });
 
@@ -490,6 +681,96 @@ describe('automatic backup coordinator', () => {
     expect(preservation.casAttempts).toBeGreaterThan(1);
     expect(preservation.record.control.protected).toMatchObject({ revision: 0, snapshot: { slot: '00000' } });
     expect(vault.uploadCalls).toHaveLength(1);
+    coordinator.close();
+  });
+
+  it('reconciles a committed remote copy when local receipt acknowledgement fails', async () => {
+    const { preservation, vault, coordinator } = setup({ drafts: [climb('Remote committed before CAS failure')] });
+    await coordinator.retry();
+    vault.afterRemoteCommit = () => { preservation.throwNextCas = true; };
+
+    await coordinator.useLocalLibrary();
+
+    expect(vault.remote.size).toBe(1);
+    expect(preservation.record.control).toMatchObject({
+      pending: { slot: '00000', revision: 0 },
+      protected: null,
+    });
+    expect(coordinator.getSnapshot().phase).toBe('error');
+
+    vault.afterRemoteCommit = null;
+    await coordinator.retry();
+
+    expect(preservation.record.control).toMatchObject({
+      pending: null,
+      protected: { revision: 0, snapshot: { slot: '00000' } },
+    });
+    expect(vault.remote.size).toBe(1);
+    expect(vault.stageCalls).toBe(1);
+    expect(vault.uploadCalls).toHaveLength(1);
+    expect(coordinator.getSnapshot().phase).toBe('protected');
+    coordinator.close();
+  });
+
+  it('does not acknowledge corrupt staged bytes or replace the prior protected copy', async () => {
+    const { preservation, vault, coordinator } = setup({ drafts: [climb('Prior good copy')] });
+    await coordinator.retry();
+    await coordinator.useLocalLibrary();
+    const prior = preservation.record.control.protected;
+    expect(prior).not.toBeNull();
+    preservation.commit(climb('Must not be acknowledged'));
+    vault.corruptNextStage = true;
+
+    await coordinator.retry();
+
+    expect(coordinator.getSnapshot().phase).toBe('error');
+    expect(preservation.record.control).toMatchObject({ pending: null, protected: prior });
+    expect(vault.remote.size).toBe(1);
+    expect(vault.uploadCalls).toHaveLength(1);
+    coordinator.close();
+  });
+
+  it('explains when the connected account is not enabled for private backups', async () => {
+    const vault = new FakeVault();
+    vault.failNextList = new VaultError('not-admitted');
+    const { coordinator } = setup({ drafts: [climb('Account policy')], vault });
+
+    await coordinator.retry();
+
+    expect(coordinator.getSnapshot()).toMatchObject({
+      phase: 'discovery',
+      error: expect.stringMatching(/account.*not enabled|not enabled.*account/i),
+    });
+    expect(coordinator.getSnapshot().error).not.toMatch(/review retained backups/i);
+    coordinator.close();
+  });
+
+  it('reports unresolved local pending recovery instead of account admission failure', async () => {
+    const vault = new FakeVault();
+    const source = await vault.seed(encodeLibraryBackup({ drafts: [climb('Selected recovery')], playlists: [] }, new Date(stableDate)), '00000');
+    const { preservation, coordinator } = setup({ vault });
+    await coordinator.retry();
+    const listing = await coordinator.history();
+    const review = await coordinator.review(listing.snapshots[0]!);
+    const pendingDraft = climb('Pending local backup');
+    const staged = await vault.stage(account.uid,
+      encodeLibraryBackup({ drafts: [pendingDraft], playlists: [] }, new Date(stableDate)));
+    preservation.record = Object.freeze({ ...preservation.record, version: preservation.record.version + 1,
+      control: decodeBackupControl({ binding: { uid: account.uid, installationId, scope: 'library-v1' },
+        admission: 'active', history: [source], pending: { id: staged.id, revision: 0, slot: '00001', staged,
+          capturedAt: stableDate }, protected: null }) });
+    vault.beforeUpload = async () => {
+      await vault.seed(encodeLibraryBackup({ drafts: [climb('Conflicting writer')], playlists: [] }, new Date(stableDate)), '00001');
+    };
+
+    const outcome = await coordinator.restore(review);
+
+    expect(outcome).toMatchObject({ status: 'failed', phase: 'preflight' });
+    if (outcome.status !== 'failed') throw new Error('Expected pending recovery to fail before restore.');
+    expect(outcome.error.message).toMatch(/pending backup.*resolve|backup.*pending/i);
+    expect(outcome.error).not.toMatchObject({ code: 'not-admitted' });
+    expect(preservation.drafts).toHaveLength(0);
+    expect(coordinator.getSnapshot()).toMatchObject({ phase: 'discovery' });
     coordinator.close();
   });
 

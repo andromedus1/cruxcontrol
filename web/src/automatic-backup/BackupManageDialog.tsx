@@ -324,6 +324,7 @@ export function BackupManageDialog({
             : <button className="button button--primary" type="button" disabled={locked || status.phase === 'not-configured'} onClick={() => void runSimple('connect')}>Connect account</button>}
         </div>
         {status.phase === 'not-configured' && <p>This build does not have private backup access. You can still save or recover a portable file.</p>}
+        {status.phase === 'verifying-recovery' && <button className="button button--secondary" type="button" disabled={locked} onClick={() => void runSimple('retry')}>{busy === 'retry' ? 'Checking…' : 'Retry local verification'}</button>}
         {status.account && status.phase !== 'protected' && status.phase !== 'checking' && status.phase !== 'uploading' && status.phase !== 'verifying-recovery' && <button className="button button--secondary" type="button" disabled={locked} onClick={() => void runSimple('retry')}>{busy === 'retry' ? 'Checking…' : 'Retry online backup'}</button>}
       </section>
 

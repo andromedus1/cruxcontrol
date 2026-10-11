@@ -17,7 +17,10 @@ const ERROR_COPY: Readonly<Record<VaultErrorCode, Readonly<{
   'not-configured': { phase: 'not-configured', message: 'Private backup is not configured on this build.' },
   'signed-out': { phase: 'signed-out', message: 'Sign in to back up or recover this library.' },
   'account-changed': { phase: 'discovery', message: 'Your account changed. Review retained backups before continuing.' },
-  'not-admitted': { phase: 'discovery', message: 'Review retained backups before backing up this library.' },
+  'not-admitted': {
+    phase: 'discovery',
+    message: 'This account is not enabled for private backups. Use an enabled account or save a portable backup file.',
+  },
   cancelled: { phase: 'signed-out', message: 'Sign-in was cancelled.' },
   offline: { phase: 'offline', message: 'You are offline. Saved changes stay on this phone and can be backed up later.' },
   unavailable: { phase: 'error', message: 'Backup could not be completed. Your saved library remains available.' },
