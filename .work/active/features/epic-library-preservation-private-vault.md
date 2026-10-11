@@ -545,3 +545,23 @@ the exact planned resources and run synthetic live authorization, conditional
 create, retry and separate-installation recovery checks. Only passing live evidence
 can support selecting the production vault and completing the automatic-backup
 design. Real authoring remains gated on automatic protection and proven restore.
+
+### Live proof authorization and provisioning
+
+Andrew chose the $5/month alert-budget setup and clicked Link account. The console
+spinner persisted, but a direct Cloud Billing read confirms `billingEnabled=true`
+and a linked account. No second linking attempt is necessary. The owner's action
+supplies the prepared proof's billing prerequisite; continue the already-authorized
+synthetic deployment and recovery work without another permission round.
+
+`provision-service.mjs` executes the reviewed infrastructure plan explicitly:
+verify prepared artifact hashes and the exact project, require billing to be
+enabled, reconcile project-scoped $5 alerts at $1/$2.50/$5, enable required APIs,
+create the dedicated identity and single-permission authentication role, and
+create the private bucket with non-destructive object permissions. Preserve
+existing IAM bindings using provider etags. Reject unexpected budget amounts,
+bucket settings, public access or extra runtime roles. Save account/IAM details
+only to private evidence. The script cannot link billing, upload snapshots,
+delete data or deploy the function; deployment remains a separate explicit CLI
+step using the prepared artifact. The initial inspect pass correctly stops when
+the Budget API is not enabled; only explicit provisioning enables it.
