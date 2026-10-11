@@ -110,8 +110,9 @@ codec, dependency lock, local UID configuration, `firebase.json` and
 access controls and a finite snapshot pool; these are plans, not provisioned
 resources. Preparation makes no cloud authentication, provenance-verification,
 deployment or billing calls. Keep the complete package and evidence outside Git.
-Billing is still disabled, and Android compilation/native service acceptance
-remain pending.
+Billing is still disabled. SignedProof18 compiled with the native service bridge;
+native live-service acceptance remains pending. No emulator installation or live
+service call occurred for this build.
 
 ```bash
 node prototypes/firebase-vault/cost-estimate.mjs

@@ -470,8 +470,11 @@ node --experimental-strip-types prototypes/ios/scripts/android-auth-proof.mjs em
 `vaultPut` validates the synthetic whole-library backup with the app codec before
 invocation. Private evidence contains the service response, including backup
 contents for `vaultGet`; console output contains only status and response digest.
-These commands do not import records into the app or schedule backups. Android
-compilation of the new service bridge remains pending.
+These commands do not import records into the app or schedule backups.
+SignedProof18 compiled with the new service bridge and validated private catalog,
+and its signature matches the retained certificate. This build used a tracked
+dirty checkout; it is not clean-source evidence. No emulator installation or live
+service call occurred, so native live-service acceptance remains pending.
 
 SignedProof17 compiled with the dedicated Firebase project's Android registration
 and Google provider configured; billing remains disabled. Native sign-in, forced
