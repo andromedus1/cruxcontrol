@@ -466,3 +466,21 @@ authored-data loss or incorrect acknowledgement of a newer committed revision.
 Fix/verify/CI closes this standard review administratively; do not request another
 independent pass. The previously passing emulator recovery evidence remains valid
 for its measured paths, and real authoring stays gated on physical parity.
+
+### Native reproduction of interrupted recovery
+
+The root reproduced finding 1 on signed proof 26 using normal Manage recovery of
+the retained 10,000-climb/1,000-list/100,000-membership synthetic snapshot. The
+app was stopped after observing its persisted verification barrier, then reopened
+offline. A complete bounded read proves all restored content committed exactly;
+the recovery hold remains despite matching local content. No database writes or
+injected restore implementation fabricated this state. The emulator remains
+offline for a preserving fixed-build update. Whole-library evidence is retained
+outside Git under `.private-firebase/automatic-app-acceptance/offline-hold26/`.
+
+Committed runners `smoke-android-recovery-hold.mjs` and
+`smoke-android-offline-recovery-resume.mjs` separate the pre-fix reproduction from
+the required fixed-build continuation. The latter must clear the hold offline,
+allow an ordinary grade save, protect the full structured library after network
+returns, automatically protect another edit, and preserve exact content on
+relaunch. Preparing that runner is not evidence that the continuation has passed.
