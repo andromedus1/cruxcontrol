@@ -496,8 +496,8 @@ Native upload of a 7,993-byte synthetic eight-climb/three-playlist library retur
 empty emulator signed into the same authorized account, discovered/downloaded the
 snapshot and restored it through Android DocumentsUI, with exact whole-library
 equality after import and cold restart. This is operator-assisted cloud download
-and portable-file restore; integrated app cloud restore and automatic scheduling
-remain unimplemented. Live runtime create/get/list-only IAM, atomic concurrent
+and portable-file restore; it does not establish the separately implemented
+automatic scheduling and integrated recovery UI. Live runtime create/get/list-only IAM, atomic concurrent
 creation, denied overwrite/delete and other-account/anonymous denial checks pass.
 The initial 25 MiB download exhausted memory during conversion to JavaScript;
 SignedProof19's streaming path passed an exact 26,214,400-byte round trip and
@@ -529,12 +529,18 @@ not authorize installation on the owner phone or changes to authored library dat
 Native Firebase Auth/Credential Manager and the authenticated GCS gateway are
 selected for Android dogfood on the existing project resources. The application
 account/file transport is implemented and the service deployed; live transport
-acceptance passes. Product account surfaces are not yet available.
+acceptance passes. Product account/status/history/recovery surfaces are implemented.
 It uses a separate 512-copy `library-v1` namespace and native files with bounded
 bridge chunks; the legacy 32-slot operator proof remains separate. Automatic-backup
-durable state is implemented; the coordinator and UI remain under implementation.
-Status, Manage, account, history and integrated recovery remain planned. The
-foreground schedule promises no Android background execution. Physical-phone and
+durable state, the foreground coordinator and Android runtime/UI integration are
+implemented. Committed changes coalesce for 30 seconds with a 60-second maximum
+foreground wait. Exact receipts bind protection to the saved aggregate revision;
+offline edits remain pending and can retry explicitly, on resume/network changes,
+or through bounded 5/15/60-second foreground backoff. No background execution is
+promised. Manage shows retained history and remaining capacity; 512 retained copies
+pause new uploads without pruning or blocking ordinary offline saves. Recovery
+reviews a copy, restores atomically and holds uploads until verification succeeds.
+Integrated empty-install recovery acceptance is in progress. Physical-phone and
 Fullride parity plus integrated automatic-backup/clean-install recovery remain
 gates before real authoring. iOS continues to use IndexedDB.
 

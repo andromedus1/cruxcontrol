@@ -279,16 +279,17 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   capability is not yet delivered. The hosting/session proof must include the chosen
   native iPhone client; a web-only same-origin proof is insufficient.
 
-### 10. Private Library Preservation (Intended)
+### 10. Private Library Preservation
 
 - Preserve offline local creation and board use while protecting saved authored work
   through automatic private online backups and portable owner-controlled files.
-  Current exports remain manual; automatic protection is not implemented.
+  Portable exports remain manual. Android foreground automatic backup and recovery
+  UI are implemented; integrated empty-install recovery acceptance is in progress.
 - Android dogfood selects native Firebase Auth/Credential Manager and the existing
   authenticated GCS gateway. Native account/file transport is implemented and the
-  service deployed; live transport acceptance passes and product UI is absent.
-  Automatic-backup durable state is implemented; the coordinator and UI remain
-  under implementation.
+  service deployed; live transport acceptance passes. Durable state, the foreground
+  coordinator and product UI are implemented. Integrated recovery and physical
+  phone/Fullride parity must still pass before real authoring.
 - Retain up to 512 immutable whole-library copies of at most 25 MiB in the application
   namespace. Pause protection visibly at capacity without pruning older copies.
   Separate synthetic acceptance pools and legacy proof copies never appear in user
@@ -297,10 +298,12 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   a 60-second maximum wait while foreground execution is available. No Android
   background execution is promised. Durable pending state and an exact server-verified
   receipt must bind protection to the SQLite aggregate revision.
-- Planned status, Manage, account, history and recovery surfaces must distinguish
-  saved work from protected work. Integrated recovery must restore atomically and
-  pass a verification barrier before uploads resume. This Android milestone does
-  not require PWA backup retrofits or change the iOS IndexedDB path.
+- Status, Manage, account, history and recovery surfaces distinguish saved work
+  from protected work, expose offline pending edits and allow explicit retry.
+  Foreground retries use bounded backoff and resume on foreground/network changes.
+  Recovery reviews retained copies, restores atomically and requires a verification
+  barrier before uploads resume. This Android milestone does not require PWA backup
+  retrofits or change the iOS IndexedDB path.
 - Include Draft/Finished/Trash, metadata including grade and angle, holds/roles,
   effect recipes, stable identities and revisions, playlists and exact membership
   order. Catalog downloads are separately reacquirable and are not authored backups.
@@ -408,8 +411,9 @@ The model mirrors the official Kilter SQLite schema (see
   Android emulator has passed synthetic restore, edit/save, force-stop/relaunch, and
   same-signature update preservation checks; physical-board behavior and full Android
   feature parity remain unverified. A bounded Firebase proof passes authenticated
-  synthetic backup and operator-assisted separate-installation recovery; automatic
-  online backup and integrated cloud recovery remain unimplemented. The separately verified private
+  synthetic backup and operator-assisted separate-installation recovery. Android
+  automatic backup and integrated recovery UI are implemented; their integrated
+  empty-install acceptance remains in progress. The separately verified private
   APK catalog flow covers the older snapshot through offline reopen on Android 36 / WebView
   133, not board lighting or general Android acceptance. Android SAF delivery uses
   `ACTION_CREATE_DOCUMENT` and reports success after the provider's UTF-8 stream closes;

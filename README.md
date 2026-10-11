@@ -140,10 +140,12 @@ open before iOS support can ship.
 Native Firebase Auth and a narrow authenticated GCS gateway are selected for Android
 dogfood after a bounded operator-assisted recovery proof. Native account/file
 transport is implemented and the service deployed; live transport acceptance passes.
-Automatic backup, product account surfaces and integrated recovery remain unavailable.
-Their design retains 512 immutable whole-library copies, pauses at capacity without
-pruning, and keeps offline local saving available. Verified automatic protection
-and clean-install recovery remain required before real authored climbs.
+Android foreground automatic backup, account/status/history surfaces and recovery
+UI are implemented. Protection identifies the exact saved revision acknowledged by
+server readback; offline edits remain pending with retry available. The service
+retains 512 immutable whole-library copies and pauses at capacity without pruning.
+Integrated empty-install recovery acceptance is in progress. That gate and physical
+phone/Fullride parity remain required before real authored climbs.
 
 ### Implementation highlights
 
@@ -163,8 +165,9 @@ and clean-install recovery remain required before real authored climbs.
   playlists, and 100,000 playlist references. On web and iOS, export checks for
   changes across the two stores and asks you to finish edits in other tabs; the
   bounded check does not form one cross-database atomic snapshot. Android captures
-  its one-database snapshot transactionally. Backup remains a manual local file
-  workflow: it does not upload to a cloud service or require an account. Backup reads
+  its one-database snapshot transactionally. Portable export remains a manual local
+  file workflow without an account requirement; Android additionally supports
+  account-protected foreground online backup. Backup reads
   remain strict: unreadable records block export rather than producing an incomplete
   backup. The backup file cannot salvage corrupt raw records.
 - A version-dispatched pure frame engine drives both screen preview and BLE output. It

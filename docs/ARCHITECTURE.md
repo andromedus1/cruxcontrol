@@ -19,8 +19,8 @@ summary: >
   browser-managed library storage; Android injects a native SQLite library and has
   passed synthetic emulator restore, edit/save, process-relaunch, and same-signature
   update checks. Portable-file recovery and bounded operator-assisted cloud recovery
-  pass synthetic emulator proofs. Physical-board behavior, full Android feature parity,
-  integrated cloud restore and automatic backup remain open. Firebase Auth and the
+  pass synthetic emulator proofs. Physical-board behavior, full Android feature parity
+  and integrated automatic-backup/recovery acceptance remain open. Firebase Auth and the
   authenticated GCS gateway are selected for Android dogfood. Native application
   transport is implemented and the service deployed; live transport acceptance passes.
 decisions:
@@ -265,8 +265,9 @@ proof passes synthetic operator-assisted cloud download and portable-file import
 into an independent installation. The native account/file transport is implemented
 and the application service deployed; live transport acceptance passes. A configured
 `library-v1` release APK passes non-debuggable and proof-surface exclusion checks.
-Product account surfaces, integrated app cloud restore and automatic backup remain
-unimplemented.
+Android account/status/history surfaces, foreground automatic backup and integrated
+cloud recovery UI are implemented. Integrated empty-install recovery acceptance
+remains in progress; these implementations do not yet admit real authoring.
 
 The application design separates a `library-v1` namespace with 512 immutable
 25 MiB copies (`00000`–`00511`) from the unchanged 32-slot proof pool. Four bounded
@@ -278,13 +279,17 @@ are usage-priced, with no fixed $25/month plan; existing $5 budget alerts are no
 
 The automatic-backup durable-state checkpoint is implemented with a preserving
 SQLite v1-to-v2 migration; synthetic emulator upgrades preserve complete libraries
-and playlist ordering through restart. The coordinator and UI remain under
-implementation.
+and playlist ordering through restart. The coordinator and UI are implemented.
 A SQLite aggregate revision and durable pending record bind
 an exact receipt to saved work. Atomic whole-library restore and a verification
-barrier precede renewed uploads. Planned foreground scheduling coalesces changes for 30
+barrier precede renewed uploads. Foreground scheduling coalesces changes for 30
 seconds with a 60-second maximum wait; it makes no Android background-execution
-promise. Status, Manage, account, history and recovery surfaces remain planned.
+promise. Status, Manage, account, history and recovery surfaces expose exact
+protected revisions, pending offline changes, retained-copy capacity and retry.
+Foreground retry uses 5/15/60-second backoff and resumes on foreground/network
+changes. Recovery reviews a retained copy and blocks uploads until atomic restore
+and verification complete. At 512 retained versions, new copies pause without
+pruning while ordinary offline saving remains available.
 The PWA needs no retrofit for this Android milestone; iOS retains IndexedDB.
 Browser/native file-delivery and scheduling limits need proof before promising automatic
 file copies.
@@ -454,11 +459,12 @@ or network.
 - **Static-first distribution.** The web app is a client-side, installable PWA
   configured for future static hosting on Cloudflare Workers (Static Assets); live
   deployment still requires operator setup and acceptance. The production app has no
-  shared database or integrated account system; the
-  [private-vault prototype](../prototypes/firebase-vault/README.md) provisions bounded
+  shared collaboration database. Android integrates account-protected backup through
+  the [private-vault service](../prototypes/firebase-vault/README.md), with bounded
   Firebase authentication and recovery infrastructure selected for Android dogfood.
   Native application transport is implemented and the service deployed; live
-  transport acceptance passes while product integration remains incomplete.
+  transport acceptance passes. The Android coordinator and recovery UI are integrated,
+  with empty-install recovery acceptance still in progress.
   The PWA and iOS prototype use
   browser-local storage; the experimental Android package uses its app-private SQLite
   library. Each client's local storage remains independent. The current hardware edge
@@ -505,8 +511,8 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
   Intended protection combines independent versioned online backup, portable files,
   honest pending/offline status and verified restore drills. Local persistence
   permission alone is insufficient. Portable-file and bounded operator-assisted cloud
-  recovery pass synthetic emulator proofs; integrated automatic production backup and
-  recovery remain unimplemented. The local native SQLite store is on the same device
+  recovery pass synthetic emulator proofs. Android automatic backup and recovery UI
+  are implemented; integrated empty-install acceptance remains in progress. The local native SQLite store is on the same device
   and does not meet that independent recovery boundary.
 
 - **Web Bluetooth reliability** across OS/browser versions — deterministic transport and

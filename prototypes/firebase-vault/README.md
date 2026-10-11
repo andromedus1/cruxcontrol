@@ -1,20 +1,21 @@
 # Firebase private-vault proof and application transport
 
 This isolated prototype explores direct Storage Rules and an authenticated
-service using synthetic backup bytes. It does not implement scheduled app backup
-or full cloud library restore. The owner has linked billing, and bounded private
+service using synthetic backup bytes. Android application scheduling and recovery
+UI live in the app coordinator, separate from this storage service. The owner has linked billing, and bounded private
 cloud infrastructure and the authenticated function are active. Native snapshot
 transfer, operator-assisted recovery and live runtime-permission verification passed.
 Native account recovery has separately passed on
 an independent fresh emulator with the same UID and forced refresh before and
-after restart; integrated app cloud restore remains unimplemented.
+after restart; integrated app recovery UI is implemented with empty-install
+acceptance still in progress.
 
 Firebase Auth/Credential Manager and this authenticated GCS gateway are selected
 for Android dogfood using the existing project resources and account-protected
 encryption. Native account/file transport is implemented and the application
-service deployed; live transport acceptance passes. Product account surfaces are
-not yet available. Automatic-backup durable state is implemented; the coordinator and UI remain
-under implementation. The detailed live evidence below covers
+service deployed; live transport acceptance passes. Android durable state, the
+foreground backup coordinator and account/status/history/recovery UI are implemented.
+Integrated empty-install recovery acceptance remains in progress. The detailed live evidence below covers
 the bounded operator-assisted proof.
 Application transport acceptance passes small-copy upload/list/download, exact
 retry and sealed-file retention across restart. A 26,188,396-byte structured
