@@ -64,6 +64,8 @@ captures/
 # Google Services (e.g. APIs or Firebase)
 google-services.json
 app/src/signedProof/assets/auth-proof-config.json
+app/src/main/assets/vault-config.json
+app/src/signedProof/assets/vault-config.json
 
 # Freeline
 freeline.py

@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "vitest run && npm run test:catalog-package",
-    "test:catalog-package": "node --experimental-strip-types --test scripts/android-catalog.test.mjs scripts/android-build-options.test.mjs",
+    "test:catalog-package": "node --experimental-strip-types --test scripts/android-catalog.test.mjs scripts/android-build-options.test.mjs scripts/android-vault-config.test.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --config ../../web/eslint.config.js src",
     "build": "npm run typecheck && npm --prefix ../../web run build -- --mode ios-prototype",

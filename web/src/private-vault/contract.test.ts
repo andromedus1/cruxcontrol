@@ -15,6 +15,14 @@ describe('private vault response contracts', () => {
       scope: 'library-v1',
       account: { uid: 'synthetic-owner', email: null },
     }).account?.uid).toBe('synthetic-owner');
+    for (const scope of ['acceptance-v1/r001', 'acceptance-v1/r002', 'acceptance-v1/r003', 'acceptance-v1/r004']) {
+      expect(decodeVaultStatus({
+        configured: true,
+        installationId: '44444444-4444-4444-8444-444444444444',
+        scope,
+        account: null,
+      }).scope).toBe(scope);
+    }
     expect(decodeVaultListing({
       snapshots: [snapshot], capacity: { slots: 512, bytesPerSlot: 25 * 1024 * 1024 },
     }).snapshots[0]?.slot).toBe('00511');
@@ -48,5 +56,13 @@ describe('private vault response contracts', () => {
       configured: false, installationId: '44444444-4444-4444-8444-444444444444',
       scope: 'library-v1', account: { uid: 'synthetic-owner', email: null },
     })).toThrowError(expect.objectContaining({ code: 'invalid-response' }));
+    for (const scope of ['acceptance-v1', 'acceptance-v1/r000', 'acceptance-v1/r005']) {
+      expect(() => decodeVaultStatus({
+        configured: true,
+        installationId: '44444444-4444-4444-8444-444444444444',
+        scope,
+        account: null,
+      })).toThrowError(expect.objectContaining({ code: 'invalid-response' }));
+    }
   });
 });

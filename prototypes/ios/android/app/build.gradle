@@ -15,6 +15,9 @@ android {
     namespace = "io.github.andromedus1.cruxcontrol.prototype"
     compileSdk = rootProject.ext.compileSdkVersion
     buildToolsVersion = '36.0.0'
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
         applicationId "io.github.andromedus1.cruxcontrol.prototype"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -70,12 +73,12 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
-    // Account feasibility proof only; no Firebase dependency in daily-use builds.
-    signedProofImplementation platform('com.google.firebase:firebase-bom:35.0.0')
-    signedProofImplementation 'com.google.firebase:firebase-auth'
-    signedProofImplementation 'androidx.credentials:credentials:1.3.0'
-    signedProofImplementation 'androidx.credentials:credentials-play-services-auth:1.3.0'
-    signedProofImplementation 'com.google.android.libraries.identity.googleid:googleid:1.1.1'
+    // Native Firebase Auth owns account persistence; tokens never enter the WebView bridge.
+    implementation platform('com.google.firebase:firebase-bom:35.0.0')
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'androidx.credentials:credentials:1.3.0'
+    implementation 'androidx.credentials:credentials-play-services-auth:1.3.0'
+    implementation 'com.google.android.libraries.identity.googleid:googleid:1.1.1'
 }
 
 apply from: 'capacitor.build.gradle'

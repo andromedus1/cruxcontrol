@@ -933,3 +933,14 @@ Receiver adjudication:
 A 60-second service timeout still limits very slow 25 MiB uplinks; failed transfers
 remain pending and retry idempotently. Smaller normal backups do not prove that
 upper-size/slow-network combination.
+
+### Native checkpoint ownership refinement
+
+The service checkpoint is verified and committed. The cross-language native
+checkpoint is unusually broad, so root takes the coherent configuration/APK-
+isolation/live-driver slice while the single feature worker retains the adapter,
+native account/file plugins and Gradle dependencies. These are disjoint write sets
+with the plugin contract already specified; root and worker serialize Gradle and
+combine the verified changes into the native checkpoint's one completion commit.
+Root also owns the reproducible structured-fixture acceptance helpers. No extra
+implementation worker or one-story fan-out was added.

@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { CATALOG_COMPRESSED_LIMIT } from '../../../web/src/data/catalog/manifest.ts';
 import { boundedFile, prepareAndroidCatalog, readCatalogManifest, validateCatalogBytes } from './prepare-android-catalog.mjs';
 import { checkAndroidCatalog, checkAndroidCatalogApk } from './check-android-catalog.mjs';
+import { checkAndroidVaultApk } from './check-android-vault.mjs';
 import { androidBuildOptions, requireSigningEnvironment } from './android-build-options.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -43,8 +44,10 @@ if (!syncOnly) {
   run('./gradlew', [task, ...(versionCode ? [`-PprototypeVersionCode=${versionCode}`] : [])], join(root, 'android'));
   const apk = join(root, `android/app/build/outputs/apk/${variant}/app-${variant}.apk`);
   if (sourceFile) console.log('Final private APK verified', await checkAndroidCatalogApk(apk, manifestFile));
+  const vault = await checkAndroidVaultApk(apk, variant);
+  console.log('Android vault packaging verified', vault);
   const buildFinished = sourceBoundary();
   const sourceCommit = buildStarted.sourceCommit;
   const sourceClean = buildStarted.trackedClean && buildFinished.trackedClean && buildStarted.sourceCommit === buildFinished.sourceCommit;
-  await writeFile(`${apk}.build.json`, JSON.stringify({ sourceCommit, sourceClean, buildStarted, buildFinished, variant, versionCode: versionCode ?? '1', privateCatalog: Boolean(sourceFile), apkSha256: createHash('sha256').update(await readFile(apk)).digest('hex') }, null, 2));
+  await writeFile(`${apk}.build.json`, JSON.stringify({ sourceCommit, sourceClean, buildStarted, buildFinished, variant, versionCode: versionCode ?? '1', privateCatalog: Boolean(sourceFile), vault, apkSha256: createHash('sha256').update(await readFile(apk)).digest('hex') }, null, 2));
 }

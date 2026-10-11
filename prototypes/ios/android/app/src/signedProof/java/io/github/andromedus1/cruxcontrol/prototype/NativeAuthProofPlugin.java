@@ -1,186 +1,64 @@
 package io.github.andromedus1.cruxcontrol.prototype;
 
-import android.os.CancellationSignal;
-import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
-import androidx.credentials.ClearCredentialStateRequest;
-import androidx.credentials.Credential;
-import androidx.credentials.CredentialManager;
-import androidx.credentials.CredentialManagerCallback;
-import androidx.credentials.CustomCredential;
-import androidx.credentials.GetCredentialRequest;
-import androidx.credentials.GetCredentialResponse;
-import androidx.credentials.exceptions.ClearCredentialException;
-import androidx.credentials.exceptions.GetCredentialCancellationException;
-import androidx.credentials.exceptions.GetCredentialException;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.GoogleAuthProvider;
-import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.net.URL;
-import javax.net.ssl.HttpsURLConnection;
-import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.json.JSONObject;
+import javax.net.ssl.HttpsURLConnection;
 
-/** Native SDK feasibility only. Never returns or logs a credential or token. */
+/** Legacy isolated storage proof; account/session behavior is shared with the production plugin. */
 @CapacitorPlugin(name = "NativeAuthProof")
-public class NativeAuthProofPlugin extends Plugin {
+public final class NativeAuthProofPlugin extends Plugin {
+    private NativeAccountSession session;
     private FirebaseAuth auth;
-    private CredentialManager credentials;
     private Executor mainExecutor;
-    private String webClientId;
-    private final AtomicBoolean busy = new AtomicBoolean(false);
+    private final AtomicBoolean transferBusy = new AtomicBoolean(false);
 
     @Override
     public void load() {
-        try (InputStream stream = getContext().getAssets().open("auth-proof-config.json")) {
-            JSONObject config = new JSONObject(new String(stream.readAllBytes(), StandardCharsets.UTF_8));
-            webClientId = config.getString("webClientId");
-            FirebaseOptions options = new FirebaseOptions.Builder()
-                .setApiKey(config.getString("apiKey"))
-                .setApplicationId(config.getString("appId"))
-                .setProjectId(config.getString("projectId"))
-                .build();
-            FirebaseApp app = FirebaseApp.getApps(getContext()).isEmpty()
-                ? FirebaseApp.initializeApp(getContext(), options)
-                : FirebaseApp.getInstance();
-            if (!options.getProjectId().equals(app.getOptions().getProjectId()) ||
-                !options.getApplicationId().equals(app.getOptions().getApplicationId())) {
-                throw new IllegalStateException("Authentication proof configuration mismatch");
-            }
-            auth = FirebaseAuth.getInstance(app);
-            credentials = CredentialManager.create(getContext());
-            mainExecutor = ContextCompat.getMainExecutor(getContext());
-        } catch (Exception ignored) {
-            auth = null;
-        }
+        session = NativeAccountSession.get(getContext());
+        auth = session.auth();
+        mainExecutor = session.mainExecutor();
     }
 
     private boolean ready(PluginCall call) {
-        if (auth != null) return true;
-        call.reject("The native authentication proof has no valid configuration.", "AUTH_NOT_CONFIGURED");
-        return false;
-    }
-
-    private JSObject describe(FirebaseUser user) {
-        JSObject result = new JSObject();
-        result.put("signedIn", user != null);
-        if (user != null) {
-            result.put("uid", user.getUid());
-            result.put("email", user.getEmail());
-        }
-        return result;
-    }
-
-    private void fail(PluginCall call, String code, Exception cause) {
-        busy.set(false);
-        // SDK error identifiers are useful diagnostics; exception text may contain account data.
-        String providerCode = cause instanceof FirebaseAuthException
-            ? ((FirebaseAuthException) cause).getErrorCode() : null;
-        call.reject(providerCode == null ? "Native authentication operation failed." : providerCode, code);
+        return session != null && session.requireConfigured(call);
     }
 
     @PluginMethod
     public void status(PluginCall call) {
-        if (ready(call)) call.resolve(describe(auth.getCurrentUser()));
+        if (ready(call)) call.resolve(session.proofStatus());
     }
 
     @PluginMethod
     public void signIn(PluginCall call) {
-        if (!ready(call)) return;
-        if (!busy.compareAndSet(false, true)) {
-            call.reject("An account operation is already running.", "AUTH_BUSY");
-            return;
-        }
-        GetCredentialRequest request = new GetCredentialRequest.Builder()
-            .addCredentialOption(new GetSignInWithGoogleOption.Builder(webClientId).build())
-            .build();
-        getActivity().runOnUiThread(() -> credentials.getCredentialAsync(
-            getActivity(), request, new CancellationSignal(), mainExecutor,
-            new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
-                @Override
-                public void onResult(GetCredentialResponse response) {
-                    try {
-                        Credential credential = response.getCredential();
-                        if (!(credential instanceof CustomCredential) ||
-                            !GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType())) {
-                            fail(call, "AUTH_UNEXPECTED_CREDENTIAL", null);
-                            return;
-                        }
-                        GoogleIdTokenCredential google = GoogleIdTokenCredential.createFrom(credential.getData());
-                        auth.signInWithCredential(GoogleAuthProvider.getCredential(google.getIdToken(), null))
-                            .addOnCompleteListener(mainExecutor, task -> {
-                                if (!task.isSuccessful()) {
-                                    fail(call, "AUTH_SIGN_IN_FAILED", task.getException());
-                                    return;
-                                }
-                                busy.set(false);
-                                call.resolve(describe(auth.getCurrentUser()));
-                            });
-                    } catch (Exception exception) {
-                        fail(call, "AUTH_CREDENTIAL_FAILED", exception);
-                    }
-                }
-
-                @Override
-                public void onError(@NonNull GetCredentialException exception) {
-                    fail(call, exception instanceof GetCredentialCancellationException
-                        ? "AUTH_CANCELED" : "AUTH_PROVIDER_FAILED", exception);
-                }
-            }
-        ));
+        session.signIn(call, getActivity(), true);
     }
 
     @PluginMethod
     public void verifySession(PluginCall call) {
-        if (!ready(call)) return;
-        FirebaseUser user = auth.getCurrentUser();
-        if (user == null) {
-            call.reject("Sign in before verifying the session.", "AUTH_REQUIRED");
-            return;
-        }
-        if (!busy.compareAndSet(false, true)) {
-            call.reject("An account operation is already running.", "AUTH_BUSY");
-            return;
-        }
-        user.getIdToken(true).addOnCompleteListener(mainExecutor, task -> {
-            if (!task.isSuccessful()) {
-                fail(call, "AUTH_REFRESH_FAILED", task.getException());
-                return;
-            }
-            FirebaseUser current = auth.getCurrentUser();
-            if (current == null || !current.getUid().equals(user.getUid())) {
-                busy.set(false);
-                call.reject("The account changed during verification.", "AUTH_CHANGED");
-                return;
-            }
-            JSObject result = describe(current);
-            result.put("issuedAt", task.getResult().getIssuedAtTimestamp());
-            result.put("expiresAt", task.getResult().getExpirationTimestamp());
-            result.put("authenticatedAt", task.getResult().getAuthTimestamp());
-            busy.set(false);
-            call.resolve(result);
-        });
+        session.verifySession(call);
     }
 
-    /** Synthetic storage proof only. The native token never crosses the JS bridge. */
+    @PluginMethod
+    public void signOut(PluginCall call) {
+        session.signOut(call, true);
+    }
+
+    /** Legacy synthetic storage proof only. Production uses PrivateVaultPlugin and its chunked adapter. */
     @PluginMethod
     public void vaultRequest(PluginCall call) {
         if (!ready(call)) return;
@@ -189,6 +67,8 @@ public class NativeAuthProofPlugin extends Plugin {
             call.reject("Sign in before accessing the vault proof.", "AUTH_REQUIRED");
             return;
         }
+        String uid = user.getUid();
+        long expectedEpoch = session.epoch();
         String operation = call.getString("operation", "");
         String slot = call.getString("slot", "");
         boolean listing = operation.equals("list");
@@ -203,119 +83,102 @@ public class NativeAuthProofPlugin extends Plugin {
             call.reject("Invalid vault proof payload size.", "VAULT_INVALID_REQUEST");
             return;
         }
-        if (!busy.compareAndSet(false, true)) {
-            call.reject("An account operation is already running.", "AUTH_BUSY");
+        if (!transferBusy.compareAndSet(false, true)) {
+            call.reject("A vault proof transfer is already running.", "VAULT_BUSY");
             return;
         }
         user.getIdToken(false).addOnCompleteListener(mainExecutor, task -> {
-            if (!task.isSuccessful()) { fail(call, "AUTH_REFRESH_FAILED", task.getException()); return; }
-            FirebaseUser current = auth.getCurrentUser();
-            if (current == null || !current.getUid().equals(user.getUid())) {
-                fail(call, "AUTH_CHANGED", null);
-                return;
-            }
-            new Thread(() -> {
-                HttpsURLConnection connection = null;
-                File download = null;
-                boolean returnedDownload = false;
-                try {
-                    // Fixed proof-project HTTPS origin; callers cannot redirect a token.
-                    URL url = new URL("https://us-central1-cruxcontrol-auth-20261010.cloudfunctions.net/privateVaultProof/snapshots"
-                        + (listing ? "" : "/" + slot));
-                    connection = (HttpsURLConnection) url.openConnection();
-                    connection.setInstanceFollowRedirects(false);
-                    connection.setConnectTimeout(15000);
-                    connection.setReadTimeout(60000);
-                    connection.setRequestMethod(uploading ? "PUT" : "GET");
-                    connection.setRequestProperty("Authorization", "Bearer " + task.getResult().getToken());
-                    if (uploading) {
-                        StringBuilder checksum = new StringBuilder();
-                        for (byte value : MessageDigest.getInstance("SHA-256").digest(payload)) {
-                            checksum.append(String.format(Locale.ROOT, "%02x", value & 0xff));
-                        }
-                        connection.setRequestProperty("Content-Type", "application/json");
-                        connection.setRequestProperty("X-Content-SHA256", checksum.toString());
-                        connection.setDoOutput(true);
-                        connection.setFixedLengthStreamingMode(payload.length);
-                        try (java.io.OutputStream output = connection.getOutputStream()) { output.write(payload); }
-                    }
-                    int status = connection.getResponseCode();
-                    if (status < 200 || status >= 300) {
-                        fail(call, "VAULT_HTTP_" + status, null);
-                        return;
-                    }
-                    JSObject result = new JSObject();
-                    result.put("httpStatus", status);
-                    if (!listing && !uploading) {
-                        // Large bodies must not be copied into a JS string: that exhausted
-                        // the Android heap at the admitted 25 MiB boundary in the live proof.
-                        download = File.createTempFile("crux-vault-proof-", ".json", getContext().getCacheDir());
-                        MessageDigest checksum = MessageDigest.getInstance("SHA-256");
-                        int size = 0;
-                        try (InputStream input = connection.getInputStream(); FileOutputStream output = new FileOutputStream(download)) {
-                            byte[] buffer = new byte[8192];
-                            int count;
-                            while ((count = input.read(buffer)) != -1) {
-                                size += count;
-                                if (size > 25 * 1024 * 1024) throw new IllegalStateException("Oversized response");
-                                output.write(buffer, 0, count);
-                                checksum.update(buffer, 0, count);
-                            }
-                            output.getFD().sync();
-                        }
-                        StringBuilder sha256 = new StringBuilder();
-                        for (byte value : checksum.digest()) sha256.append(String.format(Locale.ROOT, "%02x", value & 0xff));
-                        result.put("downloadFile", download.getName());
-                        result.put("byteLength", size);
-                        result.put("sha256", sha256.toString());
-                        busy.set(false);
-                        call.resolve(result);
-                        returnedDownload = true;
-                        return;
-                    }
-                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                    try (InputStream input = connection.getInputStream()) {
-                        byte[] buffer = new byte[8192];
-                        int count;
-                        while ((count = input.read(buffer)) != -1) {
-                            if (bytes.size() + count > 25 * 1024 * 1024) throw new IllegalStateException("Oversized response");
-                            bytes.write(buffer, 0, count);
-                        }
-                    }
-                    result.put("responseText", bytes.toString(StandardCharsets.UTF_8));
-                    busy.set(false);
-                    call.resolve(result);
-                } catch (Exception exception) {
-                    fail(call, "VAULT_REQUEST_FAILED", null);
-                } finally {
-                    if (connection != null) connection.disconnect();
-                    if (download != null && !returnedDownload) download.delete();
-                }
-            }, "crux-vault-proof").start();
+            if (!task.isSuccessful()) { fail(call, "AUTH_REFRESH_FAILED"); return; }
+            if (!session.isCurrent(uid, expectedEpoch)) { fail(call, "AUTH_CHANGED"); return; }
+            new Thread(() -> performProofRequest(call, uid, expectedEpoch, task.getResult().getToken(),
+                listing, uploading, slot, payload), "crux-vault-proof").start();
         });
     }
 
-    @PluginMethod
-    public void signOut(PluginCall call) {
-        if (!ready(call)) return;
-        if (!busy.compareAndSet(false, true)) {
-            call.reject("An account operation is already running.", "AUTH_BUSY");
-            return;
+    private void performProofRequest(PluginCall call, String uid, long expectedEpoch, String token,
+        boolean listing, boolean uploading, String slot, byte[] payload) {
+        HttpsURLConnection connection = null;
+        File download = null;
+        boolean returnedDownload = false;
+        try {
+            if (!session.isCurrent(uid, expectedEpoch)) { fail(call, "AUTH_CHANGED"); return; }
+            URL url = new URL(NativeAccountSession.VAULT_ENDPOINT + "/snapshots"
+                + (listing ? "" : "/" + slot));
+            connection = (HttpsURLConnection) url.openConnection();
+            connection.setInstanceFollowRedirects(false);
+            connection.setConnectTimeout(15_000);
+            connection.setReadTimeout(60_000);
+            connection.setRequestMethod(uploading ? "PUT" : "GET");
+            connection.setRequestProperty("Authorization", "Bearer " + token);
+            if (uploading) {
+                StringBuilder checksum = new StringBuilder();
+                for (byte value : MessageDigest.getInstance("SHA-256").digest(payload)) {
+                    checksum.append(String.format(Locale.ROOT, "%02x", value & 0xff));
+                }
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setRequestProperty("X-Content-SHA256", checksum.toString());
+                connection.setDoOutput(true);
+                connection.setFixedLengthStreamingMode(payload.length);
+                try (java.io.OutputStream output = connection.getOutputStream()) { output.write(payload); }
+            }
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300) { fail(call, "VAULT_HTTP_" + status); return; }
+            JSObject result = new JSObject();
+            result.put("httpStatus", status);
+            if (!listing && !uploading) {
+                // Preserve the legacy proof stream path; it does not handle app-vault files.
+                download = File.createTempFile("crux-vault-proof-", ".json", getContext().getCacheDir());
+                MessageDigest checksum = MessageDigest.getInstance("SHA-256");
+                int size = 0;
+                try (InputStream input = connection.getInputStream(); FileOutputStream output = new FileOutputStream(download)) {
+                    byte[] buffer = new byte[8192];
+                    int count;
+                    while ((count = input.read(buffer)) != -1) {
+                        size += count;
+                        if (size > 25 * 1024 * 1024) throw new IllegalStateException("Oversized response");
+                        output.write(buffer, 0, count);
+                        checksum.update(buffer, 0, count);
+                    }
+                    output.getFD().sync();
+                }
+                if (!session.isCurrent(uid, expectedEpoch)) { fail(call, "AUTH_CHANGED"); return; }
+                result.put("downloadFile", download.getName());
+                result.put("byteLength", size);
+                result.put("sha256", hex(checksum.digest()));
+                transferBusy.set(false);
+                call.resolve(result);
+                returnedDownload = true;
+                return;
+            }
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            try (InputStream input = connection.getInputStream()) {
+                byte[] buffer = new byte[8192];
+                int count;
+                while ((count = input.read(buffer)) != -1) {
+                    if (bytes.size() + count > 25 * 1024 * 1024) throw new IllegalStateException("Oversized response");
+                    bytes.write(buffer, 0, count);
+                }
+            }
+            if (!session.isCurrent(uid, expectedEpoch)) { fail(call, "AUTH_CHANGED"); return; }
+            result.put("responseText", bytes.toString(StandardCharsets.UTF_8));
+            transferBusy.set(false);
+            call.resolve(result);
+        } catch (Exception ignored) {
+            fail(call, "VAULT_REQUEST_FAILED");
+        } finally {
+            if (connection != null) connection.disconnect();
+            if (download != null && !returnedDownload) download.delete();
         }
-        auth.signOut();
-        credentials.clearCredentialStateAsync(new ClearCredentialStateRequest(),
-            new CancellationSignal(), mainExecutor,
-            new CredentialManagerCallback<Void, ClearCredentialException>() {
-                @Override
-                public void onResult(Void result) {
-                    busy.set(false);
-                    call.resolve(describe(auth.getCurrentUser()));
-                }
+    }
 
-                @Override
-                public void onError(@NonNull ClearCredentialException exception) {
-                    fail(call, "AUTH_PROVIDER_CLEAR_FAILED", exception);
-                }
-            });
+    private void fail(PluginCall call, String code) {
+        transferBusy.set(false);
+        call.reject("Native vault proof operation failed.", code);
+    }
+
+    private static String hex(byte[] bytes) {
+        StringBuilder value = new StringBuilder(bytes.length * 2);
+        for (byte item : bytes) value.append(String.format(Locale.ROOT, "%02x", item & 0xff));
+        return value.toString();
     }
 }
