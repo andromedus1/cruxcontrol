@@ -2,13 +2,25 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { decodeLibraryBackup } from "../../../web/src/library-backup/codec.ts";
 
-const [serial, method, output] = process.argv.slice(2);
+const [serial, method, output, slot, backupFile] = process.argv.slice(2);
 assert(/^emulator-\d+$/.test(serial ?? "") &&
-  ["status", "signIn", "verifySession", "signOut"].includes(method) && output,
-  "Usage: node android-auth-proof.mjs emulator-N status|signIn|verifySession|signOut PRIVATE_EVIDENCE_FILE");
+  ["status", "signIn", "verifySession", "signOut", "vaultList", "vaultPut", "vaultGet"].includes(method) && output,
+  "Usage: node android-auth-proof.mjs emulator-N METHOD PRIVATE_EVIDENCE_FILE [SLOT [BACKUP_FILE]]");
+const vault = method.startsWith("vault");
+const options = vault ? { operation: method.slice(5).toLowerCase() } : {};
+if (vault && method !== "vaultList") {
+  assert(/^([0-2][0-9]|3[01])$/.test(slot ?? ""), "Expected proof slot 00–31");
+  options.slot = slot;
+}
+if (method === "vaultPut") {
+  assert(backupFile, "A validated synthetic whole-library backup file is required");
+  options.text = await readFile(backupFile, "utf8");
+  decodeLibraryBackup(options.text);
+}
 const adbPath = process.env.ADB ?? `${process.env.ANDROID_HOME}/platform-tools/adb`;
 const appId = "io.github.andromedus1.cruxcontrol.prototype";
 const adb = (...args) => execFileSync(adbPath, ["-s", serial, ...args], {
@@ -69,7 +81,7 @@ try {
   }
   assert(bridgeReady, "Native bridge did not finish starting");
   const result = await evaluate(
-    `window.Capacitor.nativePromise('NativeAuthProof', ${JSON.stringify(method)}, {}).then(value => ({ok:true,value}), error => ({ok:false,code:error.code ?? 'UNKNOWN'}))`,
+    `window.Capacitor.nativePromise('NativeAuthProof', ${JSON.stringify(vault ? "vaultRequest" : method)}, ${JSON.stringify(options)}).then(value => ({ok:true,value}), error => ({ok:false,code:error.code ?? 'UNKNOWN'}))`,
     10 * 60 * 1000,
   );
   await mkdir(dirname(evidence), { recursive: true, mode: 0o700 });
@@ -79,6 +91,8 @@ try {
     signedIn: value?.signedIn,
     uidSha256: value?.uid ? createHash("sha256").update(value.uid).digest("hex") : undefined,
     issuedAt: value?.issuedAt, expiresAt: value?.expiresAt,
+    httpStatus: value?.httpStatus,
+    responseSha256: value?.responseText ? createHash("sha256").update(value.responseText).digest("hex") : undefined,
   }));
   if (!result.ok) process.exitCode = 1;
 } finally {

@@ -389,3 +389,159 @@ identity validation, no bearer URL issuance, atomic concurrent creation,
 interrupted upload/retry, live account isolation and native full-library recovery.
 Prepare concrete deployment configuration and revised costs before requesting
 billing activation. Production vault design and automatic backup remain incomplete.
+
+### Authenticated service proof design
+
+Andrew authorized continuing on 2026-10-10. Proceed inline with one owner and
+standard eventual feature review; the bounded service spike does not advance this
+feature out of drafting or select the production provider. Existing privacy,
+offline-use, retention and budget decisions answer the directional questions.
+
+Options: (1) deploy the direct Firebase Storage SDK/Rules candidate to see whether
+the local race exists in the live service; this leaves the separate bearer URL
+boundary and conditional-write contract unresolved; (2) retain native Firebase
+identity and add a narrow authenticated service using GCS create preconditions and
+non-destructive IAM permissions; (3) restart the native-account proof with Supabase.
+Prepare option 2 for synthetic proof. It reuses the demonstrated account and gives
+an explicit conditional write. Firebase's second-generation HTTP function deployer
+fits the installed CLI and runs on Cloud Run; no additional authentication protocol,
+database, email provider, domain or client-visible storage credentials are needed.
+This is a candidate to validate, not evidence that deployed IAM or recovery works.
+
+The trickiest unit is atomic admission plus lost-response retry: read an existing
+slot first, accept only exact matching bytes, otherwise create with
+`ifGenerationMatch: 0`, then independently read back the committed bytes before
+returning a receipt. A losing concurrent create reads the winning object; a
+different payload receives conflict. A failed readback is never success. No
+handler replaces, deletes or prunes objects. Use the existing strict backup codec
+for schema validation, with fatal UTF-8 decoding and the 25 MiB byte limit.
+
+Proof units under `prototypes/firebase-vault/gateway/`:
+
+- `handler.mjs`: `createVaultHandler({ ownerUid, verifyToken, store })` returns an
+  HTTP handler. The verifier resolves `{uid:string}` or rejects; the store exposes
+  `list(): Promise<Snapshot[]>`, `read(slot): Promise<{bytes:Buffer,snapshot:Snapshot}|null>`
+  and `create(slot, bytes, sha256): Promise<void>`. `Snapshot` is
+  `{slot:string, bytes:number, sha256:string, generation:string, createdAt:string}`.
+  Only an authenticated admitted UID can use `GET /snapshots`,
+  `GET /snapshots/00..31` or `PUT /snapshots/00..31`; mutations require an exact
+  `X-Content-SHA256` digest. Unknown paths, query parameters, other verbs and
+  malformed content fail explicitly. Responses carry no UID, tokens or URLs.
+  `Cache-Control: no-store` applies to errors and library bytes alike.
+- `gcs-store.mjs`: `createGcsStore(bucket, ownerUid)` implements this port with
+  native Google Cloud Storage SDK calls. Hardcode the owner prefix, exact slot
+  grammar, create precondition and metadata. Bound listings and downloads; pin a
+  read to the returned object generation. Never construct signed/download URLs.
+- `index.mjs`: Firebase HTTP function `privateVaultProof`, Node 22,
+  us-central1, 512 MiB, one CPU, concurrency one, minimum zero and maximum one
+  instance, 60-second timeout. Firebase Admin validates the ID token for the
+  proof project with revocation checking; the admitted UID is private runtime
+  configuration. Use a dedicated service account, never a default editor account.
+  Bundle the existing codec into the deployment artifact with esbuild; do not
+  fork its schema or ship web UI assets and emulator tools to the function.
+- `prepare-service.mjs`: generate a private deployment directory and reviewed
+  resource plan using successful native evidence only as local configuration
+  input. Do not authenticate that evidence, link billing, deploy or upload data.
+  Include dedicated bucket/account names, required roles, runtime limits and
+  artifact hash. Owner UID and generated environment file remain outside Git.
+
+Deployment proposal: same dedicated project `cruxcontrol-auth-20261010`, bucket
+`cruxcontrol-auth-20261010-vault-proof`, account `crux-vault-proof`, one function.
+Bucket has uniform access and enforced public-access prevention, no lifecycle
+deletion, and default seven-day soft deletion. Runtime gets only bucket-scoped
+Object Creator/Viewer and a project custom role containing `firebaseauth.users.get`
+for revoked/disabled-user checks. The function endpoint admits unauthenticated
+transport requests so it can verify Firebase end-user tokens, but every data route
+requires the admitted account. No client has direct bucket IAM or a token URL.
+The 32-slot, 800 MiB maximum remains proof-only. It is not dogfood retention.
+
+Tests use actual HTTP requests against the handler plus synthetic verifier/storage
+adapters, and an SDK wire fixture checks the GCS precondition. Cover competing
+different and identical creates, existing-object conflict, lost upload response,
+readback corruption, anonymous/other-owner/invalid token denial before storage,
+strict schema/hash/size/path validation, no destructive methods, slot exhaustion,
+and exact readback/discovery from a fresh client. Mock storage is not evidence of
+live GCS atomicity or IAM. Retain the original failing direct-SDK assertion.
+
+Before live admission, verify deployed least privilege, actual native token
+authentication, concurrent conditional creates, interrupted retries, unauthorized
+requests and fresh-install discovery/readback. Whole-library installation/restore
+and automatic scheduling remain owned by automatic-backup. Confirm service costs
+and explicit billing activation before any deploy command executes.
+
+Primary implementation references checked 2026-10-10:
+[GCS preconditions](https://docs.cloud.google.com/storage/docs/request-preconditions),
+[GCS IAM roles](https://docs.cloud.google.com/storage/docs/access-control/iam-roles),
+[public access prevention](https://docs.cloud.google.com/storage/docs/public-access-prevention),
+[Firebase token validation](https://firebase.google.com/docs/auth/admin/verify-id-tokens),
+[revocation](https://firebase.google.com/docs/auth/admin/manage-sessions),
+[HTTP functions](https://firebase.google.com/docs/functions/http-events),
+[runtime limits](https://firebase.google.com/docs/functions/manage-functions).
+
+Pre-mortem: the emulator cannot certify IAM; local passing tests must never close
+live acceptance. A service identity with inherited delete/admin rights defeats the
+intended secondary protection, so inspect effective permissions. Public transport
+means invalid traffic still consumes compute; maximum instances and alerts are not
+hard spending caps. Recovery depends on account and project availability; retain
+the separately verified portable-file path. If live authorization or conditional
+creation fails, stop at the proof and revisit the candidate before real authoring.
+
+### Authenticated service preparation evidence
+
+The candidate and native proof transport are implemented; no live service is
+deployed. Ten local tests pass: nine handler tests exercise actual local HTTP
+with injected identity/storage boundaries, and one real GCS SDK wire fixture
+checks request preconditions, generation-pinned reads and non-destructive
+requests. The original direct-SDK competing-create todo remains unresolved.
+Neither fixture establishes live IAM, account isolation or cloud recovery.
+
+Inspection of pinned `@google-cloud/storage` 8.4.0 found that its post-upload
+checksum-mismatch path attempts `delete()`. The adapter therefore supplies CRC32C
+in upload metadata for server validation and disables that SDK cleanup path;
+independent generation-pinned readback still checks checksum, exact bytes, SHA-256
+and backup schema before a receipt. The wire test deliberately returns a wrong
+upload-response checksum and confirms no DELETE request occurs. This follows the
+provider's [server-side checksum validation](https://docs.cloud.google.com/storage/docs/data-validation)
+contract; live rejection and IAM remain to be tested.
+
+`prepare-service.mjs` produced ignored `.private-firebase/service-proof-1/` with
+artifact SHA-256
+`104df9104d69af451fe59891b5c550cb0094ff9c642c0b1163b26e8a3129f3fd`.
+The copied artifact and lock hashes match the resource plan, private files have
+no group/other access, and test fixtures are absent from the deployment bundle.
+A production-only dependency install and import of that exact bundle pass;
+Firebase's exported endpoint metadata matches the proposed region, identity,
+memory, CPU, concurrency, instance limits and timeout. These are local package
+checks, not a deployed-configuration readback.
+
+The proof-only Android bridge now offers native `vaultRequest` list/get/put
+against the fixed project HTTPS endpoint. Firebase ID tokens stay in the native
+Authorization header, redirects are disabled, and response sizes/timeouts are
+bounded. The emulator-only operator runner validates uploads with the shared
+codec and writes responses only to private evidence. No automatic scheduler or
+product account UI is introduced. SignedProof18 compiles with the private catalog;
+APK SHA-256 is
+`6924cc5b187330b3ea1c87a3dd305e69ea78ccd5455b7a37f5a903fb06b62577`, and its
+signature matches the retained signing certificate. It was built from tracked
+dirty source based on `36af3fd`, not a clean release commit. No emulator or phone
+has received this build, and no native service request has run. Existing release
+variant isolation is unchanged; CI checks the added source compilation.
+
+`cost-estimate.mjs` records reproducible illustrative pricing checked 2026-10-10:
+approximately **$0.485/month before free allowances** for 32 × 25 MiB snapshots,
+1,000 function requests, 2,000 instance seconds at one CPU/0.5 GiB, 1,000 class-A
+and 5,000 class-B storage operations, 1 GiB North America outbound transfer,
+1 GiB retained build artifacts and 30 e2-standard-2 build minutes with a 100 GiB
+disk. This is assumed usage, not measured spending or a guarantee. Free allowances
+may reduce it; taxes, unrelated usage, excess traffic and optional services are
+excluded. Primary rate links are embedded in the script. Propose a $5 monthly
+budget with alerts at $1, $2.50 and $5 before live verification; alerts and runtime
+limits are not hard spending caps. Restrict seven-day artifact cleanup to function
+build images, never library snapshots. Billing activation remains an explicit
+prerequisite; no billed service has been provisioned.
+
+Next: CI for this preparation, owner billing activation, then provision/read back
+the exact planned resources and run synthetic live authorization, conditional
+create, retry and separate-installation recovery checks. Only passing live evidence
+can support selecting the production vault and completing the automatic-backup
+design. Real authoring remains gated on automatic protection and proven restore.

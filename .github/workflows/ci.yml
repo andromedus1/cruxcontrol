@@ -180,6 +180,12 @@ jobs:
         run: |
           echo '::warning::The executable competing-create TODO remains unresolved. This job is policy exploration, not immutable-backup acceptance.'
 
+      - name: Install authenticated service proof dependencies
+        run: npm --prefix prototypes/firebase-vault/gateway ci --ignore-scripts
+
+      - name: Test and bundle authenticated service proof
+        run: npm --prefix prototypes/firebase-vault/gateway test
+
   ml:
     name: ml (stub lane)
     runs-on: ubuntu-latest
