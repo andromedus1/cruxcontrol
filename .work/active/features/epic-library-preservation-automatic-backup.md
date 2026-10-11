@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-automatic-backup
 kind: feature
-stage: review
+stage: implementing
 tags: [data, security, ui]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -437,3 +437,32 @@ packaging pass. Real `library-v1` and physical hardware remain untouched.
 Standard review is one independent Claude pass through the installed peeragent
 wrapper, followed by root adjudication and verification of accepted material
 fixes without a second pass. PR CI must also pass before feature closure.
+
+## Review (2026-10-11)
+
+**Verdict:** Request changes; standard weight, one completed independent Claude
+pass via peeragent job `20261011T172817Z-7aa47a5e` at verified implementation
+checkpoint `88014e4`. Reviewer performed read-only code/contract inspection and
+used the committed acceptance evidence; it did not independently rerun devices.
+
+**Blockers:** `epic-library-preservation-automatic-backup-review-fixes` owns
+offline local verification, late sign-out publication, refreshed pending history,
+empty-library discovery, actionable wrong-account handling, and identity/CAS
+regressions. Root confirms the code paths. Findings 2–5 are bounded but merit
+correction now because they affect truthful backup/recovery admission and status.
+
+**Important:** Remaining capture cost and no-op recovery adoption/save-failure
+polish are recorded separately in backlog. Root will additionally exercise actual
+maximum structured automatic upload; the earlier large UI restore bound the
+existing receipt and did not itself run automatic capture/upload at that size.
+
+**Nits/rejected:** Future state-schema changes requiring migration are a normal
+versioning obligation, not evidence of a present unsupported format or bug. No
+speculative compatibility layer is warranted. The live offline/reconnect proof
+already covers that integration scenario, while the interrupted local verification
+case needs the newly specified regression. The reviewer found no demonstrated
+authored-data loss or incorrect acknowledgement of a newer committed revision.
+
+Fix/verify/CI closes this standard review administratively; do not request another
+independent pass. The previously passing emulator recovery evidence remains valid
+for its measured paths, and real authoring stays gated on physical parity.
