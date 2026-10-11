@@ -439,10 +439,10 @@ runner uses `ADB` when set, otherwise `$ANDROID_HOME/platform-tools/adb`. From
 the repository root, capture each operation into a separate private file:
 
 ```bash
-node prototypes/ios/scripts/android-auth-proof.mjs emulator-N status /outside/git/auth-evidence/status.json
-node prototypes/ios/scripts/android-auth-proof.mjs emulator-N signIn /outside/git/auth-evidence/sign-in.json
-node prototypes/ios/scripts/android-auth-proof.mjs emulator-N verifySession /outside/git/auth-evidence/session.json
-node prototypes/ios/scripts/android-auth-proof.mjs emulator-N signOut /outside/git/auth-evidence/sign-out.json
+node --experimental-strip-types prototypes/ios/scripts/android-auth-proof.mjs emulator-N status /outside/git/auth-evidence/status.json
+node --experimental-strip-types prototypes/ios/scripts/android-auth-proof.mjs emulator-N signIn /outside/git/auth-evidence/sign-in.json
+node --experimental-strip-types prototypes/ios/scripts/android-auth-proof.mjs emulator-N verifySession /outside/git/auth-evidence/session.json
+node --experimental-strip-types prototypes/ios/scripts/android-auth-proof.mjs emulator-N signOut /outside/git/auth-evidence/sign-out.json
 ```
 
 `signIn` requires completing or canceling the native account prompt while the
@@ -453,6 +453,25 @@ console output hashes the UID and omits the email. Relaunch the explicit activit
 and use new evidence files for persistence, offline/online and cancellation
 checks. `AUTH_NOT_CONFIGURED` means the asset is absent or invalid, not a
 successful authentication check.
+
+Proof-only `vaultList`, `vaultGet` and `vaultPut` operator commands call the
+[authenticated service candidate](../firebase-vault/README.md#authenticated-service-candidate)
+at its fixed proof-project HTTPS endpoint. Native code supplies the Firebase
+token without sending it through JavaScript and refuses redirects. After signing
+in, the following commands are for future authorized synthetic service checks;
+the endpoint is not deployed and native service acceptance remains pending:
+
+```bash
+node --experimental-strip-types prototypes/ios/scripts/android-auth-proof.mjs emulator-N vaultList /outside/git/auth-evidence/vault-list.json
+node --experimental-strip-types prototypes/ios/scripts/android-auth-proof.mjs emulator-N vaultPut /outside/git/auth-evidence/vault-put.json 00 /outside/git/synthetic-library.json
+node --experimental-strip-types prototypes/ios/scripts/android-auth-proof.mjs emulator-N vaultGet /outside/git/auth-evidence/vault-get.json 00
+```
+
+`vaultPut` validates the synthetic whole-library backup with the app codec before
+invocation. Private evidence contains the service response, including backup
+contents for `vaultGet`; console output contains only status and response digest.
+These commands do not import records into the app or schedule backups. Android
+compilation of the new service bridge remains pending.
 
 SignedProof17 compiled with the dedicated Firebase project's Android registration
 and Google provider configured; billing remains disabled. Native sign-in, forced

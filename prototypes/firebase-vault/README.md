@@ -1,8 +1,9 @@
 # Firebase private-vault policy proof
 
-This isolated prototype tests Storage Rules against synthetic identities and
-backup bytes. It does not implement app backup or library restore, enable billing,
-create a bucket or deploy rules. Native account recovery has separately passed on
+This isolated prototype explores direct Storage Rules and an authenticated
+service using synthetic backup bytes. It does not implement scheduled app backup
+or full cloud library restore, enable billing, create a bucket or deploy code.
+Native account recovery has separately passed on
 an independent fresh emulator with the same UID and forced refresh before and
 after restart; cloud library recovery remains unimplemented.
 
@@ -26,9 +27,9 @@ Nine checks passed, but the competing-create check failed with Storage emulator
 behavior. The direct-SDK prototype is **not accepted for immutable backups**.
 The failing assertion remains executable as a test todo linked to the feature
 blocker; a todo is not passing acceptance. The next proof must establish atomic
-creation and address bearer URLs. A trusted service using Cloud Storage generation
-preconditions is one candidate; no replacement service has been selected. No
-billing activation or deployment approval is requested by this proof.
+creation and address bearer URLs. The service candidate below explores that
+boundary; no production app or provider has been selected. No billing activation
+or deployment approval is requested by this proof.
 
 The policy admits one UID at `owners/<uid>/snapshots/<slot>`, with 32 names
 `00`–`31`. The owner can list and read those snapshots and create a nonempty
@@ -68,3 +69,58 @@ project argument is checked locally; the generated configuration has no project
 binding or emulator settings. Deployment, billing and live storage acceptance
 remain separate owner-controlled decisions. See the [native Android proof](../ios/README.md#native-android-authentication-feasibility-proof)
 for evidence generation.
+
+## Authenticated service candidate
+
+The candidate verifies Firebase ID tokens, including revocation, and admits one
+configured UID. Its only routes are `GET /snapshots`, `GET /snapshots/00`–`31`
+and `PUT` to those slots. Uploads must pass the app's whole-library backup codec
+and SHA-256 validation within 25 MiB. GCS creation uses `ifGenerationMatch: 0`;
+identical retries can recover a receipt, while conflicting bytes are rejected.
+The handler verifies exact object readback before returning `verified: true`.
+There is no delete, overwrite, automatic pruning or tokenized download URL API.
+
+Uploads supply CRC32C metadata for GCS server validation. SDK post-upload checksum
+validation is disabled because its failure path can automatically delete an
+object; the gateway instead verifies readback before acknowledging protection,
+without deletion. Reads pin the object generation and validate its checksum,
+backup structure and digest.
+
+With Node 22, run the candidate's local checks and build from the repository root:
+
+```bash
+npm --prefix prototypes/firebase-vault/gateway ci --ignore-scripts
+npm --prefix prototypes/firebase-vault/gateway test
+npm --prefix prototypes/firebase-vault/gateway run build
+node prototypes/firebase-vault/prepare-service.mjs \
+  /outside/git/auth-evidence/session.json \
+  /outside/git/new-vault-service-proof cruxcontrol-auth-20261010
+```
+
+Ten local tests pass: handler tests use real local HTTP with injected identity
+verification and storage; a GCS SDK wire fixture checks create preconditions,
+generation-pinned reads and absence of destructive requests. These do not prove
+live GCS/IAM enforcement, genuine service-side token verification or native
+service access. The original direct-SDK race todo remains unresolved.
+
+Preparation requires a new private output directory and successful native
+`verifySession` evidence. It packages the built service with the bundled backup
+codec, dependency lock, local UID configuration, `firebase.json` and
+`resource-plan.json`. The resource plan records proposed restricted IAM, bucket
+access controls and a finite snapshot pool; these are plans, not provisioned
+resources. Preparation makes no cloud authentication, provenance-verification,
+deployment or billing calls. Keep the complete package and evidence outside Git.
+Billing is still disabled, and Android compilation/native service acceptance
+remain pending.
+
+```bash
+node prototypes/firebase-vault/cost-estimate.mjs
+```
+
+The script's illustrative proof month totals about **$0.485 before free
+allowances**: 730 hours, 32 × 25 MiB snapshots, 1,000 requests, 2,000 billable
+instance seconds at 1 CPU/0.5 GiB, 1,000 class-A/5,000 class-B storage operations,
+1 GiB North America egress, 1 GiB build artifacts and 30 build minutes with a
+100 GiB build disk. This is arithmetic for stated assumptions, not measured
+spending, a cap or a readiness claim; taxes, unrelated usage and usage beyond
+those assumptions are excluded. Proposed billing alerts are not hard caps.
