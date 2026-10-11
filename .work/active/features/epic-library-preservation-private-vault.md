@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-private-vault
 kind: feature
-stage: drafting
+stage: implementing
 tags: [data, security, infra]
 research_refs: [independent-library-preservation, native-backup-service-costs]
 parent: epic-library-preservation
@@ -9,7 +9,7 @@ depends_on: [epic-library-preservation-native-library]
 release_binding: null
 gate_origin: null
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # Access private backups through a recoverable account
@@ -23,9 +23,10 @@ a project-scoped $5 monthly alert budget. The 25 MiB download proof exposed and
 fixed an Android heap exhaustion in the proof bridge by streaming to a native
 cache file. See the final live-evidence section for limits and reproducible paths.
 
-Stage remains **drafting**: production provider/design admission, automatic backup
-scheduling/revision acknowledgement, retention/capacity behavior and integrated
-account/cloud recovery UI are unfinished. Real authoring is not admitted. Earlier
+Stage is **implementing**: the application vault design below admits the verified
+provider and bounded retention policy. Native application transport remains to be
+implemented; automatic scheduling/revision acknowledgement and account/cloud recovery
+UI belong to the dependent automatic-backup feature. Real authoring is not admitted. Earlier
 setup checkpoints below describe the evidence available at those points; their
 pre-deployment statements are superseded by the live checkpoint.
 
@@ -672,3 +673,209 @@ owning features. Test offline creation and subsequent automatic backup, failed o
 interrupted writes, sign-out/account recovery and clean-install restoration through
 the integrated app before admitting real authoring. Phone/Fullride acceptance is
 still separate. The live proof service alone does not fulfill these requirements.
+
+## Application vault design (2026-10-11)
+
+The live evidence admits Firebase Authentication + the narrow authenticated GCS
+service as the Android dogfood vault. Keep the existing project, bucket, runtime
+identity, encryption, alerts and limits; the owning account is unchanged. This is
+private backup, not sharing or multi-device synchronization. The automatic-backup
+feature owns scheduling, durable revision/admission state and all product UI.
+
+Directional question pass: account recovery, service encryption, offline use,
+portable files and cheaper-first cost limits are settled. The prepared Manage,
+connect, history and recovery mocks cover the forthcoming UI. Remaining pool,
+chunk and retry sizes are reversible engineering choices, not new user decisions.
+Direct reads covered gateway/native bridge/library/runtime/tests; one focused
+read-only explorer mapped the cross-feature UI/restore seam. A standard independent
+feature review will follow verification. One design advisory is warranted because
+native file lifetime, identity changes and recovery receipts cross trust boundaries.
+
+### Architectural choice
+
+1. Native Firebase identity plus the already-proven gateway: choose this, with
+   streamed native files and small bridge chunks. It preserves demonstrated account
+   recovery and immutable storage without a new account/service.
+2. Direct native Storage SDK: rejected here because it changes the proven access
+   and conditional-write boundary; the earlier emulator race remains documented.
+3. Another provider or JS token-bearing SDK: adds an unproven session boundary and
+   does not resolve the native heap/large-transfer issue.
+
+Keep the existing proof routes/data intact. Add `/library-v1/snapshots` and
+`/library-v1/snapshots/<slot>` to the same function. Application slots are three
+ASCII decimal digits `000` through `511`, exactly 512 immutable objects of at most
+25 MiB (12.5 GiB maximum admitted application bytes); proof slots remain separate.
+Application objects live at `owners/<uid>/library-v1/snapshots/<slot>`, disjoint
+from proof data. Add an explicit `/acceptance-v1/snapshots` pool with the identical
+512-slot policy and algorithm at `owners/<uid>/acceptance-v1/snapshots/<slot>`.
+Only a debuggable signed-proof build may select this pool through its ignored
+variant-specific configuration; ordinary release configuration must select
+`library-v1`. Status returns the scope so durable backup state cannot cross pools.
+No app list/get route can discover the other pools. The acceptance pool is a
+bounded synthetic test location, not an alternate product mode.
+Keep every admitted snapshot; no pruning, deletion, mutable latest pointer, new
+metadata database, or background-execution promise. Capacity exhaustion is visible
+and stops uploads. This is the first dogfood retention policy, not indefinite free
+retention. Existing $5 alerts remain alerts; measure actual usage before changing
+policy. There is no fixed $25/month plan or new service instance.
+
+### Public TypeScript contract
+
+`web/src/private-vault/types.ts` owns the app-facing port; the native adapter is
+its only production implementation. No token, signed URL or filesystem path enters
+this contract.
+
+```typescript
+export interface VaultAccount { readonly uid: string; readonly email: string | null }
+export interface VaultStatus {
+  readonly configured: boolean;
+  readonly installationId: string;
+  readonly scope: 'library-v1' | 'acceptance-v1';
+  readonly account: VaultAccount | null;
+}
+export interface VaultSnapshot {
+  readonly slot: string; readonly bytes: number; readonly sha256: string;
+  readonly generation: string; readonly createdAt: string;
+}
+export interface StagedBackup { readonly id: string; readonly bytes: number; readonly sha256: string }
+export interface VaultListing {
+  readonly snapshots: readonly VaultSnapshot[];
+  readonly capacity: { readonly slots: number; readonly bytesPerSlot: number };
+}
+export interface VaultReceipt { readonly snapshot: VaultSnapshot; readonly verified: true }
+export interface PrivateVault {
+  status(): Promise<VaultStatus>;
+  signIn(): Promise<VaultAccount>;
+  signOut(): Promise<void>;
+  list(uid: string): Promise<VaultListing>;
+  stage(uid: string, text: string): Promise<StagedBackup>;
+  upload(uid: string, slot: string, staged: StagedBackup): Promise<VaultReceipt>;
+  download(uid: string, snapshot: VaultSnapshot): Promise<string>;
+  discard(uid: string, stagedId: string): Promise<void>;
+  retainStaged(uid: string, ids: readonly string[]): Promise<void>;
+}
+```
+
+`VaultError` carries a bounded code: `not-configured`, `signed-out`,
+`account-changed`, `not-admitted`, `cancelled`, `offline`, `unavailable`,
+`conflict`, `missing`, `invalid-response`, `invalid-backup`, `staging-missing`.
+Provider/SQL exception text, credentials and library contents never enter logs.
+Strict response decoders fail closed on malformed metadata, capacity, duplicate
+slots, noncanonical slots, invalid digest/generation/date/size and wrong receipts.
+Download validates the listed generation, digest, size and strict backup codec;
+a receipt validates the requested slot and staged digest/size. Older caller identity
+cannot consume a completion after sign-out/account change, including sign-out and
+back into the same UID: capture and recheck a native session epoch as well as UID.
+
+### Implementation units and order
+
+1. **Application service contract and isolation** —
+   `web/src/private-vault/{types,contract}.ts` and gateway
+   `{contract,handler,gcs-store,index}.mjs`, plus focused tests. Reuse the same handler
+   and store algorithm with explicit proof/application pool definitions rather than
+   fork the security logic. Validate path/slot/prefix from the selected pool, preserve
+   current proof defaults/tests, and route the application prefix explicitly.
+   A bounded listing of at most 513 objects detects excess/duplicate metadata.
+   Continue generation-zero creates, server CRC metadata and independently verified
+   readback. Deny unknown methods/queries, anonymous/different accounts, overwrite
+   and delete. Application and proof routes cannot cross namespaces. Build bundles
+   the shared codecs/contracts; no UI or private evidence enters the deployment.
+
+2. **Native account and file transport** — main Android
+   `NativeAccountPlugin.java` + `PrivateVaultPlugin.java`,
+   `MainActivity.java`, `app/build.gradle`, and
+   `prototypes/ios/src/{private-vault-plugin,native-private-vault}.ts`.
+   Extract the proven account/session methods into a common native base where useful
+   so the proof and application do not maintain separate authentication protocols.
+   Native Firebase SDK and Credential Manager continue to own tokens/session storage;
+   verification/access stays native with a fixed HTTPS endpoint, no redirects, bounded
+   timeouts and at most one forced-token-refresh retry after HTTP 401. Recheck the
+   expected Firebase UID before request and before returning. Refresh failures do not
+   prevent local application startup or offline use.
+
+   The hardest unit is durable upload staging without large bridge strings.
+   Stage strictly decoded UTF-8 backup bytes in bounded chunks (at most 64 KiB
+   decoded per call); require ordered offsets, exact declared size/digest, file sync
+   and atomic sealing before returning an opaque UUID. Keep sealed uploads in an
+   app-private `noBackupFilesDir` subdirectory, bound to the native account. Never
+   accept arbitrary paths/URLs. A native installation UUID also lives in this
+   non-restorable directory and survives ordinary updates, not app removal.
+   Upload streams the sealed file; receipts never imply the JS coordinator has
+   acknowledged a library revision. Interrupted/lost-response uploads leave sealed
+   bytes available for the same retry. Discard is explicit after durable caller
+   acknowledgement. `retainStaged` deletes only this account's unreferenced staging
+   files, never a database, authored library, downloaded backup or cloud object;
+   the coordinator supplies its durable pending ID before invoking cleanup. Sealed
+   files are bound to owner and pool; native staging operations are serialized,
+   reject stale session epochs, and cleanup never removes admitted in-flight files.
+
+   GET streams to a temporary native file while hashing/limiting bytes and checking
+   returned generation/digest against the selected snapshot. Read that file across
+   the bridge in bounded chunks; incremental fatal UTF-8 decoding and the shared
+   backup codec validate it before returning text. Clean only the temporary download
+   after transfer. Serialize file operations; do not allow account changes to mix
+   chunks or receipts. No 25 MiB Java String/Base64/JSONObject response is permitted.
+
+3. **Packaging and integrated transport evidence** —
+   `scripts/prepare-android-vault.mjs`, signed build checks and native proof driver.
+   Generate ignored `vault-config.json` from the existing registered app's public
+   Firebase configuration; never accept a service key/operator credential. Pin the
+   exact project/package/client and service origin. Compile-only/CI builds may lack
+   configuration and expose `not-configured`; a configured daily-use build includes
+   native auth but remains non-debuggable and excludes proof activities/config.
+   Preserve app ID, signing key, OS backup exclusions and increasing version codes.
+   Update release-isolation assertions to distinguish intentionally admitted native
+   auth from the still-excluded proof surface.
+
+### Verification and acceptance
+
+- Local HTTP/SDK tests for both pools, namespace isolation, all 512 application
+  slots, invalid routes/metadata/receipts, conditional races/retries, strict schema
+  and no destructive storage requests. Existing proof cases remain honest.
+- Native-adapter tests for chunk boundaries (including multibyte UTF-8), exact
+  digest/generation/size checks, wrong-account/late response, staging restart/retry,
+  missing/corrupt file and cancellation/401 refresh behavior. Use injected native
+  transport and actual shared backup codecs; don't merely mirror Java code in mocks.
+- Compile configured signed proof and unconfigured CI variants. Before an emulator
+  update, retain/validate its complete library; compare after update. Validate real
+  native sign-in/renewal and 25 MiB app-namespace put/list/get with synthetic data,
+  plus process restart with a sealed pending file. Production-namespace synthetic
+  acceptance must use a separately reserved test owner/namespace or a temporary
+  isolated service configuration; never seed the owner's future library with test
+  snapshots. Keep proof endpoint/test pool for routine live transport verification.
+- Service changes deploy only from the prepared, reviewed artifact through the
+  existing explicit project path; verify IAM/runtime/bucket unchanged. Actual app
+  automatic scheduling/restoration is the next feature's acceptance, not this one's.
+
+### Risks and ownership
+
+Persisting staged bytes before recording the durable pending ID can leave an orphan;
+cleanup must use the authoritative SQL pending state and account, never directory
+age or an optimistic assumption. An auth change invalidates in-flight results.
+Chunked transport solves the observed Java heap failure; maximum record-count and
+JS restore memory still need integrated acceptance. Capacity must report paused
+protection rather than delete older versions. Unknown initial proof 401 remains a
+recorded limitation; production handles one refresh retry and visible failure.
+
+One owner implements this cohesive vault feature; its service/native/acceptance
+checkpoints have different test surfaces and span multiple sessions, so child
+stories provide resume points. No automatic-backup implementation is dispatched
+until the vault is verified at review or done. Review weight is standard from
+`.work/CONVENTIONS.md`, with one cross-model review and fix verification.
+
+### Dispatch and checkpoints
+
+One feature owner implements the service and native checkpoints sequentially; the
+host owns isolated live acceptance and feature review. Child stories are
+`private-vault-service`, `private-vault-native`, and `private-vault-acceptance`
+(all prefixed by `epic-library-preservation-`). Each has distinct verification
+and a separate completion commit. The dependency graph is acyclic and native
+library is terminal. Automatic-backup remains design-only until this feature's
+integrated verification is green.
+
+Implementation capability: the skill's default GPT-5.6 Luna is unavailable; use
+available GPT-6 Luna at xhigh for this cross-language security/data-preservation
+work. Root owns design adjudication, integration verification and the standard
+one-pass Claude review. The worker may not deploy, read private account evidence,
+change real device state, or push. Shared working tree ownership excludes the
+automatic-backup feature and unrelated untracked documentation.
