@@ -277,7 +277,9 @@ Capacity exhaustion pauses uploads; there is no automatic pruning. Service costs
 are usage-priced, with no fixed $25/month plan; existing $5 budget alerts are not caps.
 
 The automatic-backup durable-state checkpoint is implemented with a preserving
-SQLite v1-to-v2 migration. The coordinator and UI remain under implementation.
+SQLite v1-to-v2 migration; synthetic emulator upgrades preserve complete libraries
+and playlist ordering through restart. The coordinator and UI remain under
+implementation.
 A SQLite aggregate revision and durable pending record bind
 an exact receipt to saved work. Atomic whole-library restore and a verification
 barrier precede renewed uploads. Planned foreground scheduling coalesces changes for 30

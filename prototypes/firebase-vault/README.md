@@ -92,7 +92,9 @@ configured UID. Its legacy proof routes are `GET /snapshots`,
 `GET /snapshots/00`–`31` and `PUT` to those slots. Uploads must pass the app's
 whole-library backup codec and SHA-256 validation within 25 MiB. GCS creation uses `ifGenerationMatch: 0`;
 identical retries can recover a receipt, while conflicting bytes are rejected.
-The handler verifies exact object readback before returning `verified: true`.
+Application export time and content counts are validated before immutable creation,
+so invalid application metadata cannot consume a retained slot. The handler
+verifies exact object readback before returning `verified: true`.
 There is no delete, overwrite, automatic pruning or tokenized download URL API.
 
 The deployed application extension adds `/library-v1/snapshots` and

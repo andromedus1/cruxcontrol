@@ -548,6 +548,14 @@ restart; unfinished stages and download temporaries are cleared on startup. The
 TypeScript adapter validates receipts and decoded whole-library contents. It does
 not schedule backups or restore the local database.
 
+Native token acquisition has a 30-second deadline. Each network transfer has a
+180-second whole-operation deadline that disconnects the active connection and
+interrupts the worker on expiry; it does not merely stop waiting in JavaScript.
+The service retains its shorter 60-second request timeout, so very slow uploads
+can still fail. Retained sealed files support an exact retry without creating a
+different copy. Local staging/read/write failures report storage unavailability;
+only network-bound failures report network unavailability.
+
 Prepare the ignored public application configuration from the existing Android
 registration before building a release (with the signing environment already set):
 
@@ -584,6 +592,11 @@ library (10,000 climbs, 1,000 playlists and 100,000 ordered memberships) passed
 exact readback on another installation. An exact 25 MiB fixture passed upload and
 readback. These checks do not establish a worst-case memory ceiling, automatic
 scheduling or integrated recovery; feature review remains separate.
+
+The native library v1-to-v2 upgrade also preserved complete synthetic libraries
+and playlist ordering through emulator restart, including an existing nonempty
+library. This verifies the local migration path; integrated online recovery and
+physical-phone acceptance remain open.
 
 ## Native transport boundary
 
