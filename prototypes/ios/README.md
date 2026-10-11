@@ -513,6 +513,19 @@ spike supplies no automatic online library backup or clean-install
 recovery; both remain required before irreplaceable everyday authoring. It does
 not authorize installation on the owner phone or changes to authored library data.
 
+## Android application vault status
+
+Native Firebase Auth/Credential Manager and the authenticated GCS gateway are
+selected for Android dogfood on the existing project resources. The application
+transport is being implemented and is not yet verified or available in product UI.
+It uses a separate 512-copy `library-v1` namespace and native files with bounded
+bridge chunks; the legacy 32-slot operator proof remains separate. Automatic-backup
+design is complete and awaits verified private-vault review before implementation.
+Status, Manage, account, history and integrated recovery remain planned. The
+foreground schedule promises no Android background execution. Physical-phone and
+Fullride parity plus integrated automatic-backup/clean-install recovery remain
+gates before real authoring. iOS continues to use IndexedDB.
+
 ## Native transport boundary
 
 The prototype's composition root injects `NativeBleByteTransport` through the

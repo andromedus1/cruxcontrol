@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-10-10
+updated: 2026-10-11
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -20,7 +20,9 @@ summary: >
   passed synthetic emulator restore, edit/save, process-relaunch, and same-signature
   update checks. Portable-file recovery and bounded operator-assisted cloud recovery
   pass synthetic emulator proofs. Physical-board behavior, full Android feature parity,
-  production service selection, integrated cloud restore and automatic backup remain open.
+  integrated cloud restore and automatic backup remain open. Firebase Auth and the
+  authenticated GCS gateway are selected for Android dogfood; application transport
+  is being implemented and is not yet verified.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; an optional lazy runtime service opens the local SQLite catalog through a serialized wa-sqlite AccessHandlePoolVFS worker."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
@@ -242,7 +244,8 @@ versioned whole-library contracts where sound, support automatic private online
 backup and portable files, retain prior versions and verify recovery after local
 origin/device loss. The web and iOS stores need a bounded consistency check across
 their independent databases; Android can read both aggregates in one local transaction.
-Version acknowledgement, retention and account recovery require explicit design.
+The Android design binds protection receipts to committed aggregate revisions and
+retains immutable copies; account recovery must work on an independent installation.
 An empty installation cannot supply deletion authority over retained backups.
 The intended trust boundary permits service-managed encryption with recoverable
 owner accounts; it does not require operator-blind encryption or a separate
@@ -253,10 +256,29 @@ authoring remains authoritative for offline work: browser-managed IndexedDB on t
 and iOS, and app-private SQLite on Android. Android's native database provides a coherent
 local snapshot, but a copy on the same device is not independent recovery. Backup
 availability and sign-in cannot gate local reads or saves. Acknowledged protection must
-identify the saved revision represented in an independently verified copy. Production
-service selection and automatic backup remain open. A bounded Firebase native-account
-and private-vault proof is provisioned; synthetic recovery passes through operator-assisted
-cloud download and portable-file import, while integrated app cloud restore remains unimplemented.
+identify the saved revision represented in an independently verified copy. Native
+Firebase Auth with Credential Manager and a narrow authenticated GCS gateway are
+selected for Android dogfood, reusing the existing project resources. The bounded
+proof passes synthetic operator-assisted cloud download and portable-file import
+into an independent installation. Application transport is being implemented; it
+is not yet verified or available through product UI. Integrated app cloud restore
+and automatic backup remain unimplemented.
+
+The application design separates a `library-v1` namespace with 512 immutable
+25 MiB copies (`00000`–`00511`) from the unchanged 32-slot proof pool. Four bounded
+`acceptance-v1/r001`–`r004` pools use the application algorithm outside user history.
+Server readback must verify each acknowledged copy. Native transfer uses files in
+`noBackupFilesDir` and bounded bridge chunks rather than whole-file bridge payloads.
+Capacity exhaustion pauses uploads; there is no automatic pruning. Service costs
+are usage-priced, with no fixed $25/month plan; existing $5 budget alerts are not caps.
+
+The automatic-backup design is complete and awaits verified private-vault review
+before implementation. A SQLite aggregate revision and durable pending record bind
+an exact receipt to saved work. Atomic whole-library restore and a verification
+barrier precede renewed uploads. Foreground scheduling coalesces changes for 30
+seconds with a 60-second maximum wait; it makes no Android background-execution
+promise. Status, Manage, account, history and recovery surfaces remain planned.
+The PWA needs no retrofit for this Android milestone; iOS retains IndexedDB.
 Browser/native file-delivery and scheduling limits need proof before promising automatic
 file copies.
 
@@ -419,13 +441,16 @@ or network.
 - **Image-minimizing imports.** Screenshot recognition runs entirely in the client;
   decoded bitmap/canvas resources are released after analysis, while selected File
   references and object-URL evidence remain only through review. None enter durable
-  storage or network I/O; only the confirmed climb aggregate reaches IndexedDB.
+  storage or network I/O; only the confirmed climb aggregate reaches the platform
+  library adapter.
 - **Static-first distribution.** The web app is a client-side, installable PWA
   configured for future static hosting on Cloudflare Workers (Static Assets); live
   deployment still requires operator setup and acceptance. The production app has no
-  application server, account system, or shared database; a separate
+  shared database or integrated account system; the
   [private-vault prototype](../prototypes/firebase-vault/README.md) provisions bounded
-  Firebase authentication and recovery infrastructure. The PWA and iOS prototype use
+  Firebase authentication and recovery infrastructure selected for Android dogfood.
+  Application integration is in progress, not a verified product capability.
+  The PWA and iOS prototype use
   browser-local storage; the experimental Android package uses its app-private SQLite
   library. Each client's local storage remains independent. The current hardware edge
   is the board over BLE. A

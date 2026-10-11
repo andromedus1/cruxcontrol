@@ -2,7 +2,7 @@
 description: CruxControl vision, problem, audience, principles, and non-goals
 type: planning
 kind: planning
-updated: 2026-10-10
+updated: 2026-10-11
 nav_priority: high
 summary: >
   CruxControl is a Kilter-first, eventually universal climbing-board app. Its
@@ -53,7 +53,11 @@ clean-install recovery remain intended work, not shipped guarantees. Whole-libra
 exports remain manual; Android's portable-file path has passed synthetic isolated-emulator
 export and empty-install offline recovery checks. A bounded Firebase proof has also
 passed authenticated backup and operator-assisted recovery into a separate Android
-installation. Automatic protection and integrated cloud recovery are not yet implemented.
+installation. Native Firebase Auth and the narrow authenticated GCS gateway are now
+selected for Android dogfood. Application transport is being implemented and is not
+yet verified or available through product UI. Automatic-backup design is complete,
+but implementation awaits verified private-vault review. Automatic protection and
+integrated cloud recovery are not yet implemented.
 Local saving and offline access must remain available while automatic
 protection is pending or unavailable.
 The Kilter community catalog first slice is now

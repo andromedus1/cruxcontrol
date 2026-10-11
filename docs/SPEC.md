@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-10-10
+updated: 2026-10-11
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
@@ -284,6 +284,22 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Preserve offline local creation and board use while protecting saved authored work
   through automatic private online backups and portable owner-controlled files.
   Current exports remain manual; automatic protection is not implemented.
+- Android dogfood selects native Firebase Auth/Credential Manager and the existing
+  authenticated GCS gateway. Application transport is being implemented and is not
+  yet verified or exposed through product UI. Automatic-backup design is complete,
+  awaiting verified private-vault review before implementation.
+- Retain up to 512 immutable whole-library copies of at most 25 MiB in the application
+  namespace. Pause protection visibly at capacity without pruning older copies.
+  Separate synthetic acceptance pools and legacy proof copies never appear in user
+  history. Costs are usage-priced; $5 budget alerts are notifications, not caps.
+- The first Android backup schedule coalesces committed changes for 30 seconds, with
+  a 60-second maximum wait while foreground execution is available. No Android
+  background execution is promised. Durable pending state and an exact server-verified
+  receipt must bind protection to the SQLite aggregate revision.
+- Planned status, Manage, account, history and recovery surfaces must distinguish
+  saved work from protected work. Integrated recovery must restore atomically and
+  pass a verification barrier before uploads resume. This Android milestone does
+  not require PWA backup retrofits or change the iOS IndexedDB path.
 - Include Draft/Finished/Trash, metadata including grade and angle, holds/roles,
   effect recipes, stable identities and revisions, playlists and exact membership
   order. Catalog downloads are separately reacquirable and are not authored backups.

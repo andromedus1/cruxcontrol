@@ -1,4 +1,4 @@
-# Firebase private-vault policy proof
+# Firebase private-vault proof and application transport
 
 This isolated prototype explores direct Storage Rules and an authenticated
 service using synthetic backup bytes. It does not implement scheduled app backup
@@ -8,6 +8,13 @@ transfer, operator-assisted recovery and live runtime-permission verification pa
 Native account recovery has separately passed on
 an independent fresh emulator with the same UID and forced refresh before and
 after restart; integrated app cloud restore remains unimplemented.
+
+Firebase Auth/Credential Manager and this authenticated GCS gateway are selected
+for Android dogfood using the existing project resources and account-protected
+encryption. Application transport is being implemented; it is not yet verified or
+available in product UI. Automatic-backup design is complete and awaits verified
+private-vault review before implementation. The live evidence below remains the
+bounded operator-assisted proof, not integrated automatic protection or recovery.
 
 Use Node 22 and JDK 21, with `JAVA_HOME` set to the JDK. From the repository root:
 
@@ -28,10 +35,9 @@ Nine checks passed, but the competing-create check failed with Storage emulator
 `resource == null`. This is emulator evidence, not a claim about live-service
 behavior. The direct-SDK prototype is **not accepted for immutable backups**.
 The failing assertion remains executable as a test todo linked to the feature
-blocker; a todo is not passing acceptance. The next proof must establish atomic
-creation and address bearer URLs. The service candidate below explores that
-boundary; no production app or provider has been selected. Billing and cloud
-provisioning belong to the separate explicitly authorized service proof.
+blocker; a todo is not passing acceptance. The authenticated service below
+establishes atomic creation and authenticated reads in its separate live proof and is the selected Android dogfood boundary.
+The direct-SDK result does not establish that boundary.
 
 The policy admits one UID at `owners/<uid>/snapshots/<slot>`, with 32 names
 `00`–`31`. The owner can list and read those snapshots and create a nonempty
@@ -50,8 +56,8 @@ Firebase download tokens are a separate bearer capability. The emulator test
 records that provider token metadata can produce a tokenized URL readable without
 an authenticated Rules context, even when anonymous SDK reads are denied. It does
 not establish that all anonymous access is impossible. The app must never expose
-or store `getDownloadURL` results. The production access boundary and live-provider
-tests remain unresolved.
+or store `getDownloadURL` results. The selected authenticated gateway avoids this
+SDK access path; its separate live permission and atomic-create checks pass.
 
 To prepare owner-specific rules from successful private native `verifySession`
 evidence, use a new private output directory and the exact proof project:
@@ -75,12 +81,21 @@ for evidence generation.
 ## Authenticated service candidate
 
 The candidate verifies Firebase ID tokens, including revocation, and admits one
-configured UID. Its only routes are `GET /snapshots`, `GET /snapshots/00`–`31`
-and `PUT` to those slots. Uploads must pass the app's whole-library backup codec
-and SHA-256 validation within 25 MiB. GCS creation uses `ifGenerationMatch: 0`;
+configured UID. Its legacy proof routes are `GET /snapshots`,
+`GET /snapshots/00`–`31` and `PUT` to those slots. Uploads must pass the app's
+whole-library backup codec and SHA-256 validation within 25 MiB. GCS creation uses `ifGenerationMatch: 0`;
 identical retries can recover a receipt, while conflicting bytes are rejected.
 The handler verifies exact object readback before returning `verified: true`.
 There is no delete, overwrite, automatic pruning or tokenized download URL API.
+
+The application extension under implementation adds `/library-v1/snapshots` and
+its five-digit slots `00000`–`00511`: 512 retained copies up to 25 MiB each,
+separate from the unchanged legacy proof objects. Four bounded
+`/acceptance-v1/r001/snapshots`–`/acceptance-v1/r004/snapshots` pools use the same
+algorithm for synthetic acceptance outside user history. Capacity exhaustion pauses
+uploads without pruning. Native application transfer is designed around
+`noBackupFilesDir` files and bounded bridge chunks. This is not the proof GET cache
+file/ADB extraction flow and has not yet passed integrated acceptance.
 
 Uploads supply CRC32C metadata for GCS server validation. SDK post-upload checksum
 validation is disabled because its failure path can automatically delete an
@@ -99,7 +114,7 @@ node prototypes/firebase-vault/prepare-service.mjs \
   /outside/git/new-vault-service-proof cruxcontrol-auth-20261010
 ```
 
-Ten local tests pass: handler tests use real local HTTP with injected identity
+Local handler tests use real local HTTP with injected identity
 verification and storage; a GCS SDK wire fixture checks create preconditions,
 generation-pinned reads and absence of destructive requests. These do not prove
 live GCS/IAM enforcement, genuine service-side token verification or native
@@ -197,10 +212,12 @@ extraction is proof tooling, not a delivered app restore flow.
 node prototypes/firebase-vault/cost-estimate.mjs
 ```
 
-The script's illustrative proof month totals about **$0.485 before free
-allowances**: 730 hours, 32 × 25 MiB snapshots, 1,000 requests, 2,000 billable
+The script estimates aggregate admitted capacity before free allowances: 32 proof
+slots, 512 application copies and four 512-copy acceptance pools, each capped at
+25 MiB. Its other assumptions include 730 hours, 1,000 requests, 2,000 billable
 instance seconds at 1 CPU/0.5 GiB, 1,000 class-A/5,000 class-B storage operations,
 1 GiB North America egress, 1 GiB build artifacts and 30 build minutes with a
 100 GiB build disk. This is arithmetic for stated assumptions, not measured
 spending, a cap or a readiness claim; taxes, unrelated usage and usage beyond
 those assumptions are excluded. Configured billing alerts are not hard caps.
+Application retention uses usage pricing, not a fixed $25/month plan.
