@@ -1,6 +1,7 @@
 // Synthetic scale fixture for native capture/restore and gateway acceptance.
 // Generate on demand: do not commit multi-megabyte library files or real records.
 import { readFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
 import {
   decodeLibraryBackup, encodeLibraryBackup, LIBRARY_BACKUP_LIMITS,
 } from '../../../web/src/library-backup/codec.ts';
@@ -33,4 +34,38 @@ export function createStructuredLibrary() {
   for (const draft of drafts) draft.metadata.description += 'x'.repeat(padding);
   const decoded = decodeLibraryBackup(JSON.stringify(raw));
   return encodeLibraryBackup(decoded, new Date(base.exportedAt));
+}
+
+// Grow an already-preserved synthetic acceptance library to the maximum counts
+// without clearing the emulator or overwriting any of its existing records.
+// One generated playlist deliberately spans multiple native SQL byte chunks.
+export function createStructuredContinuation(preservedText) {
+  const preserved = JSON.parse(encodeLibraryBackup(decodeLibraryBackup(preservedText),
+    new Date('2026-10-11T00:00:00.000Z')));
+  assert(preserved.drafts.length < LIBRARY_BACKUP_LIMITS.climbs);
+  assert(preserved.playlists.length < LIBRARY_BACKUP_LIMITS.playlists);
+  const raw = JSON.parse(createStructuredLibrary());
+  raw.drafts.splice(0, preserved.drafts.length, ...preserved.drafts);
+  raw.playlists.splice(0, preserved.playlists.length, ...preserved.playlists);
+  const preservedReferences = preserved.playlists.reduce((sum, list) => sum + list.entries.length, 0);
+  const generated = raw.playlists.slice(preserved.playlists.length);
+  const remaining = LIBRARY_BACKUP_LIMITS.references - preservedReferences;
+  assert(remaining >= 2_000 && generated.length > 1,
+    'Continuation fixture needs room for a large generated playlist');
+  let assigned = 0;
+  generated.forEach((playlist, index) => {
+    const count = index === 0 ? 2_000 : Math.floor((remaining - assigned) / (generated.length - index));
+    assert(count <= raw.drafts.length);
+    playlist.entries = Array.from({ length: count }, (_, position) => ({
+      kind: 'local', id: raw.drafts[(index * 101 + position) % raw.drafts.length].id,
+    }));
+    assigned += count;
+  });
+  assert.equal(assigned, remaining);
+  const text = JSON.stringify(raw);
+  const decoded = decodeLibraryBackup(text); // Includes duplicate-ID and exact size checks.
+  assert.equal(decoded.drafts.length, LIBRARY_BACKUP_LIMITS.climbs);
+  assert.equal(decoded.playlists.length, LIBRARY_BACKUP_LIMITS.playlists);
+  assert(Buffer.byteLength(JSON.stringify(generated[0])) > 32_768);
+  return encodeLibraryBackup(decoded, new Date(preserved.exportedAt));
 }
