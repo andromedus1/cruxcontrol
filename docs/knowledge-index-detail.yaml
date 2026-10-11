@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-11T16:26:44Z'
+generated_at: '2026-10-11T16:28:27Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -34,8 +34,8 @@ documents:
       Capacitor Android/iOS package; both reuse API-level-2 and API-level-3 Aurora codecs selected from
       the connected controller identity.
     - The required iPhone path reuses the controller transport boundary; simulator backup round-trip is
-      proven, while real-board BLE, real-device storage pressure and native authentication remain unverified
-      before service implementation resumes.
+      proven, while iPhone real-board BLE, real-device storage pressure and native authentication remain
+      unverified before invited-sharing service implementation resumes.
     - Catalog acquisition and local browsing compose existing provider, storage, renderer and controller
       boundaries without depending on invited access or native iPhone proof.
     - The first browser explicitly installs and reads an older Fullride snapshot; two OPFS slots and IndexedDB

@@ -28,7 +28,7 @@ decisions:
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
   - "Provider-native records and provenance are retained beside the normalized read model; catalogs install per provider/layout rather than as one universal bundled database."
   - "BLE byte I/O is isolated behind Web Bluetooth in the PWA and experimental native adapters in the Capacitor Android/iOS package; both reuse API-level-2 and API-level-3 Aurora codecs selected from the connected controller identity."
-  - "The required iPhone path reuses the controller transport boundary; simulator backup round-trip is proven, while real-board BLE, real-device storage pressure and native authentication remain unverified before service implementation resumes."
+  - "The required iPhone path reuses the controller transport boundary; simulator backup round-trip is proven, while iPhone real-board BLE, real-device storage pressure and native authentication remain unverified before invited-sharing service implementation resumes."
   - "Catalog acquisition and local browsing compose existing provider, storage, renderer and controller boundaries without depending on invited access or native iPhone proof."
   - "The first browser explicitly installs and reads an older Fullride snapshot; two OPFS slots and IndexedDB receipt metadata provide bounded recovery, with no automatic source refresh or claim of current coverage."
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
