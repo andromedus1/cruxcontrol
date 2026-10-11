@@ -23,7 +23,7 @@ decisions:
   - "Kilter community catalog access precedes invited sharing and can ship on Android/web independently of native iPhone hardware acceptance."
   - "Locally authored climbs are unrestricted platform-local aggregates with Draft/Finished status and recoverable Trash; web and iOS use IndexedDB, Android uses native SQLite, and provider publication validation is a separate future boundary."
   - "Kilter Android Fullride screenshots are analyzed and reviewed locally, then imported as ordinary 40-degree drafts without persisting or uploading source images; exact duplicates, including Trash, are skipped."
-  - "Current whole-library export is manual and restore is missing-only per store; everyday real authoring requires verified automatic online backup and clean-install recovery, with portable files as an independent second path."
+  - "Current whole-library export is manual and restore is missing-only (atomic on Android, per-store on web/iOS); everyday real authoring requires verified automatic online backup and clean-install recovery, with portable files as an independent second path."
   - "PWA updates use a waiting Workbox worker and explicit safe apply; shared Web Locks coordinate tabs, and workspace, mutation, play-through, and BLE session gates protect local work before activation."
 ---
 
@@ -286,9 +286,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   Current exports remain manual; automatic protection is not implemented.
 - Android dogfood selects native Firebase Auth/Credential Manager and the existing
   authenticated GCS gateway. Native account/file transport is implemented and the
-  service deployed; live acceptance remains ongoing and product UI is absent.
-  Automatic-backup design is complete,
-  awaiting verified private-vault review before implementation.
+  service deployed; live transport acceptance passes and product UI is absent.
+  Automatic-backup durable state is implemented; the coordinator and UI remain
+  under implementation.
 - Retain up to 512 immutable whole-library copies of at most 25 MiB in the application
   namespace. Pause protection visibly at capacity without pruning older copies.
   Separate synthetic acceptance pools and legacy proof copies never appear in user
@@ -421,9 +421,9 @@ The model mirrors the official Kilter SQLite schema (see
   synthetic checks do not establish cloud upload or physical-device behavior.
   The restore flow reviews the complete file first, adds missing IDs, skips canonically
   identical IDs, and blocks any differing ID without overwriting or allocating replacement
-  IDs. Each store
-  commits in its own transaction and aborts that store on error; a playlist failure can
-  therefore follow a committed climb batch and is reported for honest retry with the
+  IDs. Android restores both aggregates atomically with a durable post-commit
+  verification barrier. Web/iOS stores commit independently; a playlist failure
+  can follow a committed climb batch and is reported for honest retry with the
   retained file. The workflow uses the existing platform-local library store for saved
   contents only; it does not rewrite schemas or upload to a cloud/account service.
   Trash remains until explicit Delete forever.

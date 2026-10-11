@@ -47,6 +47,12 @@ npm --prefix prototypes/ios run sync:android
 npm --prefix prototypes/ios run build:android
 ```
 
+Compile-only debug builds must contain no vault configuration. If a prior release
+preparation left `android/app/src/main/assets/vault-config.json`, temporarily move
+that ignored file outside the assets tree before running these commands, then
+restore it afterward. The build does not stage configuration automatically and
+fails if release configuration remains in a debug APK.
+
 These two Android commands explicitly omit catalog data and print **COMPILE-ONLY**.
 Their APK proves compilation, and is not the private dogfood build. Use the
 catalog recipe below for a package with offline Kilter availability.
@@ -429,6 +435,8 @@ prepare the ignored proof-only asset, then build with an increasing version code
 ```bash
 node prototypes/ios/scripts/prepare-android-auth-proof.mjs \
   /outside/git/firebase/google-services.json cruxcontrol-auth-PROOF_ID
+node prototypes/ios/scripts/prepare-android-vault.mjs \
+  /outside/git/firebase/google-services.json acceptance-v1/r001
 npm --prefix prototypes/ios run build:android:signed-proof -- \
   --catalog /outside/git/kilter-7x10.v1.db.gz --version-code 21
 "$ANDROID_HOME/platform-tools/adb" -s emulator-N install -r \
@@ -520,11 +528,11 @@ not authorize installation on the owner phone or changes to authored library dat
 
 Native Firebase Auth/Credential Manager and the authenticated GCS gateway are
 selected for Android dogfood on the existing project resources. The application
-account/file transport is implemented and the service deployed; live acceptance
-remains ongoing. Product account surfaces are not yet available.
+account/file transport is implemented and the service deployed; live transport
+acceptance passes. Product account surfaces are not yet available.
 It uses a separate 512-copy `library-v1` namespace and native files with bounded
 bridge chunks; the legacy 32-slot operator proof remains separate. Automatic-backup
-design is complete and awaits verified private-vault review before implementation.
+durable state is implemented; the coordinator and UI remain under implementation.
 Status, Manage, account, history and integrated recovery remain planned. The
 foreground schedule promises no Android background execution. Physical-phone and
 Fullride parity plus integrated automatic-backup/clean-install recovery remain
@@ -553,12 +561,14 @@ npm --prefix prototypes/ios run build:android:release -- \
 Choose a version code above the installed version. Preparation validates the
 existing project/app registration and writes `src/main/assets/vault-config.json`;
 it accepts public app registration, never service keys or CLI credentials. The
-build verifies `library-v1`, a non-debuggable manifest, application plugin presence
-and proof config/activity/plugin exclusion. These packaging checks pass; they do
+build allows `library-v1` only in a non-debuggable release and verifies application
+plugin presence and proof config/activity/plugin exclusion. These packaging checks pass; they do
 not admit real authoring before the recovery gates.
 
-For isolated synthetic emulator acceptance, prepare `acceptance-v1/r001` (or
-`r002`–`r004`) instead and build `build:android:signed-proof`. That configuration
+For isolated synthetic emulator acceptance, `signedProof` requires an explicit
+`acceptance-v1/r001` (or `r002`–`r004`) configuration; an absent configuration or
+`library-v1` is rejected. Prepare that scope and build
+`build:android:signed-proof`. That configuration
 belongs to `src/signedProof/assets/vault-config.json` and cannot enter a release.
 The `android-vault-proof.mjs` driver exercises the actual TypeScript/native port
 on an emulator and requires an acceptance scope. Keep all its outputs outside Git:
@@ -568,10 +578,12 @@ node --experimental-strip-types prototypes/ios/scripts/android-vault-proof.mjs \
   emulator-N status /outside/git/vault-evidence/status.json
 ```
 
-Live application acceptance has exercised small-copy upload/list/download and
-exact retry, sealed-file retention across restart, and a 26,188,396-byte structured
-upload. Independent-installation structured download acceptance remains ongoing.
-These checks do not establish automatic scheduling or integrated recovery.
+Live application transport acceptance passes small-copy upload/list/download,
+exact retry and sealed-file retention across restart. A 26,188,396-byte structured
+library (10,000 climbs, 1,000 playlists and 100,000 ordered memberships) passed
+exact readback on another installation. An exact 25 MiB fixture passed upload and
+readback. These checks do not establish a worst-case memory ceiling, automatic
+scheduling or integrated recovery; feature review remains separate.
 
 ## Native transport boundary
 

@@ -25,8 +25,10 @@ server.
 - Download and restore a bounded whole-library JSON backup containing saved climbs,
   Trash, orphan climbs, all installations, playlists, shared memberships, IDs, revisions,
   timestamps, and animation recipes. Recovery adds missing IDs, skips identical records,
-  and pauses on conflicts without overwriting current data. A playlist-store failure after
-  a committed climb batch is reported as partial and can be retried with the retained file.
+  and pauses on conflicts without overwriting current data. Android restores both
+  aggregates atomically with a verification barrier. On web/iOS, a playlist-store
+  failure after a committed climb batch is reported as partial and can be retried
+  with the retained file.
 - Installed PWA updates wait for an explicit **Update and reload** action. The app keeps
   the workspace available while a new worker waits, but blocks applying it while an editor,
   list task, import/backup flow, pending library write, play-through, or board session is
@@ -137,7 +139,7 @@ open before iOS support can ship.
 
 Native Firebase Auth and a narrow authenticated GCS gateway are selected for Android
 dogfood after a bounded operator-assisted recovery proof. Native account/file
-transport is implemented and the service deployed; live acceptance remains ongoing.
+transport is implemented and the service deployed; live transport acceptance passes.
 Automatic backup, product account surfaces and integrated recovery remain unavailable.
 Their design retains 512 immutable whole-library copies, pauses at capacity without
 pruning, and keeps offline local saving available. Verified automatic protection

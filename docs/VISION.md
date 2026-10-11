@@ -55,9 +55,9 @@ export and empty-install offline recovery checks. A bounded Firebase proof has a
 passed authenticated backup and operator-assisted recovery into a separate Android
 installation. Native Firebase Auth and the narrow authenticated GCS gateway are now
 selected for Android dogfood. Native account/file transport is implemented and the
-service deployed; live acceptance remains ongoing. Product account surfaces are
-not yet available. Automatic-backup design is complete,
-but implementation awaits verified private-vault review. Automatic protection and
+service deployed; live transport acceptance passes. Product account surfaces are
+not yet available. Automatic-backup durable state is implemented; its coordinator and UI remain
+under implementation. Automatic protection and
 integrated cloud recovery are not yet implemented.
 Local saving and offline access must remain available while automatic
 protection is pending or unavailable.

@@ -12,14 +12,16 @@ after restart; integrated app cloud restore remains unimplemented.
 Firebase Auth/Credential Manager and this authenticated GCS gateway are selected
 for Android dogfood using the existing project resources and account-protected
 encryption. Native account/file transport is implemented and the application
-service deployed; live acceptance remains ongoing. Product account surfaces are
-not yet available. Automatic-backup design is complete and awaits verified
-private-vault review before implementation. The detailed live evidence below covers
+service deployed; live transport acceptance passes. Product account surfaces are
+not yet available. Automatic-backup durable state is implemented; the coordinator and UI remain
+under implementation. The detailed live evidence below covers
 the bounded operator-assisted proof.
-Application acceptance has also exercised small-copy upload/list/download, exact
-retry, sealed-file retention across restart and a 26,188,396-byte structured upload.
-Independent-installation structured download acceptance is ongoing. None of these
-checks establishes integrated automatic protection or recovery.
+Application transport acceptance passes small-copy upload/list/download, exact
+retry and sealed-file retention across restart. A 26,188,396-byte structured
+library (10,000 climbs, 1,000 playlists and 100,000 ordered memberships) passed
+exact readback on an independent installation; an exact 25 MiB fixture also passed
+upload and readback. These checks do not establish integrated automatic protection
+or recovery, or a worst-case memory ceiling for every possible library.
 
 Use Node 22 and JDK 21, with `JAVA_HOME` set to the JDK. From the repository root:
 
@@ -100,7 +102,7 @@ separate from the unchanged legacy proof objects. Four bounded
 algorithm for synthetic acceptance outside user history. Capacity exhaustion pauses
 uploads without pruning. Native application transfer uses
 `noBackupFilesDir` files and bounded bridge chunks. This is not the proof GET cache
-file/ADB extraction flow; live application acceptance remains ongoing.
+file/ADB extraction flow; live application transport acceptance passes.
 
 Uploads supply CRC32C metadata for GCS server validation. SDK post-upload checksum
 validation is disabled because its failure path can automatically delete an

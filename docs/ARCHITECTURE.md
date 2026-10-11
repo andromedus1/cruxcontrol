@@ -22,7 +22,7 @@ summary: >
   pass synthetic emulator proofs. Physical-board behavior, full Android feature parity,
   integrated cloud restore and automatic backup remain open. Firebase Auth and the
   authenticated GCS gateway are selected for Android dogfood. Native application
-  transport is implemented and the service deployed; live acceptance remains ongoing.
+  transport is implemented and the service deployed; live transport acceptance passes.
 decisions:
   - "CruxControl is an offline-first React + Vite SPA distributed as a static, backendless, installable PWA; an optional lazy runtime service opens the local SQLite catalog through a serialized wa-sqlite AccessHandlePoolVFS worker."
   - "Board definition, catalog provider, and controller profile are independent boundaries connected by an installation registry."
@@ -34,7 +34,7 @@ decisions:
   - "The generated immutable Fullride definition is the shared geometry, placement identity, role, and LED-mapping authority; private builds may resolve exact-ID/revision calibrated raster artwork while schematics remain the distributable fallback."
   - "Locally authored climbs and playlists use the platform library adapter: independent versioned IndexedDB repositories on web and iOS, and one native SQLite database on Android; climb storage owns unrestricted Draft/Finished and recoverable-Trash lifecycle outside provider catalogs."
   - "Playlist portability uses a strict versioned snapshot envelope in URL fragments or JSON files; imports preview before creating fresh local records and compensate partial failures."
-  - "Current backup is a manual bounded file with missing-only per-store restore; real authored climbs require verified account-protected online backup and clean-install recovery, with portable files as a separate second path."
+  - "Current backup is a manual bounded file with missing-only restore (atomic on Android, per-store on web/iOS); real authored climbs require verified account-protected online backup and clean-install recovery, with portable files as a separate second path."
   - "Kilter Android Fullride screenshot import analyzes transient pixels on-device, reviews definition-mapped holds locally, and writes ordinary 40-degree drafts while skipping exact duplicates across active climbs and Trash."
   - "PWA updates use an app-owned prompt-mode Workbox registration, shared Web Locks admission, and explicit safe activation gated by local workspace, mutation, play-through, and BLE session lifetimes."
   - "Provider sync remains a separate incremental shared_syncs module; ML trains offline in Python and runs browser inference through ONNX Runtime Web."
@@ -72,8 +72,9 @@ feature item bodies in `.work/`, not here. Capabilities are in
    Climb storage additionally owns explicit lifecycle commands. Library backup uses the
    same strict codecs on every platform; web and iOS use a bounded stability check across
    their two stores, while Android captures a coherent whole-library snapshot in one
-   database transaction. Restore retains the per-store outcome contract. This is a local
-   file workflow, not a schema migration or cloud service.
+   database transaction. Android restores both aggregates atomically with a durable
+   verification barrier; web/iOS retain the per-store outcome contract. Portable
+   restore remains a local file workflow.
 3. **Catalog Providers** — source-specific import/sync adapters. Kilter is first;
    later Aurora-family and MoonBoard providers are separately researched. Network,
    auth, reconciliation, and policy metadata remain outside domain and UI code.
@@ -213,9 +214,10 @@ feature item bodies in `.work/`, not here. Capabilities are in
    they cannot provide a cross-database atomic snapshot. Android uses one native
    transaction for a coherent read of both aggregates. Restore validates the whole file,
    then adds missing IDs, skips identical records, and blocks differing IDs without overwrite or
-   replacement IDs. Draft and playlist stores commit independently in their own
-   transactions, so a playlist failure after a committed climb batch is reported as a
-   partial outcome for retry; no compensating deletion is used. Bounds are 25 MiB UTF-8,
+   replacement IDs. Android commits both aggregates atomically and holds recovery
+   until post-commit verification completes. Web/iOS stores commit independently,
+   so a playlist failure after a committed climb batch is reported as a partial
+   outcome for retry; no compensating deletion is used. Bounds are 25 MiB UTF-8,
    10,000 climbs, 1,000 playlists, and 100,000 references. The workflow operates on
    saved contents in the existing origin and does not rewrite schemas or upload data.
 12. **PWA Update Admission** — the app owns the native service-worker registration and
@@ -261,7 +263,7 @@ Firebase Auth with Credential Manager and a narrow authenticated GCS gateway are
 selected for Android dogfood, reusing the existing project resources. The bounded
 proof passes synthetic operator-assisted cloud download and portable-file import
 into an independent installation. The native account/file transport is implemented
-and the application service deployed; live acceptance remains ongoing. A configured
+and the application service deployed; live transport acceptance passes. A configured
 `library-v1` release APK passes non-debuggable and proof-surface exclusion checks.
 Product account surfaces, integrated app cloud restore and automatic backup remain
 unimplemented.
@@ -274,10 +276,11 @@ Server readback must verify each acknowledged copy. Native transfer uses files i
 Capacity exhaustion pauses uploads; there is no automatic pruning. Service costs
 are usage-priced, with no fixed $25/month plan; existing $5 budget alerts are not caps.
 
-The automatic-backup design is complete and awaits verified private-vault review
-before implementation. A SQLite aggregate revision and durable pending record bind
+The automatic-backup durable-state checkpoint is implemented with a preserving
+SQLite v1-to-v2 migration. The coordinator and UI remain under implementation.
+A SQLite aggregate revision and durable pending record bind
 an exact receipt to saved work. Atomic whole-library restore and a verification
-barrier precede renewed uploads. Foreground scheduling coalesces changes for 30
+barrier precede renewed uploads. Planned foreground scheduling coalesces changes for 30
 seconds with a 60-second maximum wait; it makes no Android background-execution
 promise. Status, Manage, account, history and recovery surfaces remain planned.
 The PWA needs no retrofit for this Android milestone; iOS retains IndexedDB.
@@ -394,7 +397,7 @@ Lists ──▶ Local playlist repository ──▶ same platform AppLibrary ada
 Library workspace ──▶ backup service ──▶ bounded local JSON file
   ├─ PWA / iOS: bounded two-store stability check
   ├─ Android: one-transaction native readSnapshot
-  └──◀ imported file ──▶ full review/conflict gate ──▶ per-store missing-only restore
+  └──◀ imported file ──▶ full review/conflict gate ──▶ platform missing-only restore
 
 App runtime ──▶ update coordinator ──▶ prompt-mode Workbox registration
   └──▶ shared admission lock ──▶ workspace safety gates ──▶ exclusive apply ──▶ requester reload
@@ -427,8 +430,9 @@ or network.
   playlist stores, including Trash, orphan rows, other installations, shared references,
   revisions, and recipes. Web and iOS export stability checks are bounded because their
   stores cannot share one transaction; Android reads the two aggregates in one native
-  transaction. Restore validates before writes, preserves IDs, and treats a playlist
-  failure after a committed climb batch as a reportable partial result for retry.
+  transaction. Restore validates before writes and preserves IDs. Android restores
+  atomically with a verification barrier; web/iOS treat a playlist failure after
+  a committed climb batch as a reportable partial result for retry.
 - **Safe update admission.** A waiting worker never activates or reloads a tab on arrival.
   The coordinator protects the lifetime of editing, dialogs, imports, backups, repository
   mutations, list play-through, and BLE sessions/operations, then uses shared Web Locks
@@ -452,7 +456,7 @@ or network.
   [private-vault prototype](../prototypes/firebase-vault/README.md) provisions bounded
   Firebase authentication and recovery infrastructure selected for Android dogfood.
   Native application transport is implemented and the service deployed; live
-  acceptance and product integration remain incomplete.
+  transport acceptance passes while product integration remains incomplete.
   The PWA and iOS prototype use
   browser-local storage; the experimental Android package uses its app-private SQLite
   library. Each client's local storage remains independent. The current hardware edge
