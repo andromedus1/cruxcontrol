@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-private-vault
 kind: feature
-stage: implementing
+stage: review
 tags: [data, security, infra]
 research_refs: [independent-library-preservation, native-backup-service-costs]
 parent: epic-library-preservation
@@ -23,12 +23,16 @@ a project-scoped $5 monthly alert budget. The 25 MiB download proof exposed and
 fixed an Android heap exhaustion in the proof bridge by streaming to a native
 cache file. See the final live-evidence section for limits and reproducible paths.
 
-Stage is **implementing**: the application vault design below admits the verified
-provider and bounded retention policy. Native application transport remains to be
-implemented; automatic scheduling/revision acknowledgement and account/cloud recovery
-UI belong to the dependent automatic-backup feature. Real authoring is not admitted. Earlier
-setup checkpoints below describe the evidence available at those points; their
-pre-deployment statements are superseded by the live checkpoint.
+Stage is **review**: the application vault service and native account/file
+transport are implemented and verified on synthetic emulators. Actual adapter
+acceptance covers restart of sealed files, immutable retry/conflict, independent
+account discovery and exact readback for structured and exact-25-MiB libraries.
+Configured release and unconfigured CI packaging checks pass. All three child
+checkpoints are done; the standard independent feature review is next.
+Automatic scheduling/revision acknowledgement and account/cloud recovery UI
+belong to the dependent automatic-backup feature. Real authoring is not admitted.
+Earlier setup checkpoints below describe evidence at those points and are
+superseded by the current implementation and acceptance records.
 
 ## Brief
 
@@ -944,3 +948,26 @@ with the plugin contract already specified; root and worker serialize Gradle and
 combine the verified changes into the native checkpoint's one completion commit.
 Root also owns the reproducible structured-fixture acceptance helpers. No extra
 implementation worker or one-story fan-out was added.
+
+## Integrated implementation verification (2026-10-11)
+
+The service (`de88541`), native transport (`b39b343`) and live acceptance
+(`96cec2e`) checkpoints are complete. The common gateway owns legacy proof,
+application and four bounded acceptance pools, preserving immutable creation and
+verified readback. Native authentication never exposes tokens to JavaScript;
+sealed account-and-pool-bound files and bounded UTF-8 chunks avoid the observed
+large Java bridge response failure. The actual adapter was exercised through
+native plugins on two signed emulator installations, including reauthentication,
+process restart, exact retry/conflict and all-record-count structured readback.
+Release packaging excludes the proof surface; unconfigured compile-only builds
+remain valid. Foundation assertions were aligned in `4903a52`.
+
+Verification: web lint/typecheck and 838 tests, prototype lint/typecheck and 100
+tests plus 10 package/config checks, gateway 16 tests, signedProof20 and release21
+build/isolation checks, unconfigured debug compile, and the acceptance child's
+live evidence. No authored phone library was modified. The actual automatic
+queue/status/recovery journey is deliberately the next feature's boundary.
+
+Standard review: one independent Claude implementation pass, then receiving-agent
+adjudication and verification of accepted fixes. This application implementation
+review is distinct from the earlier design advisory and earlier provider proofs.
