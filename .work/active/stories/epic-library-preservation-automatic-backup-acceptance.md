@@ -48,9 +48,43 @@ Private evidence lives in `.private-firebase/review-update-acceptance/`.
 growing a future UI fixture to the limits, avoiding emulator clearing or record
 overwrites. The original structured transport fixture remains byte-identical.
 
-This prerequisite does **not** close the integrated recovery gate. Next use a fresh
-reserved cloud pool with the real coordinator/UI: source admission, an edit and
-playlist reorder, automatic protection, offline save/restart/retry, retained
-pending staging across restart, and independent empty-installation UI recovery.
-Then review/restore the preserving large fixture through the cloud UI and compare
-complete records after relaunch. No operator import counts as cloud recovery.
+## Integrated small-library recovery verified
+
+SignedProof24 in reserved pool `acceptance-v1/r002` passes real Manage admission,
+automatic grade edits and playlist reorder, offline save/process exit/reopen,
+and automatic foreground reconnection. The UI stops acknowledging the earlier
+receipt as soon as a new revision saves. Every unrelated field remains exactly
+equal to the synthetic baseline; snapshots include drafts, finished climbs,
+Trash, grades, effects, ordered local/provider/unavailable memberships.
+
+The test slows actual emulator cellular networking, waits for committed pending
+metadata plus the visible uploading phase, then force-stops the synthetic app.
+The sealed file remains present. Relaunch with normal networking resolves the
+same slot, digest, byte length and captured revision, adding exactly one receipt.
+No transport/coordinator mock or injected restore is used.
+
+A different installation, verified empty beforehand, discovers and reviews the
+latest copy in Manage and restores through its normal button. All eight climbs,
+three playlists and ten memberships match the source canonically before and
+after relaunch. The selected retained source receipt protects the restored
+revision without a duplicate upload. Source aggregate revision is five;
+recovery revision is one. Evidence is outside Git in
+`.private-firebase/automatic-app-acceptance/ui24b/`.
+
+The first driver attempt reached initial protection and saved a grade, then
+stopped because Android's CSS-transformed `innerText` read `Saved` rather than
+`saved`. The driver was corrected; the continuation used a fresh preserved
+baseline without resetting or rolling back data. That earlier boundary remains
+in `ui24/`. Acceptance also found and separately tracked/fixed the real compact
+status width defect in the mobile-status child. SignedProof26 preserves both
+libraries exactly and verifies the corrected real WebView geometry/screenshot.
+
+Shared web typecheck/lint and 878 tests pass; prototype typecheck/lint and 110
+tests plus 11 packaging checks pass. Configured signedProof24/26 package checks,
+non-debuggable release25 `library-v1` isolation, packaged-browser smoke (one test),
+and six Playwright library backup/editor/read-resilience checks pass. No physical
+phone or board is included in these results.
+
+Next verify older-copy conflict/cancel preservation and the preserving 10,000-
+climb/1,000-list cloud UI recovery, then complete standard feature review. No
+operator import counts as cloud recovery.
