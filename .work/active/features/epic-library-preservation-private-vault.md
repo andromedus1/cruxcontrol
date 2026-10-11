@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-private-vault
 kind: feature
-stage: review
+stage: implementing
 tags: [data, security, infra]
 research_refs: [independent-library-preservation, native-backup-service-costs]
 parent: epic-library-preservation
@@ -23,12 +23,13 @@ a project-scoped $5 monthly alert budget. The 25 MiB download proof exposed and
 fixed an Android heap exhaustion in the proof bridge by streaming to a native
 cache file. See the final live-evidence section for limits and reproducible paths.
 
-Stage is **review**: the application vault service and native account/file
+Stage is **implementing** pending the bounded review fixes: the application vault service and native account/file
 transport are implemented and verified on synthetic emulators. Actual adapter
 acceptance covers restart of sealed files, immutable retry/conflict, independent
 account discovery and exact readback for structured and exact-25-MiB libraries.
-Configured release and unconfigured CI packaging checks pass. All three child
-checkpoints are done; the standard independent feature review is next.
+Configured release and unconfigured CI packaging checks pass. The three original child
+checkpoints are done; the completed independent review and root regression added a
+bounded fix checkpoint before closure.
 Automatic scheduling/revision acknowledgement and account/cloud recovery UI
 belong to the dependent automatic-backup feature. Real authoring is not admitted.
 Earlier setup checkpoints below describe evidence at those points and are
@@ -971,3 +972,19 @@ queue/status/recovery journey is deliberately the next feature's boundary.
 Standard review: one independent Claude implementation pass, then receiving-agent
 adjudication and verification of accepted fixes. This application implementation
 review is distinct from the earlier design advisory and earlier provider proofs.
+
+## Standard implementation review — adjudication in progress
+
+Claude Opus xhigh completed one balanced independent pass at `fd261f8`, job
+`20261011T162201Z-d5498093`; it independently reran gateway16/shared-contract11/
+adapter5 tests. Root separately reproduced a late download-completion/sign-out
+race with a new failing regression. The reviewer called other concerns mostly
+hardening; receiving-agent assessment treats pre-create metadata validation,
+bounded transfer waits, local-file error honesty and test/build namespace isolation
+as material to this preservation release. Stale acceptance documentation is also
+accepted. These bounded fixes belong to child `private-vault-review-fixes`.
+
+No second independent pass is required under standard weight. Root will verify the
+named fix set and document every proposal's final disposition. Automatic-backup
+implementation may continue on its already verified port; release/admission remains
+blocked until the fixes and integrated recovery acceptance pass.
