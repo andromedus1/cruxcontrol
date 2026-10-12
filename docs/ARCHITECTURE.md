@@ -292,7 +292,11 @@ promise. Status, Manage, account, history and recovery surfaces expose exact
 protected revisions, pending offline changes, retained-copy capacity and retry.
 Foreground retry uses 5/15/60-second backoff and resumes on foreground/network
 changes. Recovery reviews a retained copy and blocks uploads until atomic restore
-and verification complete. At 512 retained versions, new copies pause without
+and verification complete. Local recovery verification runs before network and
+account admission and can retry offline or signed out; an actual content mismatch
+keeps the recovery hold. An admitted library that becomes empty while retained
+history exists returns to discovery rather than uploading an empty replacement.
+At 512 retained versions, new copies pause without
 pruning while ordinary offline saving remains available.
 The PWA needs no retrofit for this Android milestone; iOS retains IndexedDB.
 Browser/native file-delivery and scheduling limits need proof before promising automatic

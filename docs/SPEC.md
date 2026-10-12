@@ -304,8 +304,12 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   from protected work, expose offline pending edits and allow explicit retry.
   Foreground retries use bounded backoff and resume on foreground/network changes.
   Recovery reviews retained copies, restores atomically and requires a verification
-  barrier before uploads resume. This Android milestone does not require PWA backup
-  retrofits or change the iOS IndexedDB path.
+  barrier before uploads resume. Local verification precedes network/account
+  admission and supports retry while offline or signed out; a content mismatch
+  keeps authoring and uploads paused. An active library emptied while retained
+  history exists returns to discovery. An account not enabled for private backups
+  receives guidance to use an enabled account or save a portable file. This Android
+  milestone does not require PWA backup retrofits or change the iOS IndexedDB path.
 - Include Draft/Finished/Trash, metadata including grade and angle, holds/roles,
   effect recipes, stable identities and revisions, playlists and exact membership
   order. Catalog downloads are separately reacquirable and are not authored backups.

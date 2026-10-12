@@ -542,6 +542,12 @@ or through bounded 5/15/60-second foreground backoff. No background execution is
 promised. Manage shows retained history and remaining capacity; 512 retained copies
 pause new uploads without pruning or blocking ordinary offline saves. Recovery
 reviews a copy, restores atomically and holds uploads until verification succeeds.
+Manage offers **Retry local verification** for an interrupted recovery check, even
+while offline or signed out. Verification runs before network/account admission;
+a content mismatch keeps the hold on authoring and uploads. If an admitted local
+library becomes empty while online history exists, it returns to discovery for
+review and recovery. An account not enabled for private backups is directed to an
+enabled account or a portable backup file.
 Synthetic integrated acceptance passes automatic edits and playlist order, offline
 restart/reconnection, pending-upload process death and recovery through the normal
 Manage UI on a separate empty installation. Physical owner-phone/Fullride parity still gate real authoring. iOS continues to use IndexedDB.
