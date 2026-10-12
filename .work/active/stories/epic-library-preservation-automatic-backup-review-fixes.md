@@ -47,8 +47,8 @@ offline verification success and failure/retry, delayed final-read sign-out/clos
 an edit while resolving pending history, deletion-to-empty discovery, and 403
 account guidance versus unresolved pending recovery. Strengthen boundary coverage
 with changed native installation and pool over copied active/pending state,
-different-account binding, and CAS/SQL acknowledgement failure after a real fake
-remote commit: no false protection or new slot; retry reconciles the retained copy.
+different-account binding, and CAS/SQL acknowledgement failure after the fake
+remote commits: no false protection or new slot; retry reconciles the retained copy.
 Corrupt staged bytes must not be acknowledged or replace prior good copies.
 
 Run focused checks then required full web/native suites, typecheck/lint and signed

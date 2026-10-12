@@ -9,7 +9,7 @@ depends_on: [story-phone-library-recovery]
 release_binding: null
 gate_origin: null
 created: 2026-10-09
-updated: 2026-10-11
+updated: 2026-10-12
 ---
 
 # Preserve private libraries across browser and device loss
@@ -398,24 +398,31 @@ focused verification, standard independent review and required CI. Android parit
 has verified emulator interaction and independent signing-key recovery; physical
 phone/Fullride acceptance and its feature review remain open.
 
-The native account and private snapshot proof now passes sign-in/renewal, immutable
-upload/readback/retry, restricted runtime permissions, account isolation and
-operator-assisted recovery into a separate installation. The earlier statements
-that live storage was unproven are superseded by this checkpoint. Billing is linked
-with project-scoped $5 alerts, which are not spending caps.
+Native account access and private snapshots pass sign-in/renewal, immutable
+upload/readback/retry, restricted runtime permissions and account isolation.
+Private-vault implementation, its standard independent review and required CI are
+complete. Billing is linked with project-scoped $5 alerts, which are not spending
+caps.
 
 **Provider admission (2026-10-11):** choose the demonstrated native Firebase account
-and narrow authenticated GCS gateway for Android dogfood. The private-vault feature
-is implementing the application transport and isolated acceptance pools. Automatic
-backup has a completed design and waits for that dependency's integrated verification
-before implementation. Its durable revision acknowledgement, status/account surfaces
-and fully in-app clean-install recovery remain admission-critical work. Existing
-proof tooling does not fulfill those product acceptance gates.
+and narrow authenticated GCS gateway for Android dogfood. Automatic backup now has
+durable revision acknowledgements, foreground scheduling, account/status surfaces
+and in-app retained-copy review/recovery. Synthetic acceptance includes automatic
+saved edits, offline restart/reconnect, interrupted uploads and actual app recovery
+into an independent empty installation. The 10,000-climb/1,000-list structured cloud
+copy restores through Manage with all fields and ordering intact after relaunch.
+The single standard review identified bounded recovery/lifecycle findings; fixes,
+regression checks, required CI and fixed-build acceptance pass. A later ordinary
+edit automatically uploaded the entire structured library, with exact remote
+readback and relaunch comparisons. Automatic backup is done. These emulator
+results do not establish physical board parity.
 
 Retain all admitted copies and pause at capacity for the first dogfood release;
 no automatic pruning or background-execution guarantee. The owning feature carries
 limits and costs. Prefer cheaper hosting; no fixed USD 25/month plan was selected.
 Account setup no longer blocks engineering. Physical hardware availability still
 affects final acceptance; no real authoring before the aggregate protection and
-parity gates pass. Current-PWA protection is not a prerequisite. Query child items
+parity gates pass. Andrew confirmed phone/board availability and has returned;
+physical acceptance awaits the USB connection, preservation checks and observed
+wall results. Current-PWA protection is not a prerequisite. Query child items
 for exact stages and evidence rather than treating this sequence as dogfood admission.

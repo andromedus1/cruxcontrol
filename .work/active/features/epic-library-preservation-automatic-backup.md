@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-automatic-backup
 kind: feature
-stage: implementing
+stage: done
 tags: [data, security, ui]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -9,7 +9,7 @@ depends_on: [epic-library-preservation-native-library, epic-library-preservation
 release_binding: null
 gate_origin: null
 created: 2026-10-10
-updated: 2026-10-11
+updated: 2026-10-12
 ---
 
 # Automatically protect saved native library changes
@@ -484,3 +484,51 @@ the required fixed-build continuation. The latter must clear the hold offline,
 allow an ordinary grade save, protect the full structured library after network
 returns, automatically protect another edit, and preserve exact content on
 relaunch. Preparing that runner is not evidence that the continuation has passed.
+
+## Review closure and full-size automatic protection (2026-10-12)
+
+Accepted findings are fixed in `3b11809`. Six regressions failed before the bounded
+corrections; all 40 focused coordinator/Manage tests then passed. Full verification
+passes 892 web tests, 110 native tests and 11 package checks, both typechecks and
+both lints. Required PR CI passed at `e392025` (run `38171720466`). The standard
+review is closed after root adjudication and fix verification; no second peer
+pass was requested. Remaining capture-cost and recovery-polish items stay parked.
+
+Clean committed source `e392025` produced configured signedProof29. A fresh complete
+external backup matched the held 10,000-climb/1,000-list library before the same-ID,
+same-key `install -r` update. The updated app cleared the real persisted recovery
+hold; subsequent offline verification confirmed every restored field and membership
+and ordinary offline editing saved grade V8 while leaving all other content intact.
+
+Evidence boundaries matter: the first driver timed out before recording the exact
+instant the hold cleared, and its cleanup re-enabled networking. The Mac's power log
+shows repeated sleep interruptions. The continuation therefore does **not** claim
+to have independently timed the native hold clearing while offline. The focused
+regression proves verification precedes connectivity/account access; actual native
+evidence proves the persisted hold cleared after update, complete content survived,
+and offline authoring then worked. Failed attempts remain private and unchanged.
+
+After explicit admission, the production coordinator captured and protected the
+entire 26,178,915-byte structured library at revision 3. With the Mac awake, another
+ordinary UI edit to V9 used the normal automatic schedule and protected revision 4
+in a new immutable slot. No operator staging/upload, Retry, or second admission
+produced this later copy. Both receipts contain 10,000 climbs and 1,000 lists;
+history advanced from seven to eight retained copies. Exact content and the same
+current receipt/history survived process relaunch.
+
+Finally the real native vault adapter downloaded the newest remote object. Its
+encoded digest matches the acknowledged receipt; full canonical comparison against
+the actual local export passes all 10,000 climbs, 1,000 lists and 100,000 memberships,
+including grades, Trash, recipes, metadata and order. Canonical SHA-256 is
+`e0d0264661dd1bae22abb393a44ceaecf462820348658615b04a2b119d2eeb67`.
+The source emulator remains unchanged. These are synthetic acceptance copies in
+`acceptance-v1/r002`; the production `library-v1` namespace and owner phone were not
+used for this proof.
+
+Private evidence under `.private-firebase/automatic-app-acceptance/`:
+`offline-hold26/`, `before29-receiver-retry.json`,
+`offline-resume29-continuation/`, `full-upload29-final/`,
+`full-upload29-remote.json` and `full-upload29-remote-comparison.json`.
+Together with earlier independent empty-install in-app recovery and portable-file
+recovery, this completes the feature. Physical owner-phone/Fullride parity remains
+the epic's separate admission gate before real authoring.

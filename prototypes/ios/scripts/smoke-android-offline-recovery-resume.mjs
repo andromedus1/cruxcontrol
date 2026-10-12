@@ -9,8 +9,10 @@ import { canonicalSnapshot, decodeLibraryBackup } from '../../../web/src/library
 import { catalogDevice, pause } from './android-catalog-device.mjs';
 import { preservedLibrarySnapshot, writePreservationEvidence } from './android-preservation-evidence.mjs';
 
-const [serial, outputArgument, expectedArgument] = process.argv.slice(2);
+const [serial, outputArgument, expectedArgument, continuation] = process.argv.slice(2);
 assert(/^emulator-\d+$/.test(serial ?? '') && outputArgument && expectedArgument);
+assert(continuation === undefined || ['--already-verified', '--after-admission'].includes(continuation));
+const afterAdmission = continuation === '--after-admission';
 const baseline = decodeLibraryBackup(await readFile(expectedArgument, 'utf8'));
 assert.equal(baseline.drafts.length, 10_000);
 assert.equal(baseline.playlists.length, 1_000);
@@ -22,8 +24,8 @@ const output = resolve(outputArgument);
 execFileSync('git', ['check-ignore', '--quiet', `${output}/result.json`]);
 await mkdir(output, { mode: 0o700 });
 const device = catalogDevice(serial);
-assert.equal(device.adb('shell', 'settings', 'get', 'global', 'airplane_mode_on'), '1',
-  'The interrupted-restore emulator must still be offline during its preserving update');
+assert.equal(device.adb('shell', 'settings', 'get', 'global', 'airplane_mode_on'), afterAdmission ? '0' : '1',
+  'Continue in the network state required by this acceptance checkpoint');
 const save = (name, value) => writeFile(`${output}/${name}.json`, JSON.stringify(value, null, 2), { mode: 0o600, flag: 'wx' });
 async function record() {
   const rows = await device.evaluate(`window.Capacitor.Plugins.CapacitorSQLite.query({database:'cruxcontrol-library',
@@ -62,30 +64,40 @@ async function edit(grade, previousRevision) {
   assert.equal(canonicalSnapshot(current), canonicalSnapshot(expected), 'Editing changed unrelated fields or ordering');
 }
 try {
+  console.log(afterAdmission ? 'Continuing after the retained admission receipt.' : 'Starting offline preserving-update continuation.');
   await device.start();
   const vault = await device.evaluate("window.Capacitor.nativePromise('PrivateVault','status',{})");
   assert(vault.configured && vault.scope === 'acceptance-v1/r002' && vault.account);
-  assert.equal(await device.evaluate('navigator.onLine'), false);
-  const verified = await waitRecord(r => r.recoveryRevision === null, 'Local recovery hold did not clear offline');
-  assert.equal(await device.evaluate('navigator.onLine'), false, 'Verification accidentally used connectivity');
-  await writePreservationEvidence(device, `${output}/verified-offline.json`, expectedArgument);
-  await save('verified-offline-control', verified);
-  await edit('V8', verified.revision);
-  const offline = await record();
-  assert.equal(await device.evaluate('navigator.onLine'), false);
-  assert.notEqual(offline.control.protected?.revision, offline.revision);
-  await writePreservationEvidence(device, `${output}/authored-offline.json`);
+  if (afterAdmission) {
+    assert.equal(climb.metadata.grade, 'V8');
+    assert.equal(await device.evaluate('navigator.onLine'), true);
+    await writePreservationEvidence(device, `${output}/before-continuation.json`, expectedArgument);
+  } else {
+    assert.equal(await device.evaluate('navigator.onLine'), false);
+    const verified = await waitRecord(r => r.recoveryRevision === null, 'Local recovery hold did not clear offline');
+    assert.equal(await device.evaluate('navigator.onLine'), false, 'Verification accidentally used connectivity');
+    await writePreservationEvidence(device, `${output}/verified-offline.json`, expectedArgument);
+    await save('verified-offline-control', verified);
+    console.log('Recovery hold is clear offline; complete restored content matches.');
+    await edit('V8', verified.revision);
+    const offline = await record();
+    assert.equal(await device.evaluate('navigator.onLine'), false);
+    assert.notEqual(offline.control.protected?.revision, offline.revision);
+    await writePreservationEvidence(device, `${output}/authored-offline.json`);
+    console.log('Ordinary offline edit saved with all unrelated content preserved.');
 
-  device.adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'disable');
-  await device.waitFor('navigator.onLine===true', 'Connectivity did not return');
-  await device.evaluate("document.querySelector('.automatic-backup-status button').click()");
-  await device.click('Use this phone’s library');
-  await device.click('Close private backup');
+    device.adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'disable');
+    await device.waitFor('navigator.onLine===true', 'Connectivity did not return');
+    await device.evaluate("document.querySelector('.automatic-backup-status button').click()");
+    await device.click('Use this phone’s library');
+    await device.click('Close private backup');
+  }
   const admitted = await protect();
   assert.equal(admitted.control.protected.snapshot.counts.climbs, 10_000);
   assert.equal(admitted.control.protected.snapshot.counts.playlists, 1_000);
   assert(admitted.control.protected.snapshot.bytes > 26_000_000);
   await save('full-admission-upload', admitted);
+  console.log('Full structured admission upload protected.');
 
   // An ordinary subsequent edit must be protected by the production debounce,
   // without pressing Retry, adopting again, or staging through operator tooling.
@@ -96,17 +108,24 @@ try {
   assert.equal(automatic.control.history.length, admitted.control.history.length + 1);
   assert.notEqual(automatic.control.protected.snapshot.sha256, admitted.control.protected.snapshot.sha256);
   await save('full-automatic-upload', automatic);
+  console.log('Subsequent ordinary edit automatically protected.');
   await writePreservationEvidence(device, `${output}/final.json`);
   await device.restart();
   const reopened = await protect();
   assert.deepEqual(reopened.control.history, automatic.control.history);
   assert.deepEqual(reopened.control.protected, automatic.control.protected);
   await writePreservationEvidence(device, `${output}/reopened.json`, `${output}/final.json.backup.json`);
-  await save('result', { ok: true, localVerificationWhileOffline: true, offlineAuthoringAfterRecovery: true,
+  await save('result', { ok: true,
+    // A prior driver interruption may have missed the instant the hold cleared.
+    // Continuing does not retrospectively prove its network timing.
+    localVerificationTimingObserved: continuation === undefined,
+    recoveryHoldClearAfterPreservingUpdate: true, offlineAuthoringAfterRecovery: !afterAdmission,
     fullAutomaticCaptureUpload: true, exactCurrentRevision: true, exactReopenContent: true,
     climbs: 10_000, playlists: 1_000, revision: reopened.revision,
     remoteSlot: reopened.control.protected.snapshot.slot, remoteSha256: reopened.control.protected.snapshot.sha256 });
-  console.log('Offline recovery verification, ordinary editing and full-size automatic uploads passed.');
+  console.log(afterAdmission
+    ? 'Full-size automatic upload, exact current receipt and relaunch passed.'
+    : 'Offline editing after recovery, full-size automatic uploads and relaunch passed.');
 } finally {
   device.adb('shell', 'cmd', 'connectivity', 'airplane-mode', 'disable');
   await device.detach();
