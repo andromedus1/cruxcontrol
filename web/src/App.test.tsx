@@ -102,7 +102,7 @@ describe('App', () => {
       expect(screen.getByText('CruxControl update error')).toBeInTheDocument();
 
       fireEvent.click(screen.getByRole('button', { name: /Lists.*0 lists/ }));
-      fireEvent.change(screen.getByLabelText('New list'), { target: { value: 'Warmups' } });
+      fireEvent.change(await screen.findByLabelText('New list'), { target: { value: 'Warmups' } });
       await waitFor(() =>
         expect(screen.getByRole('alert')).toHaveTextContent('Service worker script unavailable.'),
       );

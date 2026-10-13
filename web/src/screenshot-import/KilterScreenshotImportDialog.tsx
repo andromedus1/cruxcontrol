@@ -15,6 +15,7 @@ import type {
   ScreenshotImportResult,
 } from './types';
 import './KilterScreenshotImportDialog.css';
+import { useBackAction } from '../app/use-back-action.ts';
 
 interface ReviewItem {
   readonly candidate: ScreenshotImportCandidate;
@@ -80,6 +81,7 @@ export function KilterScreenshotImportDialog({
 }: KilterScreenshotImportDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const analysisGeneration = useRef(0);
+  const mutationPending = useRef(false);
   const [items, setItems] = useState<readonly ReviewItem[]>([]);
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<'choose' | 'analyzing' | 'review' | 'importing'>('choose');
@@ -117,9 +119,11 @@ export function KilterScreenshotImportDialog({
   }, [createObjectUrl, currentFile, revokeObjectUrl]);
 
   function close(): void {
+    if (mutationPending.current) return;
     analysisGeneration.current += 1;
     onClose();
   }
+  useBackAction(close);
 
   async function chooseFiles(files: readonly File[]): Promise<void> {
     onOperationStart?.();
@@ -179,7 +183,8 @@ export function KilterScreenshotImportDialog({
   }
 
   async function confirm(): Promise<void> {
-    if (phase !== 'review') return;
+    if (phase !== 'review' || mutationPending.current) return;
+    mutationPending.current = true;
     onOperationStart?.();
     const confirmed: ConfirmedScreenshotCandidate[] = items.map((item) => ({
       sourceName: item.candidate.sourceName,
@@ -200,6 +205,7 @@ export function KilterScreenshotImportDialog({
         setStatus('');
         setPhase('review');
       } else {
+        mutationPending.current = false;
         close();
       }
     } catch (cause) {
@@ -207,6 +213,7 @@ export function KilterScreenshotImportDialog({
       setStatus('');
       setPhase('review');
     } finally {
+      mutationPending.current = false;
       onOperationEnd?.();
     }
   }
@@ -250,6 +257,7 @@ export function KilterScreenshotImportDialog({
           className="screenshot-import-close"
           aria-label="Close screenshot import"
           onClick={close}
+          disabled={phase === 'importing'}
         >
           ×
         </button>

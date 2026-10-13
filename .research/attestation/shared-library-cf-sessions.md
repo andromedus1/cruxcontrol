@@ -1,6 +1,6 @@
 ---
 source_handle: shared-library-cf-sessions
-fetched: 2026-09-26
+fetched: 2026-10-09
 source_url: https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/
 provenance: source-direct
 substrate_confidence: source-direct
@@ -22,3 +22,10 @@ The browser's Access authorization cookie is cleared immediately; previously iss
 
 ### AJAX requests
 An expired token on a background request can fail without displaying a login page. Requests marked `X-Requested-With: XMLHttpRequest` receive an HTTP 401 response when the session expires, allowing an application to handle reauthentication.
+
+### Global / application session duration
+Global sessions range from fifteen minutes to one month, defaulting to twenty-four
+hours; expiry requires another identity-provider authentication. Application session
+duration ranges from immediate to one month, also defaulting to twenty-four hours.
+A still-valid global session can permit renewal of an application session. The
+Cloudflare One Client session, when configured, can override these durations.

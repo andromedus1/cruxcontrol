@@ -1,7 +1,7 @@
 ---
 id: roadmap-next-milestones
 created: 2026-09-12
-updated: 2026-10-09
+updated: 2026-10-10
 tags: []
 ---
 
@@ -14,6 +14,40 @@ priority and resumption capture; the linked work items own their scope. No relea
 schedule, service architecture, or new feature decomposition is selected here.
 
 ## Agreed order
+
+**Android dogfood target (2026-10-10):** Andrew wants to use the native Android app
+within the next few days with full shipped-app parity, off-phone backups and the
+Kilter catalog. The [preservation epic](../active/epics/epic-library-preservation.md)
+owns the six-feature delivery graph, including Android packaging of the approved
+older catalog. This brings native catalog availability into the dogfood gate;
+current official coverage and invited sharing remain subsequent priorities.
+
+
+**Preservation priority (2026-10-09):** Andrew has closed further recovery escalation
+and chosen to proceed assuming the missing post-migration climbs are lost. The
+[incident record](../archive/story-phone-library-recovery.md) preserves the qualified
+diagnosis; physical unrecoverability and the deletion trigger remain unproven.
+[Independent library preservation](../active/epics/epic-library-preservation.md) is now the
+immediate priority: both automatic private online backups and owner-controlled
+portable files, with verified restoration. Resume the sequence below after this
+protection work; do not treat closing the recovery attempt as permission to reset
+the phone or as evidence that safeguards already ship.
+
+Andrew subsequently clarified that he does not plan to create climbs in the current
+PWA while the new app is built. Focus preservation delivery on the native-client
+path, with actual native storage, both backup forms and verified recovery before
+normal authoring resumes. Retrofitting protection into the unused PWA is not a
+prerequisite. The preservation epic owns this sequencing; retain existing evidence
+and any available files without assuming a live library migration is necessary.
+
+Andrew confirmed the immediate sequence after PR #31 merged (2026-10-09):
+update and dogfood the older catalog on the connected Android phone, then pursue
+current Kilter coverage, then partner sharing. Physical iPhone testing waits for
+hardware; retain the native-client proof gate for production sharing. Logbook,
+additional board manufacturers, grade prediction and recommendations are explicitly
+deferred for now. USB debugging enables phone maintenance but does not itself
+establish current catalog acquisition. Preserve and validate a fresh whole-library
+backup before updating the phone.
 
 1. **Reliable everyday sessions.** The six selected fixes are implemented and
    verified in [PR #20](https://github.com/andromedus1/cruxcontrol/pull/20):
