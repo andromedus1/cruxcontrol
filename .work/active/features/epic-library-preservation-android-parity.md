@@ -9,7 +9,7 @@ depends_on: [epic-library-preservation-native-library, epic-library-preservation
 release_binding: null
 gate_origin: null
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-12
 ---
 
 # Use the complete Android wall-session app
@@ -391,3 +391,105 @@ mutation. Preserve the same UI layout and strict serialization/identity contract
   This completes the independent signing-key recovery requirement.
 - No production behavior or tests changed. Feature remains implementing until
   actual phone/Fullride acceptance and the required feature review pass.
+
+## Next session: USB installation and dogfooding
+
+**Explicit stopping point (2026-10-12):** Andrew asked to wrap and resume next time
+with app installation over USB and dogfooding, then continue this work arc. Stop
+device work for this session. The last USB inventory contained only synthetic
+emulators; the physical phone has not been installed, updated or used for this
+acceptance. Earlier USB questions are deferred to the next session, not outstanding
+product decisions or permission to proceed while Andrew is away.
+
+### Verified delivery state
+
+Five sibling features are done: native storage, portable files, older Android
+Kilter catalog, private account vault and automatic backup. Their reviews and
+verification are recorded in their owning items. This feature and its parent epic
+remain implementing because physical parity and this feature's standard review
+remain. Automatic backup's completed review does not need another independent pass.
+
+- Branch `codex/library-preservation`; [draft PR #32](https://github.com/andromedus1/cruxcontrol/pull/32).
+  Verified application source is `acb7a6027b9c96e9762b2b649c9e141b800418b7`.
+  [All required CI passed](https://github.com/andromedus1/cruxcontrol/actions/runs/38257748591)
+  at that exact source. A later handoff-only commit does not rebuild the package.
+  No PR #32 merge has been authorized; the older PR #31 authorization is separate.
+- Full web checks: 892 tests plus lint/typecheck; native: 110 tests plus 11 package
+  checks and lint/typecheck; gateway: 17 tests. Browser/native packaging checks pass.
+- [Automatic-backup acceptance](epic-library-preservation-automatic-backup.md#review-closure-and-full-size-automatic-protection-2026-10-12)
+  includes independent empty-install in-app recovery, offline edits, interrupted
+  uploads, conflicts/cancellation and full-size automatic protection with exact
+  remote readback of 10,000 synthetic climbs, 1,000 lists and 100,000 memberships.
+  These are synthetic records, not recovery of Andrew's missing authored climbs.
+- Firebase account setup, service deployment and linked billing are complete. The
+  $5 alerts are not a spending cap. No fresh provider choice or billing setup is
+  needed. Backups run while foreground execution is available; retain copies and
+  pause at the 512-version limit. Portable exports remain manual.
+
+### Exact installation candidate
+
+Use the retained **release30**, not an instrumented proof APK:
+
+- APK: `.private-signing/android-dogfood/cruxcontrol-30.apk`.
+- Provenance: `.private-signing/android-dogfood/cruxcontrol-30.apk.build.json`.
+- APK SHA-256: `c5c8f2715c7de4c727a35ed514c8daf128de0905712afd74fc3055ba5e8e107f`.
+- Version code 30, stable app ID `io.github.andromedus1.cruxcontrol.prototype`,
+  debugging disabled, production scope `library-v1`, proof surfaces excluded.
+  Older Kilter catalog, worker/WASM and vault packaging checks pass.
+- Built from the clean source above; file digest was revalidated at handoff. Its
+  certificate matches the independently recovered Drive signing key:
+  `45a130298d76cb97ed00204f382ac40acf8328def2203660915bd56cf1ac2ff8`.
+  Signing recovery evidence: `.private-signing/recovery-verification.json`.
+
+The APK, catalog binary, credentials and detailed device/cloud evidence remain
+outside Git. Code and handoff are pushed through the existing PR branch; signing
+material was separately uploaded to and retrieved from Andrew's Google Drive.
+If a rebuild is needed, follow `prototypes/ios/README.md`, use the retained key and
+an appropriate increasing version code, and recheck production scope/signing.
+Do not print credentials or substitute an unconfigured compile-only package.
+
+### Resume sequence
+
+1. Re-read the project's preservation rules and query the work state. Keep the Mac
+   open and powered for acceptance; host sleep interrupted earlier synthetic runs.
+   The temporary awake assertion was stopped before wrapping this session.
+2. Have Andrew connect/unlock the phone and allow USB debugging. Select its explicit
+   device target; never use an untargeted `adb` command with emulators present.
+   Inspect the actual installed app/package, existing PWA origin and browser profile.
+   The established PWA origin is `http://localhost:4173/`; verify actual state rather
+   than assuming it. Do not restart a preview server or force a PWA refresh first.
+3. Before maintenance, capture and validate a fresh complete library backup outside
+   Git, including drafts, finished climbs, Trash, grades, recipes, playlists and
+   exact membership order. An earlier empty-library finding does not prove today's
+   state. If the existing app cannot export, investigate without clearing, replacing
+   or resetting it; never interpret an inaccessible store as an empty backup.
+4. Inspect any existing native installation's ID, signing identity and version;
+   install release30 only when those checks permit it. Preserve existing data with
+   the normal update path; never uninstall to fix a signature/version mismatch.
+   A new native installation must leave the separate PWA/browser data intact.
+   Compare all saved content/order against the fresh baseline after installation.
+5. Execute the existing Fullride acceptance checklist in this item using clearly
+   synthetic test data: editor/grade/save/reopen, Trash, ordered playlists, actual
+   picker import/export, older catalog/offline provider playback, Bluetooth chooser
+   and permissions, light/clear/effects, background/interruption and explicit
+   reconnect. Andrew must confirm expected physical wall lighting. Do not label
+   emulator evidence as observed phone/board behavior or copy acceptance-pool data
+   into the production vault as a shortcut.
+6. Verify the phone's account/backup status and a real retained copy before admitting
+   irreplaceable authoring. Independent recovery is already proven on separate
+   synthetic installations; do not reset the phone to repeat that experiment.
+   Complete this feature's one standard independent review, fix/verify accepted
+   findings and required CI, then close the epic's remaining admission gate. Keep
+   the PR draft until its remaining acceptance/review is complete.
+
+After safe dogfooding, follow the [saved roadmap](../../backlog/roadmap-next-milestones.md):
+current official Kilter coverage ahead of partner sharing. Physical iPhone testing
+still awaits hardware; logbook, extra board manufacturers, grade prediction and
+recommendations remain deferred. Existing capture-cost/recovery-polish backlog
+items remain parked; do not silently expand this install session into them.
+
+Private evidence is retained under `.private-firebase/automatic-app-acceptance/`;
+the automatic-backup item maps its exact files and observation limits. Preserve
+both synthetic emulators and retained cloud copies. The unrelated untracked
+`docs/kilter_docs/` and `docs/set_boulders/` directories were left untouched and
+must not be swept into a handoff commit.

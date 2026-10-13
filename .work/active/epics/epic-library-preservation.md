@@ -422,7 +422,11 @@ no automatic pruning or background-execution guarantee. The owning feature carri
 limits and costs. Prefer cheaper hosting; no fixed USD 25/month plan was selected.
 Account setup no longer blocks engineering. Physical hardware availability still
 affects final acceptance; no real authoring before the aggregate protection and
-parity gates pass. Andrew confirmed phone/board availability and has returned;
-physical acceptance awaits the USB connection, preservation checks and observed
-wall results. Current-PWA protection is not a prerequisite. Query child items
+parity gates pass. Andrew explicitly wrapped the session on 2026-10-12: resume
+next time with USB installation and phone/Fullride dogfooding, then continue this
+work arc. Physical installation and board acceptance have not started. The exact
+candidate, preservation-first steps and remaining review are saved in the
+[Android parity handoff](../features/epic-library-preservation-android-parity.md#next-session-usb-installation-and-dogfooding).
+No setup answer or action is required while the session is wrapped. Current-PWA
+protection is not a prerequisite. Query child items
 for exact stages and evidence rather than treating this sequence as dogfood admission.
