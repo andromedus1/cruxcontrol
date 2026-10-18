@@ -307,7 +307,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   service deployed; live transport acceptance passes. Durable state, the foreground
   coordinator and product UI are implemented. Structured cloud recovery, cancellation,
   conflict blocking and relaunch pass on synthetic emulators. Owner-phone preservation/import/backup checks and owner-observed Fullride acceptance
-  pass; required feature review and final delivery checks remain.
+  pass. Independent review is complete and required CI passes; merge and delivery
+  remain separate.
 - Retain up to 512 immutable whole-library copies of at most 25 MiB in the application
   namespace. Pause protection visibly at capacity without pruning older copies.
   Separate synthetic acceptance pools and legacy proof copies never appear in user
@@ -542,7 +543,8 @@ The model mirrors the official Kilter SQLite schema (see
   use. These are owner observations, not instrumented radio measurements; no
   scenario-specific physical evidence covers catalog entries lighting from playlists,
   Trash/restore actions or angle changes. Catalog playlist resolution has software
-  and emulator coverage. Required feature review and final delivery checks remain.
+  and emulator coverage. Independent review is complete and required CI passes;
+  merge and delivery remain separate.
   The iPhone path must
   prove connection/light/clear, interruption recovery, durable local storage,
   whole-library export/restore and native sign-in before claiming support.

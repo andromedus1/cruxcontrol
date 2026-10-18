@@ -17,7 +17,8 @@ summary: >
   synthetic emulator persistence, independent portable recovery and bounded
   operator-assisted cloud recovery checks pass. Android foreground backup and
   integrated recovery pass synthetic emulator acceptance. Owner-observed phone/Fullride
-  acceptance passes; feature review and final delivery checks remain. Invited contributions
+  acceptance passes. Independent review is complete and required CI passes; merge
+  and delivery remain separate. Invited contributions
   follow with Android and iPhone board control.
 decisions:
   - "Share product logic across web, Android and iOS while retaining platform-specific storage and device adapters; preserve the working web client and keep native-device acceptance explicit."
@@ -67,8 +68,8 @@ pending-upload process death, and separate empty-install recovery through the ap
 Structured cloud recovery, cancellation, conflict blocking and relaunch also pass.
 Physical acceptance is owner-observed, not instrumented radio measurement.
 Catalog-specific playlist lighting, Trash/restore actions and angle changes have no
-scenario-specific physical evidence. Required feature review and delivery checks
-remain before formal completion.
+scenario-specific physical evidence. Independent review is complete and required CI
+passes; merge and delivery remain separate.
 Local saving and offline access must remain available while automatic
 protection is pending or unavailable.
 The Kilter community catalog first slice is now

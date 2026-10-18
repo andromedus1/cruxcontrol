@@ -24,8 +24,22 @@ effects, connected playlist play-through, background/reopen, disconnect/reconnec
 and offline use also pass. These are owner observations, not instrumented radio
 measurements; catalog-specific playlist lighting, Trash/restore actions and angle
 changes lack scenario-specific physical evidence. Physical iPhone testing remains
-open. Formal review closure and final CI remain pending; this does not claim the
-installed APK includes subsequent fixes.
+open. Independent review is complete and required CI passes; merge and delivery remain
+separate. Source verification does not establish what is installed on the phone.
+**These resources hold real owner backups.** Despite their proof names, project
+`cruxcontrol-auth-20261010`, bucket `cruxcontrol-auth-20261010-vault-proof`, service
+account `crux-vault-proof@cruxcontrol-auth-20261010.iam.gserviceaccount.com` and
+function `privateVaultProof` serve Andrew's retained `library-v1` backups. Do not
+delete or recreate these resources, detach billing, or treat them as disposable
+proof infrastructure. Any replacement or rename requires verified backup migration
+and an app endpoint update before retiring the old service: the Android endpoint
+is compiled into `NativeAccountSession`.
+
+Ignored `.private-signing/` and `.private-firebase/` directories are vulnerable to
+`git clean -fdx` or `git clean -X`; exclusion from Git does not protect files from
+cleanup. Keep verified owner-controlled portable exports, signing recovery material
+and necessary operating configuration outside the checkout before any such cleanup.
+
 The detailed evidence below covers the separate bounded operator-assisted proof.
 Application transport acceptance passes small-copy upload/list/download, exact
 retry and sealed-file retention across restart. A 26,188,396-byte structured
