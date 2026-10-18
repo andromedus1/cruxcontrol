@@ -574,3 +574,24 @@ Detailed evidence and backups are excluded from Git under
 `.private-signing/phone-acceptance-2026-10-18/`. Emulator-only acceptance helpers
 were not retargeted to the owner phone; release behavior is exercised through the
 normal UI and Android accessibility/pickers.
+
+### Original inventory handoff (2026-10-18)
+
+Andrew requested loading the available original climbs into My Climbs before his
+board test. Saved and decoded a fresh whole-library export first; it exactly
+matches the prior six-climb/two-list baseline. The existing supplied-batch and
+private-source verification tests pass (three tests): all sixteen original PNG
+checksums and production-detector hold/role tuples match the established manifest.
+Prepared a strict portable file with fresh identities, the existing names and
+assignments, 40° and finished status to place these climbs in My Climbs. Did not
+infer grade metadata from title suffixes or claim recovery of lost later creations.
+
+Normal Android file selection, review and missing-only recovery added all sixteen
+with no conflicts. A fresh complete provider-written export exactly matches the
+expected twenty-two climbs and two lists; every previous field and ordered
+membership remains unchanged. Automatic backup retained the expanded library, and
+native download/review reports all twenty-two climbs and both lists unchanged.
+Independent files and detailed evidence remain outside Git in the private phone
+acceptance directory. The phone is left on My Climbs with verified backup status:
+sixteen original climbs plus the two clearly labeled test climbs. Andrew owns the
+next physical board trial; no board lighting result is inferred from this import.
