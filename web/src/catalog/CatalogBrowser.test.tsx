@@ -1,5 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createBackNavigation } from '../app/back-navigation.ts';
+import { backNavigationContext } from '../app/use-back-action.ts';
 import { MockBoardByteTransport } from '../board-control/mock-byte-transport.ts';
 import { createFullrideLightController } from '../board-control/light-controller.ts';
 import { lightSceneFromAssignments } from '../climb-browser/light-scene.ts';
@@ -201,6 +203,37 @@ describe('CatalogBrowser', () => {
     fireEvent.submit(dialog.querySelector('form')!);
     expect(screen.getByRole('alert')).toHaveTextContent('rating from 0 to 3');
     expect(query).toHaveBeenCalledOnce();
+  });
+
+  it('discards sheet edits on native Back while preserving the selected climb beneath it', async () => {
+    const back = createBackNavigation();
+    const query = vi.fn(async () => page([climb('Selected route', 'selected')]));
+    const { service } = serviceFor(queryPort({ query }));
+    render(
+      <backNavigationContext.Provider value={back}>
+        <CatalogBrowser
+          service={service}
+          definition={definition}
+          defaultAngle={40}
+          controller={null}
+          onManageOpenChange={vi.fn()}
+        />
+      </backNavigationContext.Provider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: /Selected route/ }));
+    const trigger = screen.getByRole('button', { name: 'Filters' });
+    fireEvent.click(trigger);
+    fireEvent.change(screen.getByLabelText('Minimum rating'), { target: { value: '2.5' } });
+    act(() => { expect(back.dispatch()).toBe(true); });
+    expect(screen.queryByRole('dialog', { name: 'Filter climbs' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Selected route' })).toBeInTheDocument();
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(query).toHaveBeenCalledOnce();
+    fireEvent.click(trigger);
+    expect(screen.getByLabelText('Minimum rating')).toHaveValue(null);
+    act(() => { expect(back.dispatch()).toBe(true); });
+    act(() => { expect(back.dispatch()).toBe(true); });
+    expect(screen.queryByRole('heading', { name: 'Selected route' })).not.toBeInTheDocument();
   });
 
   it('shows catalog statistics and removes one applied filter while clearing the selection', async () => {
