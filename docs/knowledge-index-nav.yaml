@@ -3,7 +3,7 @@
 # Provides corpus situational awareness only. Read knowledge-index.yaml for full index.
 
 schema_version: 3
-generated_at: 2026-10-18T21:51:46Z
+generated_at: 2026-10-18T22:09:47Z
 generated_from: frontmatter
 total_docs: 30
 
@@ -15,18 +15,22 @@ by_kind:
 # Substrate items (.work/) by tier. Query via .work/bin/work-view.
 substrate_summary:
   active:
-    epic: 6
-    feature: 18
-    story: 15
+    epic: 5
+    feature: 12
+    story: 4
     release: 0
-  backlog: 17
+  backlog: 18
   releases: {}
-  archive: 104
+  archive: 122
 
 # Top 15 most-recently-updated docs (planning + research only).
 recent:
   - path: docs/ARCHITECTURE.md
     title: "CruxControl — Architecture"
+    kind: planning
+    updated: 2026-10-18
+  - path: docs/DEPLOY.md
+    title: "Deploy"
     kind: planning
     updated: 2026-10-18
   - path: docs/SPEC.md
@@ -41,10 +45,6 @@ recent:
     title: "CruxControl — Principles"
     kind: planning
     updated: 2026-10-10
-  - path: docs/DEPLOY.md
-    title: "Deploy"
-    kind: planning
-    updated: 2026-08-02
 
 # Docs flagged with nav_priority: high in frontmatter — read at session start.
 load_bearing:

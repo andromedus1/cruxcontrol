@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-18T21:51:46Z'
+generated_at: '2026-10-18T22:09:47Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -18,9 +18,10 @@ documents:
       edit/save, process-relaunch, and same-signature update checks. Portable-file recovery and bounded
       operator-assisted cloud recovery pass synthetic emulator proofs. Integrated Android automatic backup
       and app recovery also pass synthetic acceptance. Recorded phone preservation/import/backup checks
-      and owner-observed Fullride acceptance pass; required review/delivery checks remain. Firebase Auth
-      and the authenticated GCS gateway are selected for Android dogfood. Native application transport
-      is implemented and the service deployed; live transport acceptance passes.
+      and owner-observed Fullride acceptance pass. Independent review is complete and required CI passes;
+      merge and delivery remain separate. Firebase Auth and the authenticated GCS gateway are selected
+      for Android dogfood. Native application transport is implemented and the service deployed; live
+      transport acceptance passes.
 
       '
     decisions:
@@ -66,7 +67,8 @@ documents:
       proof.
   docs/DEPLOY.md:
     summary: 'Operator runbook for the CI-gated Cloudflare Workers Static Assets deployment, including
-      secrets, opt-in enablement, branch protection, and verification.
+      secrets, opt-in enablement, branch protection, and verification, plus preservation requirements
+      for the live Android private-backup resources.
 
       '
     decisions:
@@ -139,8 +141,8 @@ documents:
       An experimental Android package now uses native SQLite for local authorship; its synthetic emulator
       persistence, independent portable recovery and bounded operator-assisted cloud recovery checks pass.
       Android foreground backup and integrated recovery pass synthetic emulator acceptance. Owner-observed
-      phone/Fullride acceptance passes; feature review and final delivery checks remain. Invited contributions
-      follow with Android and iPhone board control.
+      phone/Fullride acceptance passes. Independent review is complete and required CI passes; merge and
+      delivery remain separate. Invited contributions follow with Android and iPhone board control.
 
       '
     decisions:
