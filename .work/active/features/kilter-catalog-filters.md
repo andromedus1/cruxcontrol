@@ -1,7 +1,7 @@
 ---
 id: kilter-catalog-filters
 kind: feature
-stage: drafting
+stage: implementing
 tags: [data, ui]
 parent: null
 depends_on: [kilter-community-browser, epic-library-preservation-android-catalog]
@@ -31,7 +31,7 @@ The first proposed filter surface includes name, angle, grade range, minimum
 rating, minimum send count and setter, with explicit result sorting. Rating uses
 the installed source's three-star scale. Label send-count help accurately: distinct
 climbers who sent at the selected angle, not a total of repeated ascents.
-Whether hold selection joins this first update is awaiting Andrew's direction.
+Andrew selected statistics filters first; hold selection is deferred.
 The broader parity request remains the target; this proposal does not redefine it
 as only two added controls.
 
@@ -78,16 +78,130 @@ instead of introducing a second browser or an in-memory search index.
 - Comparison: [catalog filters](../../../.mockups/screens/kilter-catalog-filters/index.html).
 - Option 1: compact controls beside results, with expandable advanced filters.
 - Option 2: search and sort beside results, with a dedicated filter sheet.
-- Selection pending. New filter composition requires mockup alignment before
-  production UI implementation under the project's mockup-first convention.
+- Selected: option 2, dedicated filter sheet — Andrew approved 2026-10-18.
+  Apply commits a group of choices; Cancel/Back discards uncommitted choices.
 - Both mocks checked in Chromium at phone width (412px), with a desktop comparison
   at 1440px. Combined rating/send filtering, cancel-without-apply, no horizontal
   overflow and no browser errors pass. Visually inspected the comparison and sheet.
   Synthetic rows are explicitly labeled and never read the installed library.
 
-## Pending direction
+## Architectural choice
 
-- Include picking specific holds in this update, or ship the statistics filters first?
-- Choose the filter layout after reviewing the interactive comparison.
+Extend the existing catalog query port and SQLite adapter, and keep one committed
+filter state plus a temporary sheet draft in the browser (chosen). This preserves
+the complete-catalog query and bounded projection pipeline. Filtering loaded rows
+would return incomplete results. A separate search index would duplicate the catalog
+and add installation/versioning work without a demonstrated need.
 
-No implementation units or child stories are finalized while those choices are open.
+## Implementation units
+
+One owner, no child stories: query, pagination and selection invalidation must agree
+on the same filter state and are small enough for one cohesive implementation.
+
+### 1. Query contract and stable pagination (trickiest unit)
+
+Files: `web/src/catalog/types.ts`, `web/src/data/catalog/kilter-catalog.ts`,
+`web/src/data/catalog/kilter-catalog.test.ts`.
+
+```typescript
+export type CatalogSort = 'rating' | 'sends' | 'grade-asc' | 'grade-desc' | 'name';
+// Extend CatalogClimbQuery (existing angle/name/minGrade/maxGrade/limit/cursor):
+readonly minRating?: number;
+readonly minAscents?: number;
+readonly setter?: string;
+readonly sort?: CatalogSort;
+```
+
+Default sort is highest rating; UI exposes all five choices. Rating range 0–3,
+finite; ascents must be a nonnegative safe integer; setter is trimmed text up to
+200 characters with literal substring matching, just like name. Grade bounds retain
+existing native integer-scale semantics and are inclusive. Omitted minimums mean
+unrestricted, not a hidden minimum vote count. Use bound SQL parameters for all
+input. Keep the angle-specific join and compatibility projection.
+
+Use stable composite keyset ordering: selected sort value plus UUID ascending as
+unique tie-breaker. Rating and ascents descending; grade ascending/descending based
+on displayed rounded grade; name case-insensitive ascending. Cursor version changes
+and binds snapshot/layout, angle, every normalized filter and sort, plus final
+inspected sort value and UUID. Old in-memory cursors are rejected; no persisted
+cursor migration is necessary. Handle invalid/null source statistics with explicit
+sortable SQL keys so an excluded row at a page boundary cannot strand traversal.
+Keep the 250-candidate bound and next cursor based on the final inspected candidate,
+including rejected rows. Do not claim a complete total count.
+
+Acceptance: combined filters apply before pagination; tied sort keys neither repeat
+nor skip valid climbs; Prev/Next works in every sort; changed-query/snapshot cursors
+fail; malformed query values fail before storage I/O; incompatible and malformed
+source rows remain excluded without breaking continuation.
+
+### 2. Filter sheet and catalog metrics
+
+Files: `web/src/catalog/CatalogBrowser.tsx`, `web/src/catalog/catalog.css`,
+`web/src/catalog/CatalogBrowser.test.tsx`; a cohesive `CatalogFilterDialog.tsx` is
+permitted if it follows the existing catalog dialog conventions. Extend shared
+climb-browser row/detail presentation only through optional additive render slots
+or metadata that leave authored-climb views unchanged; do not downcast provider
+fields into local authored records.
+
+Use approved option 2: name and angle stay above results; sorting and a Filters
+button are adjacent. Sheet has grade From/To, minimum rating, minimum sends and
+setter. Clear labels, keyboard focus containment/return, Escape and native Back,
+44px targets and phone/desktop layouts follow existing dialogs. Keep draft state
+inside the sheet; Apply validates and commits atomically, Cancel/Back discards.
+Reset inside the sheet clears its pending fields; outside chips remove one applied
+filter. Do not commit invalid ranges or silently clamp invalid input. Rating/send
+help explains three stars and distinct climbers at this angle.
+
+Applied chips summarize grade/rating/send/setter choices; existing name debounce
+continues. Every committed filter/sort/angle change invalidates current query,
+resets pagination and clears selection before new rows arrive. Late responses and
+adapter replacement must not resurrect stale selected climbs or initiate lighting.
+The sheet itself must not auto-light anything. Show rating and sends in catalog rows
+so users can see why a result matched. Retain source freshness labeling, loading,
+retry, installation-management and empty-compatible-page continuation behavior.
+
+### 3. Verification and contract docs
+
+Meaningful adapter tests use existing database fixtures: combined numeric/text
+filters, angle-dependent statistics, all sort orders with ties across page limits,
+invalid rows at page boundaries, stale/tampered cursors, bounds and literal setter
+matching. UI tests cover committed vs draft state, invalid inputs, reset/chip
+removal, selection/page invalidation, stale responses and keyboard/native Back.
+Avoid tests that only assert an exact SQL string or mirror helper implementation.
+
+Run focused catalog tests, then web lint/typecheck/test/build. Add one targeted
+browser check of the integrated sheet at phone width and keyboard interaction;
+reuse existing catalog integration infrastructure where practical. A real phone
+update requires a fresh whole-library backup and USB connection; do not operate on
+the disconnected phone or imply that a source change updates the installed APK.
+Update SPEC/ARCHITECTURE's browser contract after implementation; retain current
+catalog-acquisition, public-distribution and personal-logbook limitations.
+
+## Implementation order
+
+1. Query normalization and keyset sorting with regression fixtures.
+2. Approved sheet, result metrics and state/selection behavior.
+3. Integrated verification, documentation and independent standard feature review.
+
+## Risks
+
+- **Cursor correctness:** rating/count ties and invalid rows can skip results.
+  Verify actual SQL-backed pages; preserve UUID tie-breaks and bounded scans.
+- **Statistics meaning:** counts and ratings belong to an angle and an older
+  snapshot. Keep those qualifications visible; never imply current official counts.
+- **UI lifecycle:** changing filters while detail is selected can leave stale
+  lighting targets. Clear selection and reject stale responses before publishing rows.
+- **Later parity:** sent/liked need personal data; hold selection and any remaining
+  official filters stay under the deferred parity capture, not falsely advertised
+  as shipped here.
+
+## Execution
+
+Use implement-orchestrator with one feature-owning worker in the main checkout.
+The small Android review repair is isolated in `.peeragent/preservation-review`.
+GPT-5.6 Luna is unavailable in this harness; use GPT-6 Luna at xhigh for the coupled
+query/UI work. Effective review weight: standard from `.work/CONVENTIONS.md`.
+Dependencies `kilter-community-browser` and `epic-library-preservation-android-catalog`
+are done. The earlier cycle check found no reverse dependencies. Worker verifies
+and commits the feature at review; host owns independent review, adjudication and
+PR completion. No phone/cloud operations or unrelated source changes.
