@@ -57,7 +57,39 @@ function validQueryRow(uuid: string): Row {
     stat_ascensionist_count: 1,
     stat_quality_average: 2,
     grade_label: 'V1',
+    cursor_sort_rank: 0,
+    cursor_sort_value: 2,
   };
+}
+
+async function insertClimb(
+  db: CatalogDb,
+  climb: Readonly<{
+    id: string;
+    name: string;
+    setter?: string;
+    display?: number | null;
+    ascents?: number | null;
+    rating?: number | null;
+    angle?: number;
+    frames?: string;
+  }>,
+): Promise<void> {
+  await db.query(
+    'INSERT INTO climbs VALUES (?, 8, ?, ?, \'\', ?, 1, 0, 1)',
+    [climb.id, climb.setter ?? 'Fixture setter', climb.name, climb.frames ?? 'p4117r42'],
+  );
+  await db.query(
+    'INSERT INTO climb_stats VALUES (?, ?, ?, ?, NULL, ?, ?)',
+    [
+      climb.id,
+      climb.angle ?? 40,
+      climb.display === undefined ? 12 : climb.display,
+      climb.display === undefined ? 12 : climb.display,
+      climb.ascents === undefined ? 1 : climb.ascents,
+      climb.rating === undefined ? 2 : climb.rating,
+    ],
+  );
 }
 
 beforeAll(async () => {
@@ -115,8 +147,110 @@ describe('Kilter catalog queries', () => {
     await db.close();
   });
 
+  it('applies combined filters to the requested angle before pagination', async () => {
+    const db = await openDb();
+    await insertClimb(db, {
+      id: 'combined-match', name: 'Filtered amber', setter: 'Ada Setter', display: 18.4,
+      ascents: 8, rating: 2.6,
+    });
+    await db.query(
+      'INSERT INTO climb_stats VALUES (?, ?, ?, ?, NULL, ?, ?)',
+      ['combined-match', 50, 18.4, 18.4, 1, 1],
+    );
+    await insertClimb(db, {
+      id: 'combined-low-rating', name: 'Filtered amber low', setter: 'Ada Setter', display: 18.4,
+      ascents: 80, rating: 2.1,
+    });
+    await insertClimb(db, {
+      id: 'combined-wrong-setter', name: 'Filtered amber wrong setter', setter: 'Other', display: 18.4,
+      ascents: 80, rating: 2.9,
+    });
+    const adapter = createKilterCatalog(portFor(db), definition, provenance);
+    const result = await adapter.query({
+      angle: 40,
+      name: 'filtered amber',
+      minGrade: 18,
+      maxGrade: 18,
+      minRating: 2.5,
+      minAscents: 8,
+      setter: 'ada',
+      sort: 'rating',
+      limit: 1,
+    });
+    expect(result.status === 'ready' ? result.value.climbs.map(({ providerClimbId }) => providerClimbId.sourceId) : [])
+      .toEqual(['combined-match']);
+    if (result.status === 'ready') expect(result.value.nextCursor).toBeNull();
+    const otherAngle = await adapter.query({
+      angle: 50,
+      name: 'filtered amber',
+      minGrade: 18,
+      maxGrade: 18,
+      minRating: 2.5,
+      minAscents: 8,
+      setter: 'ada',
+      sort: 'rating',
+      limit: 1,
+    });
+    expect(otherAngle).toMatchObject({ status: 'ready', value: { climbs: [], nextCursor: null } });
+    await db.close();
+  });
+
+  it('uses stable sort keys and UUID ties across pages for every catalog sort', async () => {
+    const db = await openDb();
+    await insertClimb(db, { id: 'z-rating-tie', name: 'sort-fixture Alpha', display: 18.2, ascents: 10, rating: 2.5 });
+    await insertClimb(db, { id: 'a-rating-tie', name: 'sort-fixture alpha', display: 18.4, ascents: 10, rating: 2.5 });
+    await insertClimb(db, { id: 'b-high', name: 'sort-fixture Beta', display: 12.2, ascents: 20, rating: 3 });
+    await insertClimb(db, { id: 'c-low', name: 'sort-fixture Gamma', display: 22, ascents: 5, rating: 1.5 });
+    await insertClimb(db, { id: 'd-tie', name: 'sort-fixture Beta', display: 12.4, ascents: 20, rating: 2.5 });
+    const adapter = createKilterCatalog(portFor(db), definition, provenance);
+    const expected: Readonly<Record<NonNullable<CatalogClimbQuery['sort']>, readonly string[]>> = {
+      rating: ['b-high', 'a-rating-tie', 'd-tie', 'z-rating-tie', 'c-low'],
+      sends: ['b-high', 'd-tie', 'a-rating-tie', 'z-rating-tie', 'c-low'],
+      'grade-asc': ['b-high', 'd-tie', 'a-rating-tie', 'z-rating-tie', 'c-low'],
+      'grade-desc': ['c-low', 'a-rating-tie', 'z-rating-tie', 'b-high', 'd-tie'],
+      name: ['a-rating-tie', 'z-rating-tie', 'b-high', 'd-tie', 'c-low'],
+    };
+    for (const sort of Object.keys(expected) as NonNullable<CatalogClimbQuery['sort']>[]) {
+      const found: string[] = [];
+      let cursor: CatalogClimbQuery['cursor'];
+      do {
+        const result = await adapter.query({ angle: 40, name: 'sort-fixture', sort, limit: 1, cursor });
+        if (result.status !== 'ready') throw new Error('expected ready result');
+        found.push(...result.value.climbs.map(({ providerClimbId }) => providerClimbId.sourceId));
+        cursor = result.value.nextCursor ?? undefined;
+      } while (cursor);
+      expect(found, sort).toEqual(expected[sort]);
+      expect(new Set(found).size, sort).toBe(found.length);
+    }
+    await db.close();
+  });
+
+  it('continues from a rejected row whose active sort key is valid', async () => {
+    const db = await openDb();
+    for (let index = 0; index < 250; index += 1) {
+      await insertClimb(db, {
+        id: 'a-invalid-' + String(index).padStart(3, '0'),
+        name: 'grade-test Invalid statistics',
+        display: 12.2,
+        rating: null,
+      });
+    }
+    await insertClimb(db, { id: 'z-valid', name: 'grade-test Valid after rejection', display: 12.3, rating: 2 });
+    const adapter = createKilterCatalog(portFor(db), definition, provenance);
+    const first = await adapter.query({ angle: 40, name: 'grade-test', sort: 'grade-asc', limit: 1 });
+    expect(first).toMatchObject({ status: 'ready', value: { climbs: [], excludedCount: 250 } });
+    if (first.status !== 'ready') throw new Error('expected ready result');
+    expect(first.value.nextCursor).toBeTruthy();
+    const second = await adapter.query({ angle: 40, name: 'grade-test', sort: 'grade-asc', limit: 1, cursor: first.value.nextCursor! });
+    expect(second).toMatchObject({ status: 'ready', value: { climbs: [{ name: 'grade-test Valid after rejection' }], nextCursor: null } });
+    await db.close();
+  });
+
   it('treats wildcard and SQL-looking search text literally', async () => {
     const db = await openDb();
+    await insertClimb(db, {
+      id: 'literal-setter', name: 'Literal setter route', setter: 'Setter % _ literal',
+    });
     const adapter = createKilterCatalog(portFor(db), definition, provenance);
     const literal = await adapter.query({ angle: 40, name: "% _" });
     expect(literal.status === 'ready' ? literal.value.climbs.map(({ name }) => name) : []).toEqual([
@@ -124,6 +258,9 @@ describe('Kilter catalog queries', () => {
     ]);
     const injection = await adapter.query({ angle: 40, name: "%' OR 1=1 --" });
     expect(injection.status === 'ready' ? injection.value.climbs : []).toEqual([]);
+    const setterLiteral = await adapter.query({ angle: 40, setter: '% _' });
+    expect(setterLiteral.status === 'ready' ? setterLiteral.value.climbs.map(({ providerClimbId }) => providerClimbId.sourceId) : [])
+      .toEqual(['literal-setter']);
     await db.close();
   });
 
@@ -202,18 +339,32 @@ describe('Kilter catalog queries', () => {
     await expect(adapter.query({ angle: 40, name: 'x'.repeat(201) })).rejects.toBeInstanceOf(RangeError);
     await expect(adapter.query({ angle: 40, minGrade: 8.5 })).rejects.toBeInstanceOf(RangeError);
     await expect(adapter.query({ angle: 40, minGrade: 10, maxGrade: 9 })).rejects.toBeInstanceOf(RangeError);
+    await expect(adapter.query({ angle: 40, minRating: -0.1 })).rejects.toBeInstanceOf(RangeError);
+    await expect(adapter.query({ angle: 40, minRating: 3.1 })).rejects.toBeInstanceOf(RangeError);
+    await expect(adapter.query({ angle: 40, minRating: Number.NaN })).rejects.toBeInstanceOf(RangeError);
+    await expect(adapter.query({ angle: 40, minAscents: -1 })).rejects.toBeInstanceOf(RangeError);
+    await expect(adapter.query({ angle: 40, minAscents: 1.5 })).rejects.toBeInstanceOf(RangeError);
+    await expect(adapter.query({ angle: 40, minAscents: Number.MAX_SAFE_INTEGER + 1 })).rejects.toBeInstanceOf(RangeError);
+    await expect(adapter.query({ angle: 40, setter: 'x'.repeat(201) })).rejects.toBeInstanceOf(RangeError);
+    await expect(adapter.query({ angle: 40, sort: 'unknown' as never })).rejects.toBeInstanceOf(RangeError);
     const page = await adapter.query({ angle: 40, limit: 1 });
     if (page.status !== 'ready') throw new Error('expected ready result');
     const cursor = page.value.nextCursor;
     expect(cursor).toBeTruthy();
     const validCursor = cursor!;
     await expect(adapter.query({ angle: 40, name: 'changed', cursor: validCursor })).rejects.toBeInstanceOf(TypeError);
+    await expect(adapter.query({ angle: 40, minRating: 2, cursor: validCursor })).rejects.toBeInstanceOf(TypeError);
+    await expect(adapter.query({ angle: 40, minAscents: 2, cursor: validCursor })).rejects.toBeInstanceOf(TypeError);
+    await expect(adapter.query({ angle: 40, setter: 'changed', cursor: validCursor })).rejects.toBeInstanceOf(TypeError);
+    await expect(adapter.query({ angle: 40, sort: 'sends', cursor: validCursor })).rejects.toBeInstanceOf(TypeError);
+    await expect(adapter.query({ angle: 40, limit: 2, cursor: validCursor })).rejects.toBeInstanceOf(TypeError);
     const cursorData = JSON.parse(validCursor) as Record<string, unknown>;
     const malformedCursors = [
       'not-json',
       'x'.repeat(4097),
-      JSON.stringify({ ...cursorData, version: 2 }),
+      JSON.stringify({ ...cursorData, version: 1 }),
       JSON.stringify({ ...cursorData, lastId: ' ' }),
+      JSON.stringify({ ...cursorData, lastSortValue: null }),
     ];
     for (const malformed of malformedCursors) {
       await expect(adapter.query({ angle: 40, cursor: malformed as CatalogCursor })).rejects.toBeInstanceOf(TypeError);

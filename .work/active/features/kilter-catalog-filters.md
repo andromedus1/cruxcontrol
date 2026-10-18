@@ -1,7 +1,7 @@
 ---
 id: kilter-catalog-filters
 kind: feature
-stage: implementing
+stage: review
 tags: [data, ui]
 parent: null
 depends_on: [kilter-community-browser, epic-library-preservation-android-catalog]
@@ -192,8 +192,41 @@ catalog-acquisition, public-distribution and personal-logbook limitations.
 - **UI lifecycle:** changing filters while detail is selected can leave stale
   lighting targets. Clear selection and reject stale responses before publishing rows.
 - **Later parity:** sent/liked need personal data; hold selection and any remaining
-  official filters stay under the deferred parity capture, not falsely advertised
-  as shipped here.
+  official filters stay under [the deferred parity capture](../../backlog/idea-kilter-remaining-filters.md),
+  not falsely advertised as shipped here.
+
+## Implementation discovery
+
+- Implemented grade ranges, minimum rating, minimum distinct sends, setter text,
+  and five stable sort modes in the existing parameterized catalog adapter. The
+  dedicated sheet keeps draft values separate until Apply; applied chips remove
+  one criterion, and every committed query change clears selection and pagination.
+- Cursor v2 binds the normalized filter, sort, snapshot, layout and page size. It
+  carries explicit sort-rank/value plus UUID keys; bounded scans advance from the
+  last inspected candidate even when projection rejects rows. SQL-backed tests
+  cover combined/angle-specific filters, literal setter text, invalid statistics,
+  ties across one-row pages, and cursor mismatch rejection.
+- Catalog rating/send metadata is rendered through an optional row slot, leaving
+  authored climb records and their views unchanged. The phone-width browser smoke
+  uses only the existing synthetic catalog fixture.
+- The SPEC/ARCHITECTURE browser-contract update remains for the host's documentation
+  workflow: this worker was explicitly restricted from writing docs. The change
+  preserves the older-catalog freshness and personal-data limits in the UI and
+  work item; docs should be reconciled before feature completion.
+
+### Verification
+
+- `npm -w web run lint` — passed.
+- `npm -w web run typecheck` — passed.
+- `npm -w web test` — passed, 102 files / 899 tests.
+- `npm -w web run build` — passed; Vite reported its existing large-chunk advisory.
+- `node web/scripts/check-pwa-build.mjs` — passed; catalog data is not precached.
+- `npm -w web test -- --run src/data/catalog/kilter-catalog.test.ts` — passed,
+  11 tests after the final query-test additions.
+- `npm -w web run test:e2e -- --grep "installs only with consent"` — passed at
+  390px phone width, including combined filters, angle-specific metrics, Escape,
+  and focus return. Full E2E and catalog-bootstrap lanes remain for host integration CI.
+- No phone update or authored-library access was performed.
 
 ## Execution
 

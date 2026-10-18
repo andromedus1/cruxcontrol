@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { BoardLightController } from '../board-control/light-controller.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
-import type { CatalogCursor, CatalogPage } from './types.ts';
+import type { CatalogCursor, CatalogPage, CatalogSort } from './types.ts';
 import type { CatalogClimb } from './types.ts';
 import type { CatalogService } from './service.ts';
 import type { ClimbViewKey } from '../climb-browser/types.ts';
 import { LocalClimbViewer } from '../climb-browser/LocalClimbViewer.tsx';
 import { CatalogManageDialog } from './CatalogManageDialog.tsx';
+import { CatalogFilterDialog, EMPTY_CATALOG_FILTERS, type CatalogFilterValues } from './CatalogFilterDialog.tsx';
 import './catalog.css';
 
 export interface CatalogBrowserProps {
@@ -47,11 +48,13 @@ export function CatalogBrowser({
   const [gradeAdapter, setGradeAdapter] = useState<object | null>(null);
   const [gradeStatus, setGradeStatus] = useState<GradeStatus>('idle');
   const [search, setSearch] = useState({ value: '', settled: true });
-  const [grade, setGrade] = useState('all');
+  const [filters, setFilters] = useState<CatalogFilterValues>(EMPTY_CATALOG_FILTERS);
+  const [sort, setSort] = useState<CatalogSort>('rating');
   const [angle, setAngle] = useState(defaultAngle);
   const [selectedKey, setSelectedKey] = useState<ClimbViewKey | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [manageOpen, setManageOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const queries = snapshot.queries;
   const currentQueries = useRef(queries);
   currentQueries.current = queries;
@@ -60,7 +63,9 @@ export function CatalogBrowser({
   const pageHistory = useRef<PageHistory>({ adapter: queries, cursors: [null] });
   const manageTrigger = useRef<HTMLButtonElement | null>(null);
   const manageButton = useRef<HTMLButtonElement | null>(null);
+  const filterTrigger = useRef<HTMLButtonElement | null>(null);
   const wasManageOpen = useRef(false);
+  const wasFilterOpen = useRef(false);
   const openFrame = useRef<number | null>(null);
   const mounted = useRef(true);
 
@@ -68,9 +73,6 @@ export function CatalogBrowser({
     pageHistory.current = { adapter: queries, cursors: [null] };
   }
   const activePageNumber = queries ? Math.min(pageNumber || 1, pageHistory.current.cursors.length) : 1;
-  const activeGrade = gradeAdapter === queries && gradeOptions.some(({ value }) => String(value) === grade)
-    ? grade
-    : 'all';
   const visibleRows = queries && rowsAdapter === queries ? rows : EMPTY_ROWS;
   const visiblePage = queries && rowsAdapter === queries ? page : null;
   const visibleSelectedKey = queries && rowsAdapter === queries ? selectedKey : null;
@@ -78,6 +80,10 @@ export function CatalogBrowser({
     ...climb,
     sourceLabel: 'Legacy Kilter · read only',
   })), [visibleRows]);
+  const metricsByKey = useMemo(
+    () => new Map(visibleRows.map((climb) => [climb.key, climb] as const)),
+    [visibleRows],
+  );
 
   useEffect(() => {
     mounted.current = true;
@@ -103,6 +109,15 @@ export function CatalogBrowser({
     }
     wasManageOpen.current = manageOpen;
   }, [manageOpen, onManageOpenChange]);
+
+  useEffect(() => {
+    if (wasFilterOpen.current && !filterOpen) {
+      requestAnimationFrame(() => {
+        if (filterTrigger.current?.isConnected) filterTrigger.current.focus();
+      });
+    }
+    wasFilterOpen.current = filterOpen;
+  }, [filterOpen]);
 
   useEffect(() => {
     const queryAdapter = queries;
@@ -155,7 +170,6 @@ export function CatalogBrowser({
 
     const currentPageIndex = Math.max(0, Math.min(activePageNumber - 1, pageHistory.current.cursors.length - 1));
     const cursor = pageHistory.current.cursors[currentPageIndex] ?? undefined;
-    const selectedGrade = activeGrade === 'all' ? undefined : Number(activeGrade);
     setQueryStatus('loading');
     setQueryError('');
     setRows(EMPTY_ROWS);
@@ -165,7 +179,12 @@ export function CatalogBrowser({
     void queryAdapter.query({
       angle,
       name: search.value,
-      ...(selectedGrade === undefined ? {} : { minGrade: selectedGrade, maxGrade: selectedGrade }),
+      ...(filters.minGrade === null ? {} : { minGrade: filters.minGrade }),
+      ...(filters.maxGrade === null ? {} : { maxGrade: filters.maxGrade }),
+      ...(filters.minRating === null ? {} : { minRating: filters.minRating }),
+      ...(filters.minAscents === null ? {} : { minAscents: filters.minAscents }),
+      ...(filters.setter ? { setter: filters.setter } : {}),
+      sort,
       limit: 25,
       ...(cursor === undefined ? {} : { cursor }),
     }).then((result) => {
@@ -197,7 +216,8 @@ export function CatalogBrowser({
     angle,
     search.value,
     search.settled,
-    activeGrade,
+    filters,
+    sort,
     activePageNumber,
     retryCount,
   ]);
@@ -299,8 +319,28 @@ export function CatalogBrowser({
     emptyDescription = 'Continue to the next catalog page to keep searching.';
   } else if (queryStatus === 'ready') {
     emptyTitle = 'No climbs match these filters';
-    emptyDescription = 'Try another name, grade, or angle.';
+    emptyDescription = 'Try another name, angle, rating, or send count.';
   }
+
+  const gradeName = (value: number) => gradeOptions.find((option) => option.value === value)?.label ?? ('Grade ' + value);
+  const gradeSummary = filters.minGrade !== null && filters.maxGrade !== null
+    ? filters.minGrade === filters.maxGrade
+      ? 'Grade ' + gradeName(filters.minGrade)
+      : gradeName(filters.minGrade) + '–' + gradeName(filters.maxGrade)
+    : filters.minGrade !== null
+      ? 'Grade ≥ ' + gradeName(filters.minGrade)
+      : filters.maxGrade !== null
+        ? 'Grade ≤ ' + gradeName(filters.maxGrade)
+        : '';
+  const filterChipCount = Number(Boolean(gradeSummary))
+    + Number(filters.minRating !== null)
+    + Number(filters.minAscents !== null)
+    + Number(Boolean(filters.setter));
+  const removeFilter = (change: Partial<CatalogFilterValues>) => {
+    invalidateQuery();
+    resetPaging();
+    setFilters((current) => ({ ...current, ...change }));
+  };
 
   const sourceHeader = (
     <>
@@ -337,25 +377,6 @@ export function CatalogBrowser({
             />
           </label>
           <label className="catalog-field">
-            <span>Grade</span>
-            <select
-              className="catalog-input"
-              value={grade}
-              disabled={gradeStatus === 'loading' || gradeStatus === 'unavailable' || gradeStatus === 'error'}
-              onChange={(event) => {
-                invalidateQuery();
-                resetPaging();
-                setGrade(event.target.value);
-              }}
-            >
-              <option value="all">All grades</option>
-              {gradeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-            {(gradeStatus === 'unavailable' || gradeStatus === 'error') && (
-              <span className="catalog-field__help">Grade choices could not be loaded.</span>
-            )}
-          </label>
-          <label className="catalog-field">
             <span>Angle</span>
             <select
               className="catalog-input"
@@ -369,21 +390,71 @@ export function CatalogBrowser({
               {definition.supportedAngles.map((value) => <option key={value} value={value}>{value}°</option>)}
             </select>
           </label>
-          <button
-            className="catalog-button catalog-button--ghost catalog-reset"
-            type="button"
-            onClick={() => {
-              invalidateQuery();
-              resetPaging();
-              setSearch({ value: '', settled: true });
-              setGrade('all');
-              setAngle(defaultAngle);
-              setRetryCount((count) => count + 1);
-            }}
-          >Reset filters</button>
         </form>
       )}
-
+      {snapshot.storage?.status === 'ready' && snapshot.queries && (
+        <>
+          <div className="catalog-sort-row">
+            <label className="catalog-field">
+              <span>Sort by</span>
+              <select
+                className="catalog-input"
+                value={sort}
+                onChange={(event) => {
+                  invalidateQuery();
+                  resetPaging();
+                  setSort(event.target.value as CatalogSort);
+                }}
+              >
+                <option value="rating">Highest rated</option>
+                <option value="sends">Most sends</option>
+                <option value="grade-asc">Easiest first</option>
+                <option value="grade-desc">Hardest first</option>
+                <option value="name">Name A–Z</option>
+              </select>
+            </label>
+            <button
+              ref={filterTrigger}
+              className="catalog-button catalog-button--primary"
+              type="button"
+              onClick={() => setFilterOpen(true)}
+            >
+              Filters{filterChipCount > 0 ? ' (' + filterChipCount + ')' : ''}
+            </button>
+          </div>
+          {gradeStatus === 'error' && (
+            <p className="catalog-field__help">Grade choices could not be loaded.</p>
+          )}
+          {filterChipCount > 0 && (
+            <div className="catalog-filter-chips" aria-label="Active filters">
+              {gradeSummary && (
+                <button className="catalog-filter-chip" type="button" aria-label="Remove grade filter"
+                  onClick={() => removeFilter({ minGrade: null, maxGrade: null })}>
+                  <span>{gradeSummary}</span><span aria-hidden="true">×</span>
+                </button>
+              )}
+              {filters.minRating !== null && (
+                <button className="catalog-filter-chip" type="button" aria-label="Remove minimum rating filter"
+                  onClick={() => removeFilter({ minRating: null })}>
+                  <span>Rating ≥ {filters.minRating} / 3</span><span aria-hidden="true">×</span>
+                </button>
+              )}
+              {filters.minAscents !== null && (
+                <button className="catalog-filter-chip" type="button" aria-label="Remove minimum sends filter"
+                  onClick={() => removeFilter({ minAscents: null })}>
+                  <span>Sends ≥ {filters.minAscents}</span><span aria-hidden="true">×</span>
+                </button>
+              )}
+              {filters.setter && (
+                <button className="catalog-filter-chip" type="button" aria-label="Remove setter filter"
+                  onClick={() => removeFilter({ setter: '' })}>
+                  <span>Setter: {filters.setter}</span><span aria-hidden="true">×</span>
+                </button>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </>
   );
 
@@ -455,6 +526,14 @@ export function CatalogBrowser({
         emptyDescription={emptyDescription}
         listHeader={sourceHeader}
         listFooter={pageFooter}
+        renderRowMetadata={(climb) => {
+          const catalogClimb = metricsByKey.get(climb.key);
+          return catalogClimb ? (
+            <span className="catalog-row-metrics">
+              ★ {catalogClimb.statistics.quality.toFixed(1)} / 3 · {catalogClimb.statistics.ascentCount} sends
+            </span>
+          ) : null;
+        }}
         onManageLists={onManageLists ? (key) => {
           const climb = visibleRows.find((row) => row.key === key);
           if (climb) onManageLists(climb);
@@ -465,6 +544,18 @@ export function CatalogBrowser({
           service={service}
           onClose={() => setManageOpen(false)}
           statusAnnouncement={statusAnnouncement}
+        />
+      )}
+      {filterOpen && (
+        <CatalogFilterDialog
+          initial={filters}
+          grades={gradeAdapter === queries ? gradeOptions : []}
+          onApply={(nextFilters) => {
+            invalidateQuery();
+            resetPaging();
+            setFilters(nextFilters);
+          }}
+          onClose={() => setFilterOpen(false)}
         />
       )}
     </>

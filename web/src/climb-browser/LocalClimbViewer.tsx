@@ -17,6 +17,7 @@ export interface LocalClimbViewerProps {
   readonly emptyDescription: string;
   readonly listHeader?: ReactNode;
   readonly listFooter?: ReactNode;
+  readonly renderRowMetadata?: (climb: ClimbViewRecord) => ReactNode;
   readonly onCreateClimb?: () => void;
   readonly onEditClimb?: (key: ClimbViewKey) => void;
   readonly onManageLists?: (key: ClimbViewKey) => void;
@@ -52,6 +53,7 @@ export function LocalClimbViewer({
   emptyDescription,
   listHeader,
   listFooter,
+  renderRowMetadata,
   onCreateClimb,
   onEditClimb,
   onManageLists,
@@ -152,6 +154,7 @@ export function LocalClimbViewer({
                     {climb.angle}°{climb.grade ? ` · ${climb.grade}` : ''}
                     {climb.setter ? ` · ${climb.setter}` : ''}
                   </span>
+                  {renderRowMetadata?.(climb)}
                   <span className="climb-row__holds">{climb.assignments.length} holds</span>
                 </button>
               </li>

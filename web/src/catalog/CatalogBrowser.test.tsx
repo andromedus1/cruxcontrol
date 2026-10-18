@@ -129,7 +129,7 @@ function renderBrowser(adapter: CatalogQueryPort, props: { controller?: ReturnTy
 afterEach(() => vi.useRealTimers());
 
 describe('CatalogBrowser', () => {
-  it('loads grade choices once and sends adapter labels, exact grade bounds, and configured angles', async () => {
+  it('loads grades for the filter sheet and queries its committed bounds with angle and sort', async () => {
     vi.useFakeTimers();
     const route = climb('Echo Chamber', 'echo');
     const query = vi.fn(async (input: CatalogClimbQuery) => {
@@ -145,22 +145,112 @@ describe('CatalogBrowser', () => {
     renderBrowser(adapter);
     await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
     expect(screen.getByRole('button', { name: /Echo Chamber/ })).toBeInTheDocument();
-    expect(query).toHaveBeenCalledWith({ angle: 40, name: '', limit: 25 });
+    expect(query).toHaveBeenCalledWith({ angle: 40, name: '', sort: 'rating', limit: 25 });
     expect(grades).toHaveBeenCalledOnce();
-    expect(screen.getByLabelText('Grade')).toHaveDisplayValue('All grades');
-
-    fireEvent.change(screen.getByLabelText('Grade'), { target: { value: '12' } });
+    expect(screen.getByLabelText('Angle')).toHaveDisplayValue('40°');
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    const dialog = screen.getByRole('dialog', { name: 'Filter climbs' });
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
-    expect(query).toHaveBeenLastCalledWith({ angle: 40, name: '', minGrade: 12, maxGrade: 12, limit: 25 });
+    expect(dialog).not.toBeInTheDocument();
+    expect(query).toHaveBeenLastCalledWith({ angle: 40, name: '', minGrade: 12, maxGrade: 12, sort: 'rating', limit: 25 });
     fireEvent.change(screen.getByLabelText('Angle'), { target: { value: '45' } });
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
-    expect(query).toHaveBeenLastCalledWith({ angle: 45, name: '', minGrade: 12, maxGrade: 12, limit: 25 });
+    expect(query).toHaveBeenLastCalledWith({ angle: 45, name: '', minGrade: 12, maxGrade: 12, sort: 'rating', limit: 25 });
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'echo' } });
     await act(async () => { await vi.advanceTimersByTimeAsync(199); });
     expect(query).toHaveBeenCalledTimes(3);
     await act(async () => { await vi.advanceTimersByTimeAsync(1); await Promise.resolve(); await Promise.resolve(); });
-    expect(query).toHaveBeenLastCalledWith({ angle: 45, name: 'echo', minGrade: 12, maxGrade: 12, limit: 25 });
+    expect(query).toHaveBeenLastCalledWith({ angle: 45, name: 'echo', minGrade: 12, maxGrade: 12, sort: 'rating', limit: 25 });
     expect(grades).toHaveBeenCalledOnce();
+  });
+
+  it('keeps filter edits in the sheet until Apply and rejects invalid ranges', async () => {
+    const query = vi.fn(async () => page([]));
+    renderBrowser(queryPort({ query }));
+    await screen.findByText('Page 1 · 0 climbs on this page');
+    const trigger = screen.getByRole('button', { name: 'Filters' });
+    fireEvent.click(trigger);
+    let dialog = screen.getByRole('dialog', { name: 'Filter climbs' });
+    fireEvent.change(screen.getByLabelText('Minimum rating'), { target: { value: '2.5' } });
+    fireEvent.change(screen.getByLabelText('Minimum sends'), { target: { value: '10' } });
+    fireEvent(dialog, new Event('cancel', { cancelable: true }));
+    expect(screen.queryByRole('dialog', { name: 'Filter climbs' })).not.toBeInTheDocument();
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(query).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Remove minimum rating filter' })).not.toBeInTheDocument();
+
+    fireEvent.click(trigger);
+    dialog = screen.getByRole('dialog', { name: 'Filter climbs' });
+    expect(screen.getByLabelText('Minimum rating')).toHaveValue(null);
+    expect(screen.getByLabelText('Minimum sends')).toHaveValue(null);
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '18' } });
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: '12' } });
+    fireEvent.submit(dialog.querySelector('form')!);
+    expect(screen.getByRole('alert')).toHaveTextContent('Check the grade range');
+    expect(screen.getByRole('dialog', { name: 'Filter climbs' })).toBeInTheDocument();
+    expect(query).toHaveBeenCalledOnce();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    expect(screen.getByLabelText('From')).toHaveValue('');
+    expect(screen.getByLabelText('To')).toHaveValue('');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Minimum rating'), { target: { value: '4' } });
+    fireEvent.submit(dialog.querySelector('form')!);
+    expect(screen.getByRole('alert')).toHaveTextContent('rating from 0 to 3');
+    expect(query).toHaveBeenCalledOnce();
+  });
+
+  it('shows catalog statistics and removes one applied filter while clearing the selection', async () => {
+    const route = climb('Statistics route', 'statistics');
+    const query = vi.fn(async () => page([route]));
+    renderBrowser(queryPort({ query }));
+    fireEvent.click(await screen.findByRole('button', { name: /Statistics route/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    const dialog = screen.getByRole('dialog', { name: 'Filter climbs' });
+    fireEvent.change(screen.getByLabelText('Minimum rating'), { target: { value: '2.1' } });
+    fireEvent.change(screen.getByLabelText('Minimum sends'), { target: { value: '4' } });
+    fireEvent.change(screen.getByLabelText('Setter'), { target: { value: 'Synthetic' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+    await screen.findByRole('button', { name: /Statistics route/ });
+    expect(dialog).not.toBeInTheDocument();
+    expect(query).toHaveBeenLastCalledWith({
+      angle: 40,
+      name: '',
+      minRating: 2.1,
+      minAscents: 4,
+      setter: 'Synthetic',
+      sort: 'rating',
+      limit: 25,
+    });
+    expect(screen.getByText('★ 2.4 / 3 · 4 sends')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove minimum rating filter' })).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Remove minimum rating filter'));
+    expect(screen.queryByRole('heading', { name: 'Statistics route' })).not.toBeInTheDocument();
+    await screen.findByRole('button', { name: /Statistics route/ });
+    expect(query).toHaveBeenLastCalledWith({
+      angle: 40,
+      name: '',
+      minAscents: 4,
+      setter: 'Synthetic',
+      sort: 'rating',
+      limit: 25,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Statistics route/ }));
+    fireEvent.change(screen.getByLabelText('Sort by'), { target: { value: 'name' } });
+    expect(screen.queryByRole('heading', { name: 'Statistics route' })).not.toBeInTheDocument();
+    await screen.findByRole('button', { name: /Statistics route/ });
+    expect(query).toHaveBeenLastCalledWith({
+      angle: 40,
+      name: '',
+      minAscents: 4,
+      setter: 'Synthetic',
+      sort: 'name',
+      limit: 25,
+    });
   });
 
   it('debounces name input, clears selection immediately, and ignores late reads from earlier filters', async () => {
@@ -200,7 +290,7 @@ describe('CatalogBrowser', () => {
     expect(query).toHaveBeenCalledTimes(3);
     await act(async () => { await vi.advanceTimersByTimeAsync(1); });
     expect(query).toHaveBeenCalledTimes(4);
-    expect(query).toHaveBeenLastCalledWith({ angle: 55, name: 'current', limit: 25 });
+    expect(query).toHaveBeenLastCalledWith({ angle: 55, name: 'current', sort: 'rating', limit: 25 });
   });
 
   it('keeps Next enabled on an empty continuable page and reissues bounded cursor history', async () => {
@@ -215,13 +305,13 @@ describe('CatalogBrowser', () => {
     expect(screen.getByText('Page 1 · 0 climbs on this page')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await screen.findByRole('button', { name: /Cursor result/ });
-    expect(query).toHaveBeenLastCalledWith({ angle: 40, name: '', limit: 25, cursor: cursorOne });
+    expect(query).toHaveBeenLastCalledWith({ angle: 40, name: '', sort: 'rating', limit: 25, cursor: cursorOne });
     expect(screen.getByText('Page 2 · 1 climb on this page')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
     await screen.findByRole('heading', { name: 'No compatible climbs on this page' });
     expect(query).toHaveBeenCalledTimes(3);
-    expect(query).toHaveBeenLastCalledWith({ angle: 40, name: '', limit: 25 });
+    expect(query).toHaveBeenLastCalledWith({ angle: 40, name: '', sort: 'rating', limit: 25 });
   });
 
   it('passes a complete provider route through the real viewer and lighting controller', async () => {
