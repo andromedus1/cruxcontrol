@@ -2,7 +2,7 @@
 description: CruxControl vision, problem, audience, principles, and non-goals
 type: planning
 kind: planning
-updated: 2026-10-11
+updated: 2026-10-18
 nav_priority: high
 summary: >
   CruxControl is a Kilter-first, eventually universal climbing-board app. Its
@@ -16,7 +16,8 @@ summary: >
   experimental Android package now uses native SQLite for local authorship; its
   synthetic emulator persistence, independent portable recovery and bounded
   operator-assisted cloud recovery checks pass. Android foreground backup and
-  integrated recovery pass synthetic emulator acceptance; physical owner-phone/Fullride parity remain open. Invited contributions
+  integrated recovery pass synthetic emulator acceptance. Owner-observed phone/Fullride
+  acceptance passes; feature review and final delivery checks remain. Invited contributions
   follow with Android and iPhone board control.
 decisions:
   - "Share product logic across web, Android and iOS while retaining platform-specific storage and device adapters; preserve the working web client and keep native-device acceptance explicit."
@@ -26,7 +27,7 @@ decisions:
   - "Imports may use public or user-authorized sources; access and redistribution constraints are enforced per provider."
   - "Static delivery and offline local use remain the default; a narrow service may support independent private backups, provider access or invited collaboration."
   - "Kilter community catalog access precedes invited shared contributions; its first browser uses an explicitly older offline snapshot, and native iPhone preparation continues independently, with a logbook, broader providers, grade prediction and personalized training retained afterward."
-  - "Private authoring and playlists stay locally usable; everyday real authoring waits for verified automatic online backup, clean-install recovery and physical owner-phone/Fullride acceptance, with portable owner-controlled files as an independent second path."
+  - "Private authoring and playlists stay locally usable; everyday real authoring requires verified automatic online backup, clean-install recovery, physical owner-phone/Fullride acceptance and required review/delivery checks, with portable owner-controlled files as an independent second path."
   - "Invited partner and friends need Android and iPhone board control; establish the iOS path before advancing shared-library implementation."
 ---
 
@@ -42,15 +43,18 @@ and editable light effects. The web client and iOS prototype store their authore
 library in IndexedDB. The experimental Android package injects the same library
 interfaces over one native SQLite database and has passed synthetic emulator checks
 for restore, edit/save, forced process termination, relaunch, and a same-signature
-update. Physical-board behavior and full Android feature parity remain unverified.
+update. Owner-observed Android/Fullride lighting, clear, effects, connected playlist
+play-through, background/reopen, disconnect/reconnect and offline use also pass.
 Native local storage is not independent recovery. The immediate priority is independent
 library preservation: automatic private online backups, retained versions, portable files,
-and verified restoration after browser or device loss. Real authored climbs remain
-gated until automatic private online protection and clean-install recovery from that
-online backup are verified and physical owner-phone/Fullride acceptance passes.
+and verified restoration after browser or device loss. Everyday authoring requires
+verified automatic private online protection,
+clean-install recovery and physical owner-phone/Fullride acceptance, followed by
+required review and delivery checks.
 Owner-controlled portable-file recovery is the independent
 second path, not a substitute for that online gate. Automatic online protection and
-clean-install recovery pass synthetic emulator acceptance; physical owner-phone/Fullride parity still gate real authoring. Whole-library
+clean-install recovery pass synthetic emulator acceptance; recorded phone checks also
+verify preservation, imports and private automatic backup. Whole-library
 exports remain manual; Android's portable-file path has passed synthetic isolated-emulator
 export and empty-install offline recovery checks. A bounded Firebase proof has also
 passed authenticated backup and operator-assisted recovery into a separate Android
@@ -61,7 +65,10 @@ backup, account/status/history surfaces and integrated recovery UI are implement
 Synthetic acceptance verifies automatic saved changes, offline restart/reconnection,
 pending-upload process death, and separate empty-install recovery through the app.
 Structured cloud recovery, cancellation, conflict blocking and relaunch also pass.
-Physical owner-phone/Fullride parity remain required.
+Physical acceptance is owner-observed, not instrumented radio measurement.
+Catalog-specific playlist lighting, Trash/restore actions and angle changes have no
+scenario-specific physical evidence. Required feature review and delivery checks
+remain before formal completion.
 Local saving and offline access must remain available while automatic
 protection is pending or unavailable.
 The Kilter community catalog first slice is now
@@ -70,8 +77,9 @@ available, while explicit management consent controls metadata lookup and downlo
 The snapshot's source freshness is unknown and it receives no live updates; complete
 current-app coverage and public distribution permission are not established. A private
 Android APK has passed isolated emulator checks for consented catalog installation and
-offline worker-backed browsing of that snapshot; this does not establish physical-board
-control or full Android parity. Catalog work can advance on Android and the web while
+offline worker-backed browsing of that snapshot; catalog playlist resolution has
+software/emulator coverage, while catalog-specific physical lighting remains unverified.
+Catalog work can advance on Android and the web while
 native iPhone work proceeds; unavailable iPhone hardware does not block that work. The
 isolated iOS prototype now compiles,
 starts, and has passed synthetic-data library preservation and complete backup/restore

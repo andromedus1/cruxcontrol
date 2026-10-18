@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-10-11
+updated: 2026-10-18
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
@@ -13,7 +13,7 @@ decisions:
   - "The local wall-session loop is implemented; approved invited-library journeys guide access, publication, retained personal copies, and explicit source updates."
   - "Invited members explicitly publish climbs immediately to their group; personal authoring/playlists remain local and Android plus iPhone board control are required."
   - "The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats)."
-  - "The PWA controller requires supported Web Bluetooth; the experimental Capacitor Android/iOS package supplies native BLE adapters, with physical-device acceptance still open."
+  - "The PWA controller requires supported Web Bluetooth; the experimental Capacitor Android/iOS package supplies native BLE adapters, with owner-observed Android/Fullride acceptance passed and physical iPhone acceptance still open."
   - "Grade-prediction target is community consensus difficulty_average from climb_stats."
   - "Playlists are a CruxControl-local construct (no Kilter playlist API): local-first, climb-ID-referenced, shareable, board-playable."
   - "Every climb and layout identity is namespaced by provider and immutable board/layout revision; bare vendor IDs never cross domain boundaries."
@@ -237,7 +237,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   or permanent climb deletion leaves an explicit unavailable reference in place
   until the user removes it; restoring a local climb resolves the same membership.
 - Export a playlist through a bounded shareable URL fragment when it fits and through
-  a complete JSON file for every valid list. Resolvable local memberships are
+  a complete JSON file for every valid list. Android links are deliberately disabled
+  while no reachable public host exists; native file sharing remains available.
+  Resolvable local memberships are
   immutable climb snapshots without local IDs, revisions, installation identity, or
   Trash state; provider memberships remain namespaced references.
 - Import URL and file payloads through the same strict compatibility preview with no
@@ -291,7 +293,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   authenticated GCS gateway. Native account/file transport is implemented and the
   service deployed; live transport acceptance passes. Durable state, the foreground
   coordinator and product UI are implemented. Structured cloud recovery, cancellation,
-  conflict blocking and relaunch pass on synthetic emulators. Physical owner-phone/Fullride parity still gate real authoring.
+  conflict blocking and relaunch pass on synthetic emulators. Owner-phone preservation/import/backup checks and owner-observed Fullride acceptance
+  pass; required feature review and final delivery checks remain.
 - Retain up to 512 immutable whole-library copies of at most 25 MiB in the application
   namespace. Pause protection visibly at capacity without pruning older copies.
   Separate synthetic acceptance pools and legacy proof copies never appear in user
@@ -326,9 +329,9 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   does not claim every OEM transfer path has been verified.
 - Recover on a clean client without relying on credentials or keys kept only inside
   the lost browser origin. Preserve private access isolation from invited sharing.
-- Everyday use with real authored climbs remains gated until automatic private online
-  protection and clean-install recovery from that online backup are verified and
-  physical owner-phone/Fullride acceptance passes. Verified
+- Everyday use with real authored climbs requires verified automatic private online
+  protection, clean-install recovery, physical owner-phone/Fullride acceptance and
+  required review/delivery checks. Verified
   owner-controlled portable-file restoration is a required independent second path; it
   does not substitute for the online gate.
 - Private backups may use service-managed encryption and recovery through the
@@ -416,8 +419,9 @@ The model mirrors the official Kilter SQLite schema (see
   stores and asks users to finish edits in other tabs; this is not a cross-database atomic
   snapshot. Android captures both aggregates through one SQLite read transaction. The
   Android emulator has passed synthetic restore, edit/save, force-stop/relaunch, and
-  same-signature update preservation checks; physical-board behavior and full Android
-  feature parity remain unverified. A bounded Firebase proof passes authenticated
+  same-signature update preservation checks. Separate phone checks verify complete
+  portable exports/imports, saved edits and order through restart, and automatic
+  private backup; owner-observed Fullride acceptance also passes. A bounded Firebase proof passes authenticated
   synthetic backup and operator-assisted separate-installation recovery. Android
   automatic backup and integrated recovery UI are implemented; their integrated
   empty-install acceptance passes on synthetic emulators. The separately verified private
@@ -478,7 +482,7 @@ The model mirrors the official Kilter SQLite schema (see
 - **Browser support.** Direct Web Bluetooth control runs in supported Android and
   desktop Chromium browsers (Chrome/Edge); other browsers can browse but not drive
   the board through that transport. The experimental Capacitor package adds native
-  BLE adapters for Android and iOS, with physical-device acceptance still open.
+  BLE adapters for Android and iOS, with owner-observed Android/Fullride acceptance passed and physical iPhone acceptance still open.
 - **Offline-first.** Local drafts already create, edit, and reopen without network.
   The catalog and logbook must likewise be usable from local storage when their
   milestones ship.
@@ -516,12 +520,17 @@ The model mirrors the official Kilter SQLite schema (see
 - **Mobile capability.** Responsive local browsing and editing work on modern phones;
   logging must do the same when its future milestone ships. The shared-library
   audience requires direct Android and iPhone board control. Android native library
-  storage has passed synthetic emulator restore/edit/save/relaunch/update checks, but
-  physical-board behavior and complete feature parity remain unverified. Independent
+  storage has passed synthetic emulator restore/edit/save/relaunch/update checks
+  and recorded owner-phone preservation/import/backup checks. Independent
   portable recovery and a bounded operator-assisted cloud recovery proof have passed
   on isolated Android installations. Automatic protection and integrated app recovery
-  also pass synthetic acceptance; physical owner-phone/Fullride
-  parity still gate real authoring. The iPhone path must
+  also pass synthetic acceptance. The owner confirms Fullride lighting, clear, effects,
+  connected playlist play-through, background/reopen, disconnect/reconnect and offline
+  use. These are owner observations, not instrumented radio measurements; no
+  scenario-specific physical evidence covers catalog entries lighting from playlists,
+  Trash/restore actions or angle changes. Catalog playlist resolution has software
+  and emulator coverage. Required feature review and final delivery checks remain.
+  The iPhone path must
   prove connection/light/clear, interruption recovery, durable local storage,
   whole-library export/restore and native sign-in before claiming support.
   Unsupported transports degrade explicitly to browse-only; that fallback does not

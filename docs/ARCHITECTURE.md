@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-10-11
+updated: 2026-10-18
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -20,8 +20,8 @@ summary: >
   passed synthetic emulator restore, edit/save, process-relaunch, and same-signature
   update checks. Portable-file recovery and bounded operator-assisted cloud recovery
   pass synthetic emulator proofs. Integrated Android automatic backup and app recovery
-  also pass synthetic acceptance; physical owner-phone/Fullride behavior
-  and full Android feature parity remain open. Firebase Auth and the
+  also pass synthetic acceptance. Recorded phone preservation/import/backup checks
+  and owner-observed Fullride acceptance pass; required review/delivery checks remain. Firebase Auth and the
   authenticated GCS gateway are selected for Android dogfood. Native application
   transport is implemented and the service deployed; live transport acceptance passes.
 decisions:
@@ -203,7 +203,8 @@ feature item bodies in `.work/`, not here. Capabilities are in
    Portable export snapshots resolvable local climb content without sender-local IDs
    and preserves namespaced provider references in a strict independently versioned
    envelope. Fragment URLs are used only below the bounded URL limit; lossless JSON
-   files remain available for every valid export. Import performs a write-free
+   files remain available for every valid export. Android link sharing is disabled
+   without a reachable public host; native file sharing remains available. Import performs a write-free
    compatibility preview, then creates fresh climbs in order and the fresh playlist
    last, with reverse-order compensation for partial failure. A CruxControl-local
    construct (no Kilter counterpart).
@@ -270,8 +271,13 @@ Android account/status/history surfaces, foreground automatic backup and integra
 cloud recovery UI pass synthetic emulator acceptance: automatic edits and order,
 offline restart/reconnection, pending-upload process death, and separate empty-install
 app recovery. Structured cloud recovery, cancellation, conflict blocking and relaunch
-also pass. Physical owner-phone/Fullride parity remain open;
-real authoring is not yet admitted.
+also pass. Recorded phone checks verify preservation, imports and automatic private
+backup. The owner confirms Fullride lighting, clear, effects, connected playlist
+play-through, background/reopen, disconnect/reconnect and offline use. These are
+owner observations, not instrumented radio measurements. Catalog-specific playlist
+lighting, Trash/restore actions and angle changes lack scenario-specific physical
+evidence; catalog playlist resolution has software/emulator coverage. Required
+feature review and final delivery checks remain before formal completion.
 
 The application design separates a `library-v1` namespace with 512 immutable
 25 MiB copies (`00000`–`00511`) from the unchanged 32-slot proof pool. Four bounded
@@ -310,9 +316,9 @@ recovery admission must treat any unexpected nonempty or OS-restored library as 
 until deliberate account or portable-file recovery resolves it; it cannot authorize an
 upload.
 
-Everyday use with real authored climbs remains gated until automatic private online
-protection and clean-install recovery from that online backup are verified and
-physical owner-phone/Fullride acceptance passes. Owner-controlled
+Everyday use with real authored climbs requires verified automatic private online
+protection, clean-install recovery, physical owner-phone/Fullride acceptance and
+required review/delivery checks. Owner-controlled
 portable-file recovery is an independent second path and does not satisfy the online gate
 by itself.
 
@@ -341,8 +347,9 @@ database; strict codecs and revision checks are shared with the browser reposito
 FULL synchronization. Android emulator checks have verified synthetic restore, edit/save,
 force-stop/relaunch, and same-signature update preservation. Separately, the private catalog
 APK passed the offline worker flow described in Catalog Providers on Android 36 / WebView
-133. These checks do not establish physical-board behavior, complete Android parity, or
-automatic online backup and recovery. The Capacitor configuration sets
+133. Separate phone checks and owner-observed Fullride acceptance pass within the
+limits stated in the independent preservation boundary; synthetic automatic online backup
+and integrated recovery also pass. The Capacitor configuration sets
 `loggingBehavior` to `none` to suppress bridge payload logs; inspection of a private APK
 confirmed the bundled setting, and fresh Logcat windows during export, recovery/edit, and
 relaunch contained neither the synthetic marker nor the full backup payload. The iOS
@@ -390,7 +397,7 @@ Board definition ──▶ Installation registry ─────┼──▶ Bro
                                          │
                              Byte transport ──▶ Physical board
                              ├─ Web Bluetooth (PWA)
-                             └─ Native BLE (experimental Android/iOS package; physical-board proof pending)
+                             └─ Native BLE (Android owner-observed Fullride acceptance; physical iPhone untested)
 
 Editor ──▶ Local climb repository ──▶ platform AppLibrary adapter
   │               (versioned + optimistic)       ├─ PWA / iOS: browser-managed IndexedDB
@@ -499,7 +506,7 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | Web Locks API                               | Shared per-tab admission and exclusive, `ifAvailable` update apply coordination                                                                                                                               |
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
 | Capacitor 8.4.3 + BLE 8.3.0 + App 8.1.1      | Experimental iOS/Android package: bundled shared UI, native byte transport, foreground lifecycle; no background BLE mode                                                                                       |
-| Capacitor Community SQLite 8.1.1             | Android app-private library database behind `AppLibrary`, with serialized revision transactions and a coherent snapshot; synthetic automatic backup/app recovery pass; physical-board and full-parity acceptance remain open                   |
+| Capacitor Community SQLite 8.1.1             | Android app-private library database behind `AppLibrary`, with serialized revision transactions and a coherent snapshot; synthetic automatic backup/app recovery and owner-phone/Fullride acceptance pass; required review/delivery checks remain                   |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |
 | BoardLib (Python)                           | Legacy bootstrap and sync-protocol reference; not a verified current catalog source                                                                                                                            |
 | Kilter sync API                             | Legacy protocol reference; current availability and coverage are unverified                                                                                                                                   |
@@ -521,7 +528,8 @@ requires a client context). See [briefs/foundation-pwa-sqlite.md](briefs/foundat
   honest pending/offline status and verified restore drills. Local persistence
   permission alone is insufficient. Portable-file and bounded operator-assisted cloud
   recovery pass synthetic emulator proofs. Android automatic backup and recovery UI
-  pass integrated empty-install acceptance on synthetic emulators; physical owner-phone/Fullride parity remain open. The local native SQLite store
+  pass integrated empty-install acceptance on synthetic emulators; phone preservation/backup
+  checks and owner-observed Fullride acceptance also pass. The local native SQLite store
   is on the same device and does not meet that independent recovery boundary.
 
 - **Web Bluetooth reliability** across OS/browser versions — deterministic transport and
