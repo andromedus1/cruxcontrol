@@ -9,7 +9,7 @@ depends_on: [story-phone-library-recovery]
 release_binding: null
 gate_origin: null
 created: 2026-10-09
-updated: 2026-10-12
+updated: 2026-10-18
 ---
 
 # Preserve private libraries across browser and device loss
@@ -422,11 +422,13 @@ no automatic pruning or background-execution guarantee. The owning feature carri
 limits and costs. Prefer cheaper hosting; no fixed USD 25/month plan was selected.
 Account setup no longer blocks engineering. Physical hardware availability still
 affects final acceptance; no real authoring before the aggregate protection and
-parity gates pass. Andrew explicitly wrapped the session on 2026-10-12: resume
-next time with USB installation and phone/Fullride dogfooding, then continue this
-work arc. Physical installation and board acceptance have not started. The exact
-candidate, preservation-first steps and remaining review are saved in the
-[Android parity handoff](../features/epic-library-preservation-android-parity.md#next-session-usb-installation-and-dogfooding).
-No setup answer or action is required while the session is wrapped. Current-PWA
-protection is not a prerequisite. Query child items
+parity gates pass. Andrew resumed with the connected Android phone on 2026-10-18.
+The retained release30 is installed after current origin/profile verification and
+a fresh validated backup. Initial physical-phone checks pass native file recovery,
+exact whole-library export, grade editing and complete preservation across cold
+relaunch. The phone's account backup check is in progress; Fullride testing waits
+for Andrew's hardware availability. The
+[Android parity item](../features/epic-library-preservation-android-parity.md#physical-android-acceptance-in-progress-2026-10-18)
+owns current evidence, remaining acceptance and the subsequent standard review.
+Current-PWA protection is not a prerequisite. Query child items
 for exact stages and evidence rather than treating this sequence as dogfood admission.

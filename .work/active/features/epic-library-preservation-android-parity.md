@@ -9,7 +9,7 @@ depends_on: [epic-library-preservation-native-library, epic-library-preservation
 release_binding: null
 gate_origin: null
 created: 2026-10-10
-updated: 2026-10-12
+updated: 2026-10-18
 ---
 
 # Use the complete Android wall-session app
@@ -161,7 +161,7 @@ Play distribution is not required.
 
 - [x] A release-shaped signed package upgrades in place without library changes.
 - [x] No private keys, personal library content, tokens or device identifiers enter Git.
-- [ ] Actual existing phone app origin/profile and fresh complete backup are verified
+- [x] Actual existing phone app origin/profile and fresh complete backup are verified
       before maintenance; browser/PWA storage is never reset or used as a fixture.
 
 ### 4. Fullride acceptance and complete-library comparison
@@ -493,3 +493,43 @@ the automatic-backup item maps its exact files and observation limits. Preserve
 both synthetic emulators and retained cloud copies. The unrelated untracked
 `docs/kilter_docs/` and `docs/set_boulders/` directories were left untouched and
 must not be swept into a handoff commit.
+
+## Physical Android acceptance in progress (2026-10-18)
+
+Andrew connected the phone and authorized installation and testing. Execution is
+host-owned inline using the implementation workflow; review weight remains standard.
+The Fullride is not yet available for testing; Andrew requested continued phone-only
+checks. Physical lighting, clear, effects, interruption and reconnect remain open.
+
+- Confirmed the existing WebAPK uses Chrome's ordinary `Default` profile and
+  `http://localhost:4173/`. It initially showed connection refused. A script-free,
+  uncached inspection document at the same origin exposed no existing IndexedDB
+  databases, localStorage keys, caches or service workers. Two current enumerations
+  agreed. Saved and decoded a fresh empty portable backup outside Git; this records
+  current accessible state and makes no claim to recover historical missing climbs.
+- No native package was installed. Revalidated release30's APK digest and retained
+  signing certificate, then installed the existing non-debuggable production-scope
+  package successfully on a Pixel 8 running Android 17. The PWA storage inventory
+  still exactly matches the pre-install baseline. No app/browser reset or uninstall
+  was performed.
+- Native startup succeeds. The older Kilter catalog is present and shows available
+  offline; catalog installation was observed after owner interaction, not driven
+  by the acceptance script.
+- Saved the native empty library through the actual Downloads provider and decoded
+  its completed file on the host before introducing test records. Imported a clearly
+  named synthetic fixture through the real Android file picker: four climbs, two
+  lists, grades, Trash, an effect recipe, shared and ordered memberships. Recovery
+  reported completion. The actual provider-written export exactly matches the
+  entire imported fixture, including all six ordered memberships.
+- Edited the synthetic draft's grade from V3 to V4 through the native keyboard.
+  Android Back first dismissed the keyboard, then returned to details with V4.
+  The next completed export proves only the intended grade and its revision/save
+  metadata changed; all other fields and list ordering stayed identical. After
+  closing the dialog with no pending save and no board connection, force-stopped
+  and cold-launched the native app. A fresh provider export exactly matches the
+  full saved pre-restart library. Account and further device checks are in progress.
+
+Detailed evidence and backups are excluded from Git under
+`.private-signing/phone-acceptance-2026-10-18/`. Emulator-only acceptance helpers
+were not retargeted to the owner phone; release behavior is exercised through the
+normal UI and Android accessibility/pickers.
