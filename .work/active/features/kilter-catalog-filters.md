@@ -1,7 +1,7 @@
 ---
 id: kilter-catalog-filters
 kind: feature
-stage: review
+stage: done
 tags: [data, ui]
 parent: null
 depends_on: [kilter-community-browser, epic-library-preservation-android-catalog]
@@ -209,10 +209,9 @@ catalog-acquisition, public-distribution and personal-logbook limitations.
 - Catalog rating/send metadata is rendered through an optional row slot, leaving
   authored climb records and their views unchanged. The phone-width browser smoke
   uses only the existing synthetic catalog fixture.
-- The SPEC/ARCHITECTURE browser-contract update remains for the host's documentation
-  workflow: this worker was explicitly restricted from writing docs. The change
-  preserves the older-catalog freshness and personal-data limits in the UI and
-  work item; docs should be reconciled before feature completion.
+- SPEC and ARCHITECTURE now describe the implemented filter/query contract; the
+  delegated documentation update and fresh system audit are complete. Older-catalog
+  freshness and personal-data limits remain explicit.
 
 ### Verification
 
@@ -268,3 +267,52 @@ horizontal overflow. No second independent pass is required by standard weight.
 The same update includes the already-reviewed editor Back/autosave fix. Phone
 installation and before/after whole-library comparison are recorded separately
 below; passing source review alone does not claim an installed update.
+
+## Phone delivery and preservation (2026-10-18)
+
+Andrew reconnected the phone and explicitly emphasized his latest climb renames,
+list memberships/order and background effects. Release30 was confirmed on the
+existing native app ID and SQLite library. The app was at the library root with
+the board disconnected, no active editor and a verified online-copy status.
+A newly completed native SAF whole-library export was strictly decoded and saved
+outside the checkout before maintenance. Old import evidence was not the baseline.
+
+Signed release31 was built from clean source `99e1793` with the retained signing
+certificate, private catalog and library-v1 vault configuration. The APK is not
+debuggable and has no proof surface. The build sidecar verified its digest and
+clean source boundaries. Changes after that build affect tests/docs/work records,
+not installed production code. The normal same-ID `install -r` upgrade succeeded;
+no uninstall, reset, storage clearing, downgrade or library import was performed.
+
+A fresh provider-written export immediately after installation matched the new
+pre-update backup canonically across every saved record, name, revision, ordered
+playlist membership and effect recipe. It retains 22 climbs (16 active, 6 in
+Trash), four lists, 18 ordered memberships and eight climbs with effects. No
+personal contents, identifiers, signing material or backup bytes enter Git.
+
+On the actual phone and retained catalog, combined minimum rating 2.5 and minimum
+send count 20 produced matching results. All 25 returned rows respected those
+bounds and descending send-count ordering after choosing Most sends. Native Back
+first dismissed the keyboard, then discarded a draft setter change without
+altering applied filters. Reset/Apply cleared the test filters and default rating
+sort was restored. Reads were ready on the first post-interaction accessibility
+check, without loading errors; this is bounded acceptance, not a latency benchmark.
+No board connection or authored edit was part of these checks.
+
+A third completed export after all phone filter checks again matches the original
+pre-update backup exactly. All exports and comparison evidence were retained in
+owner-controlled storage outside the checkout. The phone was returned to My Climbs
+with no unfinished editor or board connection, and Andrew was told it is safe to
+disconnect. Physical board use of these filters is left for Andrew's session; the
+phone-only acceptance does not claim radio verification.
+
+
+## Closure
+
+Required integration CI run `39171223172` passed on the source including the native
+Back regression. The single standard independent feature review is complete,
+its accepted test gap is resolved and verified, and the fresh system documentation
+audit reports zero findings. Signed release31 is installed with exact whole-library
+preservation demonstrated before and after the update and the phone checks.
+The feature is done; PR #33 remains the reviewable delivery branch stacked on
+PR #32, with neither merged or publicly deployed by this work.

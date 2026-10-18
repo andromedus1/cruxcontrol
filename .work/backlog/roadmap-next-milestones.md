@@ -19,8 +19,10 @@ schedule, service architecture, or new feature decomposition is selected here.
 checks and selected [Kilter catalog filters](../active/features/kilter-catalog-filters.md)
 next. Expand filtering against the installed older catalog, including rating and
 send count, before current official catalog coverage and then invited sharing.
-The preservation arc is completing its required independent review; successful
-phone acceptance does not substitute for that review. The original 16 climbs are
+The statistics-filter slice is installed on the phone with exact before/after
+library preservation. The preservation arc and filter feature have completed
+required independent review and CI; PR merge/delivery remains separate. Successful
+phone acceptance does not substitute for those checks. The original 16 climbs are
 now imported into My Climbs with verified portable and private online backup
 evidence in the preservation items. Continue normal use without losing the
 standing library-preservation requirements.
