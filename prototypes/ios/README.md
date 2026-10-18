@@ -421,7 +421,7 @@ complete and required CI passes; merge and delivery remain separate.
 Android playlist links stay disabled without a reachable public host; native file
 sharing works. This acceptance does not establish current Kilter catalog freshness,
 complete official coverage or public binary distribution rights. The owning
-[Android parity item](../../.work/active/features/epic-library-preservation-android-parity.md)
+[Android parity item](../../.work/archive/epic-library-preservation-android-parity.md)
 records the acceptance evidence and remaining delivery work.
 
 ### Native Android authentication feasibility proof

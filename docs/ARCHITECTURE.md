@@ -243,7 +243,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
 
 ## Intended independent preservation boundary
 
-The [preservation epic](../.work/active/epics/epic-library-preservation.md) owns an
+The [preservation epic](../.work/archive/epic-library-preservation.md) owns an
 independent recovery boundary for private authored libraries. It must reuse the
 versioned whole-library contracts where sound, support automatic private online
 backup and portable files, retain prior versions and verify recovery after local

@@ -17,7 +17,7 @@ schedule, service architecture, or new feature decomposition is selected here.
 
 **Android dogfood target (2026-10-10):** Andrew wants to use the native Android app
 within the next few days with full shipped-app parity, off-phone backups and the
-Kilter catalog. The [preservation epic](../active/epics/epic-library-preservation.md)
+Kilter catalog. The [preservation epic](../archive/epic-library-preservation.md)
 owns the six-feature delivery graph, including Android packaging of the approved
 older catalog. This brings native catalog availability into the dogfood gate;
 current official coverage and invited sharing remain subsequent priorities.
@@ -27,7 +27,7 @@ current official coverage and invited sharing remain subsequent priorities.
 and chosen to proceed assuming the missing post-migration climbs are lost. The
 [incident record](../archive/story-phone-library-recovery.md) preserves the qualified
 diagnosis; physical unrecoverability and the deletion trigger remain unproven.
-[Independent library preservation](../active/epics/epic-library-preservation.md) is now the
+[Independent library preservation](../archive/epic-library-preservation.md) is now the
 immediate priority: both automatic private online backups and owner-controlled
 portable files, with verified restoration. Resume the sequence below after this
 protection work; do not treat closing the recovery attempt as permission to reset
