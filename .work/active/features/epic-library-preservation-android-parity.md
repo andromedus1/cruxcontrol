@@ -656,3 +656,14 @@ prototype contracts/browser smoke, Android native compile/boundaries and the
 existing Firebase/ML lanes. Subsequent commits only update records and docs.
 The accepted F1 correction, F2 documentation update and F3 evidence qualification
 are complete. Advance to done after the single standard review and verification.
+
+
+### Owner-library acceptance exception (2026-10-18)
+
+Aggregate review F3 records that the explicitly authorized physical phone tests
+created labelled synthetic climbs/lists through normal app flows in the owner's
+library. This was a bounded acceptance exception, not permission to seed hosted
+backup records or to repeat synthetic authoring during ordinary updates. The owner
+has since moved the six test climbs to Trash. Preserve Trash and all current
+lists; no deletion or cloud cleanup is part of closure. Any later cleanup belongs
+to the owner and requires a fresh complete backup first.

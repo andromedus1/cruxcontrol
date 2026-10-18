@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation
 kind: epic
-stage: review
+stage: done
 tags: [data, security]
 research_refs: [android-chrome-recovery-access, independent-library-preservation, native-backup-service-costs]
 parent: null
@@ -128,12 +128,12 @@ private-backup architecture. The completed [preservation comparison](../../../.r
 - Coherent snapshot capture across current independent stores, revision identity,
   safe acknowledgement and recovery detection without relying on erased local flags.
 
-Research verification is complete and implementation is underway in the owning
-features. Apply the corrected comparison and settled decisions; do not re-ask
-whether online and portable-file protection are wanted. Native local persistence
-has passed its focused proof and review. Native Firebase sign-in, session renewal,
-sign-out and separate-installation account access have passed the bounded proof;
-live private snapshot storage and full-library cloud recovery remain unproven.
+Research and all six feature implementations and reviews are complete. Native
+local persistence, Firebase account access, immutable private snapshot storage,
+automatic backup and clean-client whole-library cloud recovery passed their
+recorded acceptance. Owner-observed Android/Fullride acceptance is complete within
+the explicit scenario limits below. Apply the settled decisions without re-asking
+whether online and portable-file protection are wanted.
 
 ## Scope boundaries and simplification
 
@@ -456,3 +456,44 @@ review and required verification recorded; the last correction passes CI run
 preservation, cross-feature contracts and cumulative operational limits. The
 owner's physical observations and untested scenario-specific limits remain as
 qualified above. Source completion does not update installed release30.
+
+
+## Aggregate review (2026-10-18)
+
+**Verdict:** Approve with comments. **Weight:** standard; one independent Claude
+Opus pass (`20261018T215846Z-b7ae744e`) through the peeragent wrapper, followed by
+receiver adjudication. No second independent pass is required.
+
+**Blockers:** none. The peer found all seven required outcomes met within the
+recorded platform and evidence limits. Its focused synthetic checks passed:
+118 web backup/vault tests and 18 native SQLite tests. Required CI also passed
+on the complete reviewed source, runs `39169868839` and `39170204853`.
+
+**Important:** F1 is captured in `idea-backup-retention-capacity`; the safe visible
+512-copy pause remains the contract, with no indefinite protection promise. F2 is
+resolved by commit `225a78b`: DEPLOY and the vault README identify the proof-named
+resources holding real library-v1 data and prohibit destructive maintenance
+without verified recovery/migration and appropriate app endpoint updates. No cloud
+resource was changed.
+
+**Other dispositions:**
+- F3: the owner's explicitly authorized phone acceptance intentionally created
+  synthetic climbs/lists in the live library; the parity item records that narrow
+  exception. Never delete authored data as review cleanup. The owner has since
+  moved the six test climbs to Trash; preserve them and all current lists.
+- F4: the current user-supplied AGENTS chain and substrate review contract define
+  done by completed required review and CI. The reviewer's different-model shared
+  CLAUDE merge condition is not part of this Codex instruction chain. Done records
+  verified implementation; PR #32 remains unmerged and no public deployment is
+  implied. Merge is a separate delivery action, never a direct push to main.
+- F5: the next phone update saves and validates a fresh whole-library export in
+  owner-controlled storage outside the checkout. The documentation now warns that
+  ignored local artifacts are vulnerable to repository cleanup.
+- The verified editor Back race fix is included in the next signed filter update;
+  `kilter-catalog-filters` owns that phone update and its preservation comparison.
+  It is not claimed installed by this review.
+- Stale readiness text and the automatic-backup prose fragment were corrected.
+
+All six child features are done. The epic is complete as reviewed implementation;
+PR delivery and physical iPhone proof remain separate. Existing evidence does not
+claim catalog-specific physical playlist, Trash/restore or angle-change scenarios.

@@ -286,8 +286,7 @@ capacity in Manage. At 20–60 copies per active setting session this is roughly
 10–25 sessions, not indefinite daily retention. Keep the short capture interval
 for the first dogfood protection target; a later explicit bounded capacity or
 retention change must precede a promise of indefinite use.
- retain earlier copies
-and expose portable export. Do not promise background execution after Android
+Retain earlier copies and expose portable export. Do not promise background execution after Android
 suspends/kills the app or unlimited snapshot retention.
 
 `protected` means current saved revision equals the verified receipt revision and
