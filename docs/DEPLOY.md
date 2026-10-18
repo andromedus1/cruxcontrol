@@ -1,11 +1,12 @@
 ---
-description: Read when configuring or troubleshooting CruxControl's Cloudflare deployment
+description: Read when configuring deployment or maintaining the live private-backup resources
 type: planning
 kind: planning
-updated: 2026-08-02
+updated: 2026-10-18
 summary: >
   Operator runbook for the CI-gated Cloudflare Workers Static Assets deployment,
-  including secrets, opt-in enablement, branch protection, and verification.
+  including secrets, opt-in enablement, branch protection, and verification, plus
+  preservation requirements for the live Android private-backup resources.
 decisions:
   - "Deploy only from a green main-branch CI run after explicit ENABLE_DEPLOY opt-in."
   - "Use least-scope Cloudflare credentials stored as GitHub repository secrets."
@@ -24,6 +25,22 @@ The deploy job is inert until you complete the one-time setup below. The
 `ENABLE_DEPLOY` gate keeps `main` green until you're ready — without it the deploy
 job is simply skipped (not failed). Once enabled, a missing secret fails with a
 clear authentication error rather than a silent half-deploy.
+
+## Live private-backup resources
+
+The Android vault is separate from static-site deployment. Its proof-named resources
+hold Andrew's real `library-v1` backups: project `cruxcontrol-auth-20261010`, bucket
+`cruxcontrol-auth-20261010-vault-proof`, service account
+`crux-vault-proof@cruxcontrol-auth-20261010.iam.gserviceaccount.com` and function
+`privateVaultProof`. Do not delete/recreate them or detach billing as prototype
+cleanup. Replacement or renaming requires verified backup migration and an app
+endpoint update before the old service is retired; the installed Android app uses
+a compiled endpoint. See the [vault operations guide](../prototypes/firebase-vault/README.md).
+
+Keep verified owner-controlled library exports and signing recovery material outside
+the checkout. Git-ignored `.private-signing/` and `.private-firebase/` are not safe
+from `git clean -fdx` or `git clean -X`; preserve their necessary contents before
+any checkout cleanup.
 
 ## 1. Create a Cloudflare API token
 

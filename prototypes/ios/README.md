@@ -194,7 +194,7 @@ This proves local provider save/readback and isolated offline recovery, not a
 cloud-backed provider upload, remote retention, owner-phone recovery or the
 required automatic online backup. Verify any remote copy independently; separate
 automatic-backup/recovery and owner-phone/Fullride evidence supplies those acceptance
-checks. Required review and delivery checks remain before formal completion.
+checks. Independent review is complete and required CI passes; merge and delivery remain separate.
 
 The APK11 follow-up did not repeat restore or cancellation. It rebooted the retained
 graded recovery emulator, exported its current library through SAF, installed the
@@ -415,8 +415,8 @@ playlist play-through, background/reopen, disconnect/reconnect and offline use.
 These are owner-observed physical results, not instrumented radio measurements.
 Catalog-specific playlist lighting, Trash/restore actions and angle changes lack
 scenario-specific physical evidence; catalog playlist resolution has software and
-emulator coverage. Physical iPhone testing remains open. Required feature review
-and final delivery checks remain before formal completion.
+emulator coverage. Physical iPhone testing remains open. Independent review is
+complete and required CI passes; merge and delivery remain separate.
 
 Android playlist links stay disabled without a reachable public host; native file
 sharing works. This acceptance does not establish current Kilter catalog freshness,
@@ -623,7 +623,7 @@ exact retry and sealed-file retention across restart. A 26,188,396-byte structur
 library (10,000 climbs, 1,000 playlists and 100,000 ordered memberships) passed
 exact readback on another installation. An exact 25 MiB fixture passed upload and
 readback. These checks do not establish a worst-case memory ceiling, automatic
-scheduling or integrated recovery; feature review remains separate.
+scheduling or integrated recovery; the completed independent review is separate from these transport checks.
 
 The native library v1-to-v2 upgrade also preserved complete synthetic libraries
 and playlist ordering through emulator restart, including an existing nonempty

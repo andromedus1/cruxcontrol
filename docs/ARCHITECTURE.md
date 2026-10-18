@@ -21,7 +21,8 @@ summary: >
   update checks. Portable-file recovery and bounded operator-assisted cloud recovery
   pass synthetic emulator proofs. Integrated Android automatic backup and app recovery
   also pass synthetic acceptance. Recorded phone preservation/import/backup checks
-  and owner-observed Fullride acceptance pass; required review/delivery checks remain. Firebase Auth and the
+  and owner-observed Fullride acceptance pass. Independent review is complete and
+  required CI passes; merge and delivery remain separate. Firebase Auth and the
   authenticated GCS gateway are selected for Android dogfood. Native application
   transport is implemented and the service deployed; live transport acceptance passes.
 decisions:
@@ -276,8 +277,8 @@ backup. The owner confirms Fullride lighting, clear, effects, connected playlist
 play-through, background/reopen, disconnect/reconnect and offline use. These are
 owner observations, not instrumented radio measurements. Catalog-specific playlist
 lighting, Trash/restore actions and angle changes lack scenario-specific physical
-evidence; catalog playlist resolution has software/emulator coverage. Required
-feature review and final delivery checks remain before formal completion.
+evidence; catalog playlist resolution has software/emulator coverage. Independent
+review is complete and required CI passes; merge and delivery remain separate.
 
 The application design separates a `library-v1` namespace with 512 immutable
 25 MiB copies (`00000`–`00511`) from the unchanged 32-slot proof pool. Four bounded
@@ -506,7 +507,7 @@ vite-plugin-pwa are installed; ONNX Runtime Web arrives with its ML feature.
 | Web Locks API                               | Shared per-tab admission and exclusive, `ifAvailable` update apply coordination                                                                                                                               |
 | Web Bluetooth API                           | Explicit Android/desktop Chromium session and Nordic UART writes to the board                                                                                                                                  |
 | Capacitor 8.4.3 + BLE 8.3.0 + App 8.1.1      | Experimental iOS/Android package: bundled shared UI, native byte transport, foreground lifecycle; no background BLE mode                                                                                       |
-| Capacitor Community SQLite 8.1.1             | Android app-private library database behind `AppLibrary`, with serialized revision transactions and a coherent snapshot; synthetic automatic backup/app recovery and owner-phone/Fullride acceptance pass; required review/delivery checks remain                   |
+| Capacitor Community SQLite 8.1.1             | Android app-private library database behind `AppLibrary`, with serialized revision transactions and a coherent snapshot; synthetic automatic backup/app recovery and owner-phone/Fullride acceptance pass; independent review is complete and required CI passes; merge and delivery remain separate                   |
 | Playwright                                  | Production-build Chromium smoke for climb lifecycle persistence and responsive editor behavior                                                                                                                 |
 | BoardLib (Python)                           | Legacy bootstrap and sync-protocol reference; not a verified current catalog source                                                                                                                            |
 | Kilter sync API                             | Legacy protocol reference; current availability and coverage are unverified                                                                                                                                   |
