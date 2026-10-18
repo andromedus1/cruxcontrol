@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-android-parity
 kind: feature
-stage: review
+stage: done
 tags: [data, ble, ui, infra]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -647,3 +647,12 @@ already-reviewed sibling features were not re-reviewed line by line.
 
 Standard policy requires no second independent pass after adjudicated fixes and
 verification. No secrets, personal library data or device identifiers were committed.
+
+### Closure
+
+Required CI [run 39169868839](https://github.com/andromedus1/cruxcontrol/actions/runs/39169868839)
+passes for the fixed source: web lint/typecheck/unit/browser/catalog checks, iOS
+prototype contracts/browser smoke, Android native compile/boundaries and the
+existing Firebase/ML lanes. Subsequent commits only update records and docs.
+The accepted F1 correction, F2 documentation update and F3 evidence qualification
+are complete. Advance to done after the single standard review and verification.
