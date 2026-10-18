@@ -1,11 +1,11 @@
 ---
 id: roadmap-next-milestones
 created: 2026-09-12
-updated: 2026-10-10
+updated: 2026-10-18
 tags: []
 ---
 
-# Next milestones: Kilter community climbs, then invited sharing
+# Next milestones: Kilter catalog filters, current coverage, then invited sharing
 
 Andrew confirmed the laptop migration is complete and authorized resumption on
 2026-10-09. Kilter community catalog access now takes priority over partner/friend
@@ -14,6 +14,16 @@ priority and resumption capture; the linked work items own their scope. No relea
 schedule, service architecture, or new feature decomposition is selected here.
 
 ## Agreed order
+
+**Current priority (2026-10-18):** Andrew confirmed the remaining physical Android
+checks and selected [Kilter catalog filters](../active/features/kilter-catalog-filters.md)
+next. Expand filtering against the installed older catalog, including rating and
+send count, before current official catalog coverage and then invited sharing.
+The preservation arc is completing its required independent review; successful
+phone acceptance does not substitute for that review. The original 16 climbs are
+now imported into My Climbs with verified portable and private online backup
+evidence in the preservation items. Continue normal use without losing the
+standing library-preservation requirements.
 
 **Android dogfood target (2026-10-10):** Andrew wants to use the native Android app
 within the next few days with full shipped-app parity, off-phone backups and the
