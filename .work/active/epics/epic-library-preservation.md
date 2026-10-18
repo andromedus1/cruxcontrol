@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation
 kind: epic
-stage: implementing
+stage: review
 tags: [data, security]
 research_refs: [android-chrome-recovery-access, independent-library-preservation, native-backup-service-costs]
 parent: null
@@ -398,7 +398,7 @@ focused verification, standard independent review and required CI. Android parit
 has verified emulator interaction and independent signing-key recovery; physical
 phone/Fullride owner acceptance is now recorded. Its independent review found a
 bounded Back-at-autosave-completion issue; the fix and regression checks pass,
-with required CI pending before formal closure.
+and required CI is green. All six child features are done.
 
 Native account access and private snapshots pass sign-in/renewal, immutable
 upload/readback/retry, restricted runtime permissions and account isolation.
@@ -446,3 +446,13 @@ owns current evidence, the standard review and its accepted fixes. The installed
 release30 predates the newly verified Back race fix; no phone update was attempted.
 Current-PWA protection is not a prerequisite. Query child items
 for exact stages and evidence rather than treating this sequence as dogfood admission.
+
+## Aggregate review entry
+
+Child features reviewed and complete: native library, portable files, private
+vault, automatic backup, Android catalog and Android parity. Each has its standard
+review and required verification recorded; the last correction passes CI run
+39169868839. Advance the epic to its separate aggregate review covering end-to-end
+preservation, cross-feature contracts and cumulative operational limits. The
+owner's physical observations and untested scenario-specific limits remain as
+qualified above. Source completion does not update installed release30.
