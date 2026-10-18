@@ -621,3 +621,29 @@ Advance to review for the single standard independent Android-parity pass.
 The prior intermittent workspace playlist edit/return test failure remains a review
 input: unchanged focused/full-file tests and the bounded CI retry passed, as did
 the subsequent complete CI run. Do not describe a retry as a root-cause fix.
+
+### Standard review adjudication (2026-10-18)
+
+One independent Claude Opus pass completed successfully, with no data-preservation
+blockers. Review scope was Android parity and its integration seams; the five
+already-reviewed sibling features were not re-reviewed line by line.
+
+- **F1, medium — accepted and fixed:** Back could be ignored between the saved DOM
+  render and the passive identity callback. Tracked via park → focused
+  `story-fix-editor-back-save-race`; both native/button boundary regressions fail
+  against the old callback and pass after preserving an already-closed editor.
+  Full web suite (893 passing, one existing skip), lint and TypeScript/build pass.
+  Required PR CI is the remaining closure check. Installed release30 does not
+  contain this source fix; include it in the next preservation-safe phone update.
+- **F2, low — accepted:** foundation docs and the native README now distinguish
+  owner-observed Android checks, synthetic/emulator proof and pending physical iPhone
+  acceptance. They retain the no-public-host Android link limitation.
+- **F3, low — qualified evidence:** Andrew's six confirmed board scenarios complete
+  the requested remaining owner checklist. They do not establish scenario-specific
+  physical proof of catalog entries lighting from playlists, Trash/restore actions,
+  or angle changes. Catalog playlist resolution has software/emulator proof; generic
+  playlist/board behavior is owner-observed. Retain these limits without turning
+  the report into invented instrumented evidence or claiming all device combinations.
+
+Standard policy requires no second independent pass after adjudicated fixes and
+verification. No secrets, personal library data or device identifiers were committed.
