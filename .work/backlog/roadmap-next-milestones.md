@@ -15,10 +15,11 @@ schedule, service architecture, or new feature decomposition is selected here.
 
 ## Agreed order
 
-**Current priority (2026-10-18):** Andrew confirmed the remaining physical Android
-checks and selected [Kilter catalog filters](../active/features/kilter-catalog-filters.md)
-next. Expand filtering against the installed older catalog, including rating and
-send count, before current official catalog coverage and then invited sharing.
+**Completed phone slice (2026-10-18):** Andrew confirmed the remaining physical
+Android checks and selected [Kilter catalog filters](../archive/kilter-catalog-filters.md).
+Statistics filters and sorting against the installed older catalog are complete;
+current official catalog coverage and then invited sharing remain subsequent
+priorities. Remaining official-filter parity is captured separately for later.
 The statistics-filter slice is installed on the phone with exact before/after
 library preservation. The preservation arc and filter feature have completed
 required independent review and CI; PR merge/delivery remains separate. Successful
