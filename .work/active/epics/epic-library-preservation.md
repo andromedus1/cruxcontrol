@@ -431,7 +431,11 @@ existing owner account now retains two verified copies of the synthetic library;
 an ordinary saved edit triggered the second automatically, and native download/review
 matches every saved climb and list. Single-owner service admission remains the
 private-dogfood boundary; other climbers need isolated account admission before
-wider distribution. Fullride testing waits for Andrew's hardware availability. The
+wider distribution. The original sixteen-climb inventory was subsequently imported
+into My Climbs and verified in both a complete portable export and the retained
+cloud copy. Andrew reports the first board trial works very well and believes these
+are the missing climbs, possibly all of them. Explicit remaining board-scenario
+results and the parity feature's standard review are still open. The
 [Android parity item](../features/epic-library-preservation-android-parity.md#physical-android-acceptance-in-progress-2026-10-18)
 owns current evidence, remaining acceptance and the subsequent standard review.
 Current-PWA protection is not a prerequisite. Query child items

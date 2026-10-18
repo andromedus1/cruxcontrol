@@ -595,3 +595,17 @@ Independent files and detailed evidence remain outside Git in the private phone
 acceptance directory. The phone is left on My Climbs with verified backup status:
 sixteen original climbs plus the two clearly labeled test climbs. Andrew owns the
 next physical board trial; no board lighting result is inferred from this import.
+
+### Owner board feedback (2026-10-18)
+
+After taking the app to the board, Andrew reports it is working very well and
+believes the sixteen imported climbs are the climbs he was missing, possibly the
+entire missing inventory. Record that positive owner observation without treating
+his tentative inventory identification as proof of every historical record or its
+metadata. These sixteen climbs are included in the verified twenty-two-climb/two-list
+cloud copy and the exact portable export retained on the host.
+
+The first owner board trial is therefore positive. Clear, effects, connected
+playlist playback and background/interruption/reconnect still need explicit
+scenario results before claiming the whole physical checklist complete. Standard
+review remains pending; the general success report does not close those gates.
