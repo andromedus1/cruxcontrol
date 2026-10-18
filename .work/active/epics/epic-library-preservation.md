@@ -424,10 +424,14 @@ Account setup no longer blocks engineering. Physical hardware availability still
 affects final acceptance; no real authoring before the aggregate protection and
 parity gates pass. Andrew resumed with the connected Android phone on 2026-10-18.
 The retained release30 is installed after current origin/profile verification and
-a fresh validated backup. Initial physical-phone checks pass native file recovery,
-exact whole-library export, grade editing and complete preservation across cold
-relaunch. The phone's account backup check is in progress; Fullride testing waits
-for Andrew's hardware availability. The
+a fresh validated backup. Physical-phone checks pass native file recovery,
+exact whole-library export, grade editing, preservation across cold relaunch,
+playlist reorder/play-through/export and two-image screenshot import. The selected
+existing owner account now retains two verified copies of the synthetic library;
+an ordinary saved edit triggered the second automatically, and native download/review
+matches every saved climb and list. Single-owner service admission remains the
+private-dogfood boundary; other climbers need isolated account admission before
+wider distribution. Fullride testing waits for Andrew's hardware availability. The
 [Android parity item](../features/epic-library-preservation-android-parity.md#physical-android-acceptance-in-progress-2026-10-18)
 owns current evidence, remaining acceptance and the subsequent standard review.
 Current-PWA protection is not a prerequisite. Query child items

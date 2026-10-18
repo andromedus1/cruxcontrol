@@ -527,7 +527,48 @@ checks. Physical lighting, clear, effects, interruption and reconnect remain ope
   metadata changed; all other fields and list ordering stayed identical. After
   closing the dialog with no pending save and no board connection, force-stopped
   and cold-launched the native app. A fresh provider export exactly matches the
-  full saved pre-restart library. Account and further device checks are in progress.
+  full saved pre-restart library.
+- Reordered the synthetic two-climb playlist and verified play-through visits its
+  new first/last entries, disables Next at the end and returns through Android Back.
+  Canceling the native playlist save picker reports cancellation. A completed file
+  export exactly matches the intended portable payload, including order, grades
+  and the effect recipe. The other list and its shared/missing memberships remain
+  unchanged.
+- Selected two fictional PNGs together through Android Photo Picker → Browse →
+  Downloads. Normal review/naming saved two distinct drafts with fresh identities,
+  exactly the expected two/three hold assignments and empty metadata/effects.
+  A fresh complete export verifies all four existing climbs unchanged, only the
+  intended playlist reorder, and both exact new drafts: six climbs/two lists total.
+- Andrew selected the already configured owner account for private dogfood.
+  The initially selected other Google account signed in successfully but received
+  the truthful account-not-enabled response. Switched through normal sign-out and
+  account selection; no cloud configuration or access policy was changed. Wider
+  distribution requires separately admitted users with isolated private backups;
+  accepting Google sign-in alone does not provide that capability. This session
+  does not expand the service beyond its current single-owner admission.
+- Admitted the synthetic phone library through Manage and retained its first
+  production-library copy. A normal native download/review reports all six climbs
+  and both lists unchanged, including Trash and the intentional unavailable list
+  reference; no restore was performed on the owner phone. Then changed the draft
+  grade V4 → V5 through the editor. The normal foreground schedule, without Retry
+  or another library-admission action, progressed from pending to all changes
+  backed up. History retains both copies. Reviewing the second copy again reports
+  exact unchanged contents. A completed portable export confirms only the grade
+  and its revision/save metadata changed; every other field and ordered membership
+  remains identical.
+- Physical-phone window evidence shows KEEP_SCREEN_ON while enabled/visible,
+  removal on Home/background and reacquisition on return. The temporary toggle
+  was disabled at handoff. This proves lifecycle handling, not a full five-minute
+  physical timeout trial; the isolated emulator timeout control remains separate.
+  The installed older catalog opens its read-only climb detail with grade, setter
+  and hold count. No physical-phone network-off trial or board lighting is claimed.
+
+The phone is left on the test drafts with verified online-backup status and six
+clearly named test climbs/two lists retained for continued acceptance. Complete
+portable copies are also retained on the host. Fullride permissions, lighting,
+clear, effects, connected play-through and interruption/reconnect still require
+the board and Andrew's observation. Keep this feature implementing and PR32 draft;
+its standard independent review and the epic's daily-use admission remain pending.
 
 Detailed evidence and backups are excluded from Git under
 `.private-signing/phone-acceptance-2026-10-18/`. Emulator-only acceptance helpers
