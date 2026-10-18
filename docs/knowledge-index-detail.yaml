@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-13T02:05:06Z'
+generated_at: '2026-10-18T21:51:46Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -17,10 +17,10 @@ documents:
       library storage; Android injects a native SQLite library and has passed synthetic emulator restore,
       edit/save, process-relaunch, and same-signature update checks. Portable-file recovery and bounded
       operator-assisted cloud recovery pass synthetic emulator proofs. Integrated Android automatic backup
-      and app recovery also pass synthetic acceptance; physical owner-phone/Fullride behavior and full
-      Android feature parity remain open. Firebase Auth and the authenticated GCS gateway are selected
-      for Android dogfood. Native application transport is implemented and the service deployed; live
-      transport acceptance passes.
+      and app recovery also pass synthetic acceptance. Recorded phone preservation/import/backup checks
+      and owner-observed Fullride acceptance pass; required review/delivery checks remain. Firebase Auth
+      and the authenticated GCS gateway are selected for Android dogfood. Native application transport
+      is implemented and the service deployed; live transport acceptance passes.
 
       '
     decisions:
@@ -102,7 +102,8 @@ documents:
       remain local and Android plus iPhone board control are required.
     - The domain model mirrors the official Kilter SQLite schema (climbs, holes/placements, climb_stats).
     - The PWA controller requires supported Web Bluetooth; the experimental Capacitor Android/iOS package
-      supplies native BLE adapters, with physical-device acceptance still open.
+      supplies native BLE adapters, with owner-observed Android/Fullride acceptance passed and physical
+      iPhone acceptance still open.
     - Grade-prediction target is community consensus difficulty_average from climb_stats.
     - 'Playlists are a CruxControl-local construct (no Kilter playlist API): local-first, climb-ID-referenced,
       shareable, board-playable.'
@@ -137,8 +138,9 @@ documents:
       independent online backups and portable owner-controlled files must complement offline local authoring.
       An experimental Android package now uses native SQLite for local authorship; its synthetic emulator
       persistence, independent portable recovery and bounded operator-assisted cloud recovery checks pass.
-      Android foreground backup and integrated recovery pass synthetic emulator acceptance; physical owner-phone/Fullride
-      parity remain open. Invited contributions follow with Android and iPhone board control.
+      Android foreground backup and integrated recovery pass synthetic emulator acceptance. Owner-observed
+      phone/Fullride acceptance passes; feature review and final delivery checks remain. Invited contributions
+      follow with Android and iPhone board control.
 
       '
     decisions:
@@ -155,9 +157,9 @@ documents:
     - Kilter community catalog access precedes invited shared contributions; its first browser uses an
       explicitly older offline snapshot, and native iPhone preparation continues independently, with a
       logbook, broader providers, grade prediction and personalized training retained afterward.
-    - Private authoring and playlists stay locally usable; everyday real authoring waits for verified
-      automatic online backup, clean-install recovery and physical owner-phone/Fullride acceptance, with
-      portable owner-controlled files as an independent second path.
+    - Private authoring and playlists stay locally usable; everyday real authoring requires verified automatic
+      online backup, clean-install recovery, physical owner-phone/Fullride acceptance and required review/delivery
+      checks, with portable owner-controlled files as an independent second path.
     - Invited partner and friends need Android and iPhone board control; establish the iOS path before
       advancing shared-library implementation.
   docs/architecture/history/north-star.md:

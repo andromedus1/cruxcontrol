@@ -396,7 +396,9 @@ hosted-account setup. Daily-use admission remains the aggregate epic gate.
 Native-library, portable-file recovery and Android-catalog features have completed
 focused verification, standard independent review and required CI. Android parity
 has verified emulator interaction and independent signing-key recovery; physical
-phone/Fullride acceptance and its feature review remain open.
+phone/Fullride owner acceptance is now recorded. Its independent review found a
+bounded Back-at-autosave-completion issue; the fix and regression checks pass,
+with required CI pending before formal closure.
 
 Native account access and private snapshots pass sign-in/renewal, immutable
 upload/readback/retry, restricted runtime permissions and account isolation.
@@ -420,9 +422,9 @@ results do not establish physical board parity.
 Retain all admitted copies and pause at capacity for the first dogfood release;
 no automatic pruning or background-execution guarantee. The owning feature carries
 limits and costs. Prefer cheaper hosting; no fixed USD 25/month plan was selected.
-Account setup no longer blocks engineering. Physical hardware availability still
-affects final acceptance; no real authoring before the aggregate protection and
-parity gates pass. Andrew resumed with the connected Android phone on 2026-10-18.
+Account setup no longer blocks engineering. Andrew resumed with the connected
+Android phone on 2026-10-18 and has completed the requested owner dogfood checklist.
+Formal feature/aggregate review closure remains distinct from those observations.
 The retained release30 is installed after current origin/profile verification and
 a fresh validated backup. Physical-phone checks pass native file recovery,
 exact whole-library export, grade editing, preservation across cold relaunch,
@@ -434,9 +436,13 @@ private-dogfood boundary; other climbers need isolated account admission before
 wider distribution. The original sixteen-climb inventory was subsequently imported
 into My Climbs and verified in both a complete portable export and the retained
 cloud copy. Andrew reports the first board trial works very well and believes these
-are the missing climbs, possibly all of them. Explicit remaining board-scenario
-results and the parity feature's standard review are still open. The
+are the missing climbs, possibly all of them. He subsequently confirmed clear,
+effects, connected playlist playback, background/reopen, disconnect/reconnect and
+offline use. Catalog-entry lighting from playlists, explicit Trash/restore actions
+and angle changes lack scenario-specific physical evidence; preserve that limit
+alongside their software/emulator coverage. The
 [Android parity item](../features/epic-library-preservation-android-parity.md#physical-android-acceptance-in-progress-2026-10-18)
-owns current evidence, remaining acceptance and the subsequent standard review.
+owns current evidence, the standard review and its accepted fixes. The installed
+release30 predates the newly verified Back race fix; no phone update was attempted.
 Current-PWA protection is not a prerequisite. Query child items
 for exact stages and evidence rather than treating this sequence as dogfood admission.

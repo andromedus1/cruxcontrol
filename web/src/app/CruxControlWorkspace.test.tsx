@@ -603,6 +603,47 @@ describe('CruxControlWorkspace', () => {
     expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument();
   });
 
+  it.each(['button', 'native'] as const)('honors %s Back at the instant an autosave becomes saved', async (source) => {
+    let saved = original;
+    const storedList = playlist('Circuit', [{ kind: 'local', id: original.id }]);
+    const backNavigation = createBackNavigation();
+    const runtime = runtimeWith({
+      list: vi.fn(async (options) => options?.collection === 'trash' ? [] : [saved]),
+      update: vi.fn(async (id, revision, content) => {
+        saved = persisted(id, Number(revision) + 1, content);
+        return saved;
+      }),
+    }, { list: vi.fn().mockResolvedValue([storedList]) });
+    render(<CruxControlWorkspace runtime={{ ...runtime, backNavigation }} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Lists.*1 list/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Original' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Saved before Back' } });
+
+    // Observe the visible save transition before React's passive identity effect.
+    // Waiting for a later timer masks the race where that effect reopens the editor.
+    let consumed: boolean | undefined;
+    let backRequested!: () => void;
+    const requested = new Promise<void>((resolve) => { backRequested = resolve; });
+    const chip = document.querySelector('.save-chip')!;
+    const observer = new MutationObserver(() => {
+      if (chip.textContent !== 'saved') return;
+      observer.disconnect();
+      if (source === 'native') consumed = backNavigation.dispatch();
+      else screen.getByRole('button', { name: 'Back' }).click();
+      backRequested();
+    });
+    observer.observe(chip, { childList: true, characterData: true, subtree: true });
+    try {
+      await requested;
+      expect(await screen.findByRole('button', { name: 'Edit Saved before Back' })).toBeInTheDocument();
+      expect(screen.queryByRole('textbox', { name: 'Name' })).not.toBeInTheDocument();
+      expect(saved).toMatchObject({ name: 'Saved before Back', revision: 2 });
+      if (source === 'native') expect(consumed).toBe(true);
+    } finally {
+      observer.disconnect();
+    }
+  });
+
   it('keeps editing inert until an explicit reload resolves a controller mismatch', async () => {
     const runtime = runtimeWith();
     const updateService = updateServiceFor({

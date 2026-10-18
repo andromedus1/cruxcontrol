@@ -1,39 +1,21 @@
 # Doc Review Report
 
 **Project:** CruxControl
-**Date:** 2026-10-11
-**Checkpoint:** `fca7fa8af42702ffae0ef4ebcd08b2b02aa8856b` (rolling documentation updates `50297c2`, `6ddcea6`, `fca7fa8`)
-**Documents reviewed:** 5 system planning documents + README, two prototype READMEs, and CLAUDE.md supporting rules (9 files); 0 module planning documents across 0 module sets
-**Passes run:** 1 fresh native system-level audit; module discovery found no separate planning sets
-**Issues found:** Critical 0, High 0, Medium 2, Low 0, Info 0
+**Date:** 2026-10-18
+**Scope:** Fresh independent `--system-only` audit after preservation documentation updates.
+**Passes:** 1 system pass; 0 module passes (requested scope).
+**Issues:** Critical **0**, High **0**, Medium **1**, Low **0**, Info **0**.
+**Exit result:** The doc-review Critical/High exit condition is satisfied. This is not feature approval or permission to update the phone.
 
-## Inventory and review scope
+## Inventory and method
 
-The current `docs/knowledge-index.yaml` catalogs 30 documents: five planning,
-24 research, and one explicitly superseded historical document. Its five current
-planning entries are `docs/VISION.md`, `docs/SPEC.md`, `docs/ARCHITECTURE.md`,
-`docs/PRINCIPLES.md`, and `docs/DEPLOY.md`. All five declare nonempty description,
-type, kind, and updated fields: 5/5 comply with the project's indexed planning
-schema. The project consistently uses `type: planning`; the skill's example
-north-star/architecture/roadmap names do not supersede that project convention.
-Research-method provenance is audited separately below, without backfilling it.
+Reviewed the five current foundation/runbook documents (`docs/VISION.md`, `SPEC.md`, `ARCHITECTURE.md`, `PRINCIPLES.md`, `DEPLOY.md`), `AGENTS.md`, `CLAUDE.md`, `.agents/rules/agile-workflow.md`, `.work/CONVENTIONS.md`, `prototypes/ios/README.md`, and the relevant private-vault README overview. Used the knowledge indexes, saved roadmap priorities, preservation epic and owning Android parity/automatic-backup/catalog items as delivery context. Read the doc-review skill and its build-process reference.
 
-Module discovery checked the index and tracked documentation paths. There are no
-additional current north-star entries, no `docs/*/architecture/` module planning
-sets, and no `modules/` directory. `docs/architecture/history/north-star.md` is
-superseded historical material, not a module contract. Prototype READMEs are
-supporting implementation/operator documentation, not additional module planning
-sets. Detailed designs remain owned by `.work/` item bodies.
+The current index contains five planning documents, 24 research entries and one explicitly historical document. No separate module planning documents were discovered under `docs/*/architecture/` or `modules/*/docs/`; detailed module designs are intentionally owned by `.work/` bodies, as ARCHITECTURE states. This system-only request does not require creating module documents or auditing research contents.
 
-Read AGENTS.md, `.agents/rules/*.md`, CLAUDE.md, the installed doc-review skill and
-its build-process reference. Reviewed the five planning files and the three
-READMEs against relevant implementation paths and current delivery evidence.
-This fresh audit follows the prior report at `499012a`; it is documentation
-alignment, not a repeated independent implementation review. No private evidence
-files, cloud resources, owner phone, or unrelated untracked `docs/kilter_docs/`
-and `docs/set_boulders/` contents were inspected.
+All five current planning documents have nonempty description, type, and updated metadata. Their `type: planning` is the repository's established indexed schema; the generic skill's older type examples are not grounds to rewrite it. Rules and operational prototype READMEs are not indexable planning documents. All 30 indexed paths exist. Checked local Markdown link targets in the five foundation docs, AGENTS, CLAUDE and native prototype README: no missing file targets found. Anchor semantics and external URLs were not exhaustively validated.
 
-## Pass 1: System-Level
+## Findings
 
 ### Critical (0)
 
@@ -41,196 +23,79 @@ None.
 
 ### High (0)
 
-None.
+None. No missing implementation output or missing decision-blocking research artifact was found.
 
-### Medium (2)
+### Medium (1): Current summary text still describes physical parity as pending
 
-#### Data-flow network boundary omits the implemented private vault
+**Evidence:** `.work/active/epics/epic-library-preservation.md:396–399` says physical phone/Fullride acceptance remains open; its current-delivery paragraph at lines 436–438 still asks for remaining board-scenario results. `prototypes/firebase-vault/README.md:21` likewise says physical owner-phone/Fullride parity remains open. The owning parity item's later confirmation at `.work/active/features/epic-library-preservation-android-parity.md:613–620` records the six owner-confirmed remaining scenarios and advances to review. The updated system account is explicit in `docs/ARCHITECTURE.md:278–284` and `prototypes/ios/README.md:407–419`.
 
-**Files:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#L421),
-[prototypes/ios/src/runtime.ts](prototypes/ios/src/runtime.ts),
-[prototypes/ios/src/native-private-vault.ts](prototypes/ios/src/native-private-vault.ts).
+**Impact:** These summaries send a reader back to already completed broad physical acceptance. They do not claim premature completion or weaken the outstanding review/delivery gates, so this is stale status text rather than a release-blocking contradiction.
 
-**What:** The data-flow conclusion says only provider adapters and controller
-transports cross network/device boundaries. Android's implemented private-vault
-adapter also crosses both boundaries through native account/file transport. The
-preservation section correctly documents that service, but this general boundary
-statement retains the earlier architecture and is technically incorrect.
+**Suggested correction:** Update only the current epic summary and vault overview to distinguish passed owner-observed scenarios from pending feature review/final delivery. Keep catalog-specific playlist lighting, Trash/restore and angle-change evidence limitations, and physical iPhone acceptance, explicit. Preserve dated earlier execution entries as evidence history. No changes made by this reviewer.
 
-**Fix:** Include private-backup/account adapters in this sentence. Preserve the
-intended separation of domain/UI from network/device I/O.
+**Host disposition:** Corrected the current epic summaries in `c774a25` and the
+vault README in `d764d8b`, retaining the listed evidence limits. This Medium finding
+did not require another audit under the Critical/High loop policy. The fresh audit
+above supplied the required zero Critical/High result; this disposition is not a
+new independent pass.
 
-#### Domain aggregate description remains browser-specific
+## Clean areas
 
-**Files:** [docs/SPEC.md](docs/SPEC.md#L367),
-[prototypes/ios/src/native-library.ts](prototypes/ios/src/native-library.ts).
+- Vision owns product intent, specification owns capabilities, architecture owns boundaries, principles own durable rules, deployment owns the operator runbook, and `.work/` owns decomposition and delivery state. No additional planning artifact is needed.
+- Android SQLite and web/iOS IndexedDB responsibilities agree across docs and runtime composition. Native local storage is consistently distinguished from independent off-device recovery.
+- Manual portable exports, atomic Android restore, web/iOS per-store outcomes, automatic foreground backup, immutable retained copies and recovery verification are described consistently. The preservation rule requiring a fresh outside-Git maintenance backup does not promise automatic portable files.
+- Foundation docs and the native README preserve the exact distinction between owner observations, synthetic emulator proof and physical iPhone work. They do not invent catalog-specific playlist lighting, Trash/restore or angle-change physical evidence.
+- Review and final delivery remain gates. The editor Back/autosave race is tracked separately; source verification here does not claim that its fix is present in the installed APK.
+- Catalog freshness/current official coverage/public redistribution remain unproven. The current name/exact-grade/angle browser contract matches this worktree; filters being implemented on another branch were excluded.
+- Invited collaboration, physical iPhone control, logbook and ML remain future or separately gated work. Independent private backup does not grant group access.
+- DEPLOY's push-to-main, `ENABLE_DEPLOY`, `needs: [web]`, static Worker build and named web check match `.github/workflows/ci.yml`. No live hosting or account state was accessed or inferred.
 
-**What:** The domain model describes `LocalClimbDraft` as a browser aggregate.
-The same strict domain aggregate is now retained in Android native SQLite; the
-nearby milestone and architecture correctly describe platform-local authoring.
-The browser-specific definition conflicts with that implemented storage boundary.
+## Blocking brief existence
 
-**Fix:** Describe it as a platform-local aggregate while retaining its existing
-identity, lifecycle, revision, and content contracts.
+There is no phase-numbered roadmap with a literal Blocking briefs list. Checked the decision-bearing references used by the current owning items instead.
 
-### Low (0)
-
-None.
-
-### Info (0)
-
-None. Provenance refresh candidates below are informational inventory, not
-additional findings.
-
-## Clean Areas
-
-- Vision, specification, architecture, README and prototype status agree that
-  foreground automatic backup and integrated recovery are implemented and pass
-  synthetic Android emulator acceptance. They retain physical owner-phone/Fullride
-  acceptance as an explicit gate before real authored climbs are admitted.
-- Earlier portable-file, account, catalog and transport proofs are bounded to the
-  paths they exercised. Operator-assisted download/import and padded-byte proofs
-  are not presented as integrated recovery or universal structured-memory proof.
-- The automatic coordinator's constants match the documented 30-second coalescing,
-  60-second maximum wait and 5/15/60-second foreground retry. Android runtime
-  composition creates the coordinator and connects pause/resume/network hints;
-  PWA and iOS do not acquire that Android account-backup path.
-- Native SQLite includes the preserving v1-to-v2 migration, committed aggregate
-  revisions, durable pending metadata, coherent capture, atomic missing-only restore
-  and persisted verification barrier. The service and native adapter retain exact
-  receipt identity; current protected status is tied to the saved revision.
-- Capacity matches the private-vault contracts: 512 immutable application copies
-  of at most 25 MiB, disjoint legacy 32-copy proof and four synthetic acceptance
-  pools, capacity pause and no automatic pruning. GCS creation is conditional;
-  readback precedes acknowledgment, and the service exposes no delete/overwrite API.
-- Local saving remains available during account/network outages. Recovery conflict,
-  cancellation and retained history semantics are consistent with missing-only
-  restore, existing local extras and source-copy preservation.
-- README and both prototype READMEs maintain the separation between local library
-  storage, independent recovery, older offline catalog, future invited sharing,
-  and unverified physical-device/iPhone capabilities.
-- Deployment documentation matches `.github/workflows/ci.yml`: deploy depends on
-  green web CI, push to main and explicit `ENABLE_DEPLOY=true`. Static Cloudflare
-  delivery is distinct from the deployed Android vault. No cloud-state revalidation
-  or claim of production-library proof was made by this audit.
-- Checked all 30 relative Markdown file-link occurrences in the reviewed set;
-  every file target exists. Cited research references are checked for path integrity,
-  not independently re-researched or semantically reattested.
-- The prior architecture ambiguity now explicitly names iPhone evidence and
-  invited-sharing service implementation, distinguishing the deployed Android vault.
-
-## Blocking Briefs Status
-
-No roadmap document or NEXT-phase blocking-brief declaration exists in the five
-system planning files. Their cited foundation and preservation briefs exist.
-The knowledge index's blocking references are also present on disk:
-
-| Brief | Indexed blocking item | Exists on disk? |
+| Artifact | Decision | Exists |
 |---|---|---|
-| `.research/briefs/cloudflare-deploy/parent.md` | `epic-foundation-ci-deploy` | Yes |
-| `.research/briefs/kilter-grade-prediction/parent.md` | `epic-grade-prediction` | Yes |
-| `docs/briefs/board-control-web-bluetooth.md` | `epic-board-control` | Yes |
-| `docs/briefs/board-rendering-and-filtering.md` | `epic-climb-browser` | Yes |
-| `docs/briefs/catalog-sync-api.md` | `epic-catalog-sync` | Yes |
-| `docs/briefs/foundation-pwa-sqlite.md` | `epic-foundation` | Yes |
-| `docs/briefs/recommendations-and-training.md` | `epic-recommendations` | Yes |
+| `.research/analysis/briefs/independent-library-preservation.md` | Native storage and independent recovery boundary | Yes |
+| `.research/analysis/briefs/native-backup-service-costs.md` | Private backup provider/cost selection | Yes |
+| `.research/analysis/briefs/android-chrome-recovery-access.md` | Preservation/recovery constraints | Yes |
+| `.research/analysis/briefs/ios-shared-client.md` | Shared native client proof | Yes |
+| `.research/analysis/briefs/invited-offline-library.md` | Conditional invited-service boundary | Yes |
+| `.research/analysis/landscapes/ios-board-client-prior-art.md` | iPhone controller prior art | Yes |
+| `.research/briefs/cloudflare-deploy/parent.md` | Static deployment approach | Yes |
 
-Existence is not a claim that older research is current or locked.
+No NEXT-work blocker was represented as written while absent. Existing physical/review gates are evidence requirements, not missing research documents.
 
-## DONE Phase Verification
+## Implemented-output verification
 
-There is no DONE/NEXT phase table with output declarations in the system planning
-set. The following supporting delivery claims were checked against actual paths
-and durable item evidence instead; done children do not imply their parent is done.
+No numbered DONE phases occur in the system docs. Verified the principal implemented claims and relevant done features by source/output existence and selected code inspection; did not rerun acceptance or CI.
 
-| Claim / item | Current stage | Output and evidence checked | Result |
-|---|---|---|---|
-| Native library | done | `prototypes/ios/src/native-library.ts`, `open-native-library.ts`, native tests and item evidence | Present |
-| Portable-file recovery | done | `android-backup-delivery.ts`, library backup service, portable proof runner and item evidence | Present |
-| Android catalog | done | private catalog packaging/smoke runners, catalog runtime and item evidence | Present; older snapshot/physical limits retained |
-| Native private vault | done | native account/file adapter, Android plugins, gateway handler/store and reviewed/CI closure evidence | Present; scheduling/recovery belongs to dependent feature |
-| Automatic durable-state child | done | native SQLite migration, revision/control state and atomic recovery implementation/tests | Present |
-| Automatic coordinator child | done | `web/src/automatic-backup/coordinator.ts`, status/types/tests and Android composition | Present |
-| Automatic surfaces/mobile-status children | done | `BackupStatusLine.tsx`, `BackupManageDialog.tsx`, CSS/tests and mobile acceptance record | Present |
-| Integrated acceptance child | done | `.work/active/stories/epic-library-preservation-automatic-backup-acceptance.md`, `smoke-android-automatic.mjs` and `smoke-android-large-recovery.mjs` | Documented complete synthetic acceptance |
-| Automatic backup parent | review | Feature's verified implementation section; one independent Claude review and PR CI remain separate closure gates | Correctly not marked done |
-| Android parity | implementing | `.work/active/features/epic-library-preservation-android-parity.md` retains physical owner-phone/Fullride boundary | Correctly not marked done |
+| Claimed implementation | Source/output present | Relevant verification sources present |
+|---|---|---|
+| Native SQLite library and recovery | `prototypes/ios/src/native-library.ts`, `open-native-library.ts`; WAL/FULL pragmas present | Native library/open-library tests |
+| Portable whole-library recovery | `web/src/library-backup/{service,codec}.ts`; native Android/iOS delivery adapters | Backup service/codec/delivery tests; `web/e2e/library-backup.spec.ts` |
+| Foreground automatic protection and recovery UI | `web/src/automatic-backup/{coordinator,state}.ts`, `BackupManageDialog.tsx`, `BackupStatusLine.tsx`; composed only on Android in native runtime | Coordinator/state/surface tests and Android synthetic smoke scripts |
+| Backup scheduling contract | Coordinator constants are 30-second coalescing, 60-second maximum, 5/15/60-second retry | Coordinator tests |
+| Native transport and platform lifecycle | Native BLE transport and `prototypes/ios/src/runtime.ts`; pause disconnect/foreground transitions and native entry present | Native BLE/runtime tests |
+| Older installed catalog and worker query | Catalog install/receipt/worker/query modules and private package scripts | Catalog package contracts, catalog browser/bootstrap tests and Android smoke scripts |
+| PWA update admission | `web/src/pwa/update-service.ts` | Unit tests and `web/e2e/pwa-update.spec.ts` |
 
-The integrated acceptance item records automatic edits and list order, offline
-restart/reconnection, durable pending-upload process death, and separate
-empty-install recovery through Manage. It also records normal UI conflict/cancel
-preservation and a 26,178,915-byte final fixture with exactly 10,000 climbs, 1,000
-lists and 100,000 memberships, matching canonical contents after relaunch. This
-report checks those committed evidence claims and implementation paths; it does
-not independently rerun acceptance or read private evidence. Emulator timing is
-not physical-phone performance evidence. No owner-phone or real application-pool
-operation is implied.
+The source tree includes the expected outputs. A passing source-existence check does not independently re-establish live deployment, physical acceptance or CI results; those remain attributable to the owning records.
 
-## Provenance Summary
+## Provenance summary
 
-Of 24 indexed research entries, 22 have the skill's eligible provenance types:
-21 `brief` and one `program-report`. The two `research-analysis` landscapes are
-excluded from these counts, rather than labeled missing research-method briefs.
-Counts and dates were recomputed from source frontmatter; no brief was redated,
-reclassified or assigned guessed provenance.
+Metadata-only inventory of frontmatter-declared brief/program/campaign documents; research content was not audited.
 
-| research_method | Eligible artifacts | Latest updated |
+| research_method | Count | Latest updated |
 |---|---:|---|
-| /research-program | 0 | — |
-| /deep-research | 8 | 2026-06-14 |
-| /research | 2 | 2026-10-10 |
-| /brief | 5 | 2026-06-14 |
-| hand-written | 0 | — |
-| migrated | 2 | 2026-08-02 |
-| (missing) | 5 | 2026-10-09 |
+| `/deep-research` | 8 | 2026-06-14 |
+| `/research` | 2 | 2026-10-10 |
+| `/brief` | 5 | 2026-06-14 |
+| `migrated` | 2 | 2026-08-02 |
+| Missing literal field | 5 | 2026-10-09 |
 
-The highest explicit tier used is `/deep-research`. The five missing-method
-briefs are `android-chrome-recovery-access`, `independent-library-preservation`,
-`invited-library-hosting-costs`, `invited-offline-library`, and `ios-shared-client`.
-Their provenance is unknown, not inferred from topic or directory.
+Missing literal method fields occur in newer ARD briefs; ARD uses its own provenance/engagement schema, so this inventory does not assert absence of provenance. Highest literal tool tier is `/deep-research`. Four older `/brief` entries are mechanical refresh candidates (updated 2026-06-13): board-control-web-bluetooth, board-rendering-and-filtering, catalog-sync-api, recommendations-and-training. This is informational metadata ordering, not evidence that those briefs need refreshing for this delivery.
 
-### Refresh Candidates
+## Review boundary
 
-Apply both conditions per candidate: its explicit method is lower than the
-corpus's highest tier, and its original update predates the latest artifact from
-any explicitly higher tier. There are seven candidates. For `/brief` and
-`migrated`, the latest higher-tier artifact is the `/research`
-`native-backup-service-costs` brief (2026-10-10). This is a recency/tool-tier signal,
-not proof that these seven topics need new research. Missing-method briefs cannot
-be ranked. No topic-overlap signal or guessed priority is supplied.
-
-| Candidate | research_method | Original updated |
-|---|---|---|
-| `board-control-web-bluetooth` | /brief | 2026-06-13 |
-| `board-rendering-and-filtering` | /brief | 2026-06-13 |
-| `catalog-sync-api` | /brief | 2026-06-13 |
-| `recommendations-and-training` | /brief | 2026-06-13 |
-| `foundation-pwa-sqlite` | /brief | 2026-06-14 |
-| `data-model` | migrated | 2026-08-02 |
-| `hardware-and-protocol` | migrated | 2026-08-02 |
-
-The prior report's zero-candidate conclusion was incorrect: even comparing only
-to the latest highest-tier date (2026-06-14), four `/brief` entries are dated
-2026-06-13. Counting all 24 research entries as eligible also overstated missing
-methods by two. This report replaces those inventory conclusions without altering
-source research.
-
-## Disposition
-
-Critical and High findings are zero in this fresh full system audit. No C/H
-fix loop was needed. The two Medium wording findings are reported to the driving
-agent for adjudication. Per delegated scope, this pass changes only the report:
-no foundation docs, code, work items or knowledge indexes were edited, and no
-peer review was delegated. Existing index changes were left untouched. The report
-does not close automatic implementation review, PR CI, or physical acceptance.
-
-### Receiving-agent resolution
-
-Both Medium findings are accepted and corrected in `1087d73`: the data-flow
-statement now describes the adapter boundary including private vault and native
-file delivery, and `LocalClimbDraft` is described as platform-local. Root verified
-both narrow corrections against the report and source. No unresolved material
-documentation finding remains. Provenance counts and original dates were also
-independently checked against frontmatter; no research was redated or refreshed.
-The index regeneration reports zero errors and the two existing advisory
-decision-count warnings. No Critical/High finding requires a repeated audit.
+Read-only source/doc inspection on `codex/library-preservation`; HEAD observed as `790915f` while the host continued its authorized fix work. The reviewed foundation changes include the Android evidence update originally reported as `53a4569`. Host-owned index and race-fix changes were present and were not edited. No device, cloud, secrets or private-library evidence was accessed, and no commands were run to publish, install or mutate operational state. This report is the only reviewer-written file. No commit was created.

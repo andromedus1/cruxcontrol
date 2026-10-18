@@ -508,7 +508,7 @@ function Workspace({ runtime, updateService }: CruxControlWorkspaceProps) {
       setCollection((current) => current === 'lists' || current === 'kilter'
         ? current
         : draft.status === 'draft' ? 'drafts' : 'finished');
-      setEditing(draft.id);
+      setEditing((current) => current === null ? null : draft.id);
     },
     [replaceDraft],
   );

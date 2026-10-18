@@ -4,7 +4,7 @@ This experiment packages the existing React screens with Capacitor 8.4.3 and a
 native BLE adapter to prepare for iPhone testing. Xcode 27 / iOS 27 build and
 startup pass, and the isolated simulator has verified synthetic library editing,
 save/relaunch, import, ordered lists, update preservation, and native backup file
-delivery. Physical-board operation, storage-pressure durability, native sign-in,
+delivery. On iOS, physical-board operation, storage-pressure durability, native sign-in,
 and production distribution remain unverified. Capacitor has not been selected as
 the production framework. The isolated package pins
 `@capacitor-community/bluetooth-le` 8.3.0, `@capacitor/app` 8.1.1,
@@ -62,9 +62,10 @@ The generated project is `prototypes/ios/android`; the debug APK is under
 prototype, bundled assets and no remote server or service worker. The pinned BLE
 plugin supplies the merged Android Bluetooth/scan/connect and legacy location
 permissions. Plugin initialization and permission requests remain behind explicit
-Connect. App pause/resume uses the existing foreground/disconnect contract. Real
-Android BLE, physical-device behavior and destinations outside the app remain
-separate acceptance gates.
+Connect. App pause/resume uses the existing foreground/disconnect contract.
+Owner-phone preservation/import/backup checks and owner-observed Fullride acceptance
+pass. See the Android acceptance scope below; compile-only builds do not inherit
+acceptance of the configured private dogfood package.
 
 The SQLite tests use Node 22's real SQLite engine for schema checking, revisions,
 collision handling, Trash, corruption, rollback and ambiguous commits, concurrent
@@ -100,9 +101,10 @@ It never clears storage, uninstalls the app or resets an existing library.
 
 Android API 36 on an isolated arm64 emulator has passed fixture restore/edit/save,
 process relaunch and same-signature version upgrades with canonical full-library
-comparisons. This is synthetic-data evidence. Account-protected independent
-backup, clean-client recovery, private signing-key preservation, real-device
-storage pressure and actual board control still gate daily-use admission.
+comparisons. This is synthetic-data evidence. Separate account-protected backup,
+clean-client recovery, signing-key recovery and owner-phone/Fullride evidence are
+covered in the Android acceptance scope below; no general storage-pressure
+durability guarantee follows from these checks.
 
 ### Portable Android backup proof
 
@@ -190,9 +192,9 @@ APK SHA-256 is `c3bc59761093ffd4e1743935a36383627362199a0516796d02bc75c297a055a5
 built from clean tracked commit `3a2e466636080582b92873bdcdf01e3fc7c32317`.
 This proves local provider save/readback and isolated offline recovery, not a
 cloud-backed provider upload, remote retention, owner-phone recovery or the
-required automatic online backup. Verify any remote copy independently; automatic
-online backup and physical owner-phone/Fullride acceptance remain required before
-real authoring.
+required automatic online backup. Verify any remote copy independently; separate
+automatic-backup/recovery and owner-phone/Fullride evidence supplies those acceptance
+checks. Required review and delivery checks remain before formal completion.
 
 The APK11 follow-up did not repeat restore or cancellation. It rebooted the retained
 graded recovery emulator, exported its current library through SAF, installed the
@@ -387,7 +389,8 @@ The runner records `playlist-imported.json` before the PNG stage. A bounded
 `--screenshots-only` continuation requires that exact checkpoint and does not
 repeat playlist import. It refuses unrelated source data and never resets the
 installation. Earlier partial attempts remain separate evidence. This proves the
-exercised API36 chooser paths; physical-device media providers still need acceptance.
+exercised API36 chooser paths. Separate owner-phone checks pass actual file and
+multiple-image picker flows; this does not cover every device/media provider.
 
 API36 synthetic emulator evidence establishes local Back, keyboard resizing,
 timeout prevention/background wake-lock release, native file chooser and retained
@@ -401,12 +404,25 @@ boundaries and its exact APK digest. This synthetic signing fixture has no grade
 metadata. All proof libraries, private artifacts and earlier partial attempts
 remain outside Git without resetting any installation.
 
-Physical phone permissions, Fullride lighting/clear,
-effects, pause/interruption and explicit reconnect remain required acceptance.
-The parity feature stays implementing until these actions and independent key
-retention pass. Automatic online backup and clean-install online recovery also
-remain required alongside physical owner-phone/Fullride acceptance before
-irreplaceable everyday authoring.
+### Android acceptance scope
+
+Recorded owner-phone checks pass complete portable import/export comparisons,
+saved edits and ordered playlists through restart, multiple-image import, native
+account admission and automatic private backup with retained-copy review.
+Independent signing-key retention/recovery and synthetic clean-install online
+recovery also pass. The owner confirms Fullride lighting, clear, effects, connected
+playlist play-through, background/reopen, disconnect/reconnect and offline use.
+These are owner-observed physical results, not instrumented radio measurements.
+Catalog-specific playlist lighting, Trash/restore actions and angle changes lack
+scenario-specific physical evidence; catalog playlist resolution has software and
+emulator coverage. Physical iPhone testing remains open. Required feature review
+and final delivery checks remain before formal completion.
+
+Android playlist links stay disabled without a reachable public host; native file
+sharing works. This acceptance does not establish current Kilter catalog freshness,
+complete official coverage or public binary distribution rights. The owning
+[Android parity item](../../.work/active/features/epic-library-preservation-android-parity.md)
+records the acceptance evidence and remaining delivery work.
 
 ### Native Android authentication feasibility proof
 
@@ -550,7 +566,9 @@ review and recovery. An account not enabled for private backups is directed to a
 enabled account or a portable backup file.
 Synthetic integrated acceptance passes automatic edits and playlist order, offline
 restart/reconnection, pending-upload process death and recovery through the normal
-Manage UI on a separate empty installation. Physical owner-phone/Fullride parity still gate real authoring. iOS continues to use IndexedDB.
+Manage UI on a separate empty installation. Separate owner-phone preservation/backup
+checks and owner-observed Fullride acceptance also pass within the scope above.
+iOS continues to use IndexedDB.
 
 ### Application vault configuration and packaging
 
@@ -609,8 +627,8 @@ scheduling or integrated recovery; feature review remains separate.
 
 The native library v1-to-v2 upgrade also preserved complete synthetic libraries
 and playlist ordering through emulator restart, including an existing nonempty
-library. This verifies the local migration path; physical-phone acceptance remains
-open.
+library. This verifies the local migration path; separate phone preservation and
+backup evidence is bounded by the Android acceptance scope above.
 
 The integrated cloud UI also verifies structured recovery to 10,000 climbs, 1,000
 lists and 100,000 ordered memberships, preserving the existing synthetic baseline.
@@ -620,7 +638,7 @@ match after confirmed restore and relaunch, and the retained source receipt prot
 the restored revision without a duplicate upload. The large restore and verification
 took about 51 seconds on the synthetic emulator; this is not a physical-phone
 performance claim. These app acceptance checks are separate from transport-only
-fixtures and do not waive physical owner-phone/Fullride acceptance.
+fixtures and do not replace the separate owner-phone/Fullride acceptance above.
 
 ## Native transport boundary
 
