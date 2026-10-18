@@ -1,12 +1,12 @@
 # Doc Review Report
 
-**Project:** CruxControl
-**Date:** 2026-10-18
-**Revision:** `910c6e1` on `codex/kilter-catalog-filters` (filter implementation `cf7142c`)
-**Documents reviewed:** 7 (5 system planning documents + AGENTS.md and CLAUDE.md; 0 module passes)
-**Passes run:** 1 fresh system pass (`--system-only`)
-**Issues found:** Critical **0** / High **0** / Medium **1** / Low **0**
-**Exit gate:** 0 Critical and 0 High, independently confirmed by this dispatched fresh audit.
+**Project:** CruxControl  
+**Date:** 2026-10-18  
+**Source:** `codex/kilter-catalog-filters`, HEAD `8d6f588` (documentation correction `225a78b` included); regenerated knowledge indexes present as working-tree changes.  
+**Mode:** Fresh independently dispatched `research-pipeline:doc-review --system-only` audit.  
+**Documents reviewed:** Five system foundations (`docs/SPEC.md`, `docs/ARCHITECTURE.md`, `docs/VISION.md`, `docs/PRINCIPLES.md`, `docs/DEPLOY.md`), `AGENTS.md` and its `CLAUDE.md` symlink; two supporting source READMEs (`prototypes/ios/README.md`, `prototypes/firebase-vault/README.md`). Nine named entry points, eight distinct files.  
+**Passes run:** One system pass; no module audit requested.  
+**Issues found:** **Critical 0 / High 0 / Medium 0 / Low 0 / Info 0.**
 
 ## Pass 1: System-Level
 
@@ -18,83 +18,70 @@ None.
 
 None.
 
-### Medium (1)
+### Medium (0)
 
-#### M1 — Android preservation feature-review status is stale
-
-**Files:** `docs/VISION.md:20,70`, `docs/SPEC.md:310,545`, `docs/ARCHITECTURE.md:296` versus `.work/active/features/epic-library-preservation-android-parity.md:625–658`.
-
-**What:** The system docs explicitly say that required *feature review* remains after the owner-observed phone/Fullride acceptance. The Android-parity feature now has `stage: done`; its Standard review adjudication records a completed independent Claude Opus review, the accepted editor-Back fix and verification, and its Closure records passing required CI run `39169868839`. The previously reviewed sibling preservation features are also done in the current work snapshot. These statements describe an earlier checkpoint rather than the current feature status. The preservation epic itself is still in review, so this is stale status wording rather than evidence that all preservation delivery is complete. General readiness requirements mentioning review/delivery remain valid.
-
-**Fix:** Replace the specific outstanding-*feature-review* claims with the current distinction: Android-parity feature review and required CI have passed; preservation epic review/final delivery remain where applicable. Preserve the owner-observed versus synthetic/instrumented distinction, scenario limits and pending physical iPhone acceptance. Do not imply that installed release30 contains the subsequently fixed editor-Back source change.
+None.
 
 ### Low (0)
 
 None.
 
-## Clean Areas
+### Info (0)
 
-- SPEC and ARCHITECTURE accurately describe combined whole-catalog name/angle, inclusive rounded-grade ranges, three-star minimum rating, distinct ascensionists at the selected angle and literal setter-substring matching. The adapter applies parameterized predicates before pagination (`web/src/data/catalog/kilter-catalog.ts`).
-- All five sort modes, rating default, UUID ascending tie-breaks, cursor v2 filter/sort/snapshot/layout/page-size binding, invalid-statistic keys and final-inspected-candidate continuation match the implementation. Default pages contain up to 25 rows and inspect up to 250 candidates; no total result count is claimed.
-- The dedicated filter sheet stages changes, validates Apply, discards Cancel/Escape/native Back, resets only its draft and exposes applied-chip removal. Committed query changes invalidate selection, page history and stale results. Catalog row metrics use the optional shared viewer slot. Supporting adapter/UI tests and targeted E2E files exist.
-- Hold selection/count, grade-consensus accuracy, personal sent/liked state and remaining official filters remain explicitly deferred. Anonymous catalog statistics do not establish personal history or complete official-app parity.
-- Older-snapshot source freshness remains unknown, with no live refresh. Download consent, offline reads, authored-library availability and unresolved public binary distribution permission remain explicit.
-- Android native SQLite and web/iOS IndexedDB storage are consistently distinguished. Local persistence is not called independent recovery. Portable-file and automatic-online recovery remain separate capabilities, with clean-install verification, immutable retention, conflict handling and offline pending-state requirements.
-- Recorded Android lighting, clear, effects, connected playlist play-through, background/reopen, reconnect and offline checks remain owner observations. The docs do not turn them into instrumented radio evidence or catalog-specific physical playlist/Trash/angle proof. Physical iPhone BLE, storage-pressure and authentication acceptance remain open.
-- AGENTS.md and CLAUDE.md are identical. Their same-origin/profile preservation, fresh whole-library backup, safe update admission and post-update comparison rules are aligned with the documented update/recovery boundaries.
-- DEPLOY's Worker target, `ENABLE_DEPLOY` opt-in, main-push restriction, `needs: [web]`, secret names and required web status-check name match `.github/workflows/ci.yml` and the checked-in configuration. Concrete deployment values are not treated as drift.
-- All local Markdown links in the seven reviewed system/rule documents resolve. All 30 paths in the current generated knowledge index exist. The index inventories five system planning docs; no module pass was requested.
-- All five planning documents have description/type/updated frontmatter. Their local `type: planning` / `kind: planning` schema agrees with the project's generated index; the skill's generic type examples are not treated as a competing schema.
+None. Evidence limitations and provenance observations below are audit context, not findings.
 
-## Blocking Briefs Status
+## Evidence and clean areas
 
-No system roadmap document contains a NEXT-phase blocking-brief table. Delivery ordering belongs to `.work/`. Existing indexed `blocks_phase` references were checked for file existence; future brief contents were not re-audited.
+- **Document ownership and priorities agree.** VISION owns product rationale; SPEC owns capabilities; ARCHITECTURE owns boundaries and flows; PRINCIPLES owns durable constraints; DEPLOY owns deployment and live-resource maintenance. Delivery decomposition stays in `.work/`. Catalog Android/web work remains independent of physical iPhone acceptance; invited-service implementation still requires the iPhone path. Future logbook, ML and collaboration are not claimed delivered.
+- **Metadata and index agree.** All five system foundations have nonempty descriptions, `type: planning`, `kind: planning`, and current `updated` dates. This is the established project schema reflected by its schema-v2 index, rather than a reason to replace types with generic skill examples. All 30 indexed file targets exist. The two supporting READMEs and the agent instruction alias are not additional indexable foundations.
+- **Cross-references resolve.** Checked local Markdown file targets across the eight distinct documents: no missing targets. The preservation epic and Android-parity references resolve to bodyless archive stubs. Their `git_ref: b612e3f` retains full evidence in Git; reading `git show b612e3f:.work/active/epics/epic-library-preservation.md` confirms the aggregate independent review, required-CI evidence, six completed child features and separately pending PR delivery. Bodyless retention is intentional under `.work/CONVENTIONS.md`.
+- **Preservation readiness is qualified consistently.** SPEC, VISION, ARCHITECTURE and both native/vault READMEs distinguish synthetic emulator recovery from owner-observed Android/Fullride evidence. They preserve the physical iPhone gap and lack of scenario-specific physical evidence for catalog playlist lighting, Trash/restore and angle changes. Review completion and required-CI success describe reviewed implementation; merge/delivery remain separate. No source-completion statement proves the currently installed phone binary.
+- **Live backup resources are protected by the runbooks.** DEPLOY's live-resource section and the vault README explicitly identify proof-named infrastructure as holding real `library-v1` backups, prohibit destructive prototype cleanup and require verified migration plus endpoint changes before retirement. The compiled endpoint in `prototypes/ios/android/app/src/main/java/io/github/andromedus1/cruxcontrol/prototype/NativeAccountSession.java:48` supports that warning. Both documents warn that ignored local signing/configuration directories are vulnerable to Git cleanup; owner exports and signing recovery material belong outside the checkout.
+- **Catalog filtering matches source.** `web/src/data/catalog/kilter-catalog.ts` defines 25-row default pages, a 250-candidate bound, cursor v2, normalized combined filters, rounded display-grade ordering and stable UUID ties. `CatalogBrowser.tsx` and `CatalogFilterDialog.tsx` split committed and draft state. `web/src/catalog/CatalogBrowser.test.tsx:208` contains the native Back regression covering draft discard, preserved underlying selection and focus return. Freshness, public binary distribution and personal-history filter limits remain explicit.
+- **Platform storage and recovery contracts match source.** Android uses a shared native SQLite library with a preserving v1-to-v2 migration and transactional snapshots (`prototypes/ios/src/native-library.ts`). PWA/iOS remain on separate IndexedDB repositories. `web/src/automatic-backup/coordinator.ts:29` defines 30-second coalescing, a 60-second maximum wait and 5/15/60-second retries. `prototypes/firebase-vault/gateway/contract.mjs` defines 512 application slots; bounded immutable retention and visible capacity pause are documented without promising pruning or background Android execution. AndroidManifest declares OS backup exclusions.
+- **Static delivery and PWA admission agree with configuration.** `.github/workflows/ci.yml` gates Cloudflare deployment on successful `web`, main push and `ENABLE_DEPLOY=true`, matching DEPLOY. `web/vite.config.ts` disables injected registration, `skipWaiting` and `clientsClaim`, matching explicit waiting-worker admission. Static PWA deployment and Android private-backup infrastructure remain distinct.
 
-| Brief | Owning work | Exists on Disk? | Status |
-|-------|-------------|-----------------|--------|
-| `.research/briefs/cloudflare-deploy/parent.md` | epic-foundation-ci-deploy | Yes | Present |
-| `docs/briefs/foundation-pwa-sqlite.md` | epic-foundation | Yes | Present |
-| `docs/briefs/board-control-web-bluetooth.md` | epic-board-control | Yes | Present |
-| `docs/briefs/board-rendering-and-filtering.md` | epic-climb-browser | Yes | Present |
-| `docs/briefs/catalog-sync-api.md` | epic-catalog-sync | Yes | Present; current acquisition remains separately gated |
-| `.research/briefs/kilter-grade-prediction/parent.md` | epic-grade-prediction | Yes | Present; implementation future |
-| `docs/briefs/recommendations-and-training.md` | epic-recommendations | Yes | Present; implementation future |
+## Blocking briefs status
 
-No claimed-written blocking brief is missing; no missing NEXT-phase brief was identified.
+The system foundations contain no numbered NEXT-phase roadmap or claim that an unwritten brief is complete. Delivery sequencing belongs to work items. Relevant established blocking-brief references are present:
 
-## DONE / Implemented Output Verification
+| Brief | Work scope | Exists on disk? | Status |
+|---|---|---|---|
+| `docs/briefs/foundation-pwa-sqlite.md` | Foundation | Yes | Written research reference |
+| `.research/briefs/cloudflare-deploy/parent.md` | Foundation CI/deploy | Yes | Written research reference |
+| `docs/briefs/board-control-web-bluetooth.md` | Board control | Yes | Written research reference |
+| `docs/briefs/board-rendering-and-filtering.md` | Climb browser | Yes | Written research reference |
+| `.research/analysis/briefs/independent-library-preservation.md` | Library preservation | Yes | Locked research reference |
+| `.research/analysis/briefs/ios-shared-client.md` | Shared iPhone client | Yes | Written research reference |
 
-The system documents use capability prose rather than numbered DONE phases. These implemented claims have corresponding source/test outputs; this audit does not rerun product acceptance or infer physical-device results from source files.
+## DONE capability verification
 
-| Capability/checkpoint | Documented status | Expected output | Files exist? |
-|-----------------------|-------------------|-----------------|--------------|
-| Statistics filters | Implemented; feature in review | CatalogFilterDialog, CatalogBrowser, query adapter, tests and catalog E2E | Yes |
-| Worker-backed catalog | Implemented older-snapshot slice | Catalog service, SQLite worker, bootstrap and E2E | Yes |
-| Native Android library | Implemented; synthetic and owner evidence qualified | Native library adapter/opening boundary and tests | Yes |
-| Native BLE boundary | Implemented; physical iPhone unverified | Native BLE transport and tests, native runtime | Yes |
-| Whole-library backup | Implemented | Library backup service/codecs/store/dialog and tests | Yes |
-| Static deployment | Configured, operator opt-in | CI deploy job and Worker configuration | Yes |
+No system foundation owns numbered delivery phases. Present-capability claims were checked against source and retained work evidence:
 
-Relevant outputs include `web/src/catalog/CatalogFilterDialog.tsx`, `web/src/catalog/CatalogBrowser.tsx`, `web/src/data/catalog/kilter-catalog.ts`, `web/src/data/sqlite/catalog.worker.ts`, `web/e2e/catalog-browser.spec.ts`, `web/e2e/catalog-bootstrap.spec.ts`, `prototypes/ios/src/native-library.ts`, `prototypes/ios/src/native-ble-transport.ts`, `prototypes/ios/src/runtime.ts`, `web/src/library-backup/service.ts`, `.github/workflows/ci.yml` and `web/wrangler.jsonc`.
+| Capability claim | Expected output | Evidence |
+|---|---|---|
+| Reviewed preservation implementation | Archived epic and six reviewed features, recoverable review evidence | Archive stubs exist with `git_ref: b612e3f`; full epic aggregate review inspected in Git |
+| Android native persistence and recovery | Native library, backup/recovery coordinator and bridge | `prototypes/ios/src/native-library.ts`, `web/src/automatic-backup/coordinator.ts`, native vault plugin and gateway contracts exist |
+| Catalog combined filtering and safe native Back | SQL adapter, filter sheet and regression coverage | `web/src/data/catalog/kilter-catalog.ts`, `web/src/catalog/CatalogFilterDialog.tsx`, `CatalogBrowser.test.tsx:208` exist and agree with prose |
+| Safe PWA updates | Prompt-mode build configuration and app-owned admission | `web/vite.config.ts` and update implementation exist; documented settings match configuration |
+| Owner physical acceptance | Qualified operator evidence, not simulated radio proof | Retained review and native README state observations and remaining scenario gaps; physical tests were not rerun by this audit |
 
-## Provenance Summary
+## Provenance summary
 
-Informational aggregation of indexed brief/report frontmatter only; brief structure and semantic support were outside this system-only audit.
+Informational aggregation from the existing index, not a structural or semantic audit of research artifacts:
 
-| research_method | Briefs/reports | Latest updated |
-|-----------------|----------------|----------------|
-| /research-program | 0 | — |
-| /deep-research | 8 | 2026-06-14 |
-| /research | 2 | 2026-10-10 |
-| /brief | 5 | 2026-06-14 |
-| hand-written | 0 | — |
-| migrated | 2 | 2026-08-02 |
-| (missing) | 5 | 2026-10-09 |
+| research_method | Brief/report count | Latest updated |
+|---|---:|---|
+| `/deep-research` | 8 | 2026-06-14 |
+| `/research` | 2 | 2026-10-10 |
+| `/brief` | 5 | 2026-06-14 |
+| `migrated` | 2 | 2026-08-02 |
+| Not declared in index | 5 | 2026-10-09 |
 
-### Refresh Candidates
+The highest represented tier is `/deep-research`. Under the skill's mechanical date/tier heuristic, four `/brief` artifacts dated 2026-06-13 precede the latest deep-research artifact: board control, board rendering/filtering, catalog sync and recommendations/training. This is a refresh-candidate signal only; it does not establish topic overlap, research invalidity or an implementation blocker. Brief metadata corrections and citation review are outside this system-only pass.
 
-The corpus's highest recorded tool tier is `/deep-research`, latest 2026-06-14. Four lower-tier `/brief` artifacts predate it: `board-control-web-bluetooth`, `board-rendering-and-filtering`, `catalog-sync-api` and `recommendations-and-training` (all 2026-06-13). This is the skill's date/tier heuristic, not a finding that their topics need renewed research. No topic-overlap conclusion is asserted. Missing-method analytical briefs were not assigned an inferred research tier.
+## Audit boundary
 
-## Audit Boundaries
+This pass read repository documentation, configuration, selected source/tests and historical review evidence. It did not execute application tests, independently rerun CI, contact cloud resources, inspect private library contents or operate a phone. CI/review and physical results above are attributed to retained evidence and the driving agent's supplied status. The driving agent reports release31 installation after a fresh full backup; the exact post-update comparison was still in progress at dispatch. This report does **not** claim that comparison passed, nor does it claim PR #32 was merged or physical iPhone acceptance completed.
 
-This was the independently dispatched Phase 2 fresh system audit after the docs update. Only this report was written; source documents, work items and generated indexes were left to the host. No commits, device operations, network service changes or new acceptance claims were made. Untracked `docs/kilter_docs/`, `docs/set_boulders/` and private files were not inspected. The parent-provided installed-release30 and owner-observation context was checked against durable work records where available; it was not independently measured on hardware.
+Only `doc-review-report.md` was written. Source docs, work items and derived indexes were not changed by this reviewer; untracked external-document directories were excluded.
