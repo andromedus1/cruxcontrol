@@ -1,7 +1,7 @@
 ---
 id: epic-library-preservation-android-parity
 kind: feature
-stage: implementing
+stage: review
 tags: [data, ble, ui, infra]
 research_refs: [independent-library-preservation]
 parent: epic-library-preservation
@@ -609,3 +609,15 @@ The first owner board trial is therefore positive. Clear, effects, connected
 playlist playback and background/interruption/reconnect still need explicit
 scenario results before claiming the whole physical checklist complete. Standard
 review remains pending; the general success report does not close those gates.
+
+### Physical checklist confirmed (2026-10-18)
+
+Andrew explicitly confirms completing every remaining board check: clear lights,
+effects, connected playlist play-through, background/reopen, disconnect/reconnect
+and offline use. Together with the earlier positive board report and the verified
+phone preservation/import/backup evidence, this completes physical acceptance.
+These are owner-observed results, not agent-instrumented radio measurements.
+Advance to review for the single standard independent Android-parity pass.
+The prior intermittent workspace playlist edit/return test failure remains a review
+input: unchanged focused/full-file tests and the bounded CI retry passed, as did
+the subsequent complete CI run. Do not describe a retry as a root-cause fix.
