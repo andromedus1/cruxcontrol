@@ -1,7 +1,7 @@
 ---
 id: story-fix-editor-back-save-race
 kind: story
-stage: review
+stage: done
 parent: null
 depends_on: []
 release_binding: null
@@ -60,3 +60,11 @@ destination; Back itself still executes at the saved DOM transition. No arbitrar
 delay, assertion weakening, or production scheduling change was introduced.
 
 No phone update was performed; the installed build does not contain this fix yet.
+
+## Bounded inline review
+
+Approved from the narrow callback/test diff and red/green evidence. The functional
+update retains completed navigation, preserves active Save-a-copy identity adoption,
+and does not change the independent create path or persisted content. The final
+observer-based tests still fail twice with the original callback and pass twice
+after restoring the fix. No independent story review or additional findings.
