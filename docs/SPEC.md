@@ -89,11 +89,24 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   download starts only after explicit user consent. Installed catalog reads work
   offline, and catalog absence or failure leaves authored climbs and lists available.
 - Browse complete routes compatible with the configured Fullride placements through
-  a read-only detail and lighting surface. The first slice supports name, exact grade,
-  and angle filters with bounded 25-row cursor pages. It does not claim a full result
-  count or display incompatible/partial routes. Quality, ascent count, setter, hold
-  count, grade-consensus accuracy, broader grade ranges, and provider-climb URLs remain
-  intended future filters or navigation.
+  a read-only detail and lighting surface. Combine name and angle with an inclusive
+  grade range, minimum rating on the source's three-star scale, minimum distinct
+  ascensionists at the selected angle, and literal setter-substring search. Sends
+  count distinct climbers, not repeated ascents. Catalog rows show rating and sends.
+  Sort by highest rating (default), most sends, easiest, hardest, or name A–Z;
+  ties use stable climb identities.
+- Name, angle and sort stay beside results. A dedicated filter sheet stages grade,
+  rating, sends and setter together: Apply validates and commits atomically;
+  Cancel, Escape and native Back discard pending choices. Reset clears the sheet's
+  draft, while applied chips remove individual committed criteria. Committed query
+  changes clear selection and reset pagination; stale responses cannot restore an
+  old lighting target. Filter state is not promised to persist across restarts.
+- Combined filters run against the whole installed catalog before bounded 25-row
+  cursor pagination. Incompatible/partial routes remain excluded, with continuation
+  through rejected candidates and no claimed total result count. Hold selection,
+  hold count, grade-consensus accuracy, personal sent/liked state and other remaining
+  official filters are deferred, as are individual/provider-climb URLs. The anonymous
+  snapshot supplies no personal sent/liked history.
 - Climb detail shows the source grade when one is available, alongside the climb's
   name and angle; missing grades remain omitted rather than fabricated.
 - Source wording identifies an older offline snapshot with no live updates. Its

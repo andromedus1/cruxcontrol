@@ -31,11 +31,17 @@ export interface CatalogGradeOption {
   readonly label: string;
 }
 
+export type CatalogSort = 'rating' | 'sends' | 'grade-asc' | 'grade-desc' | 'name';
+
 export interface CatalogClimbQuery {
   readonly angle: number;
   readonly name?: string;
   readonly minGrade?: number;
   readonly maxGrade?: number;
+  readonly minRating?: number;
+  readonly minAscents?: number;
+  readonly setter?: string;
+  readonly sort?: CatalogSort;
   readonly limit?: number;
   readonly cursor?: CatalogCursor;
 }
