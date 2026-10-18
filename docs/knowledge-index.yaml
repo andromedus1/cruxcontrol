@@ -6,7 +6,7 @@
 #   2 = enforce (missing v2 fields are errors)
 # Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-10-18T22:00:43Z
+generated_at: 2026-10-18T22:12:11Z
 generated_from: frontmatter
 total_docs: 30
 
@@ -24,8 +24,8 @@ documents:
     title: Deploy
     type: planning
     kind: planning
-    updated: 2026-08-02
-    consumer_hint: Read when configuring or troubleshooting CruxControl's Cloudflare deployment
+    updated: 2026-10-18
+    consumer_hint: Read when configuring deployment or maintaining the live private-backup resources
 
   - path: docs/PRINCIPLES.md
     title: CruxControl — Principles
