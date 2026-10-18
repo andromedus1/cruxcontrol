@@ -128,13 +128,29 @@ feature item bodies in `.work/`, not here. Capabilities are in
    modal; desktop detail and playlist play-through use the workspace header without a
    duplicate row. Climb detail and editing share automatic scene lighting
    through `useEditorLighting`; view changes never request a Bluetooth chooser.
-   The Kilter catalog surface opens its runtime service on first entry,
-   shows explicit Manage/download consent, and filters complete Fullride-compatible
-   snapshot rows by name, exact grade and angle in bounded 25-row cursor pages.
-   Catalog results reuse read-only detail and lighting. The broader quality, ascent,
-   setter, hold-count and grade-consensus filter set and provider-climb URLs remain
-   future capabilities; this first slice has neither auto-refresh nor total-result
-   claims.
+   The Kilter catalog surface opens its runtime service on first entry and shows
+   explicit Manage/download consent. Its parameterized SQLite adapter combines name,
+   angle, inclusive grade bounds, minimum rating (0–3), minimum distinct ascensionists
+   at that angle and literal setter-substring search across the installed catalog
+   before pagination. Rating and sends sort descending, rounded displayed grade sorts
+   ascending or descending, and name sorts case-insensitively ascending; rating is
+   the default and UUID ascending breaks ties in every mode.
+   Cursor v2 binds snapshot/layout revision, all normalized filters, sort and page
+   size, plus the final inspected sort rank/value and UUID. Explicit keys for invalid
+   statistics preserve continuation through projection-rejected rows. Each request
+   inspects at most 250 candidates for a default 25-row page; stale or mismatched
+   cursors are rejected, and no total-result count is claimed.
+   `CatalogBrowser` owns committed query state; `CatalogFilterDialog` owns the draft
+   grade/rating/sends/setter sheet. Apply validates and commits together; Cancel,
+   Escape and native Back discard the draft. Reset affects the draft, and applied
+   chips remove individual committed criteria. Query changes invalidate selection,
+   page history and stale responses before publishing new results. Name, angle and
+   sort remain beside results; filter persistence across restart is not guaranteed.
+   Catalog rows supply rating/send metrics through an optional shared viewer slot
+   without changing authored records, and reuse read-only detail and lighting.
+   Hold selection, hold count, grade-consensus accuracy, personal sent/liked state,
+   other remaining official filters and provider-climb URLs remain deferred. The
+   older snapshot retains unknown freshness and has no auto-refresh.
 7. **Route Editor** — a reducer-driven responsive workspace edits unrestricted local
    climbs, coalesces lifecycle-aware autosaves, exposes conflict/failure recovery, and
    composes the renderer with `useEditorLighting`. Connected-board scene changes are
