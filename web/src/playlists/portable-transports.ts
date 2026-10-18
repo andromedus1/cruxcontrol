@@ -101,3 +101,9 @@ export function downloadPlaylistFile(
     adapters.revokeObjectUrl(url);
   }
 }
+import type { LibraryBackupDelivery } from '../library-backup/delivery.ts';
+
+export interface NativePlaylistSharing {
+  readonly baseUrl: URL | null;
+  readonly deliverFile: LibraryBackupDelivery;
+}

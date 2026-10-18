@@ -4,6 +4,7 @@ import type { BoardDefinition } from '../domain/boards/definition';
 import { ClimbDetail } from './ClimbDetail';
 import type { ClimbViewKey, ClimbViewRecord } from './types';
 import './LocalClimbViewer.css';
+import { useBackAction } from '../app/use-back-action.ts';
 
 export interface LocalClimbViewerProps {
   readonly definition: BoardDefinition;
@@ -99,6 +100,7 @@ export function LocalClimbViewer({
     onSelectedKeyChange(null);
     requestAnimationFrame(() => key && rowRefs.current.get(key)?.focus());
   };
+  useBackAction(dismiss, Boolean(selected), 50);
 
   return (
     <div className="local-climb-viewer">

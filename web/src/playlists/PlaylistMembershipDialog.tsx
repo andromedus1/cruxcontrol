@@ -3,6 +3,7 @@ import type { LocalPlaylistRepository } from './repository.ts';
 import { playlistReferenceKey } from './codec.ts';
 import type { LocalPlaylist, PlaylistClimbReference } from './types.ts';
 import './playlists.css';
+import { useBackAction } from '../app/use-back-action.ts';
 
 interface MembershipState {
   readonly target: boolean;
@@ -40,6 +41,7 @@ export function PlaylistMembershipDialog({
 }: PlaylistMembershipDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const playlistsRef = useRef(playlists);
+  const pendingWrites = useRef(0);
   const [membership, setMembership] = useState<Record<string, MembershipState>>({});
   const [newName, setNewName] = useState('');
   const [createState, setCreateState] = useState('');
@@ -50,6 +52,8 @@ export function PlaylistMembershipDialog({
     const dialog = dialogRef.current;
     if (dialog && !dialog.open) dialog.showModal();
   }, []);
+  const close = () => { if (pendingWrites.current === 0) onClose(); };
+  useBackAction(close);
 
   async function refreshTruth() {
     try {
@@ -60,6 +64,7 @@ export function PlaylistMembershipDialog({
   }
 
   async function changeMembership(id: LocalPlaylist['id'], target: boolean) {
+    pendingWrites.current += 1;
     onOperationStart?.();
     const key = String(id);
     setMembership((state) => ({
@@ -97,6 +102,7 @@ export function PlaylistMembershipDialog({
         },
       }));
     } finally {
+      pendingWrites.current -= 1;
       onOperationEnd?.();
     }
   }
@@ -109,6 +115,7 @@ export function PlaylistMembershipDialog({
       return;
     }
     setCreateState('Creating…');
+    pendingWrites.current += 1;
     setCreateFailed(false);
     onOperationStart?.();
     try {
@@ -123,6 +130,7 @@ export function PlaylistMembershipDialog({
       setCreateState(cause instanceof Error ? cause.message : 'Could not create the list.');
       setCreateFailed(true);
     } finally {
+      pendingWrites.current -= 1;
       onOperationEnd?.();
     }
   }
@@ -134,9 +142,9 @@ export function PlaylistMembershipDialog({
       aria-labelledby="playlist-membership-heading"
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        close();
       }}
-      onClose={onClose}
+      onClose={close}
     >
       <header>
         <div>
@@ -147,7 +155,7 @@ export function PlaylistMembershipDialog({
           className="playlist-dialog-close"
           type="button"
           aria-label="Close lists"
-          onClick={onClose}
+          onClick={close}
         >
           ×
         </button>

@@ -11,6 +11,7 @@ import {
 import { MAX_PORTABLE_PLAYLIST_BYTES } from './portable-types.ts';
 import type { LocalPlaylistRepository } from './repository.ts';
 import './playlists.css';
+import { useBackAction } from '../app/use-back-action.ts';
 import {
   browserPlaylistHistoryAdapter,
   clearImportedPlaylistHash,
@@ -106,12 +107,14 @@ export function PlaylistImportDialog({
   }, [initialFragment, installation]);
 
   function close(): void {
+    if (importRunning.current) return;
     try {
       clearImportedPlaylistHash(initialFragment, historyAdapter);
     } finally {
       onClose();
     }
   }
+  useBackAction(close);
 
   async function chooseFile(file: File): Promise<void> {
     setPlan(null);
@@ -202,6 +205,7 @@ export function PlaylistImportDialog({
           type="button"
           aria-label="Close import"
           onClick={close}
+          disabled={phase === 'importing'}
         >
           ×
         </button>

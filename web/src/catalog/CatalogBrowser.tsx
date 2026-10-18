@@ -15,6 +15,7 @@ export interface CatalogBrowserProps {
   readonly defaultAngle: number;
   readonly controller: BoardLightController | null;
   readonly onManageOpenChange: (open: boolean) => void;
+  readonly onManageLists?: (climb: CatalogClimb) => void;
 }
 
 type QueryStatus = 'idle' | 'loading' | 'ready' | 'unavailable' | 'error';
@@ -33,6 +34,7 @@ export function CatalogBrowser({
   defaultAngle,
   controller,
   onManageOpenChange,
+  onManageLists,
 }: CatalogBrowserProps): React.JSX.Element {
   const snapshot = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   const [rows, setRows] = useState<readonly CatalogClimb[]>(EMPTY_ROWS);
@@ -453,6 +455,10 @@ export function CatalogBrowser({
         emptyDescription={emptyDescription}
         listHeader={sourceHeader}
         listFooter={pageFooter}
+        onManageLists={onManageLists ? (key) => {
+          const climb = visibleRows.find((row) => row.key === key);
+          if (climb) onManageLists(climb);
+        } : undefined}
       />
       {manageOpen && (
         <CatalogManageDialog

@@ -14,12 +14,18 @@ import {
   type PlaylistTransportAdapters,
 } from './portable-transports.ts';
 import type { LocalPlaylist } from './types.ts';
+import { encodePortablePlaylist } from './portable-codec.ts';
+import type { LibraryBackupDelivery } from '../library-backup/delivery.ts';
+import { useBackAction } from '../app/use-back-action.ts';
 import './playlists.css';
 
 export interface PlaylistShareDialogProps {
   readonly playlist: LocalPlaylist;
   readonly localClimbs: readonly LocalClimbDraft[];
-  readonly baseUrl?: URL;
+  readonly baseUrl?: URL | null;
+  readonly deliverFile?: LibraryBackupDelivery;
+  readonly onOperationStart?: () => void;
+  readonly onOperationEnd?: () => void;
   readonly transports?: PlaylistTransportAdapters;
   readonly onClose: () => void;
 }
@@ -38,10 +44,17 @@ export function PlaylistShareDialog({
   localClimbs,
   baseUrl,
   transports,
+  deliverFile,
+  onOperationStart,
+  onOperationEnd,
   onClose,
 }: PlaylistShareDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [status, setStatus] = useState<ShareStatus | null>(null);
+  const pending = useRef(false);
+  const busy = status?.kind === 'progress';
+  const close = () => { if (!pending.current) onClose(); };
+  useBackAction(close);
   const adapters = useMemo(
     () => transports ?? browserPlaylistTransportAdapters(),
     [transports],
@@ -50,7 +63,7 @@ export function PlaylistShareDialog({
     try {
       const portable = createPortablePlaylist(playlist, localClimbs);
       const file = playlistFile(portable);
-      const url = playlistShareUrl(
+      const url = baseUrl === null ? null : playlistShareUrl(
         baseUrl ?? new URL(globalThis.location?.href ?? 'https://cruxcontrol.local/'),
         portable,
       );
@@ -65,7 +78,7 @@ export function PlaylistShareDialog({
       let webShare: ShareData | null = null;
       try {
         if (linkShare && canSharePlaylist(linkShare, adapters)) webShare = linkShare;
-        else if (canSharePlaylist(fileShare, adapters)) webShare = fileShare;
+        else if (!deliverFile && canSharePlaylist(fileShare, adapters)) webShare = fileShare;
       } catch {
         webShare = null;
       }
@@ -73,7 +86,7 @@ export function PlaylistShareDialog({
     } catch (error) {
       return { portable: null, file: null, url: null, webShare: null, error };
     }
-  }, [adapters, baseUrl, localClimbs, playlist]);
+  }, [adapters, baseUrl, deliverFile, localClimbs, playlist]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -86,6 +99,9 @@ export function PlaylistShareDialog({
     action: () => Promise<void>,
     cancellationMessage?: string,
   ): Promise<void> {
+    if (pending.current) return;
+    pending.current = true;
+    onOperationStart?.();
     setStatus({ kind: 'progress', message: progress });
     try {
       await action();
@@ -96,6 +112,28 @@ export function PlaylistShareDialog({
       } else {
         setStatus({ kind: 'error', message: message(error) });
       }
+    } finally {
+      pending.current = false;
+      onOperationEnd?.();
+    }
+  }
+
+  async function saveFile(): Promise<void> {
+    if (!deliverFile || !prepared.file || pending.current) return;
+    pending.current = true;
+    onOperationStart?.();
+    setStatus({ kind: 'progress', message: 'Saving playlist file…' });
+    try {
+      const result = await deliverFile.deliver({ filename: prepared.file.name, text: encodePortablePlaylist(prepared.portable!) });
+      const message = result.status === 'cancelled' ? 'Playlist file save canceled.'
+        : result.status === 'saved' ? 'Playlist file saved.'
+        : result.status === 'shared' ? 'Playlist file shared.' : 'Playlist download started.';
+      setStatus({ kind: result.status === 'cancelled' ? 'cancelled' : 'success', message: result.warning ? `${message} ${result.warning}` : message });
+    } catch (cause) {
+      setStatus({ kind: 'error', message: message(cause) });
+    } finally {
+      pending.current = false;
+      onOperationEnd?.();
     }
   }
 
@@ -111,9 +149,9 @@ export function PlaylistShareDialog({
       aria-labelledby="playlist-share-heading"
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        close();
       }}
-      onClose={onClose}
+      onClose={close}
     >
       <header>
         <div>
@@ -124,7 +162,8 @@ export function PlaylistShareDialog({
           className="playlist-dialog-close"
           type="button"
           aria-label="Close sharing"
-          onClick={onClose}
+          onClick={close}
+          disabled={busy}
         >
           ×
         </button>
@@ -154,7 +193,7 @@ export function PlaylistShareDialog({
             </label>
           ) : (
             <p className="playlist-portable-notice">
-              This list is too large for a reliable link. Download or share the complete file.
+              {baseUrl === null ? 'Share links are unavailable in this installation. Save the complete playlist file to send or import elsewhere.' : 'This list is too large for a reliable link. Download or share the complete file.'}
             </p>
           )}
           <div className="playlist-portable-actions">
@@ -162,6 +201,7 @@ export function PlaylistShareDialog({
               <button
                 className="button button--secondary"
                 type="button"
+                disabled={busy}
                 onClick={() =>
                   void run('Copying link…', 'Link copied', () =>
                     copyPlaylistLink(prepared.url!, adapters),
@@ -174,7 +214,9 @@ export function PlaylistShareDialog({
             <button
               className="button button--secondary"
               type="button"
+              disabled={busy}
               onClick={() => {
+                if (deliverFile) { void saveFile(); return; }
                 try {
                   downloadPlaylistFile(prepared.file!, adapters);
                   setStatus({ kind: 'success', message: 'Download started' });
@@ -183,12 +225,13 @@ export function PlaylistShareDialog({
                 }
               }}
             >
-              Download file
+              {deliverFile ? deliverFile.kind === 'save' ? 'Save playlist file' : 'Share playlist file' : 'Download file'}
             </button>
             {prepared.webShare && (
               <button
                 className="button button--primary"
                 type="button"
+                disabled={busy}
                 onClick={() =>
                   void run('Opening share…', 'Share completed',
                     () => sharePlaylist(prepared.webShare!, adapters),

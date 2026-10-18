@@ -15,6 +15,7 @@ import { useAnimationClock } from '../light-effects/use-animation-clock';
 import { renderAnimationFrame } from '../light-effects/frame';
 import './RouteEditorWorkspace.css';
 import { BoardCapacityDiagnostics } from '../board-control/BoardCapacityDiagnostics';
+import { useBackAction } from '../app/use-back-action.ts';
 
 export function RouteEditorWorkspace({
   definition,
@@ -74,6 +75,7 @@ export function RouteEditorWorkspace({
   const back = () => {
     if (!risky || window.confirm('Leave with changes that may not be saved?')) onBack();
   };
+  useBackAction(back, true, 20);
   const lightBusy = lighting.status === 'lighting' || lighting.controllerState.operation === 'diagnosing';
   const unsupported = !controller || lighting.controllerState.transport.status === 'unsupported';
   const connected = lighting.controllerState.transport.status === 'connected';

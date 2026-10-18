@@ -1,3 +1,4 @@
+import { playlistFrom } from './record.ts';
 import {
   decodeStoredPlaylist,
   encodeStoredPlaylist,
@@ -13,7 +14,6 @@ import {
 import { PLAYLIST_STORE_NAME, PLAYLIST_UPDATED_ORDER_INDEX } from './open-playlist-database.ts';
 import type { LocalPlaylistRepository, PlaylistRepositoryOptions } from './repository.ts';
 import {
-  LOCAL_PLAYLIST_SCHEMA_VERSION,
   type LocalPlaylist,
   type PlaylistContent,
   type PlaylistId,
@@ -28,28 +28,6 @@ function requestResult<T>(request: IDBRequest<T>, message: string): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(translatePlaylistStorageError(request.error, message));
-  });
-}
-
-function playlistFrom(
-  content: PlaylistContent,
-  identity: Readonly<{
-    id: PlaylistId;
-    revision: PlaylistRevision;
-    createdAt: string;
-    updatedAt: string;
-  }>,
-): LocalPlaylist {
-  return decodeStoredPlaylist({
-    schemaVersion: LOCAL_PLAYLIST_SCHEMA_VERSION,
-    id: identity.id,
-    revision: identity.revision,
-    name: content.name,
-    notes: content.notes,
-    entries: content.entries,
-    createdAt: identity.createdAt,
-    updatedAt: identity.updatedAt,
-    updatedOrder: [identity.updatedAt, identity.id],
   });
 }
 

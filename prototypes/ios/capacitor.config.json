@@ -2,6 +2,7 @@
   "appId": "io.github.andromedus1.cruxcontrol.prototype",
   "appName": "CruxControl Prototype",
   "webDir": "../../web/dist-ios-prototype",
+  "loggingBehavior": "none",
   "ios": {
     "contentInset": "automatic"
   }

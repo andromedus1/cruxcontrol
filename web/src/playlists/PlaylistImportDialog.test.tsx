@@ -101,6 +101,20 @@ function history(fragment: string): PlaylistHistoryAdapter & { replaceWithoutHas
 }
 
 describe('PlaylistImportDialog', () => {
+  it('keeps a pending import mounted when its close or cancel action is requested', async () => {
+    const state = harness();
+    let finish!: () => void;
+    const pending = new Promise<void>((resolve) => { finish = resolve; });
+    state.onImported.mockImplementation(async () => { await pending; });
+    render(<PlaylistImportDialog installation={installation} drafts={state.drafts} playlists={state.playlists} initialFragment={encodePlaylistFragment(source())} onImported={state.onImported} onRefresh={state.onRefresh} onClose={state.onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Import as new list' }));
+    await waitFor(() => expect(state.onImported).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: 'Close import' }));
+    fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }));
+    expect(state.onClose).not.toHaveBeenCalled();
+    finish();
+    await waitFor(() => expect(state.onClose).toHaveBeenCalledOnce());
+  });
   it('uses file and URL inputs through the same write-free preview before confirmation', async () => {
     const state = harness();
     const value = source();

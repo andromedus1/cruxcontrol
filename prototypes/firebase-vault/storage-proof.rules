@@ -1,0 +1,27 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function owns(ownerId) {
+      return request.auth != null
+        && request.auth.uid == '__PROOF_OWNER_UID__'
+        && ownerId == request.auth.uid;
+    }
+    function proofSlot(slot) {
+      return slot.matches('^([0-2][0-9]|3[01])$');
+    }
+    match /owners/{ownerId}/snapshots/{slot} {
+      allow list: if owns(ownerId);
+      allow get: if owns(ownerId) && proofSlot(slot);
+      // Uploading to an existing name also reaches create authorization.
+      allow create: if owns(ownerId) && proofSlot(slot) && resource == null
+        && request.resource.size > 0
+        && request.resource.size <= 25 * 1024 * 1024
+        && request.resource.contentType == 'application/json'
+        && request.resource.metadata.keys().hasAll(['format', 'sha256'])
+        && request.resource.metadata.keys().hasOnly(['format', 'sha256'])
+        && request.resource.metadata.format == 'cruxcontrol-library-backup-v1'
+        && request.resource.metadata.sha256.matches('^[0-9a-f]{64}$');
+      allow update, delete: if false;
+    }
+  }
+}

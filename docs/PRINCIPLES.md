@@ -2,7 +2,7 @@
 description: Product and engineering principles governing CruxControl decisions
 type: planning
 kind: planning
-updated: 2026-08-02
+updated: 2026-10-10
 nav_priority: high
 summary: >
   Durable decision rules for building CruxControl as a Kilter-first,
@@ -11,7 +11,8 @@ decisions:
   - "Complete a Fullride 7x10 vertical slice before expanding implementation breadth."
   - "Keep board definitions, catalog providers, and controller protocols independent."
   - "Preserve native data and provenance; normalized fields are a read model, not a replacement source of truth."
-  - "Prefer local and static operation, earning backend and native-shell complexity only when a capability requires it."
+  - "Prefer local and static operation, earning backend and native-shell complexity only when a capability requires it; independent private recovery is such a capability."
+  - "Real authored climbs require verified automatic online protection and clean-install recovery; retain portable files as an independent second path."
   - "Treat measured board capacity, protected climb roles, and foreground-only browser animation as safety contracts rather than presentation details."
 ---
 
@@ -36,7 +37,15 @@ must justify that friction.
 
 Drafts, playlists, attempts, ascents, and notes remain locally available and
 exportable. Provider sync is optional and must never be the sole copy of user-created
-data.
+data. Browser-managed storage and native app-private SQLite are both local copies;
+neither establishes recovery across origin, app, or device loss. Keep independently
+recoverable versions and portable copies; verify restoration rather than inferring it
+from export success. Clearly distinguish locally
+saved changes from changes included in a verified independent backup. Offline edits
+remain usable while awaiting protection, with that exposure made explicit.
+Do not admit real authored climbs to everyday use until automatic online protection and
+clean-install recovery from that online backup are verified. Keep portable-file recovery
+as an independent second path; it does not waive that gate.
 
 ### Native communities remain legible
 
@@ -61,10 +70,15 @@ show the right generalization.
 
 ### Local-first, backend-later
 
-Static distribution, browser-local catalogs, and local user data are the default.
+Static distribution, browser-local catalogs, and platform-local user data are the default.
+The PWA and iOS package use browser-managed IndexedDB for authored climbs and playlists;
+the Android package injects the same library boundary over one native SQLite database.
+Platform-local storage keeps offline reads and saves available, but does not replace
+independent recovery.
 CI-generated provider snapshots are acceptable. Add a narrowly scoped service only
 for a demonstrated constraint such as protected credentials, browser-incompatible
-access, or live multi-user coordination.
+access, independent private backup/recovery, or live multi-user coordination. Private
+backup and group publication are distinct capabilities and authorization boundaries.
 
 ### Preserve before normalizing
 

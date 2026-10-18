@@ -3,12 +3,12 @@ import type { LibraryBackupService } from './service.ts';
 export type LibraryBackupFile = Awaited<ReturnType<LibraryBackupService['exportFile']>>;
 
 export interface LibraryBackupDeliveryResult {
-  readonly status: 'download-started' | 'shared' | 'cancelled';
+  readonly status: 'download-started' | 'shared' | 'saved' | 'cancelled';
   readonly warning?: string;
 }
 
 export interface LibraryBackupDelivery {
-  readonly kind: 'download' | 'share';
+  readonly kind: 'download' | 'share' | 'save';
   deliver(file: LibraryBackupFile, signal?: AbortSignal): Promise<LibraryBackupDeliveryResult>;
 }
 

@@ -1,3 +1,4 @@
+import { draftFrom, draftContentOf, draftInCollection } from './record.ts';
 import { decodeStoredDraft, draftRevision, encodeStoredDraft, localDraftId } from './codec.ts';
 import {
   DraftConflictError,
@@ -12,7 +13,6 @@ import type {
   LocalDraftRepository,
 } from './repository.ts';
 import {
-  LOCAL_DRAFT_SCHEMA_VERSION,
   type DraftContent,
   type DraftRevision,
   type LocalClimbDraft,
@@ -28,61 +28,6 @@ function requestResult<T>(request: IDBRequest<T>, message: string): Promise<T> {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(translateDraftStorageError(request.error, message));
   });
-}
-
-function freezeContent(
-  content: DraftContent,
-  identity: {
-    id: LocalDraftId;
-    revision: DraftRevision;
-    createdAt: string;
-    updatedAt: string;
-    trashedAt?: string;
-  },
-): LocalClimbDraft {
-  return decodeStoredDraft({
-    schemaVersion: LOCAL_DRAFT_SCHEMA_VERSION,
-    id: identity.id,
-    revision: identity.revision,
-    status: content.status,
-    ...(identity.trashedAt === undefined ? {} : { trashedAt: identity.trashedAt }),
-    installationId: content.installationId,
-    definitionId: content.definitionId,
-    layoutRevision: content.layoutRevision,
-    name: content.name,
-    angle: content.angle,
-    assignments: content.assignments,
-    effectGroups: content.effectGroups,
-    metadata: content.metadata ?? {},
-    createdAt: identity.createdAt,
-    updatedAt: identity.updatedAt,
-    updatedOrder: [identity.updatedAt, identity.id],
-  });
-}
-
-function contentOf(draft: LocalClimbDraft): DraftContent {
-  return {
-    status: draft.status,
-    installationId: draft.installationId,
-    definitionId: draft.definitionId,
-    layoutRevision: draft.layoutRevision,
-    name: draft.name,
-    angle: draft.angle,
-    assignments: draft.assignments,
-    effectGroups: draft.effectGroups,
-    metadata: draft.metadata,
-  };
-}
-
-function isInCollection(
-  draft: LocalClimbDraft,
-  collection: NonNullable<DraftListOptions['collection']>,
-): boolean {
-  if (collection === 'trash') return draft.trashedAt !== undefined;
-  if (draft.trashedAt !== undefined) return false;
-  if (collection === 'drafts') return draft.status === 'draft';
-  if (collection === 'finished') return draft.status === 'finished';
-  return true;
 }
 
 function deleteStoredDraft(store: IDBObjectStore, id: LocalDraftId): IDBRequest<undefined> {
@@ -107,7 +52,7 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       const timestamp = this.#now().toISOString();
       const id = localDraftId(this.#createId());
-      const draft = freezeContent(content, {
+      const draft = draftFrom(content, {
         id,
         revision: draftRevision(1),
         createdAt: timestamp,
@@ -177,7 +122,8 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
     }
     return new Promise((resolve, reject) => {
       const drafts: LocalClimbDraft[] = [];
-      transaction.onabort = () => reject(transactionError(transaction, 'Could not list local drafts'));
+      transaction.onabort = () =>
+        reject(transactionError(transaction, 'Could not list local drafts'));
       transaction.oncomplete = () => {
         drafts.sort((a, b) => {
           if (a.updatedAt !== b.updatedAt) return a.updatedAt < b.updatedAt ? 1 : -1;
@@ -195,17 +141,21 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
           if (
             (options.installationId === undefined ||
               draft.installationId === options.installationId) &&
-            isInCollection(draft, options.collection ?? 'active')
+            draftInCollection(draft, options.collection ?? 'active')
           )
             drafts.push(draft);
           cursor.continue();
         } catch (error) {
           if (
-            options.onUnreadableRecord && error instanceof DraftRepositoryError &&
+            options.onUnreadableRecord &&
+            error instanceof DraftRepositoryError &&
             (error.code === 'corrupt-record' || error.code === 'schema-unsupported')
           ) {
             try {
-              options.onUnreadableRecord({ key: String(cursor.primaryKey), message: error.message });
+              options.onUnreadableRecord({
+                key: String(cursor.primaryKey),
+                message: error.message,
+              });
               cursor.continue();
             } catch (cause) {
               reject(cause);
@@ -228,7 +178,7 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
           `Local climb ${id} is in Trash and cannot be updated`,
         );
       }
-      return freezeContent(content, {
+      return draftFrom(content, {
         id,
         revision: draftRevision(current.revision + 1),
         createdAt: current.createdAt,
@@ -243,7 +193,7 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
       if (current.trashedAt !== undefined) {
         throw new DraftRepositoryError('conflict', `Local climb ${id} is already in Trash`);
       }
-      return freezeContent(contentOf(current), {
+      return draftFrom(draftContentOf(current), {
         id,
         revision: draftRevision(current.revision + 1),
         createdAt: current.createdAt,
@@ -258,7 +208,7 @@ export class IndexedDbLocalDraftRepository implements LocalDraftRepository {
       if (current.trashedAt === undefined) {
         throw new DraftRepositoryError('conflict', `Local climb ${id} is not in Trash`);
       }
-      return freezeContent(contentOf(current), {
+      return draftFrom(draftContentOf(current), {
         id,
         revision: draftRevision(current.revision + 1),
         createdAt: current.createdAt,

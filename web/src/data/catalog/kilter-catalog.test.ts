@@ -66,6 +66,22 @@ beforeAll(async () => {
 });
 
 describe('Kilter catalog queries', () => {
+  it('returns null only for the requested angle when an existing climb has statistics at 45° alone', async () => {
+    const db = await openDb();
+    try {
+      await db.query(`
+        INSERT INTO climbs VALUES ('only-at-45', 8, 'fixture', 'Other angle route', '', 'p4117r42', 1, 0, 1);
+        INSERT INTO climb_stats VALUES ('only-at-45', 45, 12, 12, NULL, 1, 2)`);
+      const adapter = createKilterCatalog(portFor(db), definition, provenance);
+      const id = { provider: providerId('kilter'), sourceId: providerSourceId('only-at-45'), layoutRevision: definition.layoutRevision };
+      expect(await adapter.get(id, 45)).toMatchObject({ status: 'ready', value: { name: 'Other angle route', angle: 45 } });
+      expect(await adapter.get(id, 40)).toEqual({ status: 'ready', value: null });
+      expect(await db.query('SELECT angle FROM climb_stats WHERE climb_uuid = ?', [id.sourceId])).toEqual([{ angle: 45 }]);
+    } finally {
+      await db.close();
+    }
+  });
+
   it('filters through real SQLite and preserves grades, metadata, and source rows', async () => {
     const db = await openDb();
     const port = portFor(db);
