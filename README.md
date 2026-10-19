@@ -1,15 +1,14 @@
 # CruxControl
 
-CruxControl is a local-first, installable web app for creating climbs and controlling
-a home **Kilter Fullride 7x10**. The web app runs in Android and desktop Chromium,
-connects through Web Bluetooth, and stores its personal climbs and lists in browser
-storage. An experimental Capacitor package also targets Android with native BLE and
-SQLite-backed authoring. Synthetic emulator preservation and private APK catalog
-checks pass, including offline installation and playlist use of the labeled older
-Kilter snapshot. Synthetic automatic backup and separate empty-install app recovery
-checks also pass. Physical owner-phone/Fullride parity remain
-required before native daily use. Local use needs no account or application
-server.
+CruxControl is a local-first app for creating climbs, browsing the Kilter community
+catalog, and controlling a home **Kilter Fullride 7x10**. The installable web app runs
+in Android and desktop Chromium, connects through Web Bluetooth, and stores personal
+climbs and lists in browser storage. An experimental Capacitor package targets Android
+with native BLE, one native SQLite library database, and optional automatic private
+online backup. That Android app has passed owner-observed acceptance on a physical
+phone and Fullride and is in everyday use, with the original climb library imported
+and protected by verified portable and online backups. Local use needs no account or
+application server.
 
 ## What works now
 
@@ -36,6 +35,13 @@ server.
   active. **Later** dismisses the banner while retaining an update entry; tabs coordinate
   through a shared browser lock, and browsers without Web Locks use close-and-reopen
   recovery instructions.
+- Browse Kilter community climbs compatible with the configured Fullride from an
+  explicitly older offline snapshot, installed only after explicit download consent.
+  Filter by name, angle, grade range, minimum rating, minimum distinct ascensionists
+  at the selected angle, and setter; sort by rating, sends, difficulty, or name; and
+  light any result on the board. Filters run over the whole installed catalog with
+  stable 25-row pagination. Catalog climbs can be added to lists, and catalog absence
+  or failure leaves authored climbs and lists available.
 - Import Kilter Fullride screenshots through a local review-and-correction flow, or
   import the supplied set of 16 climbs as ordinary 40° drafts. Screenshot pixels are
   never uploaded or persisted.
@@ -76,11 +82,12 @@ definition-driven schematic renderer remains the distributable fallback. The ori
 Kilter reference documents and screenshot sources are also private inputs and are not
 application assets.
 
-Kilter community-catalog installation and browsing use
-an explicitly older offline snapshot with unknown source freshness and no live updates;
-public distribution of its catalog binary remains gated. Publication to Kilter,
-logbook/session tracking, grade prediction, recommendations, iOS board control, and
-other board models remain future work. See [docs/VISION.md](docs/VISION.md) for the
+The Kilter catalog snapshot has unknown source freshness and receives no live updates;
+current official-app coverage, the remaining official filters (hold selection, hold
+count, personal sent/liked state), and public distribution of its catalog binary remain
+open. Invited shared libraries, publication to Kilter, logbook/session tracking, grade
+prediction, recommendations, iOS board control, and other board models remain future
+work. See [docs/VISION.md](docs/VISION.md) for the
 broader direction.
 
 Catalog `.db.gz` files are gzip download artifacts. Hosts must serve the gzip bytes
@@ -126,14 +133,15 @@ An experimental [Capacitor shell](prototypes/ios/README.md) packages the existin
 screens for iOS and Android in a separate Node 22+ project. It reuses the shared
 controller and requires explicit connection. The iOS prototype keeps the browser
 library stores; Android injects the same library interfaces over one native SQLite
-database. The synthetic Android emulator runner verifies restore, edit/save,
-force-stop relaunch, and a same-signature update. Android's system document chooser
-restored a synthetic backup into an empty emulator installation; a same-key,
-non-debuggable release update preserved its complete library through relaunch. These
-emulator checks do not establish physical-board control, full Android feature parity,
-owner-phone delivery, remote library retention, or automatic online backup. Separately,
-a freshly downloaded signing-key backup passed integrity verification and signed a
-test APK with the same app identity; this protects future updates, not library contents.
+database and packages the older Kilter catalog snapshot. Synthetic emulator runners
+verify restore, edit/save, force-stop relaunch, same-signature release updates, and
+empty-install recovery from a portable backup file. On a physical phone, the owner has
+confirmed Fullride lighting, clear, effects, connected playlist play-through,
+background/reopen, disconnect/reconnect, and offline use, along with library
+preservation across app updates. These are owner observations rather than instrumented
+radio measurements; catalog-entry lighting from playlists, Trash/restore actions, and
+angle changes have no scenario-specific physical evidence yet. A verified signing-key
+backup protects future updates, not library contents.
 The iPhone simulator has passed a complete Save to Files backup and restore round
 trip; real-board operation, real-device storage pressure, and authentication remain
 open before iOS support can ship.
@@ -147,9 +155,9 @@ server readback; offline edits remain pending with retry available. The service
 retains 512 immutable whole-library copies and pauses at capacity without pruning.
 Synthetic acceptance passes automatic edits and playlist order, offline restart and
 reconnection, pending-upload process death, and separate empty-install app recovery.
-Structured cloud recovery, cancellation, conflict blocking and relaunch also pass.
-Physical owner-phone/Fullride parity remain required; real
-authored climbs are not yet admitted.
+Structured cloud recovery, cancellation, conflict blocking and relaunch also pass, and
+the owner's real library is now backed up through this path. The live backup resources
+hold real data; see [docs/DEPLOY.md](docs/DEPLOY.md) before changing them.
 
 ### Implementation highlights
 
@@ -199,8 +207,10 @@ profile; API-3 and other device, browser, and controller-profile acceptance rema
 
 ## Deployment
 
-Static assets deploy to **Cloudflare Workers (Static Assets)** through the gated GitHub
-Actions workflow. One-time setup and safety controls are documented in
-[docs/DEPLOY.md](docs/DEPLOY.md).
+The web app is configured to deploy to **Cloudflare Workers (Static Assets)** through a
+gated GitHub Actions job that runs only after green `main` CI and only once the
+`ENABLE_DEPLOY` repository variable is set. That opt-in is not currently enabled, so
+there is no public installation URL yet. One-time setup and safety controls are
+documented in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 Query current delivery state with `.work/bin/work-view --ready`.
