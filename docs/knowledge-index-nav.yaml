@@ -3,14 +3,14 @@
 # Provides corpus situational awareness only. Read knowledge-index.yaml for full index.
 
 schema_version: 3
-generated_at: 2026-10-18T22:17:25Z
+generated_at: 2026-10-19T20:12:48Z
 generated_from: frontmatter
-total_docs: 30
+total_docs: 38
 
 by_kind:
   planning: 5
-  research: 24
-  historical: 1
+  research: 31
+  historical: 2
 
 # Substrate items (.work/) by tier. Query via .work/bin/work-view.
 substrate_summary:
@@ -72,9 +72,6 @@ load_bearing:
   - path: docs/briefs/board-rendering-and-filtering.md
     title: "Brief: Board Rendering & Catalog Filtering (Climb Browser)"
     kind: research
-  - path: docs/briefs/catalog-sync-api.md
-    title: "Brief: Catalog Sync & the Kilter API (Sync Engine)"
-    kind: research
   - path: docs/briefs/data-model.md
     title: "Kilter Board Data Model: A Technical Primer"
     kind: research
@@ -86,6 +83,9 @@ load_bearing:
     kind: research
   - path: docs/briefs/recommendations-and-training.md
     title: "Brief: Recommendations & Training Methodology"
+    kind: research
+  - path: .research/analysis/campaigns/kilter-current-catalog-sources/parent.md
+    title: "Current Kilter catalog sources (October 2026)"
     kind: research
 
 # On-demand layers (Read tool):

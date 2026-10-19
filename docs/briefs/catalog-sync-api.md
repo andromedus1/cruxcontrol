@@ -1,31 +1,33 @@
 ---
-description: Read before designing epic-catalog-sync — the Kilter sync protocol, what BoardLib does, and the auth boundary for user/publish data
+description: Historical — the legacy Aurora Kilter sync protocol as BoardLib implemented it; read the current Kilter catalog sources brief instead
 type: brief
-kind: research
+kind: historical
 slug: catalog-sync-api
 research_method: /brief
 verification_status: attested
 provenance: agent-synthesis
 updated: 2026-06-13
-nav_priority: high
-blocks_phase: epic-catalog-sync
 summary: |
+  Captures the legacy Aurora sync path as of 2026-06-13; not refreshed for the
+  2026-03 Kilter/Aurora split.
   Curates the Kilter catalog-sync layer: BoardLib is the canonical reference
   implementation (download SQLite, then sync via the API; shared/public data only by
   default, user data requires credentials). Establishes the boundary between the
   one-time bootstrap (foundation) and incremental sync, and flags that the precise
   request/response shapes, shared_syncs cursor mechanics, and auth/publish endpoints
   must be read out of BoardLib's source — they are not in any official doc.
-key_findings:
-  - "BoardLib is the canonical reference: `boardlib database <board> <path> --username <user>` downloads then syncs the SQLite DB."
-  - "By default only 'shared,' public data is synced; user data (ascents/bids) requires credentials."
-  - "Incremental: if the DB already exists, BoardLib skips download and only syncs — mirror this with shared_syncs cursors (see data-model.md)."
-  - "There is no official sync-API spec; exact request/response shapes and the publish endpoint must be read from BoardLib's source."
-  - "This sync/auth layer also unblocks route publishing (epic-route-creation) and optional ascent sync (epic-logbook)."
-status: draft
+status: superseded
+superseded_by: .research/analysis/campaigns/kilter-current-catalog-sources/parent.md
+supersession_note: |
+  Superseded 2026-10-19 by the current Kilter catalog sources brief; the legacy
+  /sync endpoint no longer serves Kilter.
 ---
 
 # Brief: Catalog Sync & the Kilter API (Sync Engine)
+
+> **Superseded (2026-10-19).** The legacy Aurora sync described here no longer serves
+> Kilter. Read [current Kilter catalog sources](../../.research/analysis/campaigns/kilter-current-catalog-sources/parent.md)
+> instead; this brief is retained as the historical record.
 
 ## Purpose
 
