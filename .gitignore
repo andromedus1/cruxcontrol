@@ -37,3 +37,7 @@ ml/**/__pycache__/
 *.jks
 *.keystore
 prototypes/ios/android/.idea/
+
+# Private user-supplied reference material (Kilter docs, set-boulder screenshots)
+docs/kilter_docs/
+docs/set_boulders/
