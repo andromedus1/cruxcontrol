@@ -1,7 +1,7 @@
 ---
 id: story-fix-catalog-v2-legacy-carryover
 kind: story
-stage: review
+stage: done
 tags: [bug, data]
 parent: null
 depends_on: []
@@ -58,3 +58,12 @@ exercise the baseline download path.
   (4) idempotent on real data — the following build reports 0/0. The live repair happens
   on the next weekly publish (v3), delivered to the phone by the normal update prompt.
 - Adjacent issues parked: none.
+
+## Review (bounded inline, standalone story)
+- Verdict: approve. No independent reviewer (standalone-story lane).
+- Rescale applies only to rows copied forward from the previous artifact whose complete row
+  (all metrics and first-ascent fields) equals the raw legacy row; fresh upstream rows are
+  never touched, and Boardsesh's own Aurora-sourced values already differ by ×5/3.
+- Restore targets only climbs present in the catalog; consistent with append-only.
+- Idempotence verified on real data; an absent or non-schema-2 v1 skips the repair, and an
+  invalid v1 fails closed through the existing previous-artifact checks.
