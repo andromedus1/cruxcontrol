@@ -102,11 +102,12 @@ def climbs_db(path: Path, climbs: Iterable[Climb] = ()) -> Path:
     return path
 
 
-def manifests(climbs_size: int, climbs_raw: int, catalog_size: int, catalog_raw: int) -> Tuple[dict, dict]:
+def manifests(climbs_size: int, climbs_raw: int, catalog_size: int, catalog_raw: int,
+              built_at: str = "2026-10-19T18:38:11.515Z") -> Tuple[dict, dict]:
     climbs = {"formatVersion": 2, "generatedAt": "2026-10-19T19:00:00Z", "entries": [{
         "boardType": "kilter", "layoutId": 8, "url": "https://example.test/k8.db",
         "bytes": climbs_size, "uncompressedBytes": climbs_raw, "contentEncoding": "gzip",
-        "builtAt": "2026-10-19T18:38:11.515Z", "schemaVersion": 13,
+        "builtAt": built_at, "schemaVersion": 13,
         "tables": {"board_climbs": {"rowCount": 9, "watermarkUpdatedAt": "2026-10-19T18:31:55Z"}},
     }]}
     catalog = {"formatVersion": 1, "generatedAt": "2026-10-19T07:31:59Z", "artifact": {
@@ -116,15 +117,51 @@ def manifests(climbs_size: int, climbs_raw: int, catalog_size: int, catalog_raw:
     return climbs, catalog
 
 
-def source_dir(path: Path, gzip_climbs: bool = False, **catalog_options) -> Path:
+def source_dir(path: Path, gzip_climbs: bool = False, climbs: Iterable[Climb] = (),
+               built_at: str = "2026-10-19T18:38:11.515Z", **catalog_options) -> Path:
     """Write an offline --from-dir input set."""
     path.mkdir(parents=True, exist_ok=True)
-    raw_climbs = climbs_db(path / "climbs.raw").read_bytes()
+    raw_climbs = climbs_db(path / "climbs.raw", climbs).read_bytes()
     raw_catalog = catalog_db(path / "catalog.raw", **catalog_options).read_bytes()
     climbs_body = gzip.compress(raw_climbs, mtime=0) if gzip_climbs else raw_climbs
     (path / "climbs.db").write_bytes(climbs_body)
     (path / "catalog.db").write_bytes(raw_catalog)
-    climbs, catalog = manifests(len(climbs_body), len(raw_climbs), len(raw_catalog), len(raw_catalog))
-    (path / "climbs-manifest.json").write_text(json.dumps(climbs))
+    climbs_manifest, catalog = manifests(len(climbs_body), len(raw_climbs), len(raw_catalog),
+                                         len(raw_catalog), built_at)
+    (path / "climbs-manifest.json").write_text(json.dumps(climbs_manifest))
     (path / "catalog-manifest.json").write_text(json.dumps(catalog))
+    return path
+
+
+def legacy_previous(path: Path, climbs: Sequence[Tuple[str, str]], version: int = 1) -> Path:
+    """A schema-2 (Aurora-era) previous artifact dir with the given (uuid, frames) climbs."""
+    import hashlib
+    path.mkdir(parents=True, exist_ok=True)
+    db = path / "legacy.sqlite3"
+    connection = sqlite3.connect(db)
+    connection.executescript("""
+CREATE TABLE climbs (uuid TEXT PRIMARY KEY, layout_id INT, setter_id INT, setter_username TEXT,
+  name TEXT, description TEXT, hsm INT, edge_left INT, edge_right INT, edge_bottom INT, edge_top INT,
+  angle INT, frames_count INT, frames_pace INT, frames TEXT, is_draft BOOLEAN, is_listed BOOLEAN,
+  created_at TEXT, is_nomatch BOOLEAN);
+CREATE TABLE climb_stats (climb_uuid TEXT, angle INT, display_difficulty FLOAT, benchmark_difficulty FLOAT,
+  ascensionist_count INT, difficulty_average FLOAT, quality_average FLOAT, fa_username TEXT, fa_at TEXT,
+  PRIMARY KEY (climb_uuid, angle));
+""")
+    for uuid, frames in climbs:
+        connection.execute("INSERT INTO climbs VALUES(?,8,1,'legacy','Old '||?,'',1,-20,20,30,120,NULL,1,0,?,0,1,"
+                           "'2021-01-01 00:00:00.000000',0)", (uuid, uuid, frames))
+        connection.execute("INSERT INTO climb_stats VALUES(?,40,14.0,NULL,7,14.0,2.5,'fa','2021-01-02')", (uuid,))
+    connection.commit()
+    connection.close()
+    raw = db.read_bytes()
+    body = gzip.compress(raw, mtime=0)
+    name = f"kilter-7x10.v{version}.db.gz"
+    (path / name).write_bytes(body)
+    (path / "manifest.json").write_text(json.dumps({
+        "schemaVersion": 2, "version": version, "board": "kilter-fullride-7x10", "file": name,
+        "compression": "gzip", "sha256": hashlib.sha256(body).hexdigest(), "bytesGzipped": len(body),
+        "bytesRaw": len(raw), "generatedOn": "2026-06-14", "source": "legacy-aurora-kilter",
+        "sourceDataThrough": None, "generatedFrom": "test", "filter": "test",
+    }))
     return path

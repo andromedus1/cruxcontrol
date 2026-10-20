@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync-append-only-guards
 kind: feature
-stage: implementing
+stage: review
 tags: [data]
 parent: epic-catalog-sync
 depends_on: [epic-catalog-sync-snapshot-normalize]
@@ -186,3 +186,29 @@ the bundled legacy artifact.
   thresholds are constants with tests and can be adjusted in a reviewed change.
 - **Carried rows age**: frozen stats for removed climbs never update. — Accepted;
   marker tells the UI they are frozen.
+
+## Implementation notes
+
+- Execution capability: inline, single owner — extends the Python package from
+  `snapshot-normalize`; runs alongside the separately delegated `catalog-semantics`.
+- Review weight: standard (project default).
+- Files changed: `web/scripts/catalog/{previous,reconcile,guards}.py` (new),
+  `artifact.py`, `schema.py` (`climbs.upstream_removed_at`), `normalize_climbs.py`,
+  `fixtures.py`, `web/scripts/build-catalog-snapshot.py` (`--previous-dir`, exit codes
+  7/8/9, optional `--version`), `test_reconcile_guards.py` (new),
+  `web/src/data/catalog/__fixtures__/manifest-v3.example.json` (adds
+  `removedUpstreamCount`, `changes`), `docs/SPEC.md` §6, `docs/ARCHITECTURE.md` item 3.
+- Tests added: 10 (guard thresholds at and past each limit, unchanged vs older
+  upstream, lost/case/revision holds; carry → preserved marker → restore across four
+  builds with frozen stats; legacy schema-2 previous carrying only app-visible climbs;
+  held/unchanged builds write nothing; monotonic versions; previous-manifest
+  verification). Suite: 38 tests green.
+- Real-data verification (local): bootstrapping from the bundled v1 legacy artifact
+  with the 2026-10-19 snapshot produced v2 with 13,332 climbs (13,299 present + 33
+  carried, marked `2026-10-19`), changes added 2,231 / removed 33 / restored 0,
+  `lost` empty, guards passed (4,974,862 bytes gzipped). Re-running against v2 with
+  the same snapshot exits 8 (unchanged) and writes nothing.
+- Discrepancies from design: the marker column lives in the base `climbs` schema
+  (NULL on first builds) rather than being added during reconciliation; an "added"
+  count for a first build equals all emitted climbs.
+- Adjacent issues parked: none.

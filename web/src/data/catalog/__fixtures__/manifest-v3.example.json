@@ -4,9 +4,9 @@
   "board": "kilter-fullride-7x10",
   "file": "kilter-7x10.v2.db.gz",
   "compression": "gzip",
-  "sha256": "8bacc43f1fbbe61af3701b428b8b36f3962e125d7c99add480514055c41a08ed",
-  "bytesGzipped": 4969627,
-  "bytesRaw": 11767808,
+  "sha256": "a83bb91e6ca1d72f377e09073d627a516b702bae7ee084c472429ce2ec3cc511",
+  "bytesGzipped": 4974862,
+  "bytesRaw": 11804672,
   "generatedOn": "2026-10-19",
   "source": "boardsesh-kilter",
   "sourceBuiltAt": "2026-10-19T18:38:11.515Z",
@@ -19,7 +19,13 @@
     "min": 0,
     "max": 5
   },
-  "climbCount": 13299,
+  "climbCount": 13332,
+  "removedUpstreamCount": 33,
+  "changes": {
+    "added": 2231,
+    "removed": 33,
+    "restored": 0
+  },
   "generatedFrom": "boardsesh v1-gzip kilter layout 8 + v1-catalog -> pin to kilter-fullride-7x10 definition -> normalize roles to product 7 -> gzip",
   "filter": "climbs WHERE layout_id=8 AND is_listed=1 AND frames_count=1 AND every placement lit on product_size 17"
 }
