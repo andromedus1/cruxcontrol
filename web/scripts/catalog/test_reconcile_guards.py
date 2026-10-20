@@ -138,10 +138,13 @@ class ReconcileBuildTests(unittest.TestCase):
         self.assertIn("fell from 62 to 0", str(held.exception))
         self.assertFalse(any((self.root / f"out{run}").exists() for run in (2, 3)))
 
-    def test_versions_only_increase(self):
+    def test_versions_strictly_increase_and_may_skip_burned_numbers(self):
         _, out1 = self.build(CLIMBS, T0, version=1)
-        with self.assertRaises(ValueError):
-            self.build(CLIMBS, T1, out1, version=5)
+        for stale in (1, 0):
+            with self.assertRaises(ValueError):
+                self.build(CLIMBS, T1, out1, version=stale)
+        skipped, _ = self.build(CLIMBS, T1, out1, version=3)
+        self.assertEqual(skipped.manifest["version"], 3)
         with self.assertRaises(ValueError):
             self.build(CLIMBS, T1)
 

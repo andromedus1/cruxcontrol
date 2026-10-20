@@ -236,8 +236,11 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   dropped (climbs that leave upstream are kept and marked removed upstream), versions
   only increase, and the build publishes nothing when upstream looks unchanged,
   older, or suspicious (present climbs falling more than 2% or more than 250 newly
-  removed). Scheduled private publication and on-device updates remain future work,
-  so no Boardsesh-derived artifact is installed yet.
+  removed). A weekly CI job publishes accepted versions as immutable objects to a
+  private bucket, served only to admitted signed-in accounts by a separate catalog
+  function; it stays disabled until the operator provisions those resources.
+  On-device updates remain future work, so no Boardsesh-derived artifact is
+  installed yet.
 - The intended catalog model includes climbs + frames, `climb_stats` per angle,
   hold coordinates (`holes`), and placement→hole→LED mappings. The current safe
   query slice covers only Fullride roles 42–45.

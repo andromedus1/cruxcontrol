@@ -58,7 +58,7 @@ EXIT_CODES = (
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--version", type=int, default=None,
-                        help="Required for a first build; otherwise previous + 1.")
+                        help="Required for a first build; otherwise defaults to previous + 1 and must exceed it.")
     parser.add_argument("--previous-dir", type=pathlib.Path, default=None,
                         help="Directory with the previously published manifest.json and artifact; "
                              "its climbs are carried forward and the update guards apply.")
@@ -69,6 +69,8 @@ def main() -> int:
     parser.add_argument("--out-dir", type=pathlib.Path, required=True,
                         help="Output directory. Not defaulted: web/public/catalog holds the schema-2 "
                              "manifest current app builds install.")
+    parser.add_argument("--definition", type=pathlib.Path, default=None,
+                        help="Generated board definition to pin hardware against (tests only).")
     parser.add_argument("--report", type=pathlib.Path, default=None,
                         help="Write the normalization report and manifest as JSON.")
     args = parser.parse_args()
@@ -80,10 +82,12 @@ def main() -> int:
             if previous is None and args.version is None:
                 parser.error("--version is required without --previous-dir")
             inputs = load_inputs(args.from_dir, work) if args.from_dir else fetch_inputs(UrllibFetcher(), work)
-            result = build(inputs, load_pinned(), args.out_dir, work, args.version, args.generated_on, previous)
+            pinned = load_pinned(args.definition) if args.definition else load_pinned()
+            result = build(inputs, pinned, args.out_dir, work, args.version, args.generated_on, previous)
     except tuple(error for error, _ in EXIT_CODES) as error:
         code = next(code for kind, code in EXIT_CODES if isinstance(error, kind))
-        print(f"{'held' if isinstance(error, GuardHold) else 'error'} ({type(error).__name__}): {error}",
+        label = "unchanged" if isinstance(error, Unchanged) else "held" if isinstance(error, GuardHold) else "error"
+        print(f"{label} ({type(error).__name__}): {error}",
               file=sys.stderr)
         if isinstance(error, GuardHold) and args.report:
             args.report.write_text(json.dumps({
