@@ -40,9 +40,10 @@ class PublishScriptTests(unittest.TestCase):
                                    + " as const;\n")
         self.runs = 0
 
-    def publish(self, built_at):
+    def publish(self, built_at, **source_options):
         self.runs += 1
-        source = fixtures.source_dir(self.root / f"src{self.runs}", climbs=CLIMBS, built_at=built_at)
+        source = fixtures.source_dir(self.root / f"src{self.runs}", climbs=CLIMBS, built_at=built_at,
+                                     **source_options)
         output = self.root / f"github-output-{self.runs}"
         env = dict(os.environ, CATALOG_STORE_DIR=str(self.store), CATALOG_FROM_DIR=str(source),
                    CATALOG_DEFINITION=str(self.definition), GITHUB_OUTPUT=str(output))
@@ -50,6 +51,7 @@ class PublishScriptTests(unittest.TestCase):
         completed = subprocess.run(["bash", str(SCRIPT)], env=env, capture_output=True, text=True, check=False)
         self.assertEqual(completed.returncode, 0, completed.stderr)
         outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
+        self.last_report = outputs.get("report")
         return outputs["result"]
 
     def names(self):
@@ -71,6 +73,14 @@ class PublishScriptTests(unittest.TestCase):
         self.assertEqual((manifest["version"], manifest["file"]), (4, "kilter-7x10.v4.db.gz"))
         self.assertEqual(self.publish(T2), "published")
         self.assertEqual(latest_version(self.names()), 5)
+
+
+    def test_hardware_rejection_is_held_with_a_report_and_publishes_nothing(self):
+        self.assertEqual(self.publish(T1, rename_role="foot"), "held")
+        report = json.loads(Path(self.last_report).read_text())
+        self.assertIn("HardwareMismatch", report["verdict"]["reasons"][0])
+        self.assertIsNone(report["reconcile"])
+        self.assertEqual(latest_version(self.names()), 1)
 
 
 if __name__ == "__main__":

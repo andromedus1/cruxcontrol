@@ -55,6 +55,9 @@ case "$code" in
   0) ;;
   8) echo "Upstream unchanged since version $latest; nothing to publish."; output "result=unchanged"; exit 0 ;;
   7) echo "Update held by guards; see report."; output "result=held"; exit 0 ;;
+  # Upstream format/schema changes, hardware mismatches, invariant violations and an invalid
+  # previous artifact are safety refusals too: nothing is published and the hold issue opens.
+  2|3|4|9) echo "Update refused (exit $code); see report."; output "result=held"; exit 0 ;;
   *) echo "Catalog build failed with exit code $code." >&2; exit "$code" ;;
 esac
 

@@ -8,7 +8,8 @@ from pathlib import Path
 
 from catalog import artifact, fixtures
 from catalog.boardsesh_source import (
-    ArtifactEntry, SourceError, load_inputs, materialize, parse_catalog_entry, parse_climbs_entry)
+    MANIFEST_CATALOG_URL, MANIFEST_GZIP_URL, ArtifactEntry, SourceError, UpstreamUnchanged, fetch_inputs,
+    load_inputs, materialize, parse_catalog_entry, parse_climbs_entry)
 from catalog.hardware import (
     HardwareMismatch, PinnedDefinition, _exporter, copy_hardware, load_pinned, verify_scope)
 from catalog.normalize_climbs import NormalizationError, legacy_timestamp, normalize, normalize_frames
@@ -211,6 +212,34 @@ class SourceTests(unittest.TestCase):
             parse_climbs_entry(dict(climbs, entries=[dict(climbs["entries"][0], schemaVersion=14)]))
         with self.assertRaises(SourceError):
             parse_catalog_entry(dict(catalog, artifact=dict(catalog["artifact"], schemaVersion=2)))
+
+    def test_unchanged_upstream_fetches_only_the_small_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = fixtures.source_dir(Path(tmp) / "src")
+            climbs_manifest = json.loads((src / "climbs-manifest.json").read_text())
+            catalog_manifest = json.loads((src / "catalog-manifest.json").read_text())
+            bodies = {MANIFEST_GZIP_URL: json.dumps(climbs_manifest).encode(),
+                      MANIFEST_CATALOG_URL: json.dumps(catalog_manifest).encode(),
+                      climbs_manifest["entries"][0]["url"]: (src / "climbs.db").read_bytes(),
+                      catalog_manifest["artifact"]["url"]: (src / "catalog.db").read_bytes()}
+
+            class Recording:
+                def __init__(self):
+                    self.urls = []
+
+                def get(self, url):
+                    self.urls.append(url)
+                    return bodies[url]
+
+            fetcher = Recording()
+            # Same instant, different spelling: still unchanged, and no artifact is downloaded.
+            with self.assertRaises(UpstreamUnchanged):
+                fetch_inputs(fetcher, Path(tmp), unchanged_since="2026-10-19T18:38:11.515000Z")
+            self.assertEqual(fetcher.urls, [MANIFEST_GZIP_URL])
+
+            fetcher = Recording()
+            fetch_inputs(fetcher, Path(tmp), unchanged_since="2026-10-12T18:38:11.515Z")
+            self.assertEqual(len(fetcher.urls), 4)
 
     def test_offline_inputs_require_every_file(self):
         with tempfile.TemporaryDirectory() as tmp:

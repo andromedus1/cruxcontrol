@@ -7,15 +7,18 @@ title="Catalog update held by safety checks"
 body="$(python3 - "$report" "${GITHUB_SERVER_URL:-}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID:-}" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
-verdict, rec = data.get("verdict", {}), data.get("reconcile", {})
+verdict, rec = data.get("verdict") or {}, data.get("reconcile") or {}
 lines = ["The weekly catalog build was **held**; the previously published version is unchanged.", "",
-         "**Reasons**"] + [f"- {reason}" for reason in verdict.get("reasons", [])] + ["",
-         "**Counts**",
-         f"- previous version: {rec.get('previous_version')}",
-         f"- app-visible present before / now: {rec.get('previous_present')} / {rec.get('present')}",
-         f"- added / newly removed / restored: {rec.get('added')} / {rec.get('removed')} / {rec.get('restored')}",
-         f"- lost identities: {len(rec.get('lost', []))}; case changes: {len(rec.get('case_changed', []))}",
-         "", f"Run: {sys.argv[2]}",
+         "**Reasons**"] + [f"- {reason}" for reason in verdict.get("reasons", [])]
+if rec:
+    lines += ["", "**Counts**",
+              f"- previous version: {rec.get('previous_version')}",
+              f"- app-visible present before / now: {rec.get('previous_present')} / {rec.get('present')}",
+              f"- added / newly removed / restored: {rec.get('added')} / {rec.get('removed')} / {rec.get('restored')}",
+              f"- lost identities: {len(rec.get('lost', []))}; case changes: {len(rec.get('case_changed', []))}"]
+else:
+    lines += ["", "The build stopped before reconciliation (upstream format, hardware or input check)."]
+lines += ["", f"Run: {sys.argv[2]}",
          "", "Thresholds and the review procedure are in docs/DEPLOY.md (Catalog publication)."]
 print("\n".join(lines))
 PY

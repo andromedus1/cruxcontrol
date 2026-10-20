@@ -7,7 +7,7 @@ import json
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Protocol
+from typing import Dict, Optional, Protocol
 
 MANIFEST_GZIP_URL = "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/manifest.json"
 MANIFEST_CATALOG_URL = "https://snapshots.boardsesh.com/board-snapshots/v1-catalog/manifest.json"
@@ -25,6 +25,10 @@ USER_AGENT = "cruxcontrol-catalog-build (+https://github.com/andromedus1/cruxcon
 
 class SourceError(Exception):
     """Upstream manifest or artifact is missing, unsupported, or inconsistent."""
+
+
+class UpstreamUnchanged(Exception):
+    """Upstream's build time equals the published version's; artifacts were not fetched."""
 
 
 @dataclass(frozen=True)
@@ -160,8 +164,16 @@ def _inputs(climbs_manifest: dict, catalog_manifest: dict, climbs_body: bytes,
     )
 
 
-def fetch_inputs(fetcher: Fetcher, work_dir: Path) -> SnapshotInputs:
+def fetch_inputs(fetcher: Fetcher, work_dir: Path, unchanged_since: Optional[str] = None) -> SnapshotInputs:
+    """Fetch both manifests, then both artifacts. When `unchanged_since` (the published
+    version's upstream build time) equals the upstream build time, stop before downloading
+    any artifact so repeated runs never re-fetch an unchanged snapshot."""
     climbs_manifest = _json(fetcher.get(MANIFEST_GZIP_URL), "v1-gzip")
+    if unchanged_since is not None:
+        from .guards import instant
+        built = instant(parse_climbs_entry(climbs_manifest).built_at)
+        if built is not None and built == instant(unchanged_since):
+            raise UpstreamUnchanged(f"upstream build {parse_climbs_entry(climbs_manifest).built_at} already published")
     catalog_manifest = _json(fetcher.get(MANIFEST_CATALOG_URL), "v1-catalog")
     climbs_body = fetcher.get(parse_climbs_entry(climbs_manifest).url)
     catalog_body = fetcher.get(parse_catalog_entry(catalog_manifest).url)

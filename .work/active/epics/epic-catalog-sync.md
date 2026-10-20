@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync
 kind: epic
-stage: review
+stage: done
 tags: [data]
 parent: null
 depends_on: [epic-universal-board-platform]
@@ -168,3 +168,31 @@ All five child features are done with their reviews recorded:
 2026-10-20 (catalog v2: 13,326 climbs, 1,261 added, 23 removed upstream), and the
 owner-phone update and catalog install passed with exact library preservation (see
 `epic-catalog-sync-device-update` → Live acceptance).
+
+## Epic review
+
+- Effective weight: standard; one deeper aggregate pass at the epic boundary.
+- Reviewer: Codex `gpt-6.1-sol` (high) via peeragent — cross-model, no network. It ran
+  210 focused web tests, 44 Python tests, 10 gateway tests, 6 provisioning checks and
+  typecheck, plus two diagnostic probes.
+- Proposed verdict: Request changes. Receiver adjudication (all accepted and fixed):
+  - **Blocker — preservation checked per climb, resolution is per climb and angle.** A
+    climb losing only its 40° stats passed with `lost=[]` while 40° playlist lookups
+    failed. Reconciliation now preserves every previously usable (climb, angle) pair,
+    and `lost` counts a missing pair. Regression added.
+  - **Important — carried legacy ratings kept the 1–3 scale inside a 0–5 artifact.**
+    Rows copied from a schema-2 previous artifact are rescaled ×5/3 (Boardsesh's rule).
+    Regression added.
+  - **Important — once-per-day fetch was unenforced.** The build now reads the small
+    upstream manifest first and stops as "unchanged" before downloading any artifact
+    when its build time equals the published version's. Regression asserts only the
+    manifest URL is fetched.
+  - **Important — schema, hardware, invariant and previous-artifact refusals bypassed the
+    hold issue.** They now write a report and route to the same single held issue.
+    Regression runs the real publish script with a hardware mismatch.
+  - **Important — README and VISION still described no live updates.** Rolled forward to
+    distinguish signed-in Android updates from the legacy web/signed-out snapshot.
+- Verification after fixes: Python 47 tests; foundation docs re-read for consistency.
+- Closure: standard weight — findings fixed and verified, no second pass. The arc is
+  live: weekly private publication enabled and the owner phone on catalog v2 with exact
+  library preservation.
