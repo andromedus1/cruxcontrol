@@ -15,6 +15,12 @@ schedule, service architecture, or new feature decomposition is selected here.
 
 ## Agreed order
 
+**Catalog-sync arc live (2026-10-20):** Boardsesh-sourced Kilter catalog v2 is published
+weekly to the private bucket and installed on Andrew's phone (release 32) with exact
+library preservation. Andrew queued [swipe between climbs](idea-swipe-between-climbs.md)
+as the next feature after this arc closes, and liked a
+[confidence-weighted rating sort](idea-confidence-weighted-rating-sort.md) for later.
+
 **Completed phone slice (2026-10-18):** Andrew confirmed the remaining physical
 Android checks and selected [Kilter catalog filters](../archive/kilter-catalog-filters.md).
 Statistics filters and sorting against the installed older catalog are complete;
