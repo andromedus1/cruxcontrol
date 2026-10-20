@@ -190,6 +190,15 @@ jobs:
       - name: Test and bundle authenticated service proof
         run: npm --prefix prototypes/firebase-vault/gateway test
 
+      - name: Install private catalog service dependencies
+        run: npm --prefix prototypes/firebase-vault/catalog-gateway ci --ignore-scripts
+
+      - name: Test and bundle private catalog service
+        run: npm --prefix prototypes/firebase-vault/catalog-gateway test
+
+      - name: Test catalog provisioning plan (offline)
+        run: node --test prototypes/firebase-vault/catalog-plan.test.mjs
+
   catalog-pipeline:
     name: catalog pipeline (python tests)
     runs-on: ubuntu-latest

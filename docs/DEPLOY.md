@@ -42,6 +42,47 @@ the checkout. Git-ignored `.private-signing/` and `.private-firebase/` are not s
 from `git clean -fdx` or `git clean -X`; preserve their necessary contents before
 any checkout cleanup.
 
+## Private catalog publication
+
+The Kilter catalog is re-hosted privately in the same Firebase project but in
+separate, catalog-named resources: bucket `cruxcontrol-auth-20261010-catalog`, reader
+`crux-catalog-reader@…` (function runtime), publisher `crux-catalog-publisher@…` (CI
+only, create + read on the catalog bucket, no delete), workload identity pool
+`github-actions` / provider `cruxcontrol-catalog`, and function `privateCatalog`
+(codebase `private-catalog`). None of them has access to the vault bucket, and
+provisioning never modifies vault resources. Catalog objects are immutable: a version
+is published once `kilter-7x10/manifests/v<NNNNNN>.json` exists beside its artifact.
+
+The scheduled workflow `.github/workflows/catalog-publish.yml` is inert until enabled.
+One-time operator setup, using the isolated Firebase CLI configuration kept outside
+Git (see the [vault operations guide](../prototypes/firebase-vault/README.md)):
+
+1. Inspect, then provision, then inspect again (expect no problems):
+   `XDG_CONFIG_HOME=/outside/git/firebase-cli-config node prototypes/firebase-vault/provision-catalog.mjs /outside/git/catalog-evidence cruxcontrol-auth-20261010 inspect`
+   (repeat with `provision`, then `inspect`).
+2. Bootstrap version 1 from the private legacy artifact directory (manifest and
+   `kilter-7x10.v1.db.gz`): same command with `bootstrap /path/to/legacy-catalog`.
+3. Build the gateway (`npm --prefix prototypes/firebase-vault/catalog-gateway ci --ignore-scripts && npm --prefix prototypes/firebase-vault/catalog-gateway test`),
+   prepare a deploy package outside Git with
+   `node prototypes/firebase-vault/prepare-catalog.mjs /outside/git/auth-evidence/session.json /outside/git/new-catalog-package cruxcontrol-auth-20261010`,
+   and deploy only that codebase from the package directory:
+   `firebase deploy --only functions:private-catalog --project cruxcontrol-auth-20261010`.
+4. Set repository variables (identifiers, not secrets): `CATALOG_BUCKET`,
+   `CATALOG_PUBLISHER_SA`, `CATALOG_WIF_PROVIDER`
+   (`projects/839726977905/locations/global/workloadIdentityPools/github-actions/providers/cruxcontrol-catalog`),
+   then `CATALOG_PUBLISH_ENABLED=true`.
+5. Dispatch the workflow once (expect `published`, version 2), dispatch again (expect
+   `unchanged`), and confirm the owner's token reads `/catalog-v1/manifest` while
+   another account receives 403.
+
+**Held updates.** When the safety checks hold a build (a previously visible climb
+would be lost, present climbs fall more than 2%, more than 250 are newly removed, or
+upstream is older or changed layout), nothing is published and one "Catalog update
+held by safety checks" issue is opened or updated with counts and reasons. Review the
+upstream change; if it is legitimate, adjust the thresholds in
+`web/scripts/catalog/guards.py` through a reviewed change. Never delete published
+versions to force an update.
+
 ## 1. Create a Cloudflare API token
 
 1. Cloudflare dashboard → **My Profile → API Tokens → Create Token**.

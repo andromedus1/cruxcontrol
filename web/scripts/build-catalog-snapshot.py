@@ -83,7 +83,8 @@ def main() -> int:
             result = build(inputs, load_pinned(), args.out_dir, work, args.version, args.generated_on, previous)
     except tuple(error for error, _ in EXIT_CODES) as error:
         code = next(code for kind, code in EXIT_CODES if isinstance(error, kind))
-        print(f"{'held' if isinstance(error, GuardHold) else 'error'} ({type(error).__name__}): {error}",
+        label = "unchanged" if isinstance(error, Unchanged) else "held" if isinstance(error, GuardHold) else "error"
+        print(f"{label} ({type(error).__name__}): {error}",
               file=sys.stderr)
         if isinstance(error, GuardHold) and args.report:
             args.report.write_text(json.dumps({

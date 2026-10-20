@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync-private-publish
 kind: feature
-stage: implementing
+stage: review
 tags: [infra, security]
 parent: epic-catalog-sync
 depends_on: [epic-catalog-sync-append-only-guards]
@@ -209,3 +209,49 @@ script → 6. docs/runbook.
 - **Least sure:** first live WIF exchange and function cold-start behavior; both are
   verified in the operator's first dispatch before the device-update feature relies
   on them.
+
+## Implementation notes
+
+- Execution capability: inline, single owner; heterogeneous but tightly coupled through
+  one storage contract (Python publisher, Node gateway, operator provisioning).
+- Review weight: standard (project default).
+- Files changed:
+  - Storage contract: `web/scripts/catalog/storage_layout.py`,
+    `prototypes/firebase-vault/catalog-gateway/contract.mjs`, shared
+    `catalog-gateway/storage-layout.fixture.json` read by both test suites.
+  - Publisher: `web/scripts/catalog-publish.sh` (gcloud or local-directory store),
+    `web/scripts/catalog-storage.py`, `web/scripts/catalog-hold-issue.sh`,
+    `.github/workflows/catalog-publish.yml` (inert until `CATALOG_PUBLISH_ENABLED`;
+    actions pinned to commit SHAs; `id-token: write`, `issues: write`, `contents: read`).
+  - Gateway: `prototypes/firebase-vault/catalog-gateway/{settings,contract,handler,gcs-store,index,build}.mjs`,
+    `package.json`/`package-lock.json` (same dependency tree as the vault gateway).
+  - Operator tooling: `prototypes/firebase-vault/{catalog-plan,provision-catalog,prepare-catalog}.mjs`.
+  - CI: `.github/workflows/ci.yml` runs the catalog gateway and provisioning-plan tests
+    in the existing firebase-vault job.
+  - Docs: `docs/DEPLOY.md` (resources, runbook, held-update procedure), `docs/SPEC.md`
+    §6, `docs/ARCHITECTURE.md` item 3. CLI prints "unchanged" instead of "held" for
+    exit 8.
+- Tests added: storage layout (3, Python; shared fixture), gateway contract (4) and
+  handler (6: auth matrix, latest published manifest, artifact streaming headers and
+  generation pinning, unpublished/traversal/method rejection, storage failures,
+  length mismatch), provisioning plan (6: bucket, bucket IAM, project IAM, WIF
+  condition, impersonation, vault isolation).
+- Local end-to-end dry run (real 2026-10-19 data, directory-backed store seeded like
+  the bootstrap): run 1 published v2 (artifact then manifest after sha256 readback);
+  run 2 `unchanged`; run 3 with an older upstream `held` and wrote nothing. Hold issue
+  body rendered with a stand-in `gh` (counts and reasons only).
+- Discrepancies from design:
+  - Gateway and operator tooling live in `prototypes/firebase-vault/` (separate
+    `catalog-gateway/` package, `*-catalog.mjs` scripts) rather than a new
+    `services/` tree, to reuse the operator's isolated `firebase-tools` sign-in, Node
+    version and CI job. Cloud resources remain fully separate from the vault.
+  - The WIF condition also pins the numeric repository id (`1212058430`) so a renamed
+    or recreated repository cannot satisfy it.
+  - `prepare-catalog.mjs` refuses output inside the Git checkout.
+  - Bootstrapped v1 is a schema-2 manifest; the gateway serves only schema-3
+    manifests, so `/catalog-v1/manifest` returns 503 until CI publishes v2 — the
+    runbook dispatches the workflow immediately after bootstrap.
+- Not verified here (operator steps, by design): provisioning, bootstrap, function
+  deploy, first live WIF exchange, and live gateway auth. `shellcheck` is not installed
+  locally; scripts were syntax-checked and exercised by the dry run.
+- Adjacent issues parked: none.

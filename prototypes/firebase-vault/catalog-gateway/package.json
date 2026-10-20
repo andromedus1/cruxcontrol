@@ -1,0 +1,21 @@
+{
+  "name": "@cruxcontrol/private-catalog",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.mjs",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs --tests && node --test lib/*.test.mjs"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "8.4.0",
+    "firebase-admin": "14.5.0",
+    "firebase-functions": "7.4.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
