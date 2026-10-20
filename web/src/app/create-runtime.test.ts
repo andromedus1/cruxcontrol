@@ -6,7 +6,7 @@ import {
   type LibraryBackupDelivery,
 } from '../library-backup/delivery.ts';
 import type { AppLibrary } from './library.ts';
-import type { CatalogService } from '../catalog/service.ts';
+import { INITIAL_CATALOG_UPDATE, type CatalogService } from '../catalog/service.ts';
 import type { AutomaticBackup } from '../automatic-backup/coordinator.ts';
 
 function database() {
@@ -133,6 +133,7 @@ describe('createCruxControlRuntime', () => {
         progress: null,
         error: null,
         queries: null,
+        update: INITIAL_CATALOG_UPDATE,
       }),
       subscribe: () => () => undefined,
       start: vi.fn(async () => undefined),
@@ -140,6 +141,9 @@ describe('createCruxControlRuntime', () => {
       installOffer: vi.fn(async () => undefined),
       cancelDownload: vi.fn(),
       retryOpen: vi.fn(async () => undefined),
+      checkForUpdate: vi.fn(async () => undefined),
+      installUpdate: vi.fn(async () => undefined),
+      dismissUpdate: vi.fn(),
       close: vi.fn(async () => undefined),
     };
     const createCatalog = vi.fn(() => catalog);
@@ -187,13 +191,19 @@ describe('createCruxControlRuntime', () => {
       close: vi.fn(() => events.push('backup-close')),
     } as unknown as AutomaticBackup;
     const catalog: CatalogService = {
-      getSnapshot: () => ({ storage: null, operation: 'idle', offer: null, progress: null, error: null, queries: null }),
+      getSnapshot: () => ({
+        storage: null, operation: 'idle', offer: null, progress: null, error: null, queries: null,
+        update: INITIAL_CATALOG_UPDATE,
+      }),
       subscribe: () => () => undefined,
       start: vi.fn(async () => undefined),
       loadOffer: vi.fn(async () => undefined),
       installOffer: vi.fn(async () => undefined),
       cancelDownload: vi.fn(),
       retryOpen: vi.fn(async () => undefined),
+      checkForUpdate: vi.fn(async () => undefined),
+      installUpdate: vi.fn(async () => undefined),
+      dismissUpdate: vi.fn(),
       close: vi.fn(async () => { events.push('catalog-close'); }),
     };
     const createAutomaticBackup = vi.fn(() => {

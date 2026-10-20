@@ -11,7 +11,7 @@ import { providerSourceId } from '../domain/boards/identity.ts';
 import type { CatalogManifest } from '../data/catalog/manifest.ts';
 import type { CatalogReceipt } from '../data/sqlite/catalog-receipt.ts';
 import type { CatalogQueryPort, CatalogClimb, CatalogClimbQuery, CatalogCursor, CatalogPage, CatalogRead } from './types.ts';
-import type { CatalogService, CatalogServiceSnapshot } from './service.ts';
+import { INITIAL_CATALOG_UPDATE, type CatalogService, type CatalogServiceSnapshot } from './service.ts';
 import { CatalogBrowser } from './CatalogBrowser.tsx';
 
 const manifest: CatalogManifest = {
@@ -92,6 +92,7 @@ function serviceFor(adapter: CatalogQueryPort, initial?: Partial<CatalogServiceS
     progress: null,
     error: null,
     queries: adapter,
+    update: INITIAL_CATALOG_UPDATE,
     ...initial,
   };
   const listeners = new Set<() => void>();
@@ -103,6 +104,9 @@ function serviceFor(adapter: CatalogQueryPort, initial?: Partial<CatalogServiceS
     installOffer: vi.fn(async () => undefined),
     cancelDownload: vi.fn(),
     retryOpen: vi.fn(async () => undefined),
+    checkForUpdate: vi.fn(async () => undefined),
+    installUpdate: vi.fn(async () => undefined),
+    dismissUpdate: vi.fn(),
     close: vi.fn(async () => undefined),
   };
   return {

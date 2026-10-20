@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CatalogStorageStatus } from '../data/catalog/bootstrap-port.ts';
 import type { CatalogDownloadProgress, CatalogManifest } from '../data/catalog/manifest.ts';
 import type { CatalogReceipt } from '../data/sqlite/catalog-receipt.ts';
-import type { CatalogService, CatalogServiceSnapshot } from './service.ts';
+import { INITIAL_CATALOG_UPDATE, type CatalogService, type CatalogServiceSnapshot } from './service.ts';
 import { CatalogManageDialog } from './CatalogManageDialog.tsx';
 
 const offer: CatalogManifest = {
@@ -39,6 +39,7 @@ function snapshot(
     progress: null,
     error: null,
     queries: null,
+    update: INITIAL_CATALOG_UPDATE,
     ...extra,
   };
 }
@@ -54,6 +55,9 @@ function serviceFor(initial: CatalogServiceSnapshot) {
     installOffer: vi.fn(async () => undefined),
     cancelDownload: vi.fn(),
     retryOpen: vi.fn(async () => undefined),
+    checkForUpdate: vi.fn(async () => undefined),
+    installUpdate: vi.fn(async () => undefined),
+    dismissUpdate: vi.fn(),
     close: vi.fn(async () => undefined),
   };
   return {

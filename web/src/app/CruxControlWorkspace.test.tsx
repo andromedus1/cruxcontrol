@@ -20,7 +20,7 @@ import { MockBoardByteTransport } from '../board-control/mock-byte-transport';
 import { createFullrideLightController } from '../board-control/light-controller';
 import { LibraryBackupService } from '../library-backup/service';
 import type { LibraryBackupDelivery } from '../library-backup/delivery';
-import type { CatalogService, CatalogServiceSnapshot } from '../catalog/service.ts';
+import { INITIAL_CATALOG_UPDATE, type CatalogService, type CatalogServiceSnapshot } from '../catalog/service.ts';
 import type { CatalogClimb } from '../catalog/types.ts';
 import type { AutomaticBackup } from '../automatic-backup/coordinator.ts';
 import type { BackupStatus, OnlineBackupReview } from '../automatic-backup/types.ts';
@@ -171,7 +171,9 @@ function automaticBackupFor(initial: BackupStatus, overrides: Partial<Pick<Autom
   };
 }
 
-function catalogServiceFor(initial: CatalogServiceSnapshot = {
+type CatalogSnapshotInput = Omit<CatalogServiceSnapshot, 'update'> & Partial<Pick<CatalogServiceSnapshot, 'update'>>;
+
+function catalogServiceFor(initial: CatalogSnapshotInput = {
   storage: null,
   operation: 'idle',
   offer: null,
@@ -179,7 +181,7 @@ function catalogServiceFor(initial: CatalogServiceSnapshot = {
   error: null,
   queries: null,
 }) {
-  let snapshot = initial;
+  let snapshot: CatalogServiceSnapshot = { update: INITIAL_CATALOG_UPDATE, ...initial };
   const listeners = new Set<() => void>();
   const service: CatalogService = {
     getSnapshot: () => snapshot,
@@ -192,12 +194,15 @@ function catalogServiceFor(initial: CatalogServiceSnapshot = {
     installOffer: vi.fn(async () => undefined),
     cancelDownload: vi.fn(),
     retryOpen: vi.fn(async () => undefined),
+    checkForUpdate: vi.fn(async () => undefined),
+    installUpdate: vi.fn(async () => undefined),
+    dismissUpdate: vi.fn(),
     close: vi.fn(async () => undefined),
   };
   return {
     service,
-    publish(next: CatalogServiceSnapshot) {
-      snapshot = next;
+    publish(next: CatalogSnapshotInput) {
+      snapshot = { update: INITIAL_CATALOG_UPDATE, ...next };
       for (const listener of [...listeners]) listener();
     },
   };

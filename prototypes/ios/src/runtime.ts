@@ -20,6 +20,8 @@ import { bindAndroidBack } from "./native-back-navigation.ts";
 import { createAutomaticBackup } from "../../../web/src/automatic-backup/coordinator.ts";
 import type { AutomaticBackup } from "../../../web/src/automatic-backup/coordinator.ts";
 import { createNativePrivateVault } from "./native-private-vault.ts";
+import { createNativePrivateCatalog } from "./native-private-catalog.ts";
+import type { CatalogService } from "../../../web/src/catalog/service.ts";
 
 const interruptedFileSaveMessage =
   "The file save was interrupted. Your library is unchanged; an empty or partial file may remain in the chosen location. Please try saving again.";
@@ -56,6 +58,7 @@ export async function bindNativeLifecycle(
   app: Pick<AppPlugin, "addListener">,
   onRestoredFileSaveFailure?: (event: RestoredListenerEvent) => void,
   automaticBackup?: Pick<AutomaticBackup, "setForeground" | "retry">,
+  catalog?: Pick<CatalogService, "checkForUpdate">,
 ): Promise<() => void> {
   const handles: PluginListenerHandle[] = [];
   let disposed = false;
@@ -75,6 +78,8 @@ export async function bindNativeLifecycle(
         if (!disposed) {
           transport.setForeground(true);
           automaticBackup?.setForeground(true);
+          // Cadence-gated (3.5 days); a catalog that was never opened stays unopened.
+          void catalog?.checkForUpdate().catch(() => undefined);
         }
       }),
     );
@@ -128,6 +133,8 @@ export async function createPrototypeRuntime() {
     const runtime = await createCruxControlRuntime({
       backNavigation,
       ...(platform === "android" ? { openLibrary: openNativeLibrary } : {}),
+      // Signed-in catalog updates use the native Firebase session; iOS and web stay unconfigured.
+      ...(platform === "android" ? { catalogUpdates: createNativePrivateCatalog() } : {}),
       ...(platform === "android" ? {
         createAutomaticBackup: ({ preservation, backupService }) => createAutomaticBackup({
           preservation,
@@ -160,6 +167,7 @@ export async function createPrototypeRuntime() {
     if (native) {
       disposeLifecycle = await bindNativeLifecycle(
         transport, App, restoredFileSaveFailure?.publish, runtime.automaticBackup,
+        platform === "android" ? runtime.catalog : undefined,
       );
     }
     if (backNavigation) disposeBack = await bindAndroidBack(backNavigation, App);
