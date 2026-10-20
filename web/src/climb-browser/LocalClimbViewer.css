@@ -183,6 +183,60 @@ button {
 .connection-dot--error {
   background: var(--color-danger);
 }
+.climb-swipe-zone {
+  /* Vertical scrolling stays with the browser; horizontal drags become swipes. */
+  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
+}
+.climb-swipe-zone:focus {
+  outline: none;
+}
+/* A viewed board is never zoomed, so the swipe owns its horizontal drags too.
+   A zoomable board (gesture viewport) keeps its own pan. */
+.climb-swipe-zone .board-renderer__viewport:not(.board-renderer__viewport--gestures),
+.climb-swipe-zone .board-renderer__viewport:not(.board-renderer__viewport--gestures) .board-renderer {
+  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
+}
+/* While the page is pinch-zoomed, horizontal drags pan the page instead. */
+.climb-swipe-zone[data-page-zoomed],
+.climb-swipe-zone[data-page-zoomed] .board-renderer__viewport,
+.climb-swipe-zone[data-page-zoomed] .board-renderer {
+  touch-action: auto;
+}
+.climb-detail__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+}
+.climb-detail__position {
+  flex: 1;
+  margin: 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font: var(--font-size-xs)/1.3 var(--font-mono);
+}
+.climb-nav-button {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-xl);
+  line-height: 1;
+  cursor: pointer;
+}
+.climb-nav-button[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.46;
+}
+.climb-nav-button:focus-visible {
+  outline: 3px solid var(--color-info);
+  outline-offset: 3px;
+}
 .climb-detail__header {
   display: flex;
   justify-content: space-between;
@@ -300,6 +354,23 @@ button {
 @media (prefers-reduced-motion: no-preference) {
   .climb-sheet {
     animation: sheet-in 160ms ease-out;
+  }
+  /* Running into either end of the list. */
+  .climb-swipe-zone--nudge-next {
+    animation: climb-nudge-next 260ms ease-out;
+  }
+  .climb-swipe-zone--nudge-previous {
+    animation: climb-nudge-previous 260ms ease-out;
+  }
+  @keyframes climb-nudge-next {
+    40% {
+      transform: translateX(-12px);
+    }
+  }
+  @keyframes climb-nudge-previous {
+    40% {
+      transform: translateX(12px);
+    }
   }
   @keyframes sheet-in {
     from {

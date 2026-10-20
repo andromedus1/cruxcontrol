@@ -679,3 +679,151 @@ describe('CatalogBrowser update banner', () => {
     }
   });
 });
+
+describe('CatalogBrowser climb-to-climb navigation', () => {
+  const cursorTwo = 'cursor-two' as CatalogCursor;
+  const alpha = climb('Alpha', 'alpha');
+  const bravo = climb('Bravo', 'bravo');
+  const charlie = climb('Charlie', 'charlie');
+  const delta = climb('Delta', 'delta');
+
+  async function openClimb(name: string) {
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(name) }));
+    expect(screen.getByRole('heading', { name })).toBeInTheDocument();
+  }
+  const position = () => within(screen.getByRole('navigation', { name: 'Climb navigation' })).getByRole('status');
+
+  it('moves within the page in result order and shows "+" while later pages exist', async () => {
+    const query = vi.fn<CatalogQueryPort['query']>().mockResolvedValue(page([alpha, bravo], cursorOne));
+    renderBrowser(queryPort({ query }));
+    await openClimb('Alpha');
+    expect(position()).toHaveTextContent('1 of 2+');
+    fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+    expect(screen.getByRole('heading', { name: 'Bravo' })).toBeInTheDocument();
+    expect(position()).toHaveTextContent('2 of 2+');
+    expect(query).toHaveBeenCalledOnce();
+  });
+
+  it('crosses forward to the next page without closing the detail, then back to the previous page', async () => {
+    const nextPage = deferred<CatalogRead<CatalogPage>>();
+    const query = vi.fn<CatalogQueryPort['query']>()
+      .mockResolvedValueOnce(page([alpha, bravo], cursorOne))
+      .mockReturnValueOnce(nextPage.promise)
+      .mockResolvedValueOnce(page([alpha, bravo], cursorOne));
+    renderBrowser(queryPort({ query }));
+    await openClimb('Bravo');
+    fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+    expect(query).toHaveBeenLastCalledWith({ angle: 40, name: '', sort: 'rating', limit: 25, cursor: cursorOne });
+    // The current climb stays up while the next page is read.
+    expect(screen.getByRole('heading', { name: 'Bravo' })).toBeInTheDocument();
+    await act(async () => { nextPage.resolve(page([charlie, delta])); await nextPage.promise; });
+    expect(screen.getByRole('heading', { name: 'Charlie' })).toBeInTheDocument();
+    expect(position()).toHaveTextContent('3 of 4');
+    expect(screen.getByText('Page 2 · 2 climbs on this page')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Charlie/ })).toHaveAttribute('aria-current', 'true');
+    // The page the move read is shown as read; it is not queried a second time.
+    expect(query).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous climb' }));
+    expect(await screen.findByRole('heading', { name: 'Bravo' })).toBeInTheDocument();
+    expect(query).toHaveBeenLastCalledWith({ angle: 40, name: '', sort: 'rating', limit: 25 });
+    expect(position()).toHaveTextContent('2 of 2+');
+    expect(screen.getByText('Page 1 · 2 climbs on this page')).toBeInTheDocument();
+  });
+
+  it('continues past pages whose routes were all excluded, counting earlier pages in the position', async () => {
+    const query = vi.fn<CatalogQueryPort['query']>()
+      .mockResolvedValueOnce(page([alpha], cursorOne))
+      .mockResolvedValueOnce({ status: 'ready', value: { climbs: [], nextCursor: cursorTwo, excludedCount: 25 } })
+      .mockResolvedValueOnce(page([delta]));
+    renderBrowser(queryPort({ query }));
+    await openClimb('Alpha');
+    fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+    expect(await screen.findByRole('heading', { name: 'Delta' })).toBeInTheDocument();
+    expect(query).toHaveBeenLastCalledWith({ angle: 40, name: '', sort: 'rating', limit: 25, cursor: cursorTwo });
+    expect(screen.getByText('Page 3 · 1 climb on this page')).toBeInTheDocument();
+    expect(position()).toHaveTextContent('2 of 2');
+  });
+
+  it('stops at the end of the results with "Last climb", including when only empty pages follow', async () => {
+    const query = vi.fn<CatalogQueryPort['query']>()
+      .mockResolvedValueOnce(page([alpha, bravo], cursorOne))
+      .mockResolvedValueOnce(page([], null));
+    renderBrowser(queryPort({ query }));
+    await openClimb('Bravo');
+    fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+    await waitFor(() => expect(position()).toHaveTextContent('Last climb'));
+    expect(screen.getByRole('heading', { name: 'Bravo' })).toBeInTheDocument();
+    expect(screen.getByText('Page 1 · 2 climbs on this page')).toBeInTheDocument();
+    // The total is now known, so the next attempt does not read again.
+    expect(position()).toHaveTextContent(/^2 of 2 · Last climb$/);
+    expect(screen.getByRole('button', { name: 'Next climb' })).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+    expect(query).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous climb' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Previous climb' }));
+    expect(screen.getByRole('heading', { name: 'Alpha' })).toBeInTheDocument();
+    expect(position()).toHaveTextContent('First climb');
+    expect(query).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancels a pending page move when the search changes and ignores its late response', async () => {
+    const nextPage = deferred<CatalogRead<CatalogPage>>();
+    const query = vi.fn<CatalogQueryPort['query']>()
+      .mockResolvedValueOnce(page([alpha, bravo], cursorOne))
+      .mockReturnValueOnce(nextPage.promise)
+      .mockResolvedValueOnce(page([delta]));
+    renderBrowser(queryPort({ query }));
+    await openClimb('Bravo');
+    fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+    fireEvent.change(screen.getByLabelText('Angle'), { target: { value: '45' } });
+    expect(screen.queryByRole('heading', { name: 'Bravo' })).not.toBeInTheDocument();
+    await screen.findByRole('button', { name: /Delta/ });
+    await act(async () => { nextPage.resolve(page([charlie])); await nextPage.promise; });
+    expect(screen.queryByRole('button', { name: /Charlie/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Charlie' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Delta' })).not.toBeInTheDocument();
+    expect(screen.getByText('Page 1 · 1 climb on this page')).toBeInTheDocument();
+  });
+
+  it('cancels a pending page move when the detail is closed', async () => {
+    const nextPage = deferred<CatalogRead<CatalogPage>>();
+    const query = vi.fn<CatalogQueryPort['query']>()
+      .mockResolvedValueOnce(page([alpha, bravo], cursorOne))
+      .mockReturnValueOnce(nextPage.promise);
+    renderBrowser(queryPort({ query }));
+    await openClimb('Bravo');
+    fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close climb details' }));
+    await act(async () => { nextPage.resolve(page([charlie])); await nextPage.promise; });
+    expect(screen.queryByRole('heading', { name: 'Charlie' })).not.toBeInTheDocument();
+    expect(screen.getByText('Page 1 · 2 climbs on this page')).toBeInTheDocument();
+  });
+
+  it('keeps manual page buttons clearing the selection', async () => {
+    const query = vi.fn<CatalogQueryPort['query']>()
+      .mockResolvedValueOnce(page([alpha], cursorOne))
+      .mockResolvedValueOnce(page([charlie]));
+    renderBrowser(queryPort({ query }));
+    await openClimb('Alpha');
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('button', { name: /Charlie/ });
+    expect(screen.queryByRole('heading', { name: 'Charlie' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Alpha' })).not.toBeInTheDocument();
+    await openClimb('Charlie');
+    expect(position()).toHaveTextContent('2 of 2');
+  });
+
+  it('shows the page error state when a page move cannot read the next page', async () => {
+    const query = vi.fn<CatalogQueryPort['query']>()
+      .mockResolvedValueOnce(page([alpha], cursorOne))
+      .mockRejectedValue(new Error('Catalog read failed.'));
+    renderBrowser(queryPort({ query }));
+    await openClimb('Alpha');
+    fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+    expect(await screen.findByRole('heading', { name: 'Climbs could not be loaded' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry search' })).toBeInTheDocument();
+    expect(query).toHaveBeenLastCalledWith({ angle: 40, name: '', sort: 'rating', limit: 25, cursor: cursorOne });
+  });
+});

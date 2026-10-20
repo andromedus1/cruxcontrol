@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { BoardLightController } from '../board-control/light-controller.ts';
 import { ClimbDetail } from '../climb-browser/ClimbDetail.tsx';
+import type { ClimbNavigation } from '../climb-browser/navigation.ts';
+import { useClimbNavigationInput } from '../climb-browser/use-climb-navigation-input.ts';
 import type { LocalDraftId } from '../drafts/types.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
 import type { ResolvedPlaylistEntry } from './resolve.ts';
@@ -97,15 +99,28 @@ export function PlaylistPlayThrough({
     else statusRef.current?.focus();
   }, [currentIndex, entries.length]);
 
-  const move = (index: number, source: HTMLButtonElement) => {
+  const move = (index: number, source: HTMLButtonElement | null) => {
     const entry = entries[index];
     if (!entry) return;
-    if (document.activeElement === source) {
+    if (source && document.activeElement === source) {
       if (index === 0) pendingFocus.current = 'next';
       else if (index === entries.length - 1) pendingFocus.current = 'previous';
     }
     setPosition({ playlistId: playlist.id, key: entry.key, index });
   };
+
+  // Swipes and arrow keys go through the same move and bounds as the buttons, on
+  // available climbs and unavailable placeholders alike.
+  const navigation: ClimbNavigation | null = current
+    ? {
+        positionLabel: `${currentIndex + 1} of ${entries.length}`,
+        canPrevious: currentIndex > 0,
+        canNext: currentIndex < entries.length - 1,
+        onPrevious: () => move(currentIndex - 1, previousRef.current),
+        onNext: () => move(currentIndex + 1, nextRef.current),
+      }
+    : null;
+  const input = useClimbNavigationInput<HTMLDivElement>(navigation, current?.key ?? null);
 
   const issue = current?.availability === 'available' ? compatibilityIssue(current) : null;
   const available = Boolean(current?.climb && current.availability === 'available' && !issue);
@@ -123,15 +138,22 @@ export function PlaylistPlayThrough({
         </button>
       </header>
       {current ? (
-        <>
+        <div
+          ref={input.swipeRef}
+          className={`playlist-play-through__body climb-swipe-zone${input.nudge ? ` climb-swipe-zone--nudge-${input.nudge}` : ''}`}
+          tabIndex={-1}
+          onKeyDown={input.onKeyDown}
+        >
           <nav className="playlist-play-through__navigation" aria-label="Playlist navigation">
-            <p ref={statusRef} tabIndex={-1} role="status" aria-live="polite" aria-atomic="true">
+            <p ref={statusRef} tabIndex={-1} role="status" aria-live="polite" aria-atomic="true" data-climb-nav="">
               <span>{currentIndex + 1} of {entries.length}</span> — {entryLabel(current)}
+              {input.announcement && <span className="playlist-play-through__end"> · {input.announcement}</span>}
             </p>
             <button
               ref={previousRef}
               className="button button--secondary"
               type="button"
+              data-climb-nav=""
               disabled={currentIndex === 0}
               onClick={(event) => move(currentIndex - 1, event.currentTarget)}
             >
@@ -141,6 +163,7 @@ export function PlaylistPlayThrough({
               ref={nextRef}
               className="button button--secondary"
               type="button"
+              data-climb-nav=""
               disabled={currentIndex === entries.length - 1}
               onClick={(event) => move(currentIndex + 1, event.currentTarget)}
             >
@@ -170,7 +193,7 @@ export function PlaylistPlayThrough({
               <p>{unavailableReason(current, issue)}</p>
             </article>
           )}
-        </>
+        </div>
       ) : (
         <div className="playlist-play-through__unavailable">
           <h2>This list is empty</h2>

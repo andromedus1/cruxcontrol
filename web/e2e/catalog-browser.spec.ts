@@ -280,3 +280,107 @@ test('installs only with consent, browses offline, and preserves the authored li
     fixture.dispose();
   }
 });
+
+async function installMultiPageCatalog(
+  page: Page,
+  snapshot: ReturnType<typeof createSyntheticCatalogSnapshots>['snapshots'][number],
+) {
+  await page.route('**/catalog/**', async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/catalog/manifest.json') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(snapshot.manifest) });
+    } else if (pathname === `/catalog/${snapshot.manifest.file}`) {
+      await route.fulfill({ status: 200, contentType: 'application/gzip', body: snapshot.compressed });
+    } else {
+      await route.fulfill({ status: 404, body: 'not found' });
+    }
+  });
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'Workspace destinations' }).getByRole('button', { name: 'Kilter', exact: true }).click();
+  await page.getByRole('button', { name: 'Manage' }).click();
+  await page.getByRole('button', { name: /^Download / }).click();
+  await expect(page.getByText('Available offline on this device.')).toBeVisible({ timeout: 30000 });
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByText('Page 1 · 25 climbs on this page')).toBeVisible();
+}
+
+const climbPosition = (page: Page) =>
+  page.getByRole('navigation', { name: 'Climb navigation' }).getByRole('status');
+
+test.describe('climb-to-climb navigation in catalog results', () => {
+  // Base route plus 26 extras: page 1 holds 25 results and page 2 the last 2.
+  let fixture: ReturnType<typeof createSyntheticCatalogSnapshots>;
+  test.beforeAll(() => { fixture = createSyntheticCatalogSnapshots({ extraRoutes: 26 }); });
+  test.afterAll(() => fixture.dispose());
+
+  test.describe('on a phone', () => {
+    test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+    test('a touch swipe on the board advances to the next result', async ({ page }) => {
+      await installMultiPageCatalog(page, fixture.snapshots[0]!);
+      await page.getByRole('button', { name: /Synthetic route v1/ }).click();
+      const first = page.getByRole('dialog', { name: 'Synthetic route v1 details' });
+      await expect(first).toBeVisible();
+      await expect(climbPosition(page)).toHaveText('1 of 25+');
+
+      const board = first.getByLabel('Board preview');
+      await board.scrollIntoViewIfNeeded();
+      const bounds = await board.boundingBox();
+      if (!bounds) throw new Error('Board preview has no visible bounds');
+      const x = bounds.x + bounds.width * 0.75;
+      const y = bounds.y + Math.min(bounds.height / 2, 200);
+      // Real touch input, so the browser's touch-action handling is exercised too.
+      const touch = await page.context().newCDPSession(page);
+      try {
+        await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+        for (let step = 1; step <= 8; step += 1) {
+          await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x - step * 20, y: y + step }] });
+        }
+        await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      } finally {
+        await touch.detach();
+      }
+
+      const second = page.getByRole('dialog', { name: 'Synthetic extra 01 details' });
+      await expect(second).toBeVisible();
+      await expect.poll(() => second.evaluate((dialog) => dialog.matches(':modal'))).toBe(true);
+      await expect(climbPosition(page)).toHaveText('2 of 25+');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    });
+  });
+
+  test('arrow keys in the desktop detail move between results and across pages', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await installMultiPageCatalog(page, fixture.snapshots[0]!);
+    await page.getByRole('button', { name: /Synthetic extra 23/ }).click();
+    const heading = (name: string) => page.getByRole('heading', { name, exact: true, level: 2 });
+    await expect(heading('Synthetic extra 23')).toBeVisible();
+    await expect(climbPosition(page)).toHaveText('24 of 25+');
+
+    // Keys act only with focus in the detail, never on the list.
+    await page.keyboard.press('ArrowRight');
+    await expect(heading('Synthetic extra 23')).toBeVisible();
+
+    await heading('Synthetic extra 23').click();
+    await page.keyboard.press('ArrowRight');
+    await expect(heading('Synthetic extra 24')).toBeVisible();
+    await expect(climbPosition(page)).toHaveText('25 of 25+');
+
+    await page.keyboard.press('ArrowRight');
+    await expect(heading('Synthetic extra 25')).toBeVisible();
+    await expect(climbPosition(page)).toHaveText('26 of 27');
+    await expect(page.getByText('Page 2 · 2 climbs on this page')).toBeVisible();
+
+    await page.keyboard.press('ArrowRight');
+    await expect(heading('Synthetic extra 26')).toBeVisible();
+    await page.keyboard.press('ArrowRight');
+    await expect(climbPosition(page)).toHaveText('27 of 27 · Last climb');
+
+    await page.keyboard.press('ArrowLeft');
+    await expect(heading('Synthetic extra 25')).toBeVisible();
+    await page.keyboard.press('ArrowLeft');
+    await expect(heading('Synthetic extra 24')).toBeVisible();
+    await expect(climbPosition(page)).toHaveText('25 of 25+');
+    await expect(page.getByText('Page 1 · 25 climbs on this page')).toBeVisible();
+  });
+});
