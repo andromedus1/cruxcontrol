@@ -120,7 +120,8 @@ TABLES = {
     is_listed BOOLEAN NOT NULL,
     created_at TEXT NOT NULL,
     is_nomatch BOOLEAN NOT NULL DEFAULT 0,
-    upstream_frames TEXT NOT NULL
+    upstream_frames TEXT NOT NULL,
+    upstream_removed_at TEXT NULL
 )""",
     "climb_stats": """CREATE TABLE climb_stats (
     climb_uuid TEXT NOT NULL,

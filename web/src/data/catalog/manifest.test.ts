@@ -61,19 +61,21 @@ describe('parseCatalogManifest', () => {
 });
 
 describe('parseCatalogManifest schema 3', () => {
-  it('parses the committed Boardsesh example and reports the late reconciliation fields as unknown', () => {
+  it('parses the committed Boardsesh example, including its reconciliation fields', () => {
     const manifest = parseCatalogManifest(v3Example);
-    expect(manifest).toEqual({
-      ...v3Example,
-      removedUpstreamCount: null,
-      changes: null,
-    });
+    expect(manifest).toEqual(v3Example);
     expect(manifest.schemaVersion).toBe(3);
     if (manifest.schemaVersion !== 3) throw new Error('expected schema 3');
     expect(manifest.qualityScale).toEqual({ min: 0, max: 5 });
     expect(Object.isFrozen(manifest)).toBe(true);
     expect(Object.isFrozen(manifest.qualityScale)).toBe(true);
     expect(Object.isFrozen(manifest.sourceWatermarks)).toBe(true);
+  });
+
+  it('reports reconciliation fields as unknown when a schema-3 manifest predates them', () => {
+    const { removedUpstreamCount: _count, changes: _changes, ...older } = v3Example as Record<string, unknown>;
+    const manifest = parseCatalogManifest(older);
+    expect(manifest).toMatchObject({ removedUpstreamCount: null, changes: null });
   });
 
   it('parses reported removed-upstream counts and change summaries and round-trips its own output', () => {

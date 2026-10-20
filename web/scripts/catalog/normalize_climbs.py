@@ -129,7 +129,7 @@ def normalize(climbs_db: sqlite3.Connection, catalog_db: sqlite3.Connection,
             climb["description"] or "", climb["hsm"], climb["edge_left"], climb["edge_right"],
             climb["edge_bottom"], climb["edge_top"], climb["angle"], 1, climb["frames_pace"] or 0,
             frames, 0, 1, legacy_timestamp(climb["created_at"]), _no_match(climb["characteristics"]),
-            climb["frames"],
+            climb["frames"], None,
         ))
 
     aliases: Dict[str, Tuple[str, str]] = {}  # casefold -> (exact alias, canonical)
@@ -155,7 +155,7 @@ def normalize(climbs_db: sqlite3.Connection, catalog_db: sqlite3.Connection,
         status.append((alias, "aliased", target))
         report.aliases += 1
 
-    out.executemany(f"INSERT INTO climbs VALUES ({','.join('?' * 20)})", emitted)
+    out.executemany(f"INSERT INTO climbs VALUES ({','.join('?' * 21)})", emitted)
     out.executemany("INSERT INTO upstream_climbs VALUES (?,?,?)", sorted(status))
     report.emitted = len(emitted)
 

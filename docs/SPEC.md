@@ -231,9 +231,13 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   Fullride roles 42–45; the first browser is integrated over the explicitly older
   snapshot. Boardsesh's public Kilter snapshots are the current upstream: a
   repeatable, offline-testable build normalizes them into the Fullride artifact
-  (hardware pinned to the board definition, roles mapped to 42–45). Append-only
-  reconciliation, scheduled private publication and on-device updates remain future
-  work, so no Boardsesh-derived artifact is installed yet.
+  (hardware pinned to the board definition, roles mapped to 42–45). Each build
+  extends the previous artifact: climb identities the app could show are never
+  dropped (climbs that leave upstream are kept and marked removed upstream), versions
+  only increase, and the build publishes nothing when upstream looks unchanged,
+  older, or suspicious (present climbs falling more than 2% or more than 250 newly
+  removed). Scheduled private publication and on-device updates remain future work,
+  so no Boardsesh-derived artifact is installed yet.
 - The intended catalog model includes climbs + frames, `climb_stats` per angle,
   hold coordinates (`holes`), and placement→hole→LED mappings. The current safe
   query slice covers only Fullride roles 42–45.
