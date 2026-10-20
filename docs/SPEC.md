@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-10-19
+updated: 2026-10-20
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
@@ -121,11 +121,27 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   Kilter data · setters credited"; Manage shows its version, build date, Boardsesh
   snapshot time and climb counts. For the legacy snapshot, source wording identifies
   an older offline snapshot with no live updates. Its
-  source freshness and complete current-app coverage are unknown. Installation does
-  not refresh itself. Public distribution of the real catalog binary remains gated;
+  source freshness and complete current-app coverage are unknown. Installation never
+  replaces a catalog silently. Public distribution of the real catalog binary remains gated;
   a manifest can still present an offer when its binary is absent. After explicit
   download consent, an unavailable binary produces an HTTP or size error with retry,
   while authored climbs and lists remain available.
+- Signed-in catalog updates (Android only). While signed in, the app asks the private
+  catalog endpoint for its latest version at most every 3.5 days, when the catalog opens
+  or the app returns to the foreground; Manage's **Check now** always checks. A newer
+  Boardsesh-derived (schema 3) version for the installed board's layout revision shows a
+  slim catalog banner with its new and removed counts ("New catalog: 1,261 new climbs ·
+  23 removed · Later · Install") and, in Manage, installed versus available versions,
+  build dates, last check time and an install button. **Later** hides the banner until a
+  newer version appears; Manage still offers the install. Installing is an explicit tap:
+  the native shell downloads and verifies the artifact, then the same hash-checked A/B
+  install activates it only after it passes; a failed or cancelled update leaves the
+  current catalog active, and an equal or lower version is never installed. With no
+  catalog installed, a signed-in device is offered the current version instead of the
+  bundled older snapshot. Signed out, Manage shows "Sign in to get catalog updates" and
+  the installed catalog keeps working offline. The web/PWA and iPhone builds have no
+  catalog updates. The update path never reads or writes climbs, lists or backups; the
+  last-check time and dismissed version are per-device conveniences.
 - A private Android APK has verified the bundled snapshot's exact compressed bytes
   and normal consent/install/query flow through the module Worker, WASM, OPFS, and
   Web Locks, followed by offline reopen/list resolution on an isolated Android 36
@@ -239,8 +255,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   removed). A weekly CI job publishes accepted versions as immutable objects to a
   private bucket, served only to admitted signed-in accounts by a separate catalog
   function; it stays disabled until the operator provisions those resources.
-  On-device updates remain future work, so no Boardsesh-derived artifact is
-  installed yet.
+  Signed-in Android devices check that function and install accepted versions on
+  request (see §2).
 - The intended catalog model includes climbs + frames, `climb_stats` per angle,
   hold coordinates (`holes`), and placement→hole→LED mappings. The current safe
   query slice covers only Fullride roles 42–45.

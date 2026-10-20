@@ -2,7 +2,7 @@
 description: Read when configuring deployment or maintaining the live private-backup resources
 type: planning
 kind: planning
-updated: 2026-10-18
+updated: 2026-10-20
 summary: >
   Operator runbook for the CI-gated Cloudflare Workers Static Assets deployment,
   including secrets, opt-in enablement, branch protection, and verification, plus
@@ -68,8 +68,12 @@ Git (see the [vault operations guide](../prototypes/firebase-vault/README.md)):
 3. Build the gateway (`npm --prefix prototypes/firebase-vault/catalog-gateway ci --ignore-scripts && npm --prefix prototypes/firebase-vault/catalog-gateway test`),
    prepare a deploy package outside Git with
    `node prototypes/firebase-vault/prepare-catalog.mjs /outside/git/auth-evidence/session.json /outside/git/new-catalog-package cruxcontrol-auth-20261010`,
-   and deploy only that codebase from the package directory:
+   then, from the package directory, install the function's locked dependencies and
+   deploy only that codebase:
+   `npm --prefix functions ci --ignore-scripts`, then
    `firebase deploy --only functions:private-catalog --project cruxcontrol-auth-20261010`.
+   The prepared package omits `node_modules`, and the Firebase CLI loads the function
+   locally to discover it before uploading, so the install must come first.
 4. Set repository variables (identifiers, not secrets): `CATALOG_BUCKET`,
    `CATALOG_PUBLISHER_SA`, `CATALOG_WIF_PROVIDER`
    (`projects/839726977905/locations/global/workloadIdentityPools/github-actions/providers/cruxcontrol-catalog`),

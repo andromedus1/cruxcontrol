@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-10-19
+updated: 2026-10-20
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -10,6 +10,8 @@ summary: >
   controller profiles, on-demand local catalogs, and a Fullride 7x10 first slice.
   The first consented Kilter community catalog browser is integrated for an older
   offline snapshot, with explicit download consent and offline query support.
+  Signed-in Android devices can check for and explicitly install newer
+  Boardsesh-derived versions from a private endpoint.
   Current-source coverage, freshness, and public binary distribution remain unproven.
   Catalog work advances on Android/web independently of native iPhone acceptance.
   An invited contribution library is intended; approved journeys and a verified
@@ -87,8 +89,9 @@ feature item bodies in `.work/`, not here. Capabilities are in
    Worker and SQLite WASM, and airplane-mode reopen/list resolution using OPFS and Web
    Locks. This proves packaged offline catalog operation for that test stack, not general
    Android parity or board control. The binary remains private and public distribution
-   approval is unresolved. Source freshness is unknown, there is no live refresh, and the
-   query surface does not establish current or complete official-app coverage. Kilter
+   approval is unresolved. The bundled snapshot's source freshness is unknown and it never
+   refreshes itself, and the query surface does not establish current or complete
+   official-app coverage. Kilter
    catalog work proceeds independently of invited sharing and native iPhone proof.
    The catalog build tooling (`web/scripts/build-catalog-snapshot.py` and
    `web/scripts/catalog/`) derives the Fullride artifact from Boardsesh's public Kilter
@@ -105,6 +108,20 @@ feature item bodies in `.work/`, not here. Capabilities are in
    (legacy) and schema 3 (`boardsesh-kilter`) manifests; a schema-3 offer must match the
    installed definition's layout revision. One presentation module derives source
    wording, provenance and the rating scale from the installed manifest.
+   Signed-in updates reach Android through a `CatalogUpdateSource` port
+   (`web/src/catalog/update-source.ts`): the native `PrivateCatalog` plugin calls
+   `privateCatalog` (compiled-in endpoint, enabled only for release-configured native
+   auth) with the Firebase session the vault uses, so tokens never reach JavaScript. It
+   stages the manifest and a size- and SHA-256-verified artifact (checked against the
+   manifest and `X-Catalog-SHA256`) under app-private `noBackupFilesDir/catalog/`, renaming
+   atomically after an account/epoch check, and keeps only the staged manifest and the
+   newest artifact. `CatalogAssetWebViewClient` serves exactly those files at
+   same-origin `/catalog/private/manifest.json` and `/catalog/private/<file>`, so the
+   catalog service reuses the bundled install path (same-origin, hash-checked, A/B slots)
+   with a different base path. The service owns cadence (3.5 days, or forced from
+   Manage), dismissal, the never-downgrade and layout-revision rules, and prefers a remote
+   offer for a signed-in first install. The web/PWA and iOS runtimes use
+   `noCatalogUpdates` (always unconfigured).
 4. **Controller Profiles & Transports** — profiles own discovery and command
    encoding; transports own platform I/O. The first pair is Aurora API level 2/3 over
    Web Bluetooth: deterministic framing/checksum/multi-packet encoding, serialized
@@ -424,6 +441,8 @@ implemented or provisioned yet.
 
 ```
 Provider source ──▶ Catalog adapter ──▶ native + normalized local catalog
+Signed-in Android: privateCatalog ──▶ PrivateCatalog plugin (verified, app-private)
+  └──▶ same-origin /catalog/private/ ──▶ catalog service (explicit Install) ──▶ A/B install
                                                 │
 Board definition ──▶ Installation registry ─────┼──▶ Browser / Editor / Logbook
          │                                      │              │
@@ -465,7 +484,10 @@ App runtime ──▶ update coordinator ──▶ prompt-mode Workbox registrat
 
 Local climb reads and writes are fully offline. Installed catalog reads are local;
 manifest metadata and snapshot download require network only after opening Manage and
-choosing the explicit download action. No background or automatic source refresh runs.
+choosing the explicit download action. On signed-in Android, opening the catalog or
+returning to the foreground may run the cadence-gated update check, which fetches only
+the private manifest; downloading and installing a new version always wait for an
+explicit tap. Nothing replaces the installed catalog automatically.
 Network and device I/O stays behind adapters, including catalog providers,
 controller transports, the private vault and native portable-file delivery. Domain,
 rendering, browsing, editing, and logging remain testable without hardware or network.

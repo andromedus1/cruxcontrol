@@ -1,14 +1,14 @@
 ---
 id: epic-catalog-sync-device-update
 kind: feature
-stage: implementing
+stage: review
 tags: [data, security]
 parent: epic-catalog-sync
 depends_on: [epic-catalog-sync-snapshot-normalize, epic-catalog-sync-private-publish]
 release_binding: null
 gate_origin: null
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 research_refs:
   - .research/analysis/campaigns/kilter-current-catalog-sources/parent.md
 ---
@@ -190,3 +190,63 @@ Native (contract producer) → service → UI → docs. Stories carry the same o
   manifest names the only servable artifact.
 - **Least sure**: first-install preference between bundled and remote offers on a
   signed-in device with no catalog yet; covered by service tests and the live update.
+
+## Implementation notes
+
+- Execution capability: inline, single owner, stories in order (native → service →
+  UI → docs); one commit per story. Review not run here (left for `/agile-workflow:review`).
+- Files:
+  - Native: `PrivateCatalogPlugin.java`, `PrivateCatalogFiles.java` (pure),
+    `CatalogAssetWebViewClient.java` (private paths), `MainActivity.java`,
+    `app/build.gradle` (`testImplementation 'org.json:json:20240303'`: android.jar's
+    org.json is a stub on the JVM), `PrivateCatalogFilesTest.java`.
+  - Web: `web/src/catalog/update-source.ts`, `service.ts`, `presentation.ts`,
+    `CatalogBrowser.tsx`, `CatalogManageDialog.tsx`, `catalog.css`,
+    `web/src/data/catalog/bootstrap.ts`, `web/src/app/create-runtime.ts`.
+  - Android shell: `prototypes/ios/src/native-private-catalog.ts`, `runtime.ts`.
+  - Docs: `docs/SPEC.md` §2/§6, `docs/ARCHITECTURE.md` (summary, Catalog Providers,
+    module flow, offline/network paragraph), `prototypes/ios/README.md` (signed-in
+    catalog updates), `docs/DEPLOY.md` catalog step 3 (`npm --prefix functions ci
+    --ignore-scripts` in the prepared package before `firebase deploy`).
+- Tests added: JVM `PrivateCatalogFilesTest` (10: manifest contract, header/hash/size
+  mismatch and bounded codes, path selection, staged-only serving, stale/corrupt commit,
+  cleanup, failed restage); service (14 update cases: unconfigured web, lazy storage,
+  cadence/force, dismiss until newer, never downgrade, layout/version refusal,
+  signed-out and failed checks, offline re-offer, install via private path, failures
+  keep the active catalog, cancel, remote-first first install, bundled fallbacks,
+  dropped remote offer); bootstrap base path (2); preferences (3); native adapter (3);
+  runtime wiring + resume (1); CatalogBrowser banner (4); Manage updates (4);
+  presentation summary (1). Stale type-only fixtures in four existing test helpers gained
+  the `update` field and new methods.
+- Discrepancies from design (engineering detail, within the decisions):
+  - Contract kept exactly; additions: `CatalogUpdateError` (bounded codes →
+    `signed-out`, `not-admitted`, `network`, `integrity`, `unavailable`), a preference
+    store, and an error `action` (`check` | `install`) so Retry repeats the right step.
+  - Cadence counts only completed endpoint checks (`available`/`none`). Signed-out,
+    unconfigured or failed checks do not advance it, so those re-ask on the next open;
+    signed-out and unconfigured answers are native-only and make no request.
+  - A third per-device preference, `stagedVersion`, lets a not-yet-due open re-offer an
+    already staged version from `/catalog/private/manifest.json` without contacting the
+    endpoint; otherwise a restart would hide an offer until the next due check.
+  - Native maps `AUTH_CHANGED` (sign-out/account change mid-transfer) to
+    `AUTH_REQUIRED`, token-refresh failures to `UNAVAILABLE`, deadline expiry to
+    `NETWORK`; gateway 404 on the manifest means `none`. `prepare` only prepares the
+    version the last check staged, and reuses an already verified artifact.
+  - Cancel during native preparation cannot abort the native transfer; the result is
+    discarded on the web side (a verified artifact stays staged for a retry).
+  - Banner counts are the offered manifest's `changes` (relative to the previous
+    published version), as decided; a device that skipped versions sees that version's
+    delta, not the cumulative one. Restored climbs are listed only when non-zero.
+  - While the new slot installs, the browse list is hidden briefly (existing worker
+    behavior); the old catalog stays active unless the new one passes.
+  - Check failures appear only in Manage; the banner shows offers, progress and install
+    failures.
+- Verification: see the PR description for exact local results (web lint, typecheck,
+  991 tests, build, PWA check, e2e; prototype lint and 114 tests + 11 package-script
+  tests; Python 44; local Android compile and JVM tests with JDK 21 / SDK 36).
+- Parked / unresolved:
+  - `docs/SPEC.md` §6 still says the publish workflow "stays disabled until the operator
+    provisions those resources"; the gateway is live, but whether publishing is enabled
+    was not verified here, so the sentence was left for the docs gate.
+  - Live acceptance (Check now → Install v2 on the phone with a fresh validated backup)
+    remains the operator's step; no device or live endpoint was touched.
