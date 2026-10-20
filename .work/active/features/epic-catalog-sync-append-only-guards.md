@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync-append-only-guards
 kind: feature
-stage: review
+stage: done
 tags: [data]
 parent: epic-catalog-sync
 depends_on: [epic-catalog-sync-snapshot-normalize]
@@ -203,12 +203,36 @@ the bundled legacy artifact.
   builds with frozen stats; legacy schema-2 previous carrying only app-visible climbs;
   held/unchanged builds write nothing; monotonic versions; previous-manifest
   verification). Suite: 38 tests green.
-- Real-data verification (local): bootstrapping from the bundled v1 legacy artifact
-  with the 2026-10-19 snapshot produced v2 with 13,332 climbs (13,299 present + 33
-  carried, marked `2026-10-19`), changes added 2,231 / removed 33 / restored 0,
-  `lost` empty, guards passed (4,974,862 bytes gzipped). Re-running against v2 with
+- Real-data verification (local, after review fixes): bootstrapping from the bundled
+  v1 legacy artifact with the 2026-10-19 snapshot produced v2 with 13,322 climbs.
+  App-visible (lightable with usable stats): 9,781 before → 11,016 present now;
+  23 previously visible climbs carried and marked `2026-10-19`; 1 present climb kept
+  its previous stats; changes added 1,258 / removed 23 / restored 0; `lost` empty;
+  guards passed. Re-running against v2 with
   the same snapshot exits 8 (unchanged) and writes nothing.
 - Discrepancies from design: the marker column lives in the base `climbs` schema
   (NULL on first builds) rather than being added during reconciliation; an "added"
   count for a first build equals all emitted climbs.
 - Adjacent issues parked: none.
+
+## Review
+
+- Effective weight: standard; one independent pass.
+- Reviewer: Codex `gpt-6.1-sol` (medium) via peeragent — cross-model. It ran the suite
+  (38 green) plus in-memory probes for each finding.
+- Proposed verdict: Request changes. Receiver adjudication (all accepted):
+  - **Blocker — retention did not guarantee app visibility.** The app's climb query
+    inner-joins stats; a previously visible climb present upstream but with no usable
+    stats would vanish while `lost` stayed empty. Real data confirmed the shape (2,294
+    climbs without stats in the first v2; 1 previously visible climb affected).
+    Fixed: "app-visible" now requires a usable stats row; such climbs keep their
+    previous stats (`stats_kept`); `lost` checks final visibility; present/added
+    count visible climbs. Regression test added.
+  - **Blocker — incomplete schema-3 previous manifests disabled guards.** Missing
+    `sourceBuiltAt`/`layoutRevision` silently skipped the older-build and revision
+    holds. Fixed: required for schema 3; regression test added.
+  - **Important (fixed as part of the same contract) — build times compared as
+    strings.** Now parsed as timezone-aware instants with any fractional precision;
+    unparsable times hold. Regression tests for precision, offsets and malformed input.
+- Verification after fixes: 40 tests green; real-data bootstrap as recorded above.
+- Closure: standard weight — blockers fixed and verified, no second pass.

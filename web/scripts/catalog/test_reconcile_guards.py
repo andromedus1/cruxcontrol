@@ -45,6 +45,13 @@ class GuardTests(unittest.TestCase):
         self.assertTrue(self.verdict(removed=MAX_NEWLY_REMOVED).publish)
         self.assertFalse(self.verdict(removed=MAX_NEWLY_REMOVED + 1).publish)
 
+    def test_build_times_compare_as_instants(self):
+        self.assertTrue(self.verdict(built_at="2026-10-19T18:38:11.515000Z").unchanged)
+        self.assertTrue(self.verdict(built_at="2026-10-19T20:38:11.515+02:00").unchanged)
+        older = self.verdict(built_at="2026-10-19T18:38:11Z")
+        self.assertEqual((older.publish, older.unchanged), (False, False))
+        self.assertFalse(self.verdict(built_at="yesterday").publish)
+
     def test_other_holds(self):
         for label, kwargs in (("lost", {"lost": ["X"]}), ("case", {"case_changed": ["X"]}),
                               ("older", {"built_at": "2026-10-01T00:00:00Z"}),
@@ -62,11 +69,12 @@ class ReconcileBuildTests(unittest.TestCase):
         self.root = Path(tmp.name)
         self.runs = 0
 
-    def build(self, climbs, built_at, previous_dir=None, version=None, date="2026-10-19"):
+    def build(self, climbs, built_at, previous_dir=None, version=None, date="2026-10-19", no_stats=()):
         self.runs += 1
         work = self.root / f"work{self.runs}"
         work.mkdir()
-        inputs = load_inputs(fixtures.source_dir(work / "src", climbs=climbs, built_at=built_at), work)
+        inputs = load_inputs(fixtures.source_dir(work / "src", climbs=climbs, built_at=built_at,
+                                                 no_stats=no_stats), work)
         prior = load_previous(previous_dir, work) if previous_dir else None
         out = self.root / f"out{self.runs}"
         result = artifact.build(inputs, fixture_pin(inputs.catalog_db, work), out, work, version, date, prior)
@@ -101,6 +109,13 @@ class ReconcileBuildTests(unittest.TestCase):
         self.assertEqual(v4.manifest["changes"]["restored"], 1)
         self.assertEqual(json.loads(self.rows(v4, "SELECT value FROM catalog_meta WHERE key='reconcile'")[0][0])["lost"], [])
 
+    def test_present_climb_losing_its_stats_keeps_previous_stats(self):
+        _, out1 = self.build(CLIMBS, T0, version=1)
+        v2, _ = self.build(CLIMBS, T1, out1, date="2026-10-26", no_stats=("LEGACY1",))
+        self.assertEqual((v2.reconciled.stats_kept, v2.reconciled.lost), (1, []))
+        self.assertEqual(self.rows(v2, "SELECT climb_stats.angle, upstream_removed_at FROM climb_stats JOIN climbs "
+                                       "ON uuid = climb_uuid WHERE uuid='LEGACY1'"), [(40, None)])
+
     def test_legacy_previous_carries_only_app_visible_climbs(self):
         legacy = fixtures.legacy_previous(self.root / "legacy",
                                           [("LEGACY1", "p101r42p102r43"), ("OLD1", "p102r42p103r45"),
@@ -134,7 +149,9 @@ class ReconcileBuildTests(unittest.TestCase):
         legacy = fixtures.legacy_previous(self.root / "legacy", [("OLD1", "p102r42")])
         manifest = json.loads((legacy / "manifest.json").read_text())
         for label, change in (("sha", {"sha256": "0" * 64}), ("schema", {"schemaVersion": 4}),
-                              ("source", {"source": "boardsesh-kilter"})):
+                              ("source", {"source": "boardsesh-kilter"}),
+                              ("schema 3 without guard metadata",
+                               {"schemaVersion": 3, "source": "boardsesh-kilter", "layoutRevision": "r"})):
             with self.subTest(case=label):
                 (legacy / "manifest.json").write_text(json.dumps(dict(manifest, **change)))
                 with self.assertRaises(PreviousArtifactError):

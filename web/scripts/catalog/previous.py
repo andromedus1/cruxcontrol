@@ -50,6 +50,10 @@ def load_previous(previous_dir: Path, work_dir: Path) -> PreviousArtifact:
     raw = gzip.decompress(body)
     if len(raw) != manifest.get("bytesRaw"):
         raise PreviousArtifactError("previous artifact raw size does not match its manifest")
+    if schema == 3:
+        for key in ("sourceBuiltAt", "layoutRevision"):
+            if not isinstance(manifest.get(key), str) or not manifest[key]:
+                raise PreviousArtifactError(f"previous schema-3 manifest is missing {key}; guards need it")
     db_path = work_dir / "previous.sqlite3"
     db_path.write_bytes(raw)
     return PreviousArtifact(db_path, manifest, version, schema,

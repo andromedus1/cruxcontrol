@@ -4,9 +4,9 @@
   "board": "kilter-fullride-7x10",
   "file": "kilter-7x10.v2.db.gz",
   "compression": "gzip",
-  "sha256": "a83bb91e6ca1d72f377e09073d627a516b702bae7ee084c472429ce2ec3cc511",
-  "bytesGzipped": 4974862,
-  "bytesRaw": 11804672,
+  "sha256": "349b14ff77a4f7506b0046d71daca48e13654ab359d9c15ee69dfb9b35039bdf",
+  "bytesGzipped": 4973957,
+  "bytesRaw": 11800576,
   "generatedOn": "2026-10-19",
   "source": "boardsesh-kilter",
   "sourceBuiltAt": "2026-10-19T18:38:11.515Z",
@@ -19,11 +19,11 @@
     "min": 0,
     "max": 5
   },
-  "climbCount": 13332,
-  "removedUpstreamCount": 33,
+  "climbCount": 13322,
+  "removedUpstreamCount": 23,
   "changes": {
-    "added": 2231,
-    "removed": 33,
+    "added": 1258,
+    "removed": 23,
     "restored": 0
   },
   "generatedFrom": "boardsesh v1-gzip kilter layout 8 + v1-catalog -> pin to kilter-fullride-7x10 definition -> normalize roles to product 7 -> gzip",

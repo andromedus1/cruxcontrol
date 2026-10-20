@@ -84,7 +84,7 @@ def default_climbs() -> Sequence[Climb]:
     )
 
 
-def climbs_db(path: Path, climbs: Iterable[Climb] = ()) -> Path:
+def climbs_db(path: Path, climbs: Iterable[Climb] = (), no_stats: Sequence[str] = ()) -> Path:
     connection = sqlite3.connect(path)
     connection.executescript(CLIMBS_SCHEMA)
     for uuid, frames, listed, frames_count, setter in (climbs or default_climbs()):
@@ -92,7 +92,7 @@ def climbs_db(path: Path, climbs: Iterable[Climb] = ()) -> Path:
             "INSERT INTO board_climbs VALUES(?,'kilter',8,NULL,?,?,'',NULL,-20,20,30,120,NULL,?,0,?,0,?,?,?)",
             (uuid, setter, f"Climb {uuid}", frames_count, frames, listed, "2026-04-01T10:00:00.5Z",
              '["no_match"]' if uuid == "LEGACY1" else None))
-        for angle in (40, 45):
+        for angle in (() if uuid in no_stats else (40, 45)):
             connection.execute(
                 "INSERT INTO board_climb_stats VALUES('kilter',?,?,16.0,NULL,3,16.2,4.5,'fa','2026-04-02')",
                 (uuid, angle))
@@ -118,10 +118,11 @@ def manifests(climbs_size: int, climbs_raw: int, catalog_size: int, catalog_raw:
 
 
 def source_dir(path: Path, gzip_climbs: bool = False, climbs: Iterable[Climb] = (),
-               built_at: str = "2026-10-19T18:38:11.515Z", **catalog_options) -> Path:
+               built_at: str = "2026-10-19T18:38:11.515Z", no_stats: Sequence[str] = (),
+               **catalog_options) -> Path:
     """Write an offline --from-dir input set."""
     path.mkdir(parents=True, exist_ok=True)
-    raw_climbs = climbs_db(path / "climbs.raw", climbs).read_bytes()
+    raw_climbs = climbs_db(path / "climbs.raw", climbs, no_stats).read_bytes()
     raw_catalog = catalog_db(path / "catalog.raw", **catalog_options).read_bytes()
     climbs_body = gzip.compress(raw_climbs, mtime=0) if gzip_climbs else raw_climbs
     (path / "climbs.db").write_bytes(climbs_body)
