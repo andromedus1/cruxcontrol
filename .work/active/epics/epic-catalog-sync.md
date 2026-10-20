@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync
 kind: epic
-stage: drafting
+stage: implementing
 tags: [data]
 parent: null
 depends_on: [epic-universal-board-platform]
@@ -62,7 +62,7 @@ shape this epic:
   be slower than daily (for example weekly); freshness is not time-critical.
 - **Climb identities are append-only.** Every climb UUID ever published stays in the
   catalog. Upstream removal, unlisting, exclusion or alias folding marks a climb as removed
-  upstream (hidden from browsing by default) rather than deleting it, so playlist
+  upstream (still visible, with a badge) rather than deleting it, so playlist
   references keep resolving.
 - **Fail closed on suspicious upstream data.** The job publishes nothing and keeps the
   last-known-good artifact when the manifest or artifact is missing, the schema or format
@@ -95,10 +95,67 @@ The engagement record (dials, decomposition, gate outcomes) lives with the campa
 - `docs/SPEC.md` — Capability 6 (Data Acquisition, incremental sync); Constraints
   (data ownership, reproducible pipelines).
 
-## Anticipated child features
+## Design decisions
 
-Provisional, pending refreshed source evidence:
-- Current-source acquisition and coverage verification
-- Source-specific client behind a mockable port; legacy sync is one candidate
-- Safe catalog replacement or incremental reconciliation, according to that source
-- Authorized account flow where required, separately covering personal data/publishing
+- **Upstream source**: Boardsesh public snapshots, consumed by CruxControl's own build —
+  operator decision 2026-10-19 after reviewing the terms tension.
+- **Distribution**: re-host privately behind the existing Firebase sign-in (Android
+  first); no public catalog URL — avoids public redistribution of Kilter-derived data.
+- **Publish gate**: auto-publish when every guard passes; a tripped guard publishes
+  nothing and opens a GitHub issue with the diff report.
+- **Device update**: periodic check while signed in, summary prompt, explicit tap to
+  install; the current catalog stays until the new one verifies.
+- **Removed-upstream climbs**: kept forever, visible in browse and playlists with a
+  "removed upstream" badge.
+- **Cadence**: weekly by default and configurable; never more than one Boardsesh fetch
+  per artifact per day.
+
+## Decomposition
+
+Split by capability along the data path: one deterministic transformation defines the
+artifact contract; reconciliation and guards own the append-only and fail-closed
+policy; publishing owns schedule, private storage and the authenticated endpoint; the
+app side splits into installing new versions (Android, signed-in) and presenting the
+new data's meaning. Presentation depends only on the artifact contract, so it can
+proceed in parallel with the infrastructure chain. The provisional "authorized account
+flow" arc is dropped: catalog acquisition needs no Kilter account, and personal-data
+sync and publishing remain out of scope for this epic.
+
+### Child features
+
+- `epic-catalog-sync-snapshot-normalize` — Boardsesh Homewall snapshot → CruxControl
+  7x10 artifact and manifest (roles, UUIDs, aliases, provenance, hardware pin) —
+  depends on: `[]`
+- `epic-catalog-sync-append-only-guards` — merge with the previous artifact, append-only
+  identities, removed-upstream marking, fail-closed guards and diff report — depends on:
+  `[epic-catalog-sync-snapshot-normalize]`
+- `epic-catalog-sync-private-publish` — scheduled workflow, private storage with retained
+  versions, authenticated endpoint, guard-trip issue — depends on:
+  `[epic-catalog-sync-append-only-guards]`
+- `epic-catalog-sync-device-update` — Android signed-in update check, prompt, verified
+  A/B install, no downgrade — depends on: `[epic-catalog-sync-snapshot-normalize,
+  epic-catalog-sync-private-publish]`
+- `epic-catalog-sync-catalog-semantics` — removed-upstream badge, declared rating scale,
+  setter attribution and source wording, stable playlist resolution — depends on:
+  `[epic-catalog-sync-snapshot-normalize]`
+
+### Decomposition risks
+
+- **Live vault proximity (highest).** Private publish shares the Firebase project that
+  holds real backups. Keep catalog resources namespaced and separately permissioned,
+  make any gateway change additive, and apply infrastructure only through reviewed CI.
+- **Upstream conversion quirks.** Role recoding (12–15), dashed UUIDs and the 523
+  dashed-UUID climbs with pre-split dates show Boardsesh's conversion can change;
+  hardware pinning and guards must catch drift rather than silently excluding climbs.
+- **Guard thresholds.** Too tight blocks every update; too loose lets a partial upstream
+  through. Tune from real diffs; a held update is the safe failure.
+- **Critical path.** Normalize → guards → publish → device update is serial; catalog
+  semantics is the only parallel branch.
+- **Foundation drift.** SPEC/ARCHITECTURE currently state the catalog never refreshes
+  and is same-origin only; the owning features must roll those docs forward when they
+  land.
+
+## Mockups
+
+None planned at epic level. New UI (update prompt in Manage, removed-upstream badge,
+scale and attribution text) composes existing catalog dialog, row and detail components.

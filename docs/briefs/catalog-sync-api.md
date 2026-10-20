@@ -6,7 +6,7 @@ slug: catalog-sync-api
 research_method: /brief
 verification_status: attested
 provenance: agent-synthesis
-updated: 2026-06-13
+updated: 2026-10-19
 summary: |
   Captures the legacy Aurora sync path as of 2026-06-13; not refreshed for the
   2026-03 Kilter/Aurora split.
