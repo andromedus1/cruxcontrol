@@ -1,161 +1,87 @@
 #!/usr/bin/env python3
-"""Generate the pruned Fullride 7x10 Kilter catalog snapshot.
+"""Build the Fullride 7x10 catalog artifact from Boardsesh's public snapshots.
 
-Pipeline (proven 2026-06-14):
-  1. BoardLib downloads the full shared Kilter catalog (~198 MB) from Aurora.
-  2. Prune to the Fullride 7x10: product 7 (Homewall), layout 8, product_size 17
-     ("7x10 Full Ride LED Kit"), sets {26 Mainline, 27 Auxiliary}.
-  3. VACUUM, gzip, and emit manifest.json (version + sha256 + sizes).
+Pipeline:
+  1. Fetch the Boardsesh v1-gzip manifest and Kilter layout-8 artifact, plus the
+     v1-catalog hardware artifact (one request each), or read them from --from-dir.
+  2. Copy product 7 / layout 8 / size 17 / sets {26,27} hardware and require it to
+     reproduce the generated board definition's layout revision.
+  3. Keep listed single-frame climbs whose placements are all lit on size 17, mapping
+     role codes to product-7 ids by name; record every layout-8 UUID's upstream status.
+  4. VACUUM, gzip deterministically, and write a schema-3 manifest.
 
-Output (gitignored binaries; manifest is committed):
-  web/public/catalog/kilter-7x10.v<version>.db.gz
-  web/public/catalog/manifest.json
+Outputs: <out-dir>/kilter-7x10.v<version>.db.gz and <out-dir>/manifest.json.
+Current app builds install only schema-2 manifests, so do not write into
+web/public/catalog until they support schema 3. --from-dir expects climbs-manifest.json,
+catalog-manifest.json, climbs.db and catalog.db (gzip or plain SQLite).
 
 Usage:
-  pip install boardlib Pillow
-  python web/scripts/build-catalog-snapshot.py --version 1
+  python web/scripts/build-catalog-snapshot.py --version 2 --out-dir DIR [--from-dir DIR] [--report PATH]
 
-Set --source-data-through only when a verified upstream freshness cutoff is
-known. The build date never acts as a freshness claim.
+The build date never acts as a freshness claim; the manifest records Boardsesh's
+build time and table watermarks instead.
+
+Exit codes: 0 built, 2 source error, 3 hardware mismatch, 4 normalization error,
+5 size limit, 6 artifact already exists.
 """
 import argparse
+import dataclasses
 import datetime
-import gzip
-import hashlib
 import json
 import pathlib
-import shutil
-import sqlite3
-import subprocess
+import sys
 import tempfile
 
-# Fullride 7x10 identity (verified against the live catalog 2026-06-14).
-PRODUCT_ID = 7        # Kilter Board Homewall
-LAYOUT_ID = 8         # Kilter Board Homewall (Fullride) layout
-PRODUCT_SIZE_ID = 17  # "7x10" Full Ride LED Kit
-SET_IDS = (26, 27)    # Mainline, Auxiliary
+from catalog.artifact import SizeLimitError, build
+from catalog.boardsesh_source import SourceError, UrllibFetcher, fetch_inputs, load_inputs
+from catalog.hardware import HardwareMismatch, load_pinned
+from catalog.normalize_climbs import NormalizationError
 
-CLIMB_WHERE = "layout_id=? AND is_listed=1 AND is_draft=0 AND frames_count=1"
-
-# table -> WHERE filter (None = keep all rows). User/cache tables are dropped.
-def keep_tables():
-    setlist = ",".join(str(s) for s in SET_IDS)
-    return {
-        "climbs": (CLIMB_WHERE, (LAYOUT_ID,)),
-        "climb_stats": (
-            f"climb_uuid IN (SELECT uuid FROM climbs WHERE {CLIMB_WHERE})",
-            (LAYOUT_ID,),
-        ),
-        "placements": (f"layout_id=? AND set_id IN ({setlist})", (LAYOUT_ID,)),
-        "holes": (None, ()),
-        "leds": ("product_size_id=?", (PRODUCT_SIZE_ID,)),
-        "placement_roles": ("product_id=?", (PRODUCT_ID,)),
-        "difficulty_grades": (None, ()),
-        "products": ("id=?", (PRODUCT_ID,)),
-        "product_sizes": ("id=?", (PRODUCT_SIZE_ID,)),
-        "products_angles": ("product_id=?", (PRODUCT_ID,)),
-        "layouts": ("id=?", (LAYOUT_ID,)),
-        "sets": (f"id IN ({setlist})", ()),
-        "product_sizes_layouts_sets": ("product_size_id=?", (PRODUCT_SIZE_ID,)),
-    }
+EXIT_CODES = (
+    (SourceError, 2),
+    (HardwareMismatch, 3),
+    (NormalizationError, 4),
+    (SizeLimitError, 5),
+    (FileExistsError, 6),
+)
 
 
-def prune(full_db: str, pruned_db: str) -> None:
-    src = sqlite3.connect(full_db)
-    src.row_factory = sqlite3.Row
-    dst = sqlite3.connect(pruned_db)
-    for table, (where, params) in keep_tables().items():
-        create = src.execute(
-            "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,)
-        ).fetchone()[0]
-        dst.execute(create)
-        sql = f"SELECT * FROM {table}" + (f" WHERE {where}" if where else "")
-        rows = src.execute(sql, params).fetchall()
-        if rows:
-            cols = rows[0].keys()
-            ph = ",".join("?" * len(cols))
-            dst.executemany(
-                f"INSERT INTO {table} ({','.join(cols)}) VALUES ({ph})",
-                [tuple(r) for r in rows],
-            )
-        print(f"  {table}: {len(rows)} rows")
-    dst.commit()
-    dst.execute("VACUUM")
-    dst.commit()
-    dst.close()
-    src.close()
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--version", type=int, required=True)
+    parser.add_argument("--generated-on", default=datetime.date.today().isoformat(),
+                        help="Build date; does not imply source freshness.")
+    parser.add_argument("--from-dir", type=pathlib.Path, default=None,
+                        help="Read snapshot inputs offline instead of fetching.")
+    parser.add_argument("--out-dir", type=pathlib.Path, required=True,
+                        help="Output directory. Not defaulted: web/public/catalog holds the schema-2 "
+                             "manifest current app builds install.")
+    parser.add_argument("--report", type=pathlib.Path, default=None,
+                        help="Write the normalization report and manifest as JSON.")
+    args = parser.parse_args()
 
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            work = pathlib.Path(tmp)
+            inputs = load_inputs(args.from_dir, work) if args.from_dir else fetch_inputs(UrllibFetcher(), work)
+            result = build(inputs, load_pinned(), args.out_dir, work, args.version, args.generated_on)
+    except tuple(error for error, _ in EXIT_CODES) as error:
+        code = next(code for kind, code in EXIT_CODES if isinstance(error, kind))
+        print(f"error ({type(error).__name__}): {error}", file=sys.stderr)
+        return code
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--version", type=int, default=1)
-    ap.add_argument(
-        "--generated-on",
-        default=datetime.date.today().isoformat(),
-        help="Snapshot build date; does not imply source freshness.",
-    )
-    ap.add_argument(
-        "--source-data-through",
-        default=None,
-        help="Verified source-data cutoff date, or omit when unknown.",
-    )
-    ap.add_argument(
-        "--out-dir",
-        default=str(pathlib.Path(__file__).resolve().parents[1] / "public" / "catalog"),
-    )
-    ap.add_argument(
-        "--full-db",
-        default=None,
-        help="Reuse an already-downloaded full catalog instead of re-downloading.",
-    )
-    args = ap.parse_args()
-    out = pathlib.Path(args.out_dir)
-    out.mkdir(parents=True, exist_ok=True)
-
-    with tempfile.TemporaryDirectory() as tmp:
-        full_db = args.full_db or str(pathlib.Path(tmp) / "kilter-full.db")
-        if not args.full_db:
-            print("Downloading full Kilter catalog via BoardLib...")
-            subprocess.run(["boardlib", "database", "kilter", full_db], check=True)
-        pruned = str(pathlib.Path(tmp) / "pruned.db")
-        print("Pruning to Fullride 7x10...")
-        prune(full_db, pruned)
-
-        gz_name = f"kilter-7x10.v{args.version}.db.gz"
-        gz_path = out / gz_name
-        with open(pruned, "rb") as f_in, open(gz_path, "wb") as compressed_file:
-            with gzip.GzipFile(filename="", mode="wb", fileobj=compressed_file,
-                               compresslevel=9, mtime=0) as f_out:
-                shutil.copyfileobj(f_in, f_out)
-        raw = pathlib.Path(pruned).stat().st_size
-        gz = gz_path.stat().st_size
-        sha = hashlib.sha256(gz_path.read_bytes()).hexdigest()
-
-        (out / "manifest.json").write_text(
-            json.dumps(
-                {
-                    "schemaVersion": 2,
-                    "version": args.version,
-                    "board": "kilter-fullride-7x10",
-                    "file": gz_name,
-                    "compression": "gzip",
-                    "sha256": sha,
-                    "bytesGzipped": gz,
-                    "bytesRaw": raw,
-                    "generatedOn": args.generated_on,
-                    "source": "legacy-aurora-kilter",
-                    "sourceDataThrough": args.source_data_through,
-                    "generatedFrom": "boardlib database kilter (full catalog) -> prune to product 7 / layout 8 / size 17 / sets {26,27} -> vacuum -> gzip",
-                    "filter": "climbs WHERE layout_id=8 AND is_listed=1 AND is_draft=0 AND frames_count=1",
-                },
-                indent=2,
-            )
-            + "\n"
-        )
-        print(f"Wrote {gz_path} ({gz} bytes, raw {raw}) sha256={sha}")
-        if gz > 8 * 1024 * 1024:
-            print("WARNING: snapshot exceeds the app's 8 MiB compressed catalog limit.")
+    report = dataclasses.asdict(result.report)
+    if args.report:
+        args.report.write_text(json.dumps({"manifest": result.manifest, "report": report},
+                                          indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest = result.manifest
+    print(f"Wrote {result.artifact_path} ({manifest['bytesGzipped']} bytes, raw {manifest['bytesRaw']})")
+    print(f"  sha256 {manifest['sha256']}  revision {manifest['layoutRevision']}")
+    print(f"  upstream {report['upstream_rows']}  listed {report['listed']}  emitted {report['emitted']}"
+          f"  aliases {report['aliases']}  role-rewritten {report['role_rewritten']}")
+    print(f"  excluded {report['excluded']}  stats {report['stats_emitted']} (excluded {report['excluded_stats']})")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

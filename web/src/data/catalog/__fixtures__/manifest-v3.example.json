@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 3,
+  "version": 2,
+  "board": "kilter-fullride-7x10",
+  "file": "kilter-7x10.v2.db.gz",
+  "compression": "gzip",
+  "sha256": "8bacc43f1fbbe61af3701b428b8b36f3962e125d7c99add480514055c41a08ed",
+  "bytesGzipped": 4969627,
+  "bytesRaw": 11767808,
+  "generatedOn": "2026-10-19",
+  "source": "boardsesh-kilter",
+  "sourceBuiltAt": "2026-10-19T18:38:11.515Z",
+  "sourceWatermarks": {
+    "board_climb_stats": "2026-10-19T18:32:56.232791Z",
+    "board_climbs": "2026-10-19T18:31:55.490105Z"
+  },
+  "layoutRevision": "kilter:7:8:17:f0d70b3db9a6",
+  "qualityScale": {
+    "min": 0,
+    "max": 5
+  },
+  "climbCount": 13299,
+  "generatedFrom": "boardsesh v1-gzip kilter layout 8 + v1-catalog -> pin to kilter-fullride-7x10 definition -> normalize roles to product 7 -> gzip",
+  "filter": "climbs WHERE layout_id=8 AND is_listed=1 AND frames_count=1 AND every placement lit on product_size 17"
+}
