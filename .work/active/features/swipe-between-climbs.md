@@ -223,3 +223,11 @@ Delivered through the three child stories (all `done`) plus docs and Playwright 
 - Not covered: real-device feel of the swipe thresholds; Codex's real-browser run was
   blocked by its sandbox. Tune during the phone check.
 - Closure: standard weight — fixes verified, no re-review.
+
+## Phone acceptance
+- 2026-10-20: signed release 33 (from merge `f5d2811`, same signing certificate as 32)
+  installed as an in-place update on Andrew's Android phone. Andrew tried swiping on the
+  phone and judged it "excellent"; the thresholds stay at their designed values.
+- Library preservation: whole-library exports before and after the update decode strictly
+  and match canonically (22 climbs, 6 in Trash, 4 playlists, 18 ordered memberships, 8
+  with effects). Evidence is kept outside Git.
