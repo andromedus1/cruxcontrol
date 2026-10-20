@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync-catalog-semantics
 kind: feature
-stage: review
+stage: done
 tags: [ui, data]
 parent: epic-catalog-sync
 depends_on: [epic-catalog-sync-snapshot-normalize]
@@ -421,3 +421,20 @@ UI) and are delivered by one owner in one PR.
   `append-only-guards`); `changes` is parsed but only `device-update` will display it;
   the committed same-origin `web/public/catalog/manifest.json` is still schema 2, so
   shipping a Boardsesh artifact remains with `private-publish`/`device-update`.
+
+## Review
+
+- Effective weight: standard; one independent pass.
+- Implementation by a delegated same-harness worker (isolated worktree); review by
+  Codex `gpt-6.1-sol` (medium) via peeragent — cross-model. It reviewed
+  `main...feat/catalog-semantics` at `eeed370`, re-ran typecheck, lint and the unit
+  suite (960 passed, 1 pre-existing skip) in a throwaway worktree.
+- Verdict: Approve — no verified findings. Checked: schema-2 receipt compatibility,
+  strict schema-3 parsing, marker detection/caching and retry, rating boundaries,
+  malformed marker rejection, removed climbs searchable and resolvable by exact UUID,
+  pre-download layout-revision guard, parameterized SQL, badge accessibility, wording,
+  and foundation-doc assertions.
+- Receiver check: the TypeScript manifest parser accepts the exact instant,
+  watermark and layout-revision formats emitted by the Python build
+  (`append-only-guards`).
+- Closure: standard weight, approved without findings.
