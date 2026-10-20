@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import type { BoardLightController, BoardLightState } from '../board-control/light-controller';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10';
 import { LocalClimbViewer } from './LocalClimbViewer';
 import { climbViewKey, type ClimbViewKey, type ClimbViewRecord } from './types';
@@ -23,7 +24,26 @@ const copy = {
   emptyDescription: 'Create a climb to get started.',
 };
 
-function Controlled({ climbs = [first] }: { climbs?: readonly ClimbViewRecord[] }) {
+const second: ClimbViewRecord = {
+  ...first,
+  key: climbViewKey('local:second'),
+  name: 'Basement Traverse',
+  assignments: [{ placementId: definition.placements[1].id, appearance: { kind: 'role', role: 'start' } }],
+};
+const third: ClimbViewRecord = {
+  ...first,
+  key: climbViewKey('local:third'),
+  name: 'Attic Project',
+  assignments: [{ placementId: definition.placements[2].id, appearance: { kind: 'role', role: 'finish' } }],
+};
+
+function Controlled({
+  climbs = [first],
+  controller,
+}: {
+  climbs?: readonly ClimbViewRecord[];
+  controller?: BoardLightController;
+}) {
   const [selected, setSelected] = useState<ClimbViewKey | null>(null);
   return (
     <LocalClimbViewer
@@ -32,8 +52,33 @@ function Controlled({ climbs = [first] }: { climbs?: readonly ClimbViewRecord[] 
       climbs={climbs}
       selectedKey={selected}
       onSelectedKeyChange={setSelected}
+      controller={controller}
     />
   );
+}
+
+function connectedController(): BoardLightController {
+  const state: BoardLightState = {
+    transport: { status: 'connected', device: { id: 'board', name: 'Homewall' } },
+    operation: 'idle',
+    lastAppliedScene: null,
+    error: null,
+  };
+  return {
+    getState: () => state,
+    subscribe: () => () => undefined,
+    requestAndConnect: vi.fn(),
+    reconnect: vi.fn(),
+    disconnect: vi.fn(),
+    light: vi.fn(),
+    clear: vi.fn(),
+    preview: vi.fn().mockResolvedValue({ status: 'applied' }),
+  };
+}
+
+function swipe(target: Element, dx: number) {
+  fireEvent.pointerDown(target, { pointerId: 1, pointerType: 'touch', isPrimary: true, clientX: 200, clientY: 300 });
+  fireEvent.pointerUp(target, { pointerId: 1, pointerType: 'touch', clientX: 200 + dx, clientY: 300 });
 }
 
 describe('LocalClimbViewer', () => {
@@ -185,5 +230,94 @@ describe('LocalClimbViewer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close climb details' }));
     await waitFor(() => expect(row).toHaveFocus());
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('moves to neighbors in the list order shown with buttons, keys and swipes', async () => {
+    render(<Controlled climbs={[first, second, third]} />);
+    const firstRow = screen.getByRole('button', { name: /Garage Circuit/ });
+    fireEvent.click(firstRow);
+    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Previous climb' })).toHaveAttribute('aria-disabled', 'true');
+
+    const next = screen.getByRole('button', { name: 'Next climb' });
+    next.focus();
+    fireEvent.click(next);
+    expect(screen.getByRole('heading', { name: 'Basement Traverse' })).toBeInTheDocument();
+    expect(screen.getByText('2 of 3')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Basement Traverse/ })).toHaveAttribute('aria-current', 'true');
+    // The header control stays mounted, so keyboard focus survives the move.
+    expect(next).toBeInTheDocument();
+    expect(next).toHaveFocus();
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Next climb' }), { key: 'ArrowRight' });
+    expect(screen.getByRole('heading', { name: 'Attic Project' })).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Next climb' }), { key: 'ArrowRight' });
+    expect(screen.getByRole('heading', { name: 'Attic Project' })).toBeInTheDocument();
+    expect(screen.getByText('3 of 3').closest('[role="status"]')).toHaveTextContent('Last climb');
+
+    swipe(screen.getByRole('img', { name: 'Attic Project' }), 100);
+    expect(screen.getByRole('heading', { name: 'Basement Traverse' })).toBeInTheDocument();
+
+    // Close returns focus to the climb now shown, not the one first opened.
+    fireEvent.click(screen.getByRole('button', { name: 'Close climb details' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Basement Traverse/ })).toHaveFocus());
+  });
+
+  it('relights the board for the climb moved to, like selecting it from the list', async () => {
+    const controller = connectedController();
+    render(<Controlled climbs={[first, second]} controller={controller} />);
+    fireEvent.click(screen.getByRole('button', { name: /Garage Circuit/ }));
+    await waitFor(() => expect(controller.preview).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+    await waitFor(() => expect(controller.preview).toHaveBeenCalledTimes(2));
+    expect(controller.preview).toHaveBeenLastCalledWith([
+      { placementId: definition.placements[1].id, color: definition.rolePresets.start.lightColor },
+    ]);
+  });
+
+  it('lets fast moves light only the climb where they stop', async () => {
+    vi.useFakeTimers();
+    try {
+      const controller = connectedController();
+      render(<Controlled climbs={[first, second, third]} controller={controller} />);
+      fireEvent.click(screen.getByRole('button', { name: /Garage Circuit/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+      await act(async () => { await vi.advanceTimersByTimeAsync(400); });
+      expect(controller.preview).toHaveBeenCalledOnce();
+      expect(controller.preview).toHaveBeenCalledWith([
+        { placementId: definition.placements[2].id, color: definition.rolePresets.finish.lightColor },
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('uses a caller navigation override, or none', () => {
+    const onNext = vi.fn();
+    const view = render(
+      <LocalClimbViewer
+        {...copy}
+        definition={definition}
+        climbs={[first]}
+        selectedKey={first.key}
+        onSelectedKeyChange={() => undefined}
+        navigationOverride={{ positionLabel: '26 of 50+', canPrevious: true, canNext: true, onPrevious: vi.fn(), onNext }}
+      />,
+    );
+    expect(screen.getByText('26 of 50+')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Next climb' }));
+    expect(onNext).toHaveBeenCalledOnce();
+    view.rerender(
+      <LocalClimbViewer
+        {...copy}
+        definition={definition}
+        climbs={[first]}
+        selectedKey={first.key}
+        onSelectedKeyChange={() => undefined}
+        navigationOverride={null}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Next climb' })).not.toBeInTheDocument();
   });
 });

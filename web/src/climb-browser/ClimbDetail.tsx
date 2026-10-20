@@ -9,6 +9,8 @@ import { useEditorLighting } from '../route-editor/use-editor-lighting';
 import type { ClimbViewRecord } from './types';
 import { formatCalendarDate } from './calendar-date';
 import { UpstreamRemovedBadge } from './UpstreamRemovedBadge';
+import type { ClimbNavigation } from './navigation';
+import { useClimbNavigationInput } from './use-climb-navigation-input';
 
 export interface ClimbDetailProps {
   readonly definition: BoardDefinition;
@@ -20,21 +22,81 @@ export interface ClimbDetailProps {
   readonly onManageLists?: () => void;
   readonly primaryAction?: Readonly<{ label: string; onActivate: () => void }>;
   readonly destructiveAction?: Readonly<{ label: string; onActivate: () => void }>;
+  /** Previous/next within the list the climb was opened from: header buttons, swipe and arrow keys. */
+  readonly navigation?: ClimbNavigation | null;
 }
 
 const roles: readonly ClimbRole[] = ['start', 'middle', 'finish', 'foot-only'];
 
-export function ClimbDetail({
+function headingIdFor(climb: ClimbViewRecord): string {
+  return `board-${String(climb.key).replace(/[^a-z0-9_-]/gi, '-')}`;
+}
+
+/**
+ * The detail shell stays mounted while navigating so focus, gestures and the
+ * position stay put; the content below remounts per climb, which restarts its
+ * automatic lighting exactly like selecting the climb from the list.
+ */
+export function ClimbDetail({ navigation, showBoardControls = true, ...props }: ClimbDetailProps) {
+  const input = useClimbNavigationInput<HTMLElement>(navigation);
+  const navigable = Boolean(navigation);
+  const className = [
+    'climb-detail',
+    navigable ? 'climb-swipe-zone' : '',
+    input.nudge ? `climb-swipe-zone--nudge-${input.nudge}` : '',
+  ].filter(Boolean).join(' ');
+  return (
+    <article
+      ref={input.swipeRef}
+      className={className}
+      aria-labelledby={headingIdFor(props.climb)}
+      tabIndex={navigable ? -1 : undefined}
+      onKeyDown={navigable ? input.onKeyDown : undefined}
+    >
+      {showBoardControls && <BoardControlBar controller={props.controller} />}
+      {navigation && (
+        <nav className="climb-detail__nav" aria-label="Climb navigation">
+          <button
+            className="climb-nav-button"
+            type="button"
+            aria-label="Previous climb"
+            aria-disabled={navigation.canPrevious ? undefined : 'true'}
+            data-climb-nav=""
+            onClick={input.previous}
+          >
+            <span aria-hidden="true">‹</span>
+          </button>
+          <p className="climb-detail__position" role="status" aria-live="polite" aria-atomic="true">
+            <span>{navigation.positionLabel}</span>
+            {input.announcement && <span className="climb-detail__end"> · {input.announcement}</span>}
+          </p>
+          <button
+            className="climb-nav-button"
+            type="button"
+            aria-label="Next climb"
+            aria-disabled={navigation.canNext ? undefined : 'true'}
+            data-climb-nav=""
+            onClick={input.next}
+          >
+            <span aria-hidden="true">›</span>
+          </button>
+        </nav>
+      )}
+      <ClimbDetailContent key={props.climb.key} {...props} />
+    </article>
+  );
+}
+
+function ClimbDetailContent({
   definition,
   climb,
   controller,
-  showBoardControls = true,
   headingLevel = 2,
   onEdit,
   onManageLists,
   primaryAction,
   destructiveAction,
-}: ClimbDetailProps) {
+}: Omit<ClimbDetailProps, 'navigation' | 'showBoardControls'>) {
   const effectGroups = useMemo(() => climb.effectGroups ?? [], [climb.effectGroups]);
   const lighting = useEditorLighting({
     definition,
@@ -69,7 +131,7 @@ export function ClimbDetail({
   } else if (state.operation === 'diagnosing') {
     operationStatus = 'Board capacity test running.';
   }
-  const boardHeadingId = `board-${String(climb.key).replace(/[^a-z0-9_-]/gi, '-')}`;
+  const boardHeadingId = headingIdFor(climb);
 
   const light = () => {
     if (!controller || !ready) return;
@@ -77,8 +139,7 @@ export function ClimbDetail({
   };
 
   return (
-    <article className="climb-detail" aria-labelledby={boardHeadingId}>
-      {showBoardControls && <BoardControlBar controller={controller} />}
+    <>
       <header className="climb-detail__header">
         <div>
           <p className="eyebrow">{climb.sourceLabel ?? (climb.origin === 'local-draft' ? 'Local climb' : 'Climb')}</p>
@@ -173,6 +234,6 @@ export function ClimbDetail({
           </button>
         )}
       </div>
-    </article>
+    </>
   );
 }

@@ -4,6 +4,7 @@ import type { BoardDefinition } from '../domain/boards/definition';
 import { ClimbDetail } from './ClimbDetail';
 import { UpstreamRemovedBadge } from './UpstreamRemovedBadge';
 import type { ClimbViewKey, ClimbViewRecord } from './types';
+import { listNavigation, type ClimbNavigation } from './navigation';
 import './LocalClimbViewer.css';
 import { useBackAction } from '../app/use-back-action.ts';
 
@@ -30,6 +31,11 @@ export interface LocalClimbViewerProps {
     label: string;
     onActivate: (key: ClimbViewKey) => void;
   }>;
+  /**
+   * Replaces the default previous/next over `climbs` for callers whose list
+   * continues beyond the rows shown (catalog pages). `null` turns navigation off.
+   */
+  readonly navigationOverride?: ClimbNavigation | null;
 }
 
 function validateRecords(definition: BoardDefinition, climbs: readonly ClimbViewRecord[]) {
@@ -60,6 +66,7 @@ export function LocalClimbViewer({
   onManageLists,
   primaryAction,
   destructiveAction,
+  navigationOverride,
 }: LocalClimbViewerProps) {
   validateRecords(definition, climbs);
   const selected = useMemo(
@@ -71,6 +78,21 @@ export function LocalClimbViewer({
   const [desktopDetails, setDesktopDetails] = useState(() => window.matchMedia('(min-width: 900px)').matches);
   const rowRefs = useRef(new Map<ClimbViewKey, HTMLButtonElement>());
   const returnFocusKey = useRef<ClimbViewKey | null>(null);
+  const selectedKeyValue = selected?.key ?? null;
+  const defaultNavigation = useMemo(
+    () => selectedKeyValue === null
+      ? null
+      : listNavigation(climbs.map(({ key }) => key), selectedKeyValue, onSelectedKeyChange),
+    [climbs, onSelectedKeyChange, selectedKeyValue],
+  );
+  const navigation = navigationOverride === undefined ? defaultNavigation : navigationOverride;
+
+  // Moving between climbs keeps Close returning focus to the climb now shown.
+  useEffect(() => {
+    if (selectedKeyValue === null) return;
+    returnFocusKey.current = selectedKeyValue;
+    if (desktopDetails) rowRefs.current.get(selectedKeyValue)?.scrollIntoView?.({ block: 'nearest' });
+  }, [desktopDetails, selectedKeyValue]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -196,11 +218,11 @@ export function LocalClimbViewer({
                 ×
               </button>
               <ClimbDetail
-                key={selected.key}
                 definition={definition}
                 climb={selected}
                 controller={controller}
                 showBoardControls={!desktopDetails}
+                navigation={navigation}
                 onEdit={onEditClimb ? () => onEditClimb(selected.key) : undefined}
                 onManageLists={onManageLists ? () => onManageLists(selected.key) : undefined}
                 primaryAction={
