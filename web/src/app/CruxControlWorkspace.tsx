@@ -206,7 +206,7 @@ function Workspace({ runtime, updateService }: CruxControlWorkspaceProps) {
         queries = snapshot.queries;
         if (!queries) {
           publish(null, [], { status: 'unavailable', message: snapshot.storage?.status === 'unavailable'
-            ? snapshot.storage.message : 'Install the older Kilter catalog to resolve these list entries.' });
+            ? snapshot.storage.message : 'Install the Kilter catalog to resolve these list entries.' });
           return;
         }
         const rows: CatalogClimb[] = [];

@@ -11,6 +11,7 @@ import { providerId, providerSourceId } from '../../domain/boards/identity.ts';
 import type { CatalogClimbQuery, CatalogCursor } from '../../catalog/types.ts';
 import { CatalogReadError } from '../../catalog/types.ts';
 import { createKilterCatalog } from './kilter-catalog.ts';
+import { LEGACY_RATING_SCALE as legacyScale } from '../../catalog/presentation.ts';
 
 const fixtureUrl = new URL('./__fixtures__/fullride-catalog.sql', import.meta.url);
 const wasmVfs = new MemoryVFS();
@@ -104,7 +105,7 @@ describe('Kilter catalog queries', () => {
       await db.query(`
         INSERT INTO climbs VALUES ('only-at-45', 8, 'fixture', 'Other angle route', '', 'p4117r42', 1, 0, 1);
         INSERT INTO climb_stats VALUES ('only-at-45', 45, 12, 12, NULL, 1, 2)`);
-      const adapter = createKilterCatalog(portFor(db), definition, provenance);
+      const adapter = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
       const id = { provider: providerId('kilter'), sourceId: providerSourceId('only-at-45'), layoutRevision: definition.layoutRevision };
       expect(await adapter.get(id, 45)).toMatchObject({ status: 'ready', value: { name: 'Other angle route', angle: 45 } });
       expect(await adapter.get(id, 40)).toEqual({ status: 'ready', value: null });
@@ -118,7 +119,7 @@ describe('Kilter catalog queries', () => {
     const db = await openDb();
     const port = portFor(db);
     const before = await port.query('SELECT * FROM climbs ORDER BY uuid');
-    const adapter = createKilterCatalog(port, definition, provenance);
+    const adapter = createKilterCatalog(port, definition, provenance, legacyScale);
     const result = await adapter.query({ angle: 40, minGrade: 18, maxGrade: 18 });
     const filtered = result.status === 'ready' ? result.value.climbs : [];
     expect(filtered.map(({ providerClimbId }) => providerClimbId.sourceId)).toEqual(['a-good']);
@@ -165,7 +166,7 @@ describe('Kilter catalog queries', () => {
       id: 'combined-wrong-setter', name: 'Filtered amber wrong setter', setter: 'Other', display: 18.4,
       ascents: 80, rating: 2.9,
     });
-    const adapter = createKilterCatalog(portFor(db), definition, provenance);
+    const adapter = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
     const result = await adapter.query({
       angle: 40,
       name: 'filtered amber',
@@ -202,7 +203,7 @@ describe('Kilter catalog queries', () => {
     await insertClimb(db, { id: 'b-high', name: 'sort-fixture Beta', display: 12.2, ascents: 20, rating: 3 });
     await insertClimb(db, { id: 'c-low', name: 'sort-fixture Gamma', display: 22, ascents: 5, rating: 1.5 });
     await insertClimb(db, { id: 'd-tie', name: 'sort-fixture Beta', display: 12.4, ascents: 20, rating: 2.5 });
-    const adapter = createKilterCatalog(portFor(db), definition, provenance);
+    const adapter = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
     const expected: Readonly<Record<NonNullable<CatalogClimbQuery['sort']>, readonly string[]>> = {
       rating: ['b-high', 'a-rating-tie', 'd-tie', 'z-rating-tie', 'c-low'],
       sends: ['b-high', 'd-tie', 'a-rating-tie', 'z-rating-tie', 'c-low'],
@@ -236,7 +237,7 @@ describe('Kilter catalog queries', () => {
       });
     }
     await insertClimb(db, { id: 'z-valid', name: 'grade-test Valid after rejection', display: 12.3, rating: 2 });
-    const adapter = createKilterCatalog(portFor(db), definition, provenance);
+    const adapter = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
     const first = await adapter.query({ angle: 40, name: 'grade-test', sort: 'grade-asc', limit: 1 });
     expect(first).toMatchObject({ status: 'ready', value: { climbs: [], excludedCount: 250 } });
     if (first.status !== 'ready') throw new Error('expected ready result');
@@ -251,7 +252,7 @@ describe('Kilter catalog queries', () => {
     await insertClimb(db, {
       id: 'literal-setter', name: 'Literal setter route', setter: 'Setter % _ literal',
     });
-    const adapter = createKilterCatalog(portFor(db), definition, provenance);
+    const adapter = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
     const literal = await adapter.query({ angle: 40, name: "% _" });
     expect(literal.status === 'ready' ? literal.value.climbs.map(({ name }) => name) : []).toEqual([
       "Quotes ' % _ literal",
@@ -277,14 +278,14 @@ describe('Kilter catalog queries', () => {
       `INSERT INTO climbs VALUES ('z-valid', 8, 'fixture', 'Rejected valid route', '', 'p4117r42', 1, 0, 1);
        INSERT INTO climb_stats VALUES ('z-valid', 40, 12, 12, NULL, 1, 2)`,
     );
-    const adapter = createKilterCatalog(portFor(db), definition, provenance);
+    const adapter = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
     const first = await adapter.query({ angle: 40, name: 'Rejected', limit: 1 });
     expect(first).toMatchObject({ status: 'ready', value: { climbs: [], excludedCount: 250 } });
     if (first.status !== 'ready') throw new Error('expected ready result');
     expect(first.value.nextCursor).toBeTruthy();
     const changedFilter = adapter.query({ angle: 40, name: 'changed', limit: 1, cursor: first.value.nextCursor! });
     await expect(changedFilter).rejects.toBeInstanceOf(TypeError);
-    const replacement = createKilterCatalog(portFor(db), definition, { ...provenance, snapshotId: 'fixture-v2' });
+    const replacement = createKilterCatalog(portFor(db), definition, { ...provenance, snapshotId: 'fixture-v2' }, legacyScale);
     await expect(replacement.query({ angle: 40, name: 'Rejected', limit: 1, cursor: first.value.nextCursor! }))
       .rejects.toBeInstanceOf(TypeError);
     const second = await adapter.query({ angle: 40, name: 'Rejected', limit: 1, cursor: first.value.nextCursor! });
@@ -305,7 +306,7 @@ describe('Kilter catalog queries', () => {
          INSERT INTO climb_stats VALUES (?, 40, 12, 12, NULL, 1, 2)`, [id, id],
       );
     }
-    const adapter = createKilterCatalog(portFor(db), definition, provenance);
+    const adapter = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
     const found: string[] = [];
     let cursor: CatalogClimbQuery['cursor'];
     let passes = 0;
@@ -334,7 +335,7 @@ describe('Kilter catalog queries', () => {
       async isReady() { return true; },
       async close() {},
     };
-    const adapter = createKilterCatalog(recording, definition, provenance);
+    const adapter = createKilterCatalog(recording, definition, provenance, legacyScale);
     await expect(adapter.query({ angle: 41 })).rejects.toBeInstanceOf(RangeError);
     await expect(adapter.query({ angle: 40, name: 'x'.repeat(201) })).rejects.toBeInstanceOf(RangeError);
     await expect(adapter.query({ angle: 40, minGrade: 8.5 })).rejects.toBeInstanceOf(RangeError);
@@ -369,11 +370,13 @@ describe('Kilter catalog queries', () => {
     for (const malformed of malformedCursors) {
       await expect(adapter.query({ angle: 40, cursor: malformed as CatalogCursor })).rejects.toBeInstanceOf(TypeError);
     }
-    const replacement = createKilterCatalog(recording, definition, { ...provenance, snapshotId: 'fixture-v2' });
+    const replacement = createKilterCatalog(recording, definition, { ...provenance, snapshotId: 'fixture-v2' }, legacyScale);
     await expect(replacement.query({ angle: 40, cursor: validCursor })).rejects.toBeInstanceOf(TypeError);
-    expect(calls).toBe(1);
-    expect(queries[0]!.sql).toContain('LIMIT ?');
-    expect(queries[0]!.params.at(-1)).toBe(251);
+    // The only reads are the adapter's one-time optional-column probe and the single valid page.
+    expect(calls).toBe(2);
+    expect(queries[0]!.sql).toBe('PRAGMA table_info(climbs)');
+    expect(queries[1]!.sql).toContain('LIMIT ?');
+    expect(queries[1]!.params.at(-1)).toBe(251);
   });
 
   it('isolates provider and revision identities and distinguishes unavailable from failures', async () => {
@@ -383,14 +386,14 @@ describe('Kilter catalog queries', () => {
       async isReady() { return false; },
       async close() {},
     };
-    const adapter = createKilterCatalog(empty, definition, provenance);
+    const adapter = createKilterCatalog(empty, definition, provenance, legacyScale);
     expect(await adapter.query({ angle: 40 })).toEqual({ status: 'unavailable' });
     expect(await adapter.get({ provider: providerId('other'), sourceId: providerSourceId('x'), layoutRevision: definition.layoutRevision }, 40))
       .toEqual({ status: 'unavailable' });
     expect(calls).toBe(0);
 
     const readyEmpty: CatalogPort = { ...empty, async isReady() { return true; } };
-    const readyAdapter = createKilterCatalog(readyEmpty, definition, provenance);
+    const readyAdapter = createKilterCatalog(readyEmpty, definition, provenance, legacyScale);
     const wrongId = await readyAdapter.get({ provider: providerId('other'), sourceId: providerSourceId('x'), layoutRevision: definition.layoutRevision }, 40);
     expect(wrongId).toEqual({ status: 'ready', value: null });
     const wrongRevision = await readyAdapter.get({
@@ -405,22 +408,107 @@ describe('Kilter catalog queries', () => {
       async isReady() { return true; },
       async close() {},
     };
-    await expect(createKilterCatalog(broken, definition, provenance).query({ angle: 40 }))
+    await expect(createKilterCatalog(broken, definition, provenance, legacyScale).query({ angle: 40 }))
       .rejects.toBeInstanceOf(CatalogReadError);
-    await expect(createKilterCatalog(broken, definition, provenance).query({ angle: 40 }))
+    await expect(createKilterCatalog(broken, definition, provenance, legacyScale).query({ angle: 40 }))
       .rejects.toMatchObject({ cause: expect.any(Error) });
+  });
+
+  it('keeps removed-upstream climbs searchable and resolvable by their exact UUID spelling', async () => {
+    const db = await openDb();
+    try {
+      await db.query('ALTER TABLE climbs ADD COLUMN upstream_removed_at TEXT');
+      await db.query("UPDATE climbs SET upstream_removed_at = '2026-10-26' WHERE uuid = 'a-good'");
+      const adapter = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
+      const result = await adapter.query({ angle: 40, sort: 'name' });
+      if (result.status !== 'ready') throw new Error('expected ready result');
+      const byId = new Map(result.value.climbs.map((climb) => [climb.providerClimbId.sourceId, climb]));
+      expect(byId.get(providerSourceId('a-good'))).toMatchObject({ name: 'Amber move', upstreamRemovedOn: '2026-10-26' });
+      expect(byId.get(providerSourceId('b-no-label'))).not.toHaveProperty('upstreamRemovedOn');
+      expect(byId.size).toBe(3);
+
+      const exact = { provider: providerId('kilter'), sourceId: providerSourceId('a-good'), layoutRevision: definition.layoutRevision };
+      expect(await adapter.get(exact, 40)).toMatchObject({
+        status: 'ready', value: { name: 'Amber move', upstreamRemovedOn: '2026-10-26' },
+      });
+      expect(await adapter.get({ ...exact, sourceId: providerSourceId('A-GOOD') }, 40)).toEqual({ status: 'ready', value: null });
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('treats artifacts without the removed-upstream column as fully present upstream', async () => {
+    const db = await openDb();
+    try {
+      const adapter = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
+      const result = await adapter.query({ angle: 40, sort: 'name' });
+      if (result.status !== 'ready') throw new Error('expected ready result');
+      expect(result.value.climbs.map(({ providerClimbId }) => providerClimbId.sourceId))
+        .toEqual(['a-good', 'b-no-label', 'h-literal_%_quote']);
+      for (const climb of result.value.climbs) expect(climb).not.toHaveProperty('upstreamRemovedOn');
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('retries the optional-column probe after a failed read instead of caching the failure', async () => {
+    const db = await openDb();
+    try {
+      let failProbe = true;
+      const flaky: CatalogPort = {
+        ...portFor(db),
+        async query<T extends Row = Row>(sql: string, params?: readonly SqlValue[]): Promise<T[]> {
+          if (sql.startsWith('PRAGMA') && failProbe) {
+            failProbe = false;
+            throw new Error('transient read failure');
+          }
+          return db.query(sql, params) as Promise<T[]>;
+        },
+      };
+      const adapter = createKilterCatalog(flaky, definition, provenance, legacyScale);
+      await expect(adapter.query({ angle: 40 })).rejects.toBeInstanceOf(CatalogReadError);
+      await expect(adapter.query({ angle: 40 })).resolves.toMatchObject({ status: 'ready' });
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('validates the minimum rating against the installed catalog scale', async () => {
+    const db = await openDb();
+    try {
+      await insertClimb(db, { id: 'scale-high', name: 'scale-fixture high', rating: 4.8 });
+      await insertClimb(db, { id: 'scale-mid', name: 'scale-fixture mid', rating: 4.2 });
+      const fivePoint = createKilterCatalog(portFor(db), definition, provenance, { min: 0, max: 5 });
+      expect(fivePoint.ratingScale).toEqual({ min: 0, max: 5 });
+      const high = await fivePoint.query({ angle: 40, name: 'scale-fixture', minRating: 4.5 });
+      expect(high.status === 'ready' ? high.value.climbs.map(({ providerClimbId }) => providerClimbId.sourceId) : [])
+        .toEqual(['scale-high']);
+      await expect(fivePoint.query({ angle: 40, minRating: 5 })).resolves.toMatchObject({ status: 'ready' });
+      await expect(fivePoint.query({ angle: 40, minRating: 5.1 })).rejects.toBeInstanceOf(RangeError);
+
+      const threeStar = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
+      expect(threeStar.ratingScale).toEqual({ min: 0, max: 3 });
+      await expect(threeStar.query({ angle: 40, minRating: 4.5 })).rejects.toBeInstanceOf(RangeError);
+      await expect(threeStar.query({ angle: 40, minRating: 3 })).resolves.toMatchObject({ status: 'ready' });
+
+      expect(() => createKilterCatalog(portFor(db), definition, provenance, { min: 3, max: 3 })).toThrow(TypeError);
+      expect(() => createKilterCatalog(portFor(db), definition, provenance, { min: -1, max: 5 })).toThrow(TypeError);
+      expect(() => createKilterCatalog(portFor(db), definition, provenance, { min: 0, max: Number.NaN })).toThrow(TypeError);
+    } finally {
+      await db.close();
+    }
   });
 
   it('returns listed grade choices and rejects unsupported definitions/provenance', async () => {
     const db = await openDb();
-    const adapter = createKilterCatalog(portFor(db), definition, provenance);
+    const adapter = createKilterCatalog(portFor(db), definition, provenance, legacyScale);
     expect(await adapter.grades()).toEqual({ status: 'ready', value: [
       { value: 10, label: 'V0' }, { value: 12, label: 'V1' }, { value: 18, label: 'V4' },
       { value: 20, label: 'V5' }, { value: 22, label: 'V6' }, { value: 24, label: 'V7' },
     ] });
-    await expect(Promise.resolve().then(() => createKilterCatalog(portFor(db), { ...definition, layoutRevision: 'other' as never }, provenance)))
+    await expect(Promise.resolve().then(() => createKilterCatalog(portFor(db), { ...definition, layoutRevision: 'other' as never }, provenance, legacyScale)))
       .rejects.toBeInstanceOf(TypeError);
-    expect(() => createKilterCatalog(portFor(db), definition, { ...provenance, snapshotId: ' ' }))
+    expect(() => createKilterCatalog(portFor(db), definition, { ...provenance, snapshotId: ' ' }, legacyScale))
       .toThrow(TypeError);
     await db.close();
   });

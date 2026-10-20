@@ -45,6 +45,33 @@ describe('IndexedDbCatalogReceiptStore', () => {
     store.close();
   });
 
+  it('round-trips a Boardsesh schema-3 receipt through the strict manifest parser', async () => {
+    const { sourceDataThrough: _legacyOnly, ...shared } = manifest as Extract<CatalogManifest, { schemaVersion: 2 }>;
+    const boardsesh: CatalogReceipt = {
+      schemaVersion: 1,
+      slot: 'b',
+      installedAt: '2026-10-20T12:00:00.000Z',
+      manifest: {
+        ...shared,
+        schemaVersion: 3,
+        version: 2,
+        file: 'kilter-7x10.v2.db.gz',
+        source: 'boardsesh-kilter',
+        sourceBuiltAt: '2026-10-19T18:38:11.515Z',
+        sourceWatermarks: { board_climbs: '2026-10-19T18:31:55.490105Z' },
+        layoutRevision: 'kilter:7:8:17:f0d70b3db9a6',
+        qualityScale: { min: 0, max: 5 },
+        climbCount: 13299,
+        removedUpstreamCount: null,
+        changes: null,
+      },
+    };
+    const store = await IndexedDbCatalogReceiptStore.open(new IDBFactory());
+    await store.write(boardsesh);
+    await expect(store.read()).resolves.toEqual(boardsesh);
+    store.close();
+  });
+
   it('requests strict transaction durability and rejects an aborted receipt commit', async () => {
     let transactionArguments: unknown[] = [];
     const transaction = {

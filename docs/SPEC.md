@@ -2,7 +2,7 @@
 description: CruxControl capabilities, domain model, constraints, and non-functional requirements
 type: planning
 kind: planning
-updated: 2026-10-18
+updated: 2026-10-19
 nav_priority: high
 summary: >
   The capability contract for a Kilter-first, multi-board-capable CruxControl:
@@ -83,16 +83,19 @@ operates over, and the constraints it must satisfy. The _why_ lives in
 - Kilter community catalog access is the next major addition, ahead of invited
   sharing. Its Android/web delivery does not depend on physical iPhone acceptance;
   native iPhone support keeps its own capability and preservation gates.
-- The first slice lazily opens the installed legacy Kilter Fullride
-  snapshot on first catalog entry. Ordinary local startup does not read catalog
+- The first slice lazily opens the installed Kilter Fullride catalog on first
+  catalog entry. Ordinary local startup does not read catalog
   storage or fetch metadata. The Manage dialog describes the source and size; a
   download starts only after explicit user consent. Installed catalog reads work
   offline, and catalog absence or failure leaves authored climbs and lists available.
 - Browse complete routes compatible with the configured Fullride placements through
   a read-only detail and lighting surface. Combine name and angle with an inclusive
-  grade range, minimum rating on the source's three-star scale, minimum distinct
-  ascensionists at the selected angle, and literal setter-substring search. Sends
-  count distinct climbers, not repeated ascents. Catalog rows show rating and sends.
+  grade range, minimum rating on the installed catalog's declared scale (three stars
+  for the legacy snapshot; the manifest's `qualityScale`, 0–5, for a Boardsesh-derived
+  catalog), minimum distinct ascensionists at the selected angle, and literal
+  setter-substring search. Sends count distinct climbers, not repeated ascents, and
+  may go down as well as up between catalog versions. Catalog rows show rating on the
+  installed scale and sends.
   Sort by highest rating (default), most sends, easiest, hardest, or name A–Z;
   ties use stable climb identities.
 - Name, angle and sort stay beside results. A dedicated filter sheet stages grade,
@@ -108,8 +111,16 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   official filters are deferred, as are individual/provider-climb URLs. The anonymous
   snapshot supplies no personal sent/liked history.
 - Climb detail shows the source grade when one is available, alongside the climb's
-  name and angle; missing grades remain omitted rather than fabricated.
-- Source wording identifies an older offline snapshot with no live updates. Its
+  name and angle; missing grades remain omitted rather than fabricated. Catalog rows,
+  detail and playlist rows credit the climb's setter ("set by <setter>").
+- Climbs a Boardsesh-derived catalog marks as removed upstream stay searchable,
+  playable and resolvable from lists, with a "Removed upstream" badge in results,
+  detail and playlist rows. Artifacts without the marker treat every climb as present.
+- Source wording follows the installed manifest. A Boardsesh-derived catalog reads
+  "Kilter community climbs via Boardsesh · updated <build date>" and "Not official
+  Kilter data · setters credited"; Manage shows its version, build date, Boardsesh
+  snapshot time and climb counts. For the legacy snapshot, source wording identifies
+  an older offline snapshot with no live updates. Its
   source freshness and complete current-app coverage are unknown. Installation does
   not refresh itself. Public distribution of the real catalog binary remains gated;
   a manifest can still present an offer when its binary is absent. After explicit

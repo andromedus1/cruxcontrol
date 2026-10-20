@@ -2,7 +2,7 @@
 description: CruxControl high-level architecture — modules, data flow, conventions, dependencies, risks
 type: planning
 kind: planning
-updated: 2026-10-18
+updated: 2026-10-19
 nav_priority: high
 summary: >
   High-level architecture for a Kilter-first climbing-board platform: typed board
@@ -94,10 +94,13 @@ feature item bodies in `.work/`, not here. Capabilities are in
    `web/scripts/catalog/`) derives the Fullride artifact from Boardsesh's public Kilter
    snapshots: it pins hardware to the generated board definition's layout revision,
    rewrites role codes to product-7 ids by name, preserves upstream UUID spelling and
-   frames, records every upstream identity's status, and emits a schema-3 manifest that
-   current app builds reject until they support it. With a previous artifact it carries
-   forward every app-visible climb missing upstream (`climbs.upstream_removed_at`),
-   assigns the next version, and fails closed through update guards before writing.
+   frames, records every upstream identity's status, and emits a schema-3 manifest. With
+   a previous artifact it carries forward every app-visible climb missing upstream
+   (`climbs.upstream_removed_at`), assigns the next version, and fails closed through
+   update guards before writing. The app's same-origin install path accepts schema 2
+   (legacy) and schema 3 (`boardsesh-kilter`) manifests; a schema-3 offer must match the
+   installed definition's layout revision. One presentation module derives source
+   wording, provenance and the rating scale from the installed manifest.
 4. **Controller Profiles & Transports** — profiles own discovery and command
    encoding; transports own platform I/O. The first pair is Aurora API level 2/3 over
    Web Bluetooth: deterministic framing/checksum/multi-packet encoding, serialized
@@ -139,7 +142,8 @@ feature item bodies in `.work/`, not here. Capabilities are in
    through `useEditorLighting`; view changes never request a Bluetooth chooser.
    The Kilter catalog surface opens its runtime service on first entry and shows
    explicit Manage/download consent. Its parameterized SQLite adapter combines name,
-   angle, inclusive grade bounds, minimum rating (0–3), minimum distinct ascensionists
+   angle, inclusive grade bounds, minimum rating within the installed manifest's scale
+   (0–3 legacy, `qualityScale` for schema 3), minimum distinct ascensionists
    at that angle and literal setter-substring search across the installed catalog
    before pagination. Rating and sends sort descending, rounded displayed grade sorts
    ascending or descending, and name sorts case-insensitively ascending; rating is
@@ -157,6 +161,10 @@ feature item bodies in `.work/`, not here. Capabilities are in
    sort remain beside results; filter persistence across restart is not guaranteed.
    Catalog rows supply rating/send metrics through an optional shared viewer slot
    without changing authored records, and reuse read-only detail and lighting.
+   The adapter probes the optional `climbs.upstream_removed_at` column once per
+   snapshot; dated climbs project `upstreamRemovedOn`, which shared rows, detail and
+   playlist rows render as a "Removed upstream" badge. Install validation accepts the
+   column's absence and rejects non-date markers.
    Hold selection, hold count, grade-consensus accuracy, personal sent/liked state,
    other remaining official filters and provider-climb URLs remain deferred. The
    older snapshot retains unknown freshness and has no auto-refresh.

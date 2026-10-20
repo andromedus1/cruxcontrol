@@ -72,10 +72,15 @@ describe('CatalogManageDialog', () => {
     render(<CatalogManageDialog service={value.service} onClose={onClose} statusAnnouncement="Checking catalog details." />);
     await waitFor(() => expect(value.service.loadOffer).toHaveBeenCalledOnce());
     expect(value.service.installOffer).not.toHaveBeenCalled();
-    expect(screen.getByText(/Source freshness: unknown/)).toBeInTheDocument();
-    expect(screen.getByText(/not the current Kilter library/)).toBeInTheDocument();
+    // Before any manifest is read the dialog claims no particular source.
+    expect(screen.getByRole('heading', { name: 'Kilter catalog' })).toBeInTheDocument();
+    expect(screen.queryByText(/Source freshness: unknown/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Boardsesh/)).not.toBeInTheDocument();
 
     act(() => value.publish(snapshot({ status: 'empty' }, { offer })));
+    expect(screen.getByRole('heading', { name: 'Legacy Kilter catalog' })).toBeInTheDocument();
+    expect(screen.getByText(/Source freshness: unknown/)).toBeInTheDocument();
+    expect(screen.getByText(/not the current Kilter library/)).toBeInTheDocument();
     expect(screen.getByText(/5.1 MB download · 12.4 MB catalog data/)).toBeInTheDocument();
     expect(screen.getByText(/Snapshot generated:/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Download 5.1 MB' }));
@@ -114,6 +119,42 @@ describe('CatalogManageDialog', () => {
     expect(screen.getByText(/Source freshness: unknown/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Download|Retry|Check again/ })).not.toBeInTheDocument();
     expect(value.service.loadOffer).not.toHaveBeenCalled();
+  });
+
+  it('describes an installed Boardsesh catalog as unofficial community data with its version and dates', () => {
+    const { sourceDataThrough: _legacyOnly, ...identity } = offer as Extract<CatalogManifest, { schemaVersion: 2 }>;
+    const boardsesh: CatalogManifest = {
+      ...identity,
+      schemaVersion: 3,
+      version: 2,
+      file: 'kilter-7x10.v2.db.gz',
+      generatedOn: '2026-10-19',
+      source: 'boardsesh-kilter',
+      sourceBuiltAt: '2026-10-18T22:00:00.000Z',
+      sourceWatermarks: {},
+      layoutRevision: 'kilter:7:8:17:f0d70b3db9a6',
+      qualityScale: { min: 0, max: 5 },
+      climbCount: 13_299,
+      removedUpstreamCount: 33,
+      changes: { added: 40, removed: 33, restored: 0 },
+    };
+    const value = serviceFor(snapshot({ status: 'ready', receipt: { ...installedReceipt, manifest: boardsesh } }));
+    render(<CatalogManageDialog service={value.service} onClose={() => undefined} statusAnnouncement="" />);
+    const dialog = screen.getByRole('dialog', { name: 'Kilter community catalog' });
+    expect(dialog).toHaveTextContent('Kilter community climbs via Boardsesh. Not official Kilter data');
+    expect(dialog).toHaveTextContent('each climb credits its setter');
+    expect(dialog).toHaveTextContent('Catalog version 2, built Oct 19, 2026 from the Boardsesh snapshot of Oct 18, 2026.');
+    expect(dialog).toHaveTextContent('13,299 climbs, including 33 removed upstream and kept so your lists keep working.');
+    expect(dialog).toHaveTextContent('Ratings use a 0–5 scale. Sends count distinct climbers and can go down as well as up between catalog versions.');
+    expect(dialog).not.toHaveTextContent(/Older offline snapshot|Source freshness: unknown|Snapshot generated/);
+    expect(screen.getByText(/Installed on this device:/)).toBeInTheDocument();
+
+    act(() => value.publish(snapshot({ status: 'ready', receipt: {
+      ...installedReceipt,
+      manifest: { ...boardsesh, removedUpstreamCount: null, changes: null },
+    } })));
+    expect(dialog).toHaveTextContent('13,299 climbs.');
+    expect(dialog).not.toHaveTextContent('removed upstream');
   });
 
   it('keeps metadata retry, same-offer download retry, busy recovery, and unsupported copy distinct', () => {

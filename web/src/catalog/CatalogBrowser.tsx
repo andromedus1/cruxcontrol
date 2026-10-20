@@ -8,6 +8,7 @@ import type { ClimbViewKey } from '../climb-browser/types.ts';
 import { LocalClimbViewer } from '../climb-browser/LocalClimbViewer.tsx';
 import { CatalogManageDialog } from './CatalogManageDialog.tsx';
 import { CatalogFilterDialog, EMPTY_CATALOG_FILTERS, type CatalogFilterValues } from './CatalogFilterDialog.tsx';
+import { catalogSourceCopy } from './presentation.ts';
 import './catalog.css';
 
 export interface CatalogBrowserProps {
@@ -56,6 +57,18 @@ export function CatalogBrowser({
   const [manageOpen, setManageOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const queries = snapshot.queries;
+  const sourceCopy = catalogSourceCopy(
+    snapshot.storage?.status === 'ready' ? snapshot.storage.receipt.manifest : snapshot.offer,
+  );
+  const ratingScale = queries?.ratingScale ?? null;
+  // A committed minimum rating outside a newly installed catalog's scale is dropped
+  // rather than sent to an adapter that would reject it.
+  const activeFilters = useMemo(() => (
+    filters.minRating !== null && ratingScale
+      && (filters.minRating < ratingScale.min || filters.minRating > ratingScale.max)
+      ? { ...filters, minRating: null }
+      : filters
+  ), [filters, ratingScale]);
   const currentQueries = useRef(queries);
   currentQueries.current = queries;
   const queryGeneration = useRef(0);
@@ -76,10 +89,11 @@ export function CatalogBrowser({
   const visibleRows = queries && rowsAdapter === queries ? rows : EMPTY_ROWS;
   const visiblePage = queries && rowsAdapter === queries ? page : null;
   const visibleSelectedKey = queries && rowsAdapter === queries ? selectedKey : null;
+  const climbLabel = sourceCopy.climbLabel;
   const viewRows = useMemo(() => visibleRows.map((climb) => ({
     ...climb,
-    sourceLabel: 'Legacy Kilter · read only',
-  })), [visibleRows]);
+    sourceLabel: climbLabel,
+  })), [visibleRows, climbLabel]);
   const metricsByKey = useMemo(
     () => new Map(visibleRows.map((climb) => [climb.key, climb] as const)),
     [visibleRows],
@@ -179,11 +193,11 @@ export function CatalogBrowser({
     void queryAdapter.query({
       angle,
       name: search.value,
-      ...(filters.minGrade === null ? {} : { minGrade: filters.minGrade }),
-      ...(filters.maxGrade === null ? {} : { maxGrade: filters.maxGrade }),
-      ...(filters.minRating === null ? {} : { minRating: filters.minRating }),
-      ...(filters.minAscents === null ? {} : { minAscents: filters.minAscents }),
-      ...(filters.setter ? { setter: filters.setter } : {}),
+      ...(activeFilters.minGrade === null ? {} : { minGrade: activeFilters.minGrade }),
+      ...(activeFilters.maxGrade === null ? {} : { maxGrade: activeFilters.maxGrade }),
+      ...(activeFilters.minRating === null ? {} : { minRating: activeFilters.minRating }),
+      ...(activeFilters.minAscents === null ? {} : { minAscents: activeFilters.minAscents }),
+      ...(activeFilters.setter ? { setter: activeFilters.setter } : {}),
       sort,
       limit: 25,
       ...(cursor === undefined ? {} : { cursor }),
@@ -216,7 +230,7 @@ export function CatalogBrowser({
     angle,
     search.value,
     search.settled,
-    filters,
+    activeFilters,
     sort,
     activePageNumber,
     retryCount,
@@ -304,7 +318,7 @@ export function CatalogBrowser({
     emptyTitle = snapshot.operation === 'downloading' ? 'Your catalog is on its way' : 'Install the catalog to browse';
     emptyDescription = snapshot.operation === 'downloading'
       ? 'You can keep using your local climbs and lists while the catalog downloads.'
-      : 'Set up the older offline snapshot to search and preview compatible climbs.';
+      : sourceCopy.setupDescription;
   } else if (queryStatus === 'loading' || snapshot.operation === 'opening') {
     emptyTitle = 'Loading climbs';
     emptyDescription = 'Searching this page of the installed catalog.';
@@ -323,19 +337,19 @@ export function CatalogBrowser({
   }
 
   const gradeName = (value: number) => gradeOptions.find((option) => option.value === value)?.label ?? ('Grade ' + value);
-  const gradeSummary = filters.minGrade !== null && filters.maxGrade !== null
-    ? filters.minGrade === filters.maxGrade
-      ? 'Grade ' + gradeName(filters.minGrade)
-      : gradeName(filters.minGrade) + '–' + gradeName(filters.maxGrade)
-    : filters.minGrade !== null
-      ? 'Grade ≥ ' + gradeName(filters.minGrade)
-      : filters.maxGrade !== null
-        ? 'Grade ≤ ' + gradeName(filters.maxGrade)
+  const gradeSummary = activeFilters.minGrade !== null && activeFilters.maxGrade !== null
+    ? activeFilters.minGrade === activeFilters.maxGrade
+      ? 'Grade ' + gradeName(activeFilters.minGrade)
+      : gradeName(activeFilters.minGrade) + '–' + gradeName(activeFilters.maxGrade)
+    : activeFilters.minGrade !== null
+      ? 'Grade ≥ ' + gradeName(activeFilters.minGrade)
+      : activeFilters.maxGrade !== null
+        ? 'Grade ≤ ' + gradeName(activeFilters.maxGrade)
         : '';
   const filterChipCount = Number(Boolean(gradeSummary))
-    + Number(filters.minRating !== null)
-    + Number(filters.minAscents !== null)
-    + Number(Boolean(filters.setter));
+    + Number(activeFilters.minRating !== null)
+    + Number(activeFilters.minAscents !== null)
+    + Number(Boolean(activeFilters.setter));
   const removeFilter = (change: Partial<CatalogFilterValues>) => {
     invalidateQuery();
     resetPaging();
@@ -347,12 +361,12 @@ export function CatalogBrowser({
       <section className="catalog-source-row" aria-label="Catalog source">
         <div className="catalog-source-row__copy">
           <div className="catalog-source-row__title">
-            <strong>Legacy Kilter</strong>
+            <strong>{sourceCopy.headline}</strong>
             <span className={`catalog-badge ${snapshot.storage?.status === 'ready' ? 'catalog-badge--ready' : ''}`}>
               {statusLabel}
             </span>
           </div>
-          <p>Older offline snapshot · no live updates</p>
+          <p>{sourceCopy.summary}</p>
         </div>
         <button ref={manageButton} className="catalog-button catalog-button--secondary" type="button" onClick={openManage}>
           Manage
@@ -360,7 +374,7 @@ export function CatalogBrowser({
       </section>
 
       {snapshot.storage?.status === 'ready' && snapshot.queries && (
-        <form className="catalog-filters" onSubmit={(event) => event.preventDefault()} aria-label="Filter Legacy Kilter climbs">
+        <form className="catalog-filters" onSubmit={(event) => event.preventDefault()} aria-label={`Filter ${sourceCopy.name} climbs`}>
           <label className="catalog-field catalog-field--name">
             <span>Name</span>
             <input
@@ -433,22 +447,22 @@ export function CatalogBrowser({
                   <span>{gradeSummary}</span><span aria-hidden="true">×</span>
                 </button>
               )}
-              {filters.minRating !== null && (
+              {activeFilters.minRating !== null && ratingScale && (
                 <button className="catalog-filter-chip" type="button" aria-label="Remove minimum rating filter"
                   onClick={() => removeFilter({ minRating: null })}>
-                  <span>Rating ≥ {filters.minRating} / 3</span><span aria-hidden="true">×</span>
+                  <span>Rating ≥ {activeFilters.minRating} / {ratingScale.max}</span><span aria-hidden="true">×</span>
                 </button>
               )}
-              {filters.minAscents !== null && (
+              {activeFilters.minAscents !== null && (
                 <button className="catalog-filter-chip" type="button" aria-label="Remove minimum sends filter"
                   onClick={() => removeFilter({ minAscents: null })}>
-                  <span>Sends ≥ {filters.minAscents}</span><span aria-hidden="true">×</span>
+                  <span>Sends ≥ {activeFilters.minAscents}</span><span aria-hidden="true">×</span>
                 </button>
               )}
-              {filters.setter && (
+              {activeFilters.setter && (
                 <button className="catalog-filter-chip" type="button" aria-label="Remove setter filter"
                   onClick={() => removeFilter({ setter: '' })}>
-                  <span>Setter: {filters.setter}</span><span aria-hidden="true">×</span>
+                  <span>Setter: {activeFilters.setter}</span><span aria-hidden="true">×</span>
                 </button>
               )}
             </div>
@@ -528,9 +542,9 @@ export function CatalogBrowser({
         listFooter={pageFooter}
         renderRowMetadata={(climb) => {
           const catalogClimb = metricsByKey.get(climb.key);
-          return catalogClimb ? (
+          return catalogClimb && ratingScale ? (
             <span className="catalog-row-metrics">
-              ★ {catalogClimb.statistics.quality.toFixed(1)} / 3 · {catalogClimb.statistics.ascentCount} sends
+              ★ {catalogClimb.statistics.quality.toFixed(1)} / {ratingScale.max} · {catalogClimb.statistics.ascentCount} sends
             </span>
           ) : null;
         }}
@@ -546,10 +560,12 @@ export function CatalogBrowser({
           statusAnnouncement={statusAnnouncement}
         />
       )}
-      {filterOpen && (
+      {filterOpen && ratingScale && (
         <CatalogFilterDialog
-          initial={filters}
+          initial={activeFilters}
           grades={gradeAdapter === queries ? gradeOptions : []}
+          ratingScale={ratingScale}
+          source={sourceCopy}
           onApply={(nextFilters) => {
             invalidateQuery();
             resetPaging();

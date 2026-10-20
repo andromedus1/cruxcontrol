@@ -219,6 +219,7 @@ function readyCatalog(get: NonNullable<CatalogServiceSnapshot['queries']>['get']
     operation: 'idle', offer: null, progress: null, error: null,
     queries: {
       provenance: { source: 'Legacy Kilter', snapshotId: 'test', retrievedAt: null, coverage: null },
+      ratingScale: { min: 0, max: 3 },
       query: async () => ({ status: 'ready', value: { climbs: [], nextCursor: null, excludedCount: 0 } }),
       grades: async () => ({ status: 'ready', value: [] }), get,
     },
@@ -333,7 +334,7 @@ describe('CruxControlWorkspace', () => {
     const stored = playlist('Projects', [{ kind: 'provider', id: route.providerClimbId }]);
     render(<CruxControlWorkspace runtime={{ ...runtime, playlists: { ...runtime.playlists, list: async () => [stored] } }} />);
     fireEvent.click(await screen.findByRole('button', { name: /Lists.*1 list/ }));
-    await screen.findByText('Install the older Kilter catalog to resolve these list entries.');
+    await screen.findByText('Install the Kilter catalog to resolve these list entries.');
     expect(screen.queryByText('Missing')).not.toBeInTheDocument();
     expect(runtime.playlists.update).not.toHaveBeenCalled();
   });
@@ -356,6 +357,7 @@ describe('CruxControlWorkspace', () => {
       operation: 'idle', offer: null, progress: null, error: null,
       queries: {
         provenance: { source: 'Legacy Kilter', snapshotId: 'test', retrievedAt: null, coverage: null },
+      ratingScale: { min: 0, max: 3 },
         query: async () => ({ status: 'ready', value: { climbs: [route], nextCursor: null, excludedCount: 0 } }),
         get: async () => ({ status: 'ready', value: route }),
         grades: async () => ({ status: 'ready', value: [] }),

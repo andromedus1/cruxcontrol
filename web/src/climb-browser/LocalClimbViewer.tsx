@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BoardLightController } from '../board-control/light-controller';
 import type { BoardDefinition } from '../domain/boards/definition';
 import { ClimbDetail } from './ClimbDetail';
+import { UpstreamRemovedBadge } from './UpstreamRemovedBadge';
 import type { ClimbViewKey, ClimbViewRecord } from './types';
 import './LocalClimbViewer.css';
 import { useBackAction } from '../app/use-back-action.ts';
@@ -149,10 +150,13 @@ export function LocalClimbViewer({
                     onSelectedKeyChange(climb.key);
                   }}
                 >
-                  <span className="climb-row__name">{climb.name}</span>
+                  <span className="climb-row__name">
+                    {climb.name}
+                    {climb.upstreamRemovedOn && <UpstreamRemovedBadge />}
+                  </span>
                   <span className="climb-row__meta">
                     {climb.angle}°{climb.grade ? ` · ${climb.grade}` : ''}
-                    {climb.setter ? ` · ${climb.setter}` : ''}
+                    {climb.setter ? ` · set by ${climb.setter}` : ''}
                   </span>
                   {renderRowMetadata?.(climb)}
                   <span className="climb-row__holds">{climb.assignments.length} holds</span>
