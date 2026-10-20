@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync-private-publish
 kind: feature
-stage: drafting
+stage: implementing
 tags: [infra, security]
 parent: epic-catalog-sync
 depends_on: [epic-catalog-sync-append-only-guards]
@@ -58,3 +58,154 @@ It does **not** change the app's install flow (device update) or catalog present
 - `docs/DEPLOY.md` (live private-backup resources; CI-only infrastructure).
 - `prototypes/firebase-vault/README.md` (existing Firebase project, gateway, provisioning).
 - `docs/ARCHITECTURE.md` §Intended independent preservation boundary.
+
+## Design decisions
+
+Operator answers, 2026-10-19:
+
+- **Separate catalog service.** A new `privateCatalog` function, a new private bucket
+  (`cruxcontrol-auth-20261010-catalog`) and new runtime/publisher identities in the same
+  Firebase project. The live vault function, bucket and runtime identity are not
+  modified, redeployed or granted anything.
+- **Operator-run provisioning.** An `inspect`-by-default / explicit `provision`
+  script with readback assertions, run by the operator with an isolated signed-in
+  CLI configuration kept outside Git (the vault pattern). Agents make no cloud
+  writes; CI holds no infrastructure-admin credential.
+- **Keyless CI identity.** GitHub OIDC → Workload Identity Federation → a publisher
+  service account limited to create + read on the catalog bucket (no delete or
+  overwrite), accepted only for `andromedus1/cruxcontrol`, `refs/heads/main`, and the
+  catalog-publish workflow file.
+- **Guard holds open/update one GitHub issue** with counts and reasons only (no climb
+  data); unchanged upstream ends the run quietly.
+
+Derived (within settled scope):
+
+- **Append-only storage.** Objects are immutable and created with
+  `ifGenerationMatch=0`: `kilter-7x10/artifacts/kilter-7x10.v<N>.db.gz` then
+  `kilter-7x10/manifests/v<NNNNNN>.json`. A manifest's presence publishes its version;
+  "current" is the highest manifest version whose artifact exists. No pointer object
+  is overwritten, so the publisher never needs delete.
+- **Bootstrap.** The operator seeds version 1 with the existing private legacy
+  artifact and manifest; CI's first run then builds v2 against it.
+- **Workflow is inert until enabled.** Runs weekly (Mondays) and on manual dispatch,
+  only when repository variable `CATALOG_PUBLISH_ENABLED == 'true'`, with WIF
+  provider and service account taken from repository variables (not secrets; they
+  are identifiers).
+- **Download path streams through the function** (artifacts are ~5 MB), so no
+  signing permission is needed; identity encoding, exact `Content-Length`, and the
+  manifest's sha256 for the app to verify.
+- **Admitted users.** The same single configured owner UID as the vault for now; the
+  list form leaves room for invited members later.
+
+## Architectural choice
+
+Three small pieces with one storage contract between them: (1) a CI publisher that
+reads the latest published version, runs the existing guarded build against it, and
+uploads create-only objects; (2) a read-only catalog gateway that authenticates
+Firebase users and serves the latest manifest and named artifacts; (3) an operator
+provisioning script that creates and verifies the bucket, identities, IAM, WIF and
+budget-neutral settings, plus a one-time bootstrap upload.
+
+Alternatives: (B) extend the vault gateway — rejected by the operator to keep the
+service holding real backups untouched; (C) public static hosting — rejected by the
+epic's private-distribution decision; (D) signed URLs from the function — adds a
+token-creator/signBlob permission for no benefit at this artifact size.
+
+## Implementation Units
+
+### Unit 1: Storage contract — `web/scripts/catalog/storage_layout.py`
+
+```python
+PREFIX = "kilter-7x10"
+def artifact_object(version: int) -> str          # kilter-7x10/artifacts/kilter-7x10.v<N>.db.gz
+def manifest_object(version: int) -> str          # kilter-7x10/manifests/v<NNNNNN>.json
+def latest_version(object_names: Iterable[str]) -> Optional[int]
+    """Highest N with both manifest and artifact present; ignores anything else."""
+```
+Shared by the publisher (Python) and mirrored in the gateway (one tested regex each,
+cross-checked by a fixture list of object names used by both test suites).
+
+### Unit 2: Publish workflow — `.github/workflows/catalog-publish.yml`, `web/scripts/catalog-publish.sh`
+
+Steps: checkout → Python 3.11 → `google-github-actions/auth` (WIF) →
+`setup-gcloud` → list bucket → download the latest manifest + artifact into a
+previous dir → `build-catalog-snapshot.py --previous-dir … --report …` → by exit code:
+0 = upload artifact then manifest with `--if-generation-match=0`, verify readback
+sha256; 8 = done; 7 = open/update the "Catalog update held" issue with the report's
+reasons and counts; other = fail. Permissions: `contents: read`, `id-token: write`,
+`issues: write`. Concurrency group prevents overlapping runs. Nothing secret is
+echoed.
+
+### Unit 3: Catalog gateway — `services/private-catalog/gateway/`
+
+```js
+// handler.mjs
+export function createCatalogHandler({ admittedUids, verifyToken, store }): (req, res) => Promise<void>
+// GET /catalog-v1/manifest           -> 200 latest manifest JSON (schema 3 only) | 404
+// GET /catalog-v1/artifacts/:file    -> 200 bytes (application/gzip, identity, exact length) | 404
+// anything else -> 404/405; missing/invalid token -> 401; other uid -> 403
+// store.mjs: listObjects(prefix), readObject(name) with generation pin; read-only
+```
+Node 22, `firebase-functions`/`firebase-admin`/`@google-cloud/storage`, esbuild
+bundle, `node --test` suites with injected identity and storage (vault style).
+`Cache-Control: private, no-store`; no CORS needed (native app origin) — confirm in
+device-update.
+
+### Unit 4: Provisioning — `services/private-catalog/provision.mjs`
+
+`inspect` (default) prints current state; `provision` creates/reconciles: APIs
+(storage, iam, iamcredentials, sts, cloudfunctions, run, cloudbuild, artifactregistry),
+bucket (us-central1, uniform access, public-access prevention enforced, 7-day soft
+delete, no lifecycle), `crux-catalog-reader` (bucket objectViewer + existing
+auth-reader custom role) and `crux-catalog-publisher` (bucket objectCreator +
+objectViewer only), WIF pool/provider with the attribute condition above, and
+`workloadIdentityUser` for that principal set only. `bootstrap <dir>` uploads the
+legacy v1 artifact + manifest create-only. Readback assertions reject public access,
+unexpected bucket/IAM bindings, or a publisher able to delete. Pure plan/assert
+functions are unit-tested; cloud calls are not run by agents.
+
+### Unit 5: Function deploy preparation — `services/private-catalog/prepare.mjs`
+
+Mirrors the vault `prepare-service.mjs`: builds the bundle, writes `firebase.json`
+for the `privateCatalog` codebase only, records bundle/lock hashes and the
+admitted-UID config outside Git. Operator deploys with the isolated Firebase CLI.
+
+### Unit 6: Docs and runbook
+
+`docs/DEPLOY.md` gains the catalog resources (namespaced, deletable without
+touching the vault), the operator runbook (inspect → provision → bootstrap →
+deploy → set repository variables → dispatch once), and the guard-hold procedure.
+`docs/SPEC.md` §6 / `docs/ARCHITECTURE.md` roll forward.
+
+## Implementation Order
+
+1. Storage contract (shared, smallest) → 2. gateway with tests → 3. publisher
+script + workflow (inert) → 4. provisioning plan/asserts with tests → 5. prepare
+script → 6. docs/runbook.
+
+## Testing
+
+- Python: `latest_version` on mixed/partial listings; object naming.
+- Gateway: auth matrix (none/invalid/revoked/other uid/owner), routes and methods,
+  manifest selection ignores orphan manifests, artifact streaming headers and length,
+  path traversal and unknown names rejected, store read errors → 503 without leakage.
+- Provisioning: plan contents for a clean and a partially provisioned project;
+  readback assertions fail on public members, delete-capable publisher, missing
+  attribute condition.
+- Workflow: shellcheck-clean script; exit-code routing exercised by a local dry-run
+  mode that stubs `gcloud` with a fake bucket directory.
+- Live verification (operator, after provisioning): first dispatch publishes v2;
+  second dispatch reports unchanged; an owner-token GET returns the manifest; another
+  account gets 403.
+
+## Risks
+
+- **WIF misconfiguration grants too much or nothing.** — Readback asserts the exact
+  attribute condition and bindings; workflow stays inert until the operator enables it.
+- **Same project as the vault.** — Separate names, identities and bucket; provisioning
+  never touches vault resources, and inspect lists anything unexpected.
+- **Boardsesh download size (~194 MB catalog artifact per run).** — Weekly cadence;
+  one fetch per run.
+- **Least sure:** first live WIF exchange and function cold-start behavior; both are
+  verified in the operator's first dispatch before the device-update feature relies
+  on them.
