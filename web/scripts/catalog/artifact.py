@@ -76,7 +76,8 @@ def _meta(inputs: SnapshotInputs, revision: str, report: NormalizationReport,
 
 
 def build_database(inputs: SnapshotInputs, pinned: PinnedDefinition, db_path: Path,
-                   previous: Optional[PreviousArtifact] = None, build_date: str = "") -> tuple:
+                   previous: Optional[PreviousArtifact] = None, build_date: str = "",
+                   legacy_baseline: Optional[PreviousArtifact] = None) -> tuple:
     """Write the uncompressed artifact; return (revision, report, reconciled).
 
     With a previous artifact, its app-visible identities are carried forward and the
@@ -93,7 +94,7 @@ def build_database(inputs: SnapshotInputs, pinned: PinnedDefinition, db_path: Pa
         report = normalize(climbs, catalog, scope, out)
         reconciled = None
         if previous is not None:
-            reconciled = reconcile(out, previous, scope, build_date)
+            reconciled = reconcile(out, previous, scope, build_date, legacy_baseline)
             verdict = evaluate(reconciled, previous, inputs.climbs_entry.built_at, scope.revision)
             if verdict.unchanged:
                 raise Unchanged(verdict, reconciled)
@@ -163,7 +164,8 @@ def finalize(db_path: Path, out_dir: Path, version: int, generated_on: str,
 
 def build(inputs: SnapshotInputs, pinned: PinnedDefinition, out_dir: Path, work_dir: Path,
           version: Optional[int], generated_on: str,
-          previous: Optional[PreviousArtifact] = None) -> BuildResult:
+          previous: Optional[PreviousArtifact] = None,
+          legacy_baseline: Optional[PreviousArtifact] = None) -> BuildResult:
     """Build the next artifact. Versions strictly increase: with a previous artifact the
     version defaults to previous + 1 and may skip numbers burned by an interrupted
     publication; a first build needs an explicit version."""
@@ -175,6 +177,6 @@ def build(inputs: SnapshotInputs, pinned: PinnedDefinition, out_dir: Path, work_
     if version is None or version <= 0:
         raise ValueError("a first build needs an explicit positive version")
     db_path = work_dir / "artifact.sqlite3"
-    revision, report, reconciled = build_database(inputs, pinned, db_path, previous, generated_on)
+    revision, report, reconciled = build_database(inputs, pinned, db_path, previous, generated_on, legacy_baseline)
     manifest = finalize(db_path, out_dir, version, generated_on, inputs, revision, report, reconciled)
     return BuildResult(manifest, report, reconciled, out_dir / artifact_name(version))

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from .hardware import HardwareScope
 from .normalize_climbs import normalize_frames
@@ -20,6 +20,8 @@ class ReconcileReport:
     restored: int = 0           # previously marked, present again
     carried: int = 0            # all climbs marked removed upstream in this build
     stats_kept: int = 0         # (climb, angle) stats of present climbs kept from the previous version
+    legacy_rescaled: int = 0    # copied rows still holding raw Aurora 1-3 values, rescaled
+    legacy_restored: int = 0    # Aurora-era pairs missing from the catalog, restored
     lost: List[str] = field(default_factory=list)          # must stay empty
     case_changed: List[str] = field(default_factory=list)  # uuid reappeared with other casing
 
@@ -38,6 +40,22 @@ def _with_stats(connection: sqlite3.Connection, angles) -> set:
     return {uuid for (uuid,) in connection.execute(
         f"SELECT DISTINCT climb_uuid FROM climb_stats WHERE angle IN ({marks}) AND {USABLE_STATS}",
         tuple(angles))}
+
+
+def _legacy_rows(baseline: PreviousArtifact, stat_columns: List[str], angles) -> Dict[tuple, tuple]:
+    """Usable raw stats rows of the Aurora-era baseline, keyed by (uuid, angle)."""
+    if baseline.schema_version != 2:
+        raise ValueError("the legacy baseline must be the schema-2 Aurora-era artifact")
+    legacy = sqlite3.connect(f"file:{baseline.db_path}?mode=ro", uri=True)
+    try:
+        available = set(_columns(legacy, "climb_stats"))
+        selected = ",".join(column if column in available else "NULL" for column in stat_columns)
+        marks = ",".join("?" * len(angles))
+        rows = legacy.execute(f"SELECT {selected} FROM climb_stats WHERE angle IN ({marks}) AND {USABLE_STATS}",
+                              tuple(angles))
+        return {(row[0], row[1]): row for row in rows}
+    finally:
+        legacy.close()
 
 
 def _usable_pairs(connection: sqlite3.Connection, angles) -> set:
@@ -66,8 +84,15 @@ def _visible(previous: sqlite3.Connection, scope: HardwareScope) -> Dict[str, di
     return visible
 
 
+LEGACY_SCALE = 5 / 3  # Aurora-era ratings are 1-3; artifacts declare 0-5 (Boardsesh's rule)
+
+
 def reconcile(new: sqlite3.Connection, previous: PreviousArtifact, scope: HardwareScope,
-              build_date: str) -> ReconcileReport:
+              build_date: str, legacy_baseline: Optional[PreviousArtifact] = None) -> ReconcileReport:
+    """`legacy_baseline` (the schema-2 v1 artifact) repairs rows that builds before the
+    per-angle and rescale fixes carried forward: a copied row still equal to its raw
+    Aurora-era values is rescaled, and an Aurora-era pair missing for a catalog climb is
+    restored. Corrected rows no longer match the raw values, so the repair is idempotent."""
     report = ReconcileReport(previous.version)
     old = sqlite3.connect(f"file:{previous.db_path}?mode=ro", uri=True)
     try:
@@ -112,15 +137,28 @@ def reconcile(new: sqlite3.Connection, previous: PreviousArtifact, scope: Hardwa
         selected = ",".join(column if column in available else "NULL" for column in stat_columns)
         quality = stat_columns.index("quality_average")
         # Schema-2 (Aurora-era) ratings are on 1-3; schema-3 artifacts declare 0-5.
-        scale = 5 / 3 if previous.schema_version == 2 else 1
+        scale = LEGACY_SCALE if previous.schema_version == 2 else 1
+        rescale = lambda row: row[:quality] + (row[quality] * LEGACY_SCALE,) + row[quality + 1:]
+        baseline = _legacy_rows(legacy_baseline, stat_columns, angles) if legacy_baseline else {}
         stats = []
         for uuid, angle in keep:
             row = old.execute(f"SELECT {selected} FROM climb_stats WHERE climb_uuid=? AND angle=?",
                               (uuid, angle)).fetchone()
             if scale != 1:
-                row = row[:quality] + (row[quality] * scale,) + row[quality + 1:]
+                row = rescale(row)
+            elif baseline.get((uuid, angle)) == row:
+                row = rescale(row)
+                report.legacy_rescaled += 1
             stats.append(row)
         new.executemany(f"INSERT INTO climb_stats VALUES ({','.join('?' * len(stat_columns))})", stats)
+
+        if baseline:
+            present_pairs = _usable_pairs(new, angles)
+            in_catalog = {uuid for (uuid,) in new.execute("SELECT uuid FROM climbs")}
+            restored = [rescale(row) for pair, row in sorted(baseline.items())
+                        if pair[0] in in_catalog and pair not in present_pairs]
+            new.executemany(f"INSERT INTO climb_stats VALUES ({','.join('?' * len(stat_columns))})", restored)
+            report.legacy_restored = len(restored)
 
         final_pairs = _usable_pairs(new, angles)
         final_visible = {uuid for uuid, _ in final_pairs}
