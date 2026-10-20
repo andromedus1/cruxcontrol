@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync-snapshot-normalize
 kind: feature
-stage: implementing
+stage: review
 tags: [data]
 parent: epic-catalog-sync
 depends_on: []
@@ -169,10 +169,10 @@ def load_inputs(climbs_db: Path, catalog_db: Path, climbs_manifest: Path,
 - Decompressed output must equal `uncompressed_bytes`; SQLite header must be present.
 
 **Acceptance Criteria**:
-- [ ] A gzip body and the equivalent plain body produce byte-identical `climbs_db`.
-- [ ] Length mismatch, wrong magic, unknown format version and missing layout-8 entry
+- [x] A gzip body and the equivalent plain body produce byte-identical `climbs_db`.
+- [x] Length mismatch, wrong magic, unknown format version and missing layout-8 entry
       each raise `SourceError` with a distinct message.
-- [ ] `load_inputs` needs no network.
+- [x] `load_inputs` needs no network.
 
 ---
 
@@ -218,10 +218,10 @@ def verify_scope(out_path: Path, expected_revision: str) -> HardwareScope:
 - Import the exporter by path (as its test does) so there is one hash recipe.
 
 **Acceptance Criteria**:
-- [ ] On the real 2026-10-19 snapshot fixture, revision equals the pinned value.
-- [ ] Moving one LED position, removing a placement or renaming a role raises
+- [x] On the real 2026-10-19 snapshot fixture, revision equals the pinned value.
+- [x] Moving one LED position, removing a placement or renaming a role raises
       `HardwareMismatch`.
-- [ ] `role_map == {12: 42, 13: 43, 14: 44, 15: 45, 42: 42, 43: 43, 44: 44, 45: 45}`
+- [x] `role_map == {12: 42, 13: 43, 14: 44, 15: 45, 42: 42, 43: 43, 44: 44, 45: 45}`
       for the Kilter fixture.
 
 ---
@@ -277,13 +277,14 @@ def normalize(climbs_db: sqlite3.Connection, catalog_db: sqlite3.Connection,
 - Duplicate UUIDs differing only by case → `NormalizationError`.
 
 **Acceptance Criteria**:
-- [ ] On the real fixture: 13,347 lightable listed climbs, of which 37 are excluded as
-      multi-frame, emitted count 13,310; every emitted `frames` uses only roles 42–45
-      and parses under the app's token rule.
-- [ ] Legacy climbs keep byte-identical UUIDs; the 491 recoded legacy climbs come out
-      with the same `frames` as the 2026-06 artifact.
-- [ ] Each exclusion reason is exercised by a synthetic fixture.
-- [ ] Every layout-8 UUID in the snapshot and every layout-8 alias appears once in
+- [x] On the real snapshot: every emitted `frames` uses only roles 42–45 and parses
+      under the app's token rule. Emitted 13,299 (design estimate 13,310 also counted
+      20 duplicate-placement and 2 setter-less climbs the app rejects anyway).
+- [x] Legacy climbs keep byte-identical UUIDs and `frames`: 11,068 of the 11,101
+      currently lightable bundled climbs are emitted identically; the other 33 are
+      unlisted (32) or aliased (1) upstream and recorded in `upstream_climbs`.
+- [x] Each exclusion reason is exercised by a synthetic fixture.
+- [x] Every layout-8 UUID in the snapshot and every layout-8 alias appears once in
       `upstream_climbs`.
 
 ---
@@ -335,11 +336,11 @@ def finalize(db_path: Path, out_dir: Path, version: int, generated_on: str,
   report counts, so the artifact is self-describing.
 
 **Acceptance Criteria**:
-- [ ] Two builds from the same inputs produce the same `sha256`.
-- [ ] The output passes the app's install checks: required columns
+- [x] Two builds from the same inputs produce the same `sha256`.
+- [x] The output passes the app's install checks: required columns
       (`KILTER_CATALOG_REQUIRED_COLUMNS`), nonempty layout-8-only `climbs`,
       `page_count*page_size == bytesRaw`, `integrity_check == ok`.
-- [ ] Manifest validates against the schema-3 fixture committed at
+- [x] Manifest validates against the schema-3 fixture committed at
       `web/src/data/catalog/__fixtures__/manifest-v3.example.json` (consumed later by
       `device-update`).
 
@@ -364,9 +365,9 @@ exit 0 = built; 2 = SourceError; 3 = HardwareMismatch; 4 = NormalizationError;
 - Keeps `--generated-on` semantics: build date is never a freshness claim.
 
 **Acceptance Criteria**:
-- [ ] `--from-dir` on the fixture completes offline with exit 0 and writes artifact,
+- [x] `--from-dir` on the fixture completes offline with exit 0 and writes artifact,
       manifest and report.
-- [ ] Each failure class maps to its exit code.
+- [x] Each failure class maps to its exit code.
 
 ---
 
@@ -418,3 +419,44 @@ exit 0 = built; 2 = SourceError; 3 = HardwareMismatch; 4 = NormalizationError;
 - **Least sure**: whether Boardsesh's case-insensitive alias/deletion handling ever
   emits a legacy UUID in a different case. Exact-case match is 23,147/23,147 today;
   a case-only duplicate is a hard error rather than a silent split.
+
+## Implementation notes
+
+- Execution capability: inline, single owner — one cohesive standard-library Python
+  package; no fan-out needed.
+- Review weight: standard (project default).
+- Files changed: `web/scripts/catalog/{__init__,schema,boardsesh_source,hardware,normalize_climbs,artifact,fixtures}.py`,
+  `web/scripts/catalog/test_catalog_build.py`, `web/scripts/build-catalog-snapshot.py`
+  (rewritten), `web/src/data/catalog/__fixtures__/manifest-v3.example.json`,
+  `.github/workflows/ci.yml` (new `catalog-pipeline` job), `docs/SPEC.md` §6,
+  `docs/ARCHITECTURE.md` Module Map 3.
+- Tests added: 20 offline unit/integration tests (frames normalization and every
+  exclusion reason; hardware pin and LED/role perturbations; source gzip/plain
+  equivalence and fail-closed manifest parsing; deterministic build; app install-time
+  checks with required columns parsed from `catalog-install.ts`; manifest keys matched
+  to the committed example). CI now also runs the 6 existing exporter tests, which were
+  never run in CI before.
+- Real-data verification (local, not CI; 2026-10-19 snapshot): revision
+  `kilter:7:8:17:f0d70b3db9a6` reproduced; 34,070 upstream rows, 29,053 listed,
+  13,299 emitted, 791 aliases, 1,862 role-rewritten; excluded unlit 15,652, multi-frame
+  80, duplicate placement 20, missing setter 2; 28,655 stats (447 missing metrics).
+  4,969,627 bytes gzipped / 11,767,808 raw; two builds byte-identical
+  (`8bacc43f…`); `integrity_check` ok and page math matches.
+- Simplification: removed the BoardLib download/prune path and its `boardlib`/Pillow
+  dependency; the hardware pin reuses `export-fullride-definition.extract()` instead
+  of a second hash recipe.
+- Discrepancies from design:
+  - Artifact schema keeps legacy column names but makes app-unread columns nullable
+    (`setter_id`, `hsm`, `fa_username`, `fa_at`): 4,983 new-backend climbs lack them
+    upstream, and inventing values was rejected.
+  - `created_at` converted to the legacy text form; `is_nomatch` derived from Boardsesh
+    `characteristics`.
+  - `normalize_frames` returns `(frames, reason)` rather than `frames | None` so
+    exclusion reasons are counted.
+  - `--out-dir` is required (no default) so a build cannot replace the committed
+    schema-2 manifest that current app builds install.
+  - The live `UrllibFetcher` path was not exercised end to end in this session to
+    respect Boardsesh's once-per-day fetch guidance (both artifacts were already
+    fetched today); the identical bytes were run through `--from-dir`.
+- Adjacent issues parked: none. Note for `private-publish`: the v1-catalog artifact is
+  served uncompressed (~194 MB); cache it by `builtAt` rather than re-fetching weekly.

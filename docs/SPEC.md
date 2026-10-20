@@ -218,8 +218,11 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   research/reference material, not as a verified current catalog source. The current
   acquisition slice uses the supported catalog query adapter and safely reads
   Fullride roles 42–45; the first browser is integrated over the explicitly older
-  snapshot, while complete official catalog coverage and a repeatable current-source
-  acquisition pipeline remain future work.
+  snapshot. Boardsesh's public Kilter snapshots are the current upstream: a
+  repeatable, offline-testable build normalizes them into the Fullride artifact
+  (hardware pinned to the board definition, roles mapped to 42–45). Append-only
+  reconciliation, scheduled private publication and on-device updates remain future
+  work, so no Boardsesh-derived artifact is installed yet.
 - The intended catalog model includes climbs + frames, `climb_stats` per angle,
   hold coordinates (`holes`), and placement→hole→LED mappings. The current safe
   query slice covers only Fullride roles 42–45.

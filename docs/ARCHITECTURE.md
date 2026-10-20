@@ -90,6 +90,12 @@ feature item bodies in `.work/`, not here. Capabilities are in
    approval is unresolved. Source freshness is unknown, there is no live refresh, and the
    query surface does not establish current or complete official-app coverage. Kilter
    catalog work proceeds independently of invited sharing and native iPhone proof.
+   The catalog build tooling (`web/scripts/build-catalog-snapshot.py` and
+   `web/scripts/catalog/`) derives the Fullride artifact from Boardsesh's public Kilter
+   snapshots: it pins hardware to the generated board definition's layout revision,
+   rewrites role codes to product-7 ids by name, preserves upstream UUID spelling and
+   frames, records every upstream identity's status, and emits a schema-3 manifest that
+   current app builds reject until they support it.
 4. **Controller Profiles & Transports** — profiles own discovery and command
    encoding; transports own platform I/O. The first pair is Aurora API level 2/3 over
    Web Bluetooth: deterministic framing/checksum/multi-packet encoding, serialized
