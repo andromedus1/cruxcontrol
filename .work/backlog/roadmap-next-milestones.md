@@ -93,7 +93,7 @@ backup before updating the phone.
    [bootstrap](../active/features/epic-foundation-catalog-bootstrap.md),
    [worker/WASM verification](../active/features/epic-foundation-verify-worker-build.md),
    [provider-neutral queries](../archive/epic-universal-board-platform-catalog-domain.md),
-   [sync](../active/epics/epic-catalog-sync.md), and
+   [sync](../archive/epic-catalog-sync.md), and
    [storage fallback](epic-foundation-sqlite-idb-fallback.md).
    The lazy SQLite catalog service and first browser are now wired into the running
    app. Production-browser acceptance passes for consented installation, filtering

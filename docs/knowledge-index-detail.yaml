@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-20T00:19:41Z'
+generated_at: '2026-10-20T19:09:51Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -9,19 +9,20 @@ documents:
       and namespaced identities, independent catalog providers and controller profiles, on-demand local
       catalogs, and a Fullride 7x10 first slice. The first consented Kilter community catalog browser
       is integrated for an older offline snapshot, with explicit download consent and offline query support.
-      Current-source coverage, freshness, and public binary distribution remain unproven. Catalog work
-      advances on Android/web independently of native iPhone acceptance. An invited contribution library
-      is intended; approved journeys and a verified access/storage comparison guide its bounded collaboration
-      service and retained local copies. An iPhone client proof now precedes further shared-service implementation.
-      An experimental Capacitor package uses native BLE on Android and iOS. iOS retains browser-managed
-      library storage; Android injects a native SQLite library and has passed synthetic emulator restore,
-      edit/save, process-relaunch, and same-signature update checks. Portable-file recovery and bounded
-      operator-assisted cloud recovery pass synthetic emulator proofs. Integrated Android automatic backup
-      and app recovery also pass synthetic acceptance. Recorded phone preservation/import/backup checks
-      and owner-observed Fullride acceptance pass. Independent review is complete and required CI passes;
-      merge and delivery remain separate. Firebase Auth and the authenticated GCS gateway are selected
-      for Android dogfood. Native application transport is implemented and the service deployed; live
-      transport acceptance passes.
+      Signed-in Android devices can check for and explicitly install newer Boardsesh-derived versions
+      from a private endpoint. Current-source coverage, freshness, and public binary distribution remain
+      unproven. Catalog work advances on Android/web independently of native iPhone acceptance. An invited
+      contribution library is intended; approved journeys and a verified access/storage comparison guide
+      its bounded collaboration service and retained local copies. An iPhone client proof now precedes
+      further shared-service implementation. An experimental Capacitor package uses native BLE on Android
+      and iOS. iOS retains browser-managed library storage; Android injects a native SQLite library and
+      has passed synthetic emulator restore, edit/save, process-relaunch, and same-signature update checks.
+      Portable-file recovery and bounded operator-assisted cloud recovery pass synthetic emulator proofs.
+      Integrated Android automatic backup and app recovery also pass synthetic acceptance. Recorded phone
+      preservation/import/backup checks and owner-observed Fullride acceptance pass. Independent review
+      is complete and required CI passes; merge and delivery remain separate. Firebase Auth and the authenticated
+      GCS gateway are selected for Android dogfood. Native application transport is implemented and the
+      service deployed; live transport acceptance passes.
 
       '
     decisions:
