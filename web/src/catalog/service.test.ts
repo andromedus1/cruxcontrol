@@ -482,7 +482,10 @@ describe('signed-in catalog updates', () => {
   }
 
   function source(result: () => Promise<CatalogUpdateCheck>) {
+    const account = { value: 'signed-in' as Awaited<ReturnType<CatalogUpdateSource['status']>> };
     return {
+      account,
+      status: vi.fn(async () => account.value),
       check: vi.fn(result),
       prepare: vi.fn(async (_version: number) => undefined),
     };
@@ -760,6 +763,46 @@ describe('signed-in catalog updates', () => {
     await service.installOffer();
     expect(updates.prepare).not.toHaveBeenCalled();
     expect(String(vi.mocked(fetcher).mock.calls.at(-1)?.[0])).toMatch(/\/catalog\/kilter-7x10\.v1\.db\.gz$/);
+    await service.close();
+  });
+
+  it('never downgrades through the first-install path after an update', async () => {
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    updates.check.mockResolvedValueOnce({ status: 'signed-out' });
+    const fetcher = updateFetcher(() => remote(3));
+    const { service, port } = updatingService({ updates, fetcher, port: portFor() });
+    await service.loadOffer();
+    expect(service.getSnapshot().offer).toEqual(manifest);
+    await service.installOffer();
+    expect(service.getSnapshot()).toMatchObject({ storage: { receipt: { manifest: { version: 1 } } }, offer: null });
+
+    await service.checkForUpdate({ force: true });
+    await service.installUpdate();
+    expect(service.getSnapshot().storage).toMatchObject({ receipt: { manifest: { version: 3 } } });
+    expect(port.installCatalog).toHaveBeenCalledTimes(2);
+
+    // Nothing consumed may be reinstalled; v1 can never replace v3.
+    await service.installOffer();
+    expect(port.installCatalog).toHaveBeenCalledTimes(2);
+    expect(service.getSnapshot().storage).toMatchObject({ receipt: { manifest: { version: 3 } } });
+    await service.close();
+  });
+
+  it('clears a cached offer on sign-out between due checks and restores it after sign-in', async () => {
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    const { service } = updatingService({ updates });
+    await service.start();
+    await service.checkForUpdate({ force: true });
+    expect(service.getSnapshot().update).toMatchObject({ availability: 'available', offer: { version: 3 } });
+
+    updates.account.value = 'signed-out';
+    await service.checkForUpdate();
+    expect(service.getSnapshot().update).toMatchObject({ availability: 'signed-out', offer: null, changes: null });
+
+    updates.account.value = 'signed-in';
+    await service.checkForUpdate();
+    expect(service.getSnapshot().update).toMatchObject({ availability: 'available', offer: { version: 3 } });
+    expect(updates.check).toHaveBeenCalledOnce(); // account changes never spend the endpoint cadence
     await service.close();
   });
 

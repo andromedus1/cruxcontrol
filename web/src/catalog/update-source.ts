@@ -7,7 +7,12 @@ export type CatalogUpdateCheck =
   | { readonly status: 'unconfigured' | 'signed-out' | 'none' }
   | { readonly status: 'available'; readonly version: number };
 
+/** Network-free account state, refreshed on every open/resume independent of the cadence. */
+export type CatalogUpdateAccountStatus = 'unconfigured' | 'signed-out' | 'signed-in';
+
 export interface CatalogUpdateSource {
+  /** Current account state without contacting the endpoint. */
+  status(): Promise<CatalogUpdateAccountStatus>;
   /** Ask the private endpoint for its latest version and stage its manifest natively. */
   check(): Promise<CatalogUpdateCheck>;
   /** Download and verify that version's artifact into app-private storage. */
@@ -37,6 +42,7 @@ export class CatalogUpdateError extends Error {
 
 /** Web/PWA default: no signed-in transport, so updates are never configured. */
 export const noCatalogUpdates: CatalogUpdateSource = Object.freeze({
+  status: async (): Promise<CatalogUpdateAccountStatus> => 'unconfigured',
   check: async (): Promise<CatalogUpdateCheck> => Object.freeze({ status: 'unconfigured' as const }),
   prepare: async () => { throw new CatalogUpdateError('unavailable'); },
 });

@@ -243,11 +243,21 @@ final class PrivateCatalogFiles {
         catch (IOException error) { throw new CatalogException("UNAVAILABLE", error); }
     }
 
+    /** Runs the final, atomic publication step; callers gate it on their own invariants. */
+    interface PublicationGuard {
+        void publish(Publication publication) throws Exception;
+    }
+
+    interface Publication {
+        void run() throws CatalogException;
+    }
+
     /**
-     * Re-verifies a fully written temp file against the still-staged manifest, renames it into
-     * place and removes every other artifact. The temp file never becomes servable otherwise.
+     * Re-verifies a fully written temp file against the still-staged manifest, then lets the
+     * guard perform the rename and cleanup, so a caller can make publication atomic with its
+     * own session check. The temp file never becomes servable otherwise.
      */
-    synchronized void commitArtifact(File temporary, Manifest manifest) throws CatalogException {
+    synchronized void commitArtifact(File temporary, Manifest manifest, PublicationGuard guard) throws Exception {
         try {
             Manifest staged = readStagedLocked();
             if (staged == null || staged.version != manifest.version || !staged.sha256.equals(manifest.sha256)) {
@@ -260,8 +270,10 @@ final class PrivateCatalogFiles {
             } catch (IOException error) {
                 throw new CatalogException("UNAVAILABLE", error);
             }
-            if (!temporary.renameTo(new File(root, manifest.file))) throw new CatalogException("UNAVAILABLE");
-            removeArtifactsExceptLocked(manifest.file);
+            guard.publish(() -> {
+                if (!temporary.renameTo(new File(root, manifest.file))) throw new CatalogException("UNAVAILABLE");
+                removeArtifactsExceptLocked(manifest.file);
+            });
         } finally {
             if (temporary.exists()) temporary.delete();
         }

@@ -6,6 +6,7 @@ vi.mock('@capacitor/core', () => ({ registerPlugin: vi.fn(() => ({})) }));
 
 function plugin(overrides: Partial<NativePrivateCatalogPlugin> = {}): NativePrivateCatalogPlugin {
   return {
+    status: vi.fn(async () => ({ status: 'signed-in' })),
     check: vi.fn(async () => ({ status: 'available', version: 7 })),
     prepare: vi.fn(async ({ version }: { version: number }) => ({ version })),
     ...overrides,
@@ -66,6 +67,18 @@ describe('native private catalog adapter', () => {
       expect(checked).toMatchObject({ code });
       expect((checked as Error).message).not.toContain('native');
       await expect(failing.prepare(7)).rejects.toMatchObject({ code });
+    }
+  });
+
+  it('reports account status without contacting the endpoint and rejects malformed results', async () => {
+    for (const status of ['unconfigured', 'signed-out', 'signed-in'] as const) {
+      const native = plugin({ status: vi.fn(async () => ({ status })) });
+      await expect(createNativePrivateCatalog(native).status()).resolves.toBe(status);
+      expect(native.check).not.toHaveBeenCalled();
+    }
+    for (const value of [{ status: 'available' }, { status: 'signed-in', version: 3 }, null]) {
+      await expect(createNativePrivateCatalog(plugin({ status: vi.fn(async () => value) })).status())
+        .rejects.toMatchObject({ code: 'unavailable' });
     }
   });
 });

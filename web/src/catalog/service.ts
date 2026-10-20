@@ -428,6 +428,16 @@ export function createCatalogService(
     basePath: CatalogBasePath,
   ): Promise<void> => {
     if (!port) return;
+    // Shared boundary for every install path: never replace an installed catalog with the same
+    // or an older version, or with one built for another layout revision.
+    if (snapshot.storage?.status === 'ready') {
+      const installed = snapshot.storage.receipt.manifest;
+      if (approved.version <= installed.version
+        || (approved.schemaVersion === 3 && approved.layoutRevision !== definition.layoutRevision)) {
+        updateState({ availability: 'current', offer: null, changes: null, dismissed: false }, { offer: null });
+        return;
+      }
+    }
     const activePort = port;
     const currentGeneration = generation;
     const controller = new AbortController();
@@ -484,10 +494,12 @@ export function createCatalogService(
             error: null,
             queries: queriesFor(activePort, result.receipt),
           };
+          // Any successful install consumes every pending offer (first-install and update).
           if (target === 'update' || remote) {
-            updateState({ availability: 'current', offer: null, changes: null, dismissed: false, error: null }, changes);
+            updateState({ availability: 'current', offer: null, changes: null, dismissed: false, error: null },
+              { ...changes, offer: null });
           } else {
-            update(changes);
+            update({ ...changes, offer: null });
           }
         } else if (result.code === 'closed' || result.code === 'busy') {
           const error = installError(result);
@@ -643,6 +655,17 @@ export function createCatalogService(
 
     const pending = (async () => {
       if (!due) {
+        // The endpoint cadence never hides account changes: sign-out clears a cached offer.
+        let account: Awaited<ReturnType<CatalogUpdateSource['status']>>;
+        try { account = await updates.status(); } catch { return; }
+        if (stale()) return;
+        if (account !== 'signed-in') {
+          updateState({ availability: account, offer: null, changes: null, dismissed: false, error: null });
+          return;
+        }
+        if (snapshot.update.availability === 'signed-out' || snapshot.update.availability === 'unconfigured') {
+          updateState({ availability: 'unknown' });
+        }
         await restoreStagedOffer(controller.signal, stale);
         return;
       }

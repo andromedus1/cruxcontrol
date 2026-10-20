@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync-device-update
 kind: feature
-stage: review
+stage: done
 tags: [data, security]
 parent: epic-catalog-sync
 depends_on: [epic-catalog-sync-snapshot-normalize, epic-catalog-sync-private-publish]
@@ -250,3 +250,34 @@ Native (contract producer) → service → UI → docs. Stories carry the same o
     was not verified here, so the sentence was left for the docs gate.
   - Live acceptance (Check now → Install v2 on the phone with a fresh validated backup)
     remains the operator's step; no device or live endpoint was touched.
+
+## Review
+
+- Effective weight: standard; one independent pass.
+- Implementation by a delegated same-harness worker (isolated worktree); review by Codex
+  `gpt-6.1-sol` (high effort, security-first) via peeragent — cross-model, no network.
+  It ran 91 focused tests and two diagnostic probes; Android runtime not exercised.
+- Proposed verdict: Request changes. Receiver adjudication (all accepted and fixed):
+  - **Session invalidation could race artifact publication** (proposed blocker; judged
+    important — bytes are integrity-checked catalog data, not personal data, but the
+    stated session rule was violated). `commitArtifact` now verifies first and hands the
+    rename to a publication guard; the plugin runs the final session check and the
+    rename under the session lock that sign-out takes. Staging the manifest and reusing
+    a prepared artifact also re-check the session under that lock. JVM regression:
+    a refusing guard leaves nothing servable.
+  - **First-install path could downgrade** (important; a data-safety rule). The shared
+    `install()` boundary now refuses versions at or below the installed receipt and
+    other layout revisions for every caller, and any successful install clears all
+    pending offers. Regression: v1 → update v3 → `installOffer()` cannot reinstall v1.
+  - **Cadence hid sign-out** (important). New network-free `status()` on the update
+    source (native plugin method, adapter, web default); non-due opens/resumes refresh
+    account state, clear cached offers when signed out, and restore the staged offer
+    after sign-in without spending the endpoint cadence. Regressions in the service and
+    adapter tests.
+- Also: SPEC §6 and ARCHITECTURE no longer describe publication as disabled (enabled
+  2026-10-20).
+- Verification after fixes: lint and typecheck clean; web 994 tests; Android shell
+  vitest 115 and package scripts 11; Android JVM 16 (11 catalog, 5 vault) and debug
+  compile green.
+- Closure: standard weight — findings fixed and verified, no second pass. Live
+  acceptance remains the operator's phone update.

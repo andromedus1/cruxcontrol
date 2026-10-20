@@ -76,6 +76,13 @@ public final class PrivateCatalogPlugin extends Plugin {
         super.handleOnDestroy();
     }
 
+    /** Account state only; never contacts the endpoint. */
+    @PluginMethod
+    public void status(PluginCall call) {
+        if (!enabled()) { call.resolve(status("unconfigured")); return; }
+        call.resolve(status(currentAccount() == null ? "signed-out" : "signed-in"));
+    }
+
     @PluginMethod
     public void check(PluginCall call) {
         if (!enabled()) { call.resolve(status("unconfigured")); return; }
@@ -84,8 +91,12 @@ public final class PrivateCatalogPlugin extends Plugin {
         enqueue(call, account, () -> {
             HttpResult response = boundedTransfer(deadline -> manifestRequest(account, deadline));
             if (response == null) { call.resolve(status("none")); return; }
-            requireCurrent(account);
-            PrivateCatalogFiles.Manifest manifest = files.stageManifest(response.body);
+            PrivateCatalogFiles.Manifest manifest;
+            // Session check and staging happen under the session lock that sign-out takes.
+            synchronized (session) {
+                requireCurrent(account);
+                manifest = files.stageManifest(response.body);
+            }
             JSObject result = status("available");
             result.put("version", manifest.version);
             call.resolve(result);
@@ -117,13 +128,20 @@ public final class PrivateCatalogPlugin extends Plugin {
                         downloadArtifact(account, manifest, temporary, deadline);
                         return null;
                     });
-                    // Sign-out or account change mid-download discards the file before it is servable.
-                    requireCurrent(account);
-                    files.commitArtifact(temporary, manifest);
+                    // Verification runs first; the final session check and the rename then run under
+                    // the session lock that sign-out takes, so an invalidated session never publishes.
+                    files.commitArtifact(temporary, manifest, publication -> {
+                        synchronized (session) {
+                            requireCurrent(account);
+                            publication.run();
+                        }
+                    });
                 } finally {
                     if (temporary.exists()) temporary.delete();
                 }
             }
+            // A reused, already-verified artifact still requires the requesting session.
+            synchronized (session) { requireCurrent(account); }
             JSObject result = new JSObject();
             result.put("version", manifest.version);
             call.resolve(result);

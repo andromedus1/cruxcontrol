@@ -100,7 +100,7 @@ feature item bodies in `.work/`, not here. Capabilities are in
    frames, records every upstream identity's status, and emits a schema-3 manifest. With
    a previous artifact it carries forward every app-visible climb missing upstream
    (`climbs.upstream_removed_at`), assigns the next version, and fails closed through
-   update guards before writing. A scheduled workflow (inert until enabled) publishes
+   update guards before writing. A weekly scheduled workflow (enabled 2026-10-20) publishes
    accepted versions create-only to a private catalog bucket via keyless CI identity;
    the separate `privateCatalog` function serves the latest manifest and artifacts to
    admitted Firebase accounts and has no access to the vault. The app's same-origin

@@ -254,7 +254,7 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   older, or suspicious (present climbs falling more than 2% or more than 250 newly
   removed). A weekly CI job publishes accepted versions as immutable objects to a
   private bucket, served only to admitted signed-in accounts by a separate catalog
-  function; it stays disabled until the operator provisions those resources.
+  function; the operator provisioned those resources and enabled publishing on 2026-10-20.
   Signed-in Android devices check that function and install accepted versions on
   request (see §2).
 - The intended catalog model includes climbs + frames, `climb_stats` per angle,

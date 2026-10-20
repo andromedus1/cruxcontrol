@@ -1,6 +1,7 @@
 import { registerPlugin } from '@capacitor/core';
 import {
   CatalogUpdateError,
+  type CatalogUpdateAccountStatus,
   type CatalogUpdateCheck,
   type CatalogUpdateErrorCode,
   type CatalogUpdateSource,
@@ -8,6 +9,7 @@ import {
 
 /** Android `PrivateCatalog` plugin: tokens stay native; results carry only status and version. */
 export interface NativePrivateCatalogPlugin {
+  status(): Promise<unknown>;
   check(): Promise<unknown>;
   prepare(options: { version: number }): Promise<unknown>;
 }
@@ -35,6 +37,15 @@ function version(value: unknown): number {
     throw new CatalogUpdateError('unavailable');
   }
   return value as number;
+}
+
+const ACCOUNT_STATUSES = new Set(['unconfigured', 'signed-out', 'signed-in']);
+
+export function decodeCatalogStatus(value: unknown): CatalogUpdateAccountStatus {
+  const result = record(value);
+  exactKeys(result, ['status']);
+  if (typeof result.status !== 'string' || !ACCOUNT_STATUSES.has(result.status)) throw new CatalogUpdateError('unavailable');
+  return result.status as CatalogUpdateAccountStatus;
 }
 
 export function decodeCatalogCheck(value: unknown): CatalogUpdateCheck {
@@ -68,6 +79,11 @@ export function createNativePrivateCatalog(
   plugin: NativePrivateCatalogPlugin = registerPlugin<NativePrivateCatalogPlugin>('PrivateCatalog'),
 ): CatalogUpdateSource {
   return Object.freeze({
+    async status() {
+      let value: unknown;
+      try { value = await plugin.status(); } catch (error) { throw toCatalogUpdateError(error); }
+      return decodeCatalogStatus(value);
+    },
     async check() {
       let value: unknown;
       try { value = await plugin.check(); } catch (error) { throw toCatalogUpdateError(error); }

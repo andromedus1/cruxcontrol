@@ -75,6 +75,9 @@ public final class PrivateCatalogFilesTest {
 
     private interface ThrowingRunnable { void run() throws Exception; }
 
+    /** Publishes unconditionally, as a session that is still current would. */
+    private static final PrivateCatalogFiles.PublicationGuard PUBLISH = PrivateCatalogFiles.Publication::run;
+
     @Test
     public void parsesTheGatewaySchemaThreeManifestIdentity() throws Exception {
         PrivateCatalogFiles.Manifest manifest = PrivateCatalogFiles.parseManifest(manifestBytes(7, ARTIFACT));
@@ -198,7 +201,7 @@ public final class PrivateCatalogFilesTest {
 
         File part = files.createArtifactTemp();
         write(part, ARTIFACT);
-        files.commitArtifact(part, manifest);
+        files.commitArtifact(part, manifest, PUBLISH);
         assertFalse(part.exists());
         assertTrue(files.hasPreparedArtifact(manifest));
         PrivateCatalogFiles.Served servedArtifact = files.openServable(manifest.file);
@@ -210,6 +213,24 @@ public final class PrivateCatalogFilesTest {
     }
 
     @Test
+    public void aRefusingGuardPublishesNothingAfterVerification() throws Exception {
+        PrivateCatalogFiles files = files();
+        PrivateCatalogFiles.Manifest manifest = files.stageManifest(manifestBytes(7, ARTIFACT));
+        File part = files.createArtifactTemp();
+        write(part, ARTIFACT);
+        boolean[] consulted = { false };
+        // Models sign-out landing after hashing: the guard's session check fails at publication.
+        assertCode("AUTH_REQUIRED", () -> files.commitArtifact(part, manifest, publication -> {
+            consulted[0] = true;
+            throw new PrivateCatalogFiles.CatalogException("AUTH_REQUIRED");
+        }));
+        assertTrue("guard runs only after verification", consulted[0]);
+        assertFalse(part.exists());
+        assertFalse(files.hasPreparedArtifact(manifest));
+        assertNull(files.openServable(manifest.file));
+    }
+
+    @Test
     public void commitRejectsCorruptOrStaleArtifactsAndRemovesTheTempFile() throws Exception {
         PrivateCatalogFiles files = files();
         PrivateCatalogFiles.Manifest manifest = files.stageManifest(manifestBytes(7, ARTIFACT));
@@ -218,7 +239,7 @@ public final class PrivateCatalogFilesTest {
         byte[] tampered = ARTIFACT.clone();
         tampered[3] ^= 1;
         write(corrupt, tampered);
-        assertCode("INTEGRITY", () -> files.commitArtifact(corrupt, manifest));
+        assertCode("INTEGRITY", () -> files.commitArtifact(corrupt, manifest, PUBLISH));
         assertFalse(corrupt.exists());
         assertNull(files.openServable(manifest.file));
 
@@ -227,7 +248,7 @@ public final class PrivateCatalogFilesTest {
         files.stageManifest(manifestBytes(8, newer));
         File stale = files.createArtifactTemp();
         write(stale, ARTIFACT);
-        assertCode("UNAVAILABLE", () -> files.commitArtifact(stale, manifest));
+        assertCode("UNAVAILABLE", () -> files.commitArtifact(stale, manifest, PUBLISH));
         assertFalse(stale.exists());
         assertNull(files.openServable(manifest.file));
     }
@@ -239,7 +260,7 @@ public final class PrivateCatalogFilesTest {
         PrivateCatalogFiles.Manifest v7 = files.stageManifest(manifestBytes(7, ARTIFACT));
         File part = files.createArtifactTemp();
         write(part, ARTIFACT);
-        files.commitArtifact(part, v7);
+        files.commitArtifact(part, v7, PUBLISH);
         write(new File(root, "kilter-7x10.v5.db.gz"), ARTIFACT);
         write(new File(root, "artifact-123.part"), ARTIFACT);
         write(new File(root, "unrelated.txt"), ARTIFACT);
@@ -255,7 +276,7 @@ public final class PrivateCatalogFilesTest {
         assertFalse("a newer staged manifest retires the older artifact", new File(root, "kilter-7x10.v7.db.gz").exists());
         File next = files.createArtifactTemp();
         write(next, newer);
-        files.commitArtifact(next, v8);
+        files.commitArtifact(next, v8, PUBLISH);
         File[] artifacts = root.listFiles((parent, name) -> PrivateCatalogFiles.validArtifactName(name));
         assertNotNull(artifacts);
         assertEquals(1, artifacts.length);

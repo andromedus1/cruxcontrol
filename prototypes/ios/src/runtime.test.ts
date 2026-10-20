@@ -67,6 +67,7 @@ beforeEach(() => {
   native.createAutomaticBackup.mockReturnValue(automaticBackup);
   native.createNativePrivateVault.mockReturnValue({});
   native.createNativePrivateCatalog.mockReturnValue({
+    status: vi.fn(async () => "signed-out"),
     check: vi.fn(async () => ({ status: "signed-out" })),
     prepare: vi.fn(async () => undefined),
   });
