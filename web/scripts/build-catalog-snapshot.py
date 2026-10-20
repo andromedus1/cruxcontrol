@@ -21,8 +21,13 @@ Usage:
 The build date never acts as a freshness claim; the manifest records Boardsesh's
 build time and table watermarks instead.
 
+With --previous-dir, every climb the previous artifact could show is carried forward
+(marked removed upstream when it disappears), the version becomes previous + 1, and
+the update guards must pass before anything is written.
+
 Exit codes: 0 built, 2 source error, 3 hardware mismatch, 4 normalization error,
-5 size limit, 6 artifact already exists.
+5 size limit, 6 artifact already exists, 7 held by guards, 8 upstream unchanged,
+9 previous artifact invalid.
 """
 import argparse
 import dataclasses
@@ -32,12 +37,16 @@ import pathlib
 import sys
 import tempfile
 
-from catalog.artifact import SizeLimitError, build
+from catalog.artifact import GuardHold, SizeLimitError, Unchanged, build
 from catalog.boardsesh_source import SourceError, UrllibFetcher, fetch_inputs, load_inputs
 from catalog.hardware import HardwareMismatch, load_pinned
 from catalog.normalize_climbs import NormalizationError
+from catalog.previous import PreviousArtifactError, load_previous
 
 EXIT_CODES = (
+    (Unchanged, 8),
+    (GuardHold, 7),
+    (PreviousArtifactError, 9),
     (SourceError, 2),
     (HardwareMismatch, 3),
     (NormalizationError, 4),
@@ -48,7 +57,11 @@ EXIT_CODES = (
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--version", type=int, required=True)
+    parser.add_argument("--version", type=int, default=None,
+                        help="Required for a first build; otherwise previous + 1.")
+    parser.add_argument("--previous-dir", type=pathlib.Path, default=None,
+                        help="Directory with the previously published manifest.json and artifact; "
+                             "its climbs are carried forward and the update guards apply.")
     parser.add_argument("--generated-on", default=datetime.date.today().isoformat(),
                         help="Build date; does not imply source freshness.")
     parser.add_argument("--from-dir", type=pathlib.Path, default=None,
@@ -63,16 +76,27 @@ def main() -> int:
     try:
         with tempfile.TemporaryDirectory() as tmp:
             work = pathlib.Path(tmp)
+            previous = load_previous(args.previous_dir, work) if args.previous_dir else None
+            if previous is None and args.version is None:
+                parser.error("--version is required without --previous-dir")
             inputs = load_inputs(args.from_dir, work) if args.from_dir else fetch_inputs(UrllibFetcher(), work)
-            result = build(inputs, load_pinned(), args.out_dir, work, args.version, args.generated_on)
+            result = build(inputs, load_pinned(), args.out_dir, work, args.version, args.generated_on, previous)
     except tuple(error for error, _ in EXIT_CODES) as error:
         code = next(code for kind, code in EXIT_CODES if isinstance(error, kind))
-        print(f"error ({type(error).__name__}): {error}", file=sys.stderr)
+        print(f"{'held' if isinstance(error, GuardHold) else 'error'} ({type(error).__name__}): {error}",
+              file=sys.stderr)
+        if isinstance(error, GuardHold) and args.report:
+            args.report.write_text(json.dumps({
+                "verdict": dataclasses.asdict(error.verdict),
+                "reconcile": dataclasses.asdict(error.reconciled),
+            }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return code
 
     report = dataclasses.asdict(result.report)
     if args.report:
-        args.report.write_text(json.dumps({"manifest": result.manifest, "report": report},
+        reconciled = dataclasses.asdict(result.reconciled) if result.reconciled else None
+        args.report.write_text(json.dumps({"manifest": result.manifest, "report": report,
+                                           "reconcile": reconciled},
                                           indent=2, sort_keys=True) + "\n", encoding="utf-8")
     manifest = result.manifest
     print(f"Wrote {result.artifact_path} ({manifest['bytesGzipped']} bytes, raw {manifest['bytesRaw']})")
@@ -80,6 +104,8 @@ def main() -> int:
     print(f"  upstream {report['upstream_rows']}  listed {report['listed']}  emitted {report['emitted']}"
           f"  aliases {report['aliases']}  role-rewritten {report['role_rewritten']}")
     print(f"  excluded {report['excluded']}  stats {report['stats_emitted']} (excluded {report['excluded_stats']})")
+    print(f"  version {manifest['version']}  climbs {manifest['climbCount']}  "
+          f"removed upstream {manifest['removedUpstreamCount']}  changes {manifest['changes']}")
     return 0
 
 

@@ -8,11 +8,14 @@ import json
 import shutil
 import sqlite3
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 from .boardsesh_source import SnapshotInputs
+from .guards import GuardVerdict, evaluate
 from .hardware import PinnedDefinition, copy_hardware, verify_scope
 from .normalize_climbs import NormalizationReport, normalize
+from .previous import PreviousArtifact
+from .reconcile import ReconcileReport, reconcile
 from .schema import create
 
 MANIFEST_SCHEMA_VERSION = 3
@@ -31,10 +34,24 @@ class SizeLimitError(Exception):
     """The artifact exceeds the app's supported catalog size."""
 
 
+class GuardHold(Exception):
+    """Guards refused publication; no artifact was written."""
+
+    def __init__(self, verdict: GuardVerdict, reconciled: ReconcileReport) -> None:
+        super().__init__("; ".join(verdict.reasons))
+        self.verdict = verdict
+        self.reconciled = reconciled
+
+
+class Unchanged(GuardHold):
+    """Upstream has not changed since the previous artifact; nothing to publish."""
+
+
 @dataclasses.dataclass(frozen=True)
 class BuildResult:
     manifest: Dict[str, object]
     report: NormalizationReport
+    reconciled: Optional[ReconcileReport]
     artifact_path: Path
 
 
@@ -42,8 +59,10 @@ def artifact_name(version: int) -> str:
     return f"kilter-7x10.v{version}.db.gz"
 
 
-def _meta(inputs: SnapshotInputs, revision: str, report: NormalizationReport) -> Dict[str, str]:
+def _meta(inputs: SnapshotInputs, revision: str, report: NormalizationReport,
+          reconciled: Optional[ReconcileReport]) -> Dict[str, str]:
     return {
+        "reconcile": json.dumps(dataclasses.asdict(reconciled) if reconciled else None, sort_keys=True),
         "source": SOURCE_ID,
         "layoutRevision": revision,
         "sourceBuiltAt": inputs.climbs_entry.built_at,
@@ -56,8 +75,12 @@ def _meta(inputs: SnapshotInputs, revision: str, report: NormalizationReport) ->
     }
 
 
-def build_database(inputs: SnapshotInputs, pinned: PinnedDefinition, db_path: Path) -> tuple:
-    """Write the uncompressed artifact; return (revision, report)."""
+def build_database(inputs: SnapshotInputs, pinned: PinnedDefinition, db_path: Path,
+                   previous: Optional[PreviousArtifact] = None, build_date: str = "") -> tuple:
+    """Write the uncompressed artifact; return (revision, report, reconciled).
+
+    With a previous artifact, its app-visible identities are carried forward and the
+    guards must pass; GuardHold / Unchanged leave no usable database behind."""
     if db_path.exists():
         db_path.unlink()
     catalog = sqlite3.connect(f"file:{inputs.catalog_db}?mode=ro", uri=True)
@@ -68,20 +91,29 @@ def build_database(inputs: SnapshotInputs, pinned: PinnedDefinition, db_path: Pa
         out.commit()
         scope = verify_scope(db_path, catalog, pinned)
         report = normalize(climbs, catalog, scope, out)
+        reconciled = None
+        if previous is not None:
+            reconciled = reconcile(out, previous, scope, build_date)
+            verdict = evaluate(reconciled, previous, inputs.climbs_entry.built_at, scope.revision)
+            if verdict.unchanged:
+                raise Unchanged(verdict, reconciled)
+            if not verdict.publish:
+                raise GuardHold(verdict, reconciled)
         create(out, "catalog_meta")
         out.executemany("INSERT INTO catalog_meta VALUES (?,?)",
-                        sorted(_meta(inputs, scope.revision, report).items()))
+                        sorted(_meta(inputs, scope.revision, report, reconciled).items()))
         out.commit()
         out.execute("VACUUM")
     finally:
         out.close()
         climbs.close()
         catalog.close()
-    return scope.revision, report
+    return scope.revision, report, reconciled
 
 
 def finalize(db_path: Path, out_dir: Path, version: int, generated_on: str,
-             inputs: SnapshotInputs, revision: str, report: NormalizationReport) -> Dict[str, object]:
+             inputs: SnapshotInputs, revision: str, report: NormalizationReport,
+             reconciled: Optional[ReconcileReport] = None) -> Dict[str, object]:
     name = artifact_name(version)
     gz_path = out_dir / name
     if gz_path.exists():
@@ -115,7 +147,13 @@ def finalize(db_path: Path, out_dir: Path, version: int, generated_on: str,
         "sourceWatermarks": inputs.climbs_entry.watermarks,
         "layoutRevision": revision,
         "qualityScale": QUALITY_SCALE,
-        "climbCount": report.emitted,
+        "climbCount": report.emitted + (reconciled.carried if reconciled else 0),
+        "removedUpstreamCount": reconciled.carried if reconciled else 0,
+        "changes": {
+            "added": reconciled.added if reconciled else report.emitted,
+            "removed": reconciled.removed if reconciled else 0,
+            "restored": reconciled.restored if reconciled else 0,
+        },
         "generatedFrom": GENERATED_FROM,
         "filter": FILTER,
     }
@@ -124,10 +162,18 @@ def finalize(db_path: Path, out_dir: Path, version: int, generated_on: str,
 
 
 def build(inputs: SnapshotInputs, pinned: PinnedDefinition, out_dir: Path, work_dir: Path,
-          version: int, generated_on: str) -> BuildResult:
-    if version <= 0:
-        raise ValueError("version must be positive")
+          version: Optional[int], generated_on: str,
+          previous: Optional[PreviousArtifact] = None) -> BuildResult:
+    """Build the next artifact. Versions only increase: with a previous artifact the
+    version is previous + 1 (an explicit version must agree); a first build needs one."""
+    if previous is not None:
+        expected = previous.version + 1
+        if version is not None and version != expected:
+            raise ValueError(f"version must be {expected} (previous is {previous.version})")
+        version = expected
+    if version is None or version <= 0:
+        raise ValueError("a first build needs an explicit positive version")
     db_path = work_dir / "artifact.sqlite3"
-    revision, report = build_database(inputs, pinned, db_path)
-    manifest = finalize(db_path, out_dir, version, generated_on, inputs, revision, report)
-    return BuildResult(manifest, report, out_dir / artifact_name(version))
+    revision, report, reconciled = build_database(inputs, pinned, db_path, previous, generated_on)
+    manifest = finalize(db_path, out_dir, version, generated_on, inputs, revision, report, reconciled)
+    return BuildResult(manifest, report, reconciled, out_dir / artifact_name(version))

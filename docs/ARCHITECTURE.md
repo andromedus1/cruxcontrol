@@ -95,7 +95,9 @@ feature item bodies in `.work/`, not here. Capabilities are in
    snapshots: it pins hardware to the generated board definition's layout revision,
    rewrites role codes to product-7 ids by name, preserves upstream UUID spelling and
    frames, records every upstream identity's status, and emits a schema-3 manifest that
-   current app builds reject until they support it.
+   current app builds reject until they support it. With a previous artifact it carries
+   forward every app-visible climb missing upstream (`climbs.upstream_removed_at`),
+   assigns the next version, and fails closed through update guards before writing.
 4. **Controller Profiles & Transports** — profiles own discovery and command
    encoding; transports own platform I/O. The first pair is Aurora API level 2/3 over
    Web Bluetooth: deterministic framing/checksum/multi-packet encoding, serialized
