@@ -54,6 +54,24 @@ shape this epic:
   store and must be unaffected by any catalog update, including playlist references to
   catalog climbs later unlisted or aliased.
 
+### Operator decisions (2026-10-19)
+
+- **Re-host.** A scheduled job fetches the Boardsesh Homewall snapshot and publishes
+  CruxControl's own normalized 7x10 catalog artifact (with its own hash) to a
+  CruxControl-controlled host; the app never fetches from Boardsesh directly. Cadence may
+  be slower than daily (for example weekly); freshness is not time-critical.
+- **Climb identities are append-only.** Every climb UUID ever published stays in the
+  catalog. Upstream removal, unlisting, exclusion or alias folding marks a climb as removed
+  upstream (hidden from browsing by default) rather than deleting it, so playlist
+  references keep resolving.
+- **Fail closed on suspicious upstream data.** The job publishes nothing and keeps the
+  last-known-good artifact when the manifest or artifact is missing, the schema or format
+  version changes, any 7x10 hardware row changes, the listed-climb count drops beyond a
+  threshold, or newly removed climbs exceed a cap. Thresholds are a design choice for this
+  epic. Previous artifacts are retained for rollback.
+- **Device installs stay atomic.** The installed catalog is replaced only after the new
+  artifact passes integrity checks; the personal library is never touched.
+
 The engagement record (dials, decomposition, gate outcomes) lives with the campaign:
 `dispatch.md`, `verification-checklist.md`, `campaign-evaluation.md`, `acquisitions.md`.
 

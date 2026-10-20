@@ -425,7 +425,12 @@ These are facts an updater must accommodate; the design choices belong to the ep
 - The operator accepted Boardsesh snapshots as CruxControl's recurring upstream Kilter
   catalog source on 2026-10-19, with the Kilter-terms tension in view. That decision
   should be re-confirmed against the Boardsesh policy restriction quoted in §3 and the
-  use modes above. Both are project decisions recorded here for the epic, not
+  use modes above.
+- On 2026-10-19 the operator chose use mode (c), re-hosting: a scheduled job derives
+  CruxControl's own catalog artifact from the snapshot at a cadence that may be slower
+  than daily. The operator also required that climb identities only accumulate and that
+  updates fail closed on suspicious upstream data (for example an emptied snapshot);
+  the epic records the specifics. Both are project decisions recorded here for the epic, not
   conclusions of the sources.
 - The catalog is a separate, reacquirable store; authored climbs, playlists and backups
   are outside it. Any update path must leave the personal library untouched, including
