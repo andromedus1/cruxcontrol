@@ -70,15 +70,20 @@ class ReconcileBuildTests(unittest.TestCase):
         self.runs = 0
 
     def build(self, climbs, built_at, previous_dir=None, version=None, date="2026-10-19", no_stats=(),
-              stats_angles=None):
+              stats_angles=None, legacy_baseline=None):
         self.runs += 1
         work = self.root / f"work{self.runs}"
         work.mkdir()
         inputs = load_inputs(fixtures.source_dir(work / "src", climbs=climbs, built_at=built_at,
                                                  no_stats=no_stats, stats_angles=stats_angles), work)
         prior = load_previous(previous_dir, work) if previous_dir else None
+        baseline = None
+        if legacy_baseline:
+            (work / "baseline").mkdir()
+            baseline = load_previous(legacy_baseline, work / "baseline")
         out = self.root / f"out{self.runs}"
-        result = artifact.build(inputs, fixture_pin(inputs.catalog_db, work), out, work, version, date, prior)
+        result = artifact.build(inputs, fixture_pin(inputs.catalog_db, work), out, work, version, date, prior,
+                                legacy_baseline=baseline)
         return result, out
 
     def rows(self, result, sql):
@@ -139,6 +144,48 @@ class ReconcileBuildTests(unittest.TestCase):
         self.assertAlmostEqual(quality, 2.5 * 5 / 3)
         self.assertEqual(result.reconciled.previous_present, 2)
         self.assertEqual(result.reconciled.lost, [])
+
+    def corrupt_like_prefix_v2(self, out_dir, legacy_quality, drop_pair):
+        """Rewrite a published artifact the way pre-fix builds left v2: carried legacy ratings
+        unscaled and one previously usable (climb, angle) pair missing."""
+        import gzip, hashlib
+        manifest = json.loads((out_dir / "manifest.json").read_text())
+        path = out_dir / manifest["file"]
+        db = self.root / f"corrupt{self.runs}.sqlite3"
+        db.write_bytes(gzip.decompress(path.read_bytes()))
+        connection = sqlite3.connect(db)
+        for uuid, quality in legacy_quality.items():
+            connection.execute("UPDATE climb_stats SET quality_average=? WHERE climb_uuid=?", (quality, uuid))
+        connection.execute("DELETE FROM climb_stats WHERE climb_uuid=? AND angle=?", drop_pair)
+        connection.commit()
+        connection.execute("VACUUM")
+        connection.close()
+        raw = db.read_bytes()
+        body = gzip.compress(raw, mtime=0)
+        path.write_bytes(body)
+        manifest.update(sha256=hashlib.sha256(body).hexdigest(), bytesGzipped=len(body), bytesRaw=len(raw))
+        (out_dir / "manifest.json").write_text(json.dumps(manifest))
+
+    def test_legacy_baseline_repairs_a_prefix_v2_once(self):
+        legacy = fixtures.legacy_previous(self.root / "legacy",
+                                          [("LEGACY1", "p101r42p102r43"), ("OLD1", "p102r42p103r45")])
+        _, out2 = self.build(fixtures.default_climbs(), T0, legacy)
+        # Pre-fix v2: OLD1 (carried) kept the raw 2.5/3 rating; LEGACY1 lost its 40-degree pair.
+        self.corrupt_like_prefix_v2(out2, {"OLD1": 2.5}, ("LEGACY1", 40))
+        # Upstream still lists LEGACY1, but only with 0-degree stats (as for the real v2 pairs).
+        upstream, angles = fixtures.default_climbs(), {"LEGACY1": (0,)}
+        v3, out3 = self.build(upstream, T1, out2, date="2026-10-26", stats_angles=angles, legacy_baseline=legacy)
+        (quality,), = self.rows(v3, "SELECT quality_average FROM climb_stats WHERE climb_uuid='OLD1'")
+        self.assertAlmostEqual(quality, 2.5 * 5 / 3)
+        self.assertEqual(self.rows(v3, "SELECT angle, quality_average FROM climb_stats "
+                                       "WHERE climb_uuid='LEGACY1' ORDER BY angle"),
+                         [(0, 4.5), (40, 2.5 * 5 / 3)])
+        self.assertEqual((v3.reconciled.legacy_rescaled, v3.reconciled.legacy_restored), (1, 1))
+        # Idempotent: a later build with the same baseline changes nothing further.
+        v4, _ = self.build(upstream, T2, out3, date="2026-11-02", stats_angles=angles, legacy_baseline=legacy)
+        self.assertEqual((v4.reconciled.legacy_rescaled, v4.reconciled.legacy_restored), (0, 0))
+        (quality,), = self.rows(v4, "SELECT quality_average FROM climb_stats WHERE climb_uuid='OLD1'")
+        self.assertAlmostEqual(quality, 2.5 * 5 / 3)
 
     def test_unchanged_and_held_builds_write_nothing(self):
         _, out1 = self.build(CLIMBS, T0, version=1)

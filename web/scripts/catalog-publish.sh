@@ -43,10 +43,21 @@ next="$(layout next <<< "$names")"
 mkdir -p "$work/previous" "$work/out"
 store_get "$(layout manifest "$latest")" "$work/previous/manifest.json"
 store_get "$(layout artifact "$latest")" "$work/previous/kilter-7x10.v$latest.db.gz"
+# Version 1 is the bootstrapped Aurora-era catalog. Passing it as the legacy baseline repairs
+# rows that builds before the per-angle/rescale fixes carried forward; idempotent afterwards.
+legacy=()
+if [[ "$latest" -gt 1 ]]; then
+  mkdir -p "$work/legacy"
+  store_get "$(layout manifest 1)" "$work/legacy/manifest.json"
+  if python3 -c 'import json,sys; sys.exit(json.load(open(sys.argv[1])).get("schemaVersion") != 2)' "$work/legacy/manifest.json"; then
+    store_get "$(layout artifact 1)" "$work/legacy/kilter-7x10.v1.db.gz"
+    legacy=(--legacy-baseline "$work/legacy")
+  fi
+fi
 
 set +e
 python3 "$scripts/build-catalog-snapshot.py" --previous-dir "$work/previous" --out-dir "$work/out" \
-  --version "$next" --report "$report" ${CATALOG_FROM_DIR:+--from-dir "$CATALOG_FROM_DIR"} \
+  --version "$next" --report "$report" ${legacy[@]+"${legacy[@]}"} ${CATALOG_FROM_DIR:+--from-dir "$CATALOG_FROM_DIR"} \
   ${CATALOG_DEFINITION:+--definition "$CATALOG_DEFINITION"}
 code=$?
 set -e

@@ -70,6 +70,9 @@ def main() -> int:
     parser.add_argument("--out-dir", type=pathlib.Path, required=True,
                         help="Output directory. Not defaulted: web/public/catalog holds the schema-2 "
                              "manifest current app builds install.")
+    parser.add_argument("--legacy-baseline", type=pathlib.Path, default=None,
+                        help="Directory with the schema-2 Aurora-era v1 manifest and artifact; repairs "
+                             "rows earlier builds carried forward unscaled or dropped (idempotent).")
     parser.add_argument("--definition", type=pathlib.Path, default=None,
                         help="Generated board definition to pin hardware against (tests only).")
     parser.add_argument("--report", type=pathlib.Path, default=None,
@@ -80,12 +83,17 @@ def main() -> int:
         with tempfile.TemporaryDirectory() as tmp:
             work = pathlib.Path(tmp)
             previous = load_previous(args.previous_dir, work) if args.previous_dir else None
+            baseline = None
+            if args.legacy_baseline:
+                (work / "baseline").mkdir()
+                baseline = load_previous(args.legacy_baseline, work / "baseline")
             if previous is None and args.version is None:
                 parser.error("--version is required without --previous-dir")
             inputs = (load_inputs(args.from_dir, work) if args.from_dir else fetch_inputs(
                 UrllibFetcher(), work, previous.source_built_at if previous else None))
             pinned = load_pinned(args.definition) if args.definition else load_pinned()
-            result = build(inputs, pinned, args.out_dir, work, args.version, args.generated_on, previous)
+            result = build(inputs, pinned, args.out_dir, work, args.version, args.generated_on, previous,
+                           legacy_baseline=baseline)
     except tuple(error for error, _ in EXIT_CODES) as error:
         code = next(code for kind, code in EXIT_CODES if isinstance(error, kind))
         label = "unchanged" if isinstance(error, Unchanged) else "held" if isinstance(error, GuardHold) else "error"
