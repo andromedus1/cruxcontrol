@@ -281,3 +281,25 @@ Native (contract producer) → service → UI → docs. Stories carry the same o
   compile green.
 - Closure: standard weight — findings fixed and verified, no second pass. Live
   acceptance remains the operator's phone update.
+
+## Live acceptance (owner phone, 2026-10-20)
+
+- Device: Andrew's Pixel 8, explicitly targeted by serial; no emulators attached.
+- Before: release 31 installed 2026-10-18; installed signing certificate matched the
+  retained key (`45a130…c1ac2ff8`).
+- Baseline: a fresh provider-written whole-library export was strictly decoded with the
+  app codec (22 climbs incl. 6 in Trash, 4 playlists, 18 ordered memberships, 8 climbs
+  with effects; canonical SHA-256 `59bcb45c…`) and matched the 2026-10-18 post-update
+  export exactly.
+- Update: signed release 32 built from merged `main` (`4fa2430`), clean tree, same
+  certificate and app ID, not debuggable, production vault scope; normal
+  `install -r` succeeded (no uninstall, reset or downgrade); first-install time
+  unchanged.
+- After update: a fresh export matched the baseline canonically.
+- Catalog: the app's first check offered catalog v2 from the private endpoint; Andrew
+  installed it. The screen showed "Kilter community climbs via Boardsesh · updated
+  Oct 20, 2026", "Not official Kilter data · setters credited", 5-star ratings and
+  "set by" credits.
+- After catalog install: a third export again matched the baseline canonically.
+- Backups, APKs and evidence stay outside Git (`.private-signing/phone-catalog-2026-10-20/`,
+  `.private-signing/android-dogfood/cruxcontrol-32.apk`).

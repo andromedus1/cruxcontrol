@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync
 kind: epic
-stage: implementing
+stage: review
 tags: [data]
 parent: null
 depends_on: [epic-universal-board-platform]
@@ -159,3 +159,12 @@ sync and publishing remain out of scope for this epic.
 
 None planned at epic level. New UI (update prompt in Manage, removed-upstream badge,
 scale and attribution text) composes existing catalog dialog, row and detail components.
+
+## Child features reviewed and complete
+
+All five child features are done with their reviews recorded:
+`snapshot-normalize`, `append-only-guards`, `catalog-semantics`, `private-publish`,
+`device-update`. Operator provisioning and the first live publish completed on
+2026-10-20 (catalog v2: 13,326 climbs, 1,261 added, 23 removed upstream), and the
+owner-phone update and catalog install passed with exact library preservation (see
+`epic-catalog-sync-device-update` → Live acceptance).
