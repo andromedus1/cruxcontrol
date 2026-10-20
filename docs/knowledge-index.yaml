@@ -6,9 +6,9 @@
 #   2 = enforce (missing v2 fields are errors)
 # Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-10-18T22:17:25Z
+generated_at: 2026-10-19T20:12:48Z
 generated_from: frontmatter
-total_docs: 30
+total_docs: 38
 
 documents:
   # ── planning ──────────────────────────────────────────────────────────────
@@ -190,16 +190,6 @@ documents:
     blocks_phase: epic-climb-browser
     consumer_hint: Read before designing epic-climb-browser — how to render the 2D board and filter the catalog, grounded in Climbdex prior art
 
-  - path: docs/briefs/catalog-sync-api.md
-    title: "Brief: Catalog Sync & the Kilter API (Sync Engine)"
-    type: brief
-    kind: research
-    updated: 2026-06-13
-    status: draft
-    research_method: /brief
-    blocks_phase: epic-catalog-sync
-    consumer_hint: Read before designing epic-catalog-sync — the Kilter sync protocol, what BoardLib does, and the auth boundary for user/publish data
-
   - path: docs/briefs/data-model.md
     title: "Kilter Board Data Model: A Technical Primer"
     type: brief
@@ -236,6 +226,56 @@ documents:
     blocks_phase: epic-recommendations
     consumer_hint: Read before designing epic-recommendations — content-based recsys for a single user + climbing-training methodology for circuits, weakness, and progression
 
+  - path: .research/analysis/campaigns/kilter-current-catalog-sources/acquisitions.md
+    title: Acquisition manifest — kilter-current-catalog-sources
+    type: campaign
+    kind: research
+    updated: 2026-10-19
+    consumer_hint: "Agentic Research campaign: Acquisition manifest — kilter-current-catalog-sources"
+
+  - path: .research/analysis/campaigns/kilter-current-catalog-sources/campaign-evaluation.md
+    title: Campaign evaluation
+    type: campaign
+    kind: research
+    consumer_hint: "Agentic Research campaign: Campaign evaluation"
+
+  - path: .research/analysis/campaigns/kilter-current-catalog-sources/parent.md
+    title: Current Kilter catalog sources (October 2026)
+    type: campaign
+    kind: research
+    updated: 2026-10-19
+    status: draft
+    research_method: /brief
+    blocks_phase: epic-catalog-sync
+    consumer_hint: Read before designing epic-catalog-sync. Establishes which sources currently carry Kilter community climbs after the 2026 Kilter/Aurora split, and what an offline Homewall 7x10 catalog updater must handle when consuming Boardsesh's public snapshots.
+
+  - path: .research/analysis/campaigns/kilter-current-catalog-sources/specialists/kilter-first-party.md
+    title: Kilter first-party app, web presence, and terms
+    type: campaign
+    kind: research
+    updated: 2026-10-19
+    consumer_hint: "Agentic Research campaign: Kilter first-party app, web presence, and terms"
+
+  - path: .research/analysis/campaigns/kilter-current-catalog-sources/specialists/legacy-aurora-sync.md
+    title: "Legacy Aurora-hosted Kilter sync and BoardLib: current status (as of 2026-10-19)"
+    type: campaign
+    kind: research
+    updated: 2026-10-19
+    consumer_hint: "Agentic Research campaign: Legacy Aurora-hosted Kilter sync and BoardLib: current status (as of 2026-10-19)"
+
+  - path: .research/analysis/campaigns/kilter-current-catalog-sources/specialists/third-party-clients.md
+    title: Third-party Kilter clients and public datasets
+    type: campaign
+    kind: research
+    updated: 2026-10-19
+    consumer_hint: "Agentic Research campaign: Third-party Kilter clients and public datasets"
+
+  - path: .research/analysis/campaigns/kilter-current-catalog-sources/verification-checklist.md
+    title: "Verification checklist: kilter-current-catalog-sources (adversarial read)"
+    type: campaign
+    kind: research
+    consumer_hint: "Agentic Research campaign: Verification checklist: kilter-current-catalog-sources (adversarial read)"
+
   - path: .research/briefs/kilter-grade-prediction/campaign.md
     title: "Campaign Report: Kilter Grade Prediction"
     type: program-report
@@ -259,7 +299,23 @@ documents:
     updated: 2026-09-27
     consumer_hint: Read before committing to a shared web and native climbing-board client; compares concrete Capacitor, React Native and Safari-extension prior art and the evidence each leaves unresolved.
 
+  - path: .research/analysis/campaigns/kilter-current-catalog-sources/dispatch.md
+    title: Current Kilter catalog sources (refresh of docs/briefs/catalog-sync-api.md)
+    type: synthesis-brief
+    kind: research
+    consumer_hint: "Agentic Research synthesis-brief: Current Kilter catalog sources (refresh of docs/briefs/catalog-sync-api.md)"
+
   # ── historical ──────────────────────────────────────────────────────────────
+
+  - path: docs/briefs/catalog-sync-api.md
+    title: "Brief: Catalog Sync & the Kilter API (Sync Engine)"
+    type: brief
+    kind: historical
+    updated: 2026-06-13
+    status: superseded
+    research_method: /brief
+    superseded_by: .research/analysis/campaigns/kilter-current-catalog-sources/parent.md
+    consumer_hint: Historical — the legacy Aurora Kilter sync protocol as BoardLib implemented it; read the current Kilter catalog sources brief instead
 
   - path: docs/architecture/history/north-star.md
     title: CruxControl -- North Star Document

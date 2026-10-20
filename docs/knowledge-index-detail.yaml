@@ -1,6 +1,6 @@
 # Auto-generated. DO NOT EDIT BY HAND.
 # On-demand layer — load when surfacing a specific doc's full context.
-generated_at: '2026-10-18T22:17:25Z'
+generated_at: '2026-10-19T20:12:48Z'
 generated_from: frontmatter
 schema_version: 2
 documents:
@@ -221,7 +221,11 @@ documents:
     - Exact hold coordinate→screen mapping and image assets must be read from Climbdex's source; the README
       does not specify them.
   docs/briefs/catalog-sync-api.md:
-    summary: 'Curates the Kilter catalog-sync layer: BoardLib is the canonical reference
+    summary: 'Captures the legacy Aurora sync path as of 2026-06-13; not refreshed for the
+
+      2026-03 Kilter/Aurora split.
+
+      Curates the Kilter catalog-sync layer: BoardLib is the canonical reference
 
       implementation (download SQLite, then sync via the API; shared/public data only by
 
@@ -234,16 +238,9 @@ documents:
       must be read out of BoardLib''s source — they are not in any official doc.
 
       '
-    key_findings:
-    - 'BoardLib is the canonical reference: `boardlib database <board> <path> --username <user>` downloads
-      then syncs the SQLite DB.'
-    - By default only 'shared,' public data is synced; user data (ascents/bids) requires credentials.
-    - 'Incremental: if the DB already exists, BoardLib skips download and only syncs — mirror this with
-      shared_syncs cursors (see data-model.md).'
-    - There is no official sync-API spec; exact request/response shapes and the publish endpoint must
-      be read from BoardLib's source.
-    - This sync/auth layer also unblocks route publishing (epic-route-creation) and optional ascent sync
-      (epic-logbook).
+    supersession_note: 'Superseded 2026-10-19 by the current Kilter catalog sources brief; the legacy
+
+      /sync endpoint no longer serves Kilter.'
   docs/briefs/data-model.md:
     summary: 'Technical primer for the Kilter data model: the bundled SQLite database (climbs, climb_stats,
       holes/placements, layouts/products/sizes), the frames string encoding for hold placements + roles,
@@ -391,6 +388,68 @@ documents:
     - Storage create/read can be separated from overwrite/delete permissions.
     - Storage budget alerts do not provide a hard spending cap.
     - Native sign-in, renewal, owner isolation and clean-install recovery still need execution evidence.
+  .research/analysis/campaigns/kilter-current-catalog-sources/parent.md:
+    summary: 'The legacy Aurora-hosted Kilter sync (kilterboardapp.com /sync, the path BoardLib
+
+      implements) stopped serving Kilter in late March 2026 and BoardLib has not followed
+
+      Kilter''s move. Kilter''s own app publishes no API, developer terms, or bulk export, and
+
+      its Terms of Use prohibit scraping, automated copying, reverse engineering and
+
+      unpermitted use of Content. Boardsesh pulls Kilter''s current catalog from the
+
+      first-party backend with an authenticated, reverse-engineered client and republishes
+
+      it as anonymous, CORS-open SQLite snapshots per layout, plus a hardware catalog; its
+
+      policy invites snapshot use while requiring written permission for a publicly
+
+      distributed app that uses Boardsesh data or servers as its service. Direct inspection
+
+      shows the Homewall (layout 8) snapshot keeps Aurora-era 7x10 hardware IDs exactly and
+
+      keeps legacy climb UUIDs, and carries climbs created through the day of fetch. Climbs
+
+      that appear to come from Kilter''s new backend use product-1 role codes 12–15 and
+
+      lowercase dashed UUIDs (inferred); quality is not on the Aurora three-star scale
+
+      (documented as 0–5 and as 1–5, observed 0.25–5.0); and anonymous consumers get no
+
+      deletion feed.
+
+      '
+    key_findings:
+    - 'The legacy Aurora Kilter sync is not a viable source of new climbs: Kilter says the old app is
+      no longer supported and press reports it was taken down; Boardsesh switched its Aurora sync off
+      for Kilter on 2026-03-30; BoardLib''s last commit is 2026-03-17 and its Kilter issue #78 remains
+      open. [kcs-kilter-support]{10} [kcs-news-yahoo]{11} [kcs-boardsesh-docs-legacy]{16} [kcs-boardlib-head-2026-10]{14}
+      [kcs-boardlib-issues-2025-2026]{15}'
+    - Kilter publishes no public API or bulk catalog export; its claim portal attaches per-user data only,
+      and its Terms of Use forbid access other than through its interface, extensive or automatic copying,
+      reverse engineering, and use of Content except as permitted. [kcs-kilter-landing]{17} [kcs-kilter-claim]{9}
+      [kcs-kilter-terms]{7}
+    - Among the sources inspected, Boardsesh's anonymous v1-gzip snapshots carry Kilter climbs dated after
+      the 2026-03-26 split; its Homewall artifact held 34,070 climbs with rows created through 2026-10-19.
+      Two other Hugging Face uploads (one dated 2026-10-04) were not inspected. [kcs-boardsesh-snapshots-dataset]{2}
+      [kcs-boardsesh-kilter8-artifact]{1} [kcs-hf-kilter-datasets-2026]{18}
+    - 'For Homewall 7x10 (layout 8, size 17, sets 26/27) the snapshot hardware catalog matches the Aurora-era
+      tables exactly: 472/472 placements, 305/305 LEDs, 3,294/3,294 holes, 39/39 grades. [kcs-boardsesh-kilter8-artifact]{1}'
+    - 'Layout-8 climbs appear with product-1 role codes 12–15 instead of Homewall''s 42–45 in 3,019 of
+      3,022 listed climbs with created_at on or after 2026-03-26, in 1,962 listed climbs dated earlier,
+      and in 491 baseline-shared legacy climbs whose placements otherwise match; {inferred: convergence}
+      this follows ingestion from Kilter''s new backend. Mapping roles by name raises 7x10-lightable listed
+      climbs from 11,465 to 13,347, the same set as the snapshot''s size-17 tag. [kcs-boardsesh-kilter8-artifact]{1}'
+    - 'Snapshot quality_average is not on the Aurora three-star scale and does not convert back to it
+      by a fixed factor: Boardsesh documents it as 0–5 and as 1–5, and observed values span 0.25–5.0.
+      On shared climb-angle rows, ascensionist counts are higher in 18,459, equal in 9,366 and lower in
+      15,899. [kcs-boardsesh-snapshots-dataset]{2} [kcs-boardsesh-kilter-sync]{3} [kcs-boardsesh-kilter8-artifact]{1}'
+    - 'Boardsesh terms: snapshots are ''welcome to use'' with once-per-day fetching, setter attribution
+      and no official-sourcing claim, but a publicly distributed app that uses Boardsesh ''accounts, data
+      or servers as its service'' needs written permission Boardsesh does not currently grant; whether
+      recurring snapshot consumption falls inside that restriction is not stated. [kcs-boardsesh-legal]{4}
+      [kcs-boardsesh-snapshots-dataset]{2}'
   .research/analysis/landscapes/climbing-board-ecosystem.md:
     summary: 'Multi-board control is technically demonstrated by Boardsesh and CruxCoach, while
 
