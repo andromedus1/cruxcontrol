@@ -110,6 +110,16 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   hold count, grade-consensus accuracy, personal sent/liked state and other remaining
   official filters are deferred, as are individual/provider-climb URLs. The anonymous
   snapshot supplies no personal sent/liked history.
+- A viewed climb in catalog results or My Climbs moves to the previous or next climb in
+  the list as shown (same filters, sort, angle and order) through compact ‹ › header
+  buttons with a position ("12 of 340"; catalog "12 of 50+" while later pages exist),
+  ArrowLeft/ArrowRight while focus is in the detail, or a horizontal touch swipe anywhere
+  on the detail; vertical scrolling and taps are unaffected. Moving behaves like
+  selecting the climb from the list, including automatic lighting where moves stop.
+  Catalog moves continue across pages, skipping pages whose routes were all excluded,
+  while the page buttons still clear the selection. At either end the detail stops with
+  a short nudge (none under reduced motion) and announces "First climb" or "Last climb".
+  The edit screen has no swipe navigation.
 - Climb detail shows the source grade when one is available, alongside the climb's
   name and angle; missing grades remain omitted rather than fabricated. Catalog rows,
   detail and playlist rows credit the climb's setter ("set by <setter>").
@@ -298,6 +308,8 @@ operates over, and the constraints it must satisfy. The _why_ lives in
   provider references with an explicit warning.
 - **Play-through on the board:** when connected, step through the playlist
   climb-by-climb, automatically lighting each available climb and its saved effects.
+  Swipes and ArrowLeft/ArrowRight step through the same order and ends as Previous and
+  Next, including unavailable entries.
   Without a board connection the playlist is still fully usable for browsing/sharing.
 - Edit available local climbs from list management or play-through. Back returns to
   the same list and, for play-through, the same entry. This navigation context is

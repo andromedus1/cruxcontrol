@@ -46,6 +46,11 @@ application server.
   light any result on the board. Filters run over the whole installed catalog with
   stable 25-row pagination. Catalog climbs can be added to lists, and catalog absence
   or failure leaves authored climbs and lists available.
+- Move from a viewed climb to the next or previous one in My Climbs or catalog results
+  (continuing across catalog pages) by swiping left or right, with the ‹ › buttons and
+  position in the detail header, or with the arrow keys. Play-through accepts the same
+  swipes and keys. The board relights where you stop, and the ends announce "First
+  climb" or "Last climb".
 - Import Kilter Fullride screenshots through a local review-and-correction flow, or
   import the supplied set of 16 climbs as ordinary 40° drafts. Screenshot pixels are
   never uploaded or persisted.

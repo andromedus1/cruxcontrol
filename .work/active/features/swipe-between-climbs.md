@@ -1,7 +1,7 @@
 ---
 id: swipe-between-climbs
 kind: feature
-stage: implementing
+stage: review
 tags: [ui]
 parent: null
 depends_on: []
@@ -153,3 +153,49 @@ keys. Existing catalog/play-through e2e remain green.
 - **Catalog page crossing races** — pending selection keyed to the query adapter and page
   request; superseded responses are discarded as today.
 - **Least sure**: feel of thresholds on the real phone; tune during the phone check.
+
+## Implementation notes
+
+Delivered through the three child stories (all `done`) plus docs and Playwright checks.
+
+- **Shared layer** (`web/src/climb-browser/`): `navigation.ts` (`ClimbNavigation`,
+  `listNavigation`), `use-horizontal-swipe.ts` (thresholds as designed; touch/pen only;
+  ignores text fields, sliders, selects and `[data-no-swipe]`; suppresses the click a
+  swipe would otherwise end with), and `use-climb-navigation-input.ts` (swipe, scoped
+  ArrowLeft/ArrowRight, end nudge skipped under reduced motion, "First climb"/"Last
+  climb" for 2.5 s or until the climb changes). Interface extension: `onPrevious` /
+  `onNext` may return `Promise<boolean>`; `false` means the surface found no neighbor
+  after an async read, which triggers the end feedback.
+- **ClimbDetail** is a persistent shell (board bar, ‹ › nav with polite position status,
+  swipe zone with `tabIndex=-1`) around per-climb content keyed by climb key.
+  `LocalClimbViewer` no longer keys `ClimbDetail`, so header buttons keep focus across
+  moves while lighting still restarts per climb (180 ms debounce: fast moves light only
+  where they stop; covered by a unit test). End buttons use `aria-disabled` so they stay
+  focusable and give end feedback. Key moves from content that remounts move focus to
+  the shell. Close returns focus to the row of the climb now shown.
+- **Touch**: `.climb-swipe-zone` sets `touch-action: pan-y` (`pan-y pinch-zoom` where
+  supported), also on the non-gesture board viewport inside it, which otherwise is an
+  `overflow: auto` scroller that let the browser claim horizontal drags. Verified by
+  Playwright (the phone swipe check fails with the rule removed). Zoomable boards
+  (`board-renderer__viewport--gestures`) keep their own pan.
+- **Catalog**: the page move reads the neighbor page itself and primes the page query
+  with page + selection rather than re-applying a `'first' | 'last'` flag after a second
+  query; same behavior with one read per page and no phone sheet close/reopen between
+  pages. Pending moves are cancelled by query changes, Manage, closing the detail,
+  picking a row or moving within the page; stale responses are discarded. Trailing
+  empty pages are discovered and reported as the end (the "+" disappears). A failed or
+  unavailable read falls back to an ordinary page change showing existing error/Retry.
+- **Play-through**: navigation built from the existing `move`/bounds feeds the shared
+  input hook on a body wrapper around its own nav and the current entry, so swipes and
+  keys also work on unavailable placeholders; the inner `ClimbDetail` gets no
+  navigation (no duplicate controls). Existing tests unchanged.
+- **Docs**: SPEC §2 (new bullet on moving between viewed climbs) and §8 (play-through
+  swipes/keys); README "What works now" bullet. No stale assertion needed removal.
+- **Tests**: Vitest 1025 passed / 1 skipped (was 993 / 1). `web/src/test-setup.ts` gained
+  a minimal `PointerEvent` stand-in (jsdom lacks one). Playwright: synthetic catalog
+  fixture gained an optional `extraRoutes`; two new checks in `catalog-browser.spec.ts`
+  (phone CDP touch swipe on the board advances to the next result; desktop arrow keys
+  are scoped to the detail and cross pages forward/back with "Last climb" at the end).
+- **Open for the phone check**: threshold feel (56 px / 0.4 px/ms flick / 1.5×
+  dominance) on the real device, per the design's risk note.
+
