@@ -1,20 +1,70 @@
 {
-  "comment": "Shared by web/scripts/catalog/test_storage_layout.py and contract.test.mjs; keep both layouts in lock-step.",
+  "comment": "Shared by web/scripts/catalog/test_storage_layout.py and contract.test.mjs; keep both layouts in lock-step. 'next' (publisher-only) skips versions burned by an artifact uploaded without its manifest.",
   "cases": [
-    { "names": [], "latest": null },
-    { "names": ["kilter-7x10/artifacts/kilter-7x10.v1.db.gz", "kilter-7x10/manifests/v000001.json"], "latest": 1 },
-    { "names": ["kilter-7x10/artifacts/kilter-7x10.v1.db.gz", "kilter-7x10/manifests/v000001.json",
-                "kilter-7x10/artifacts/kilter-7x10.v2.db.gz"], "latest": 1 },
-    { "names": ["kilter-7x10/artifacts/kilter-7x10.v1.db.gz", "kilter-7x10/manifests/v000001.json",
-                "kilter-7x10/manifests/v000003.json"], "latest": 1 },
-    { "names": ["kilter-7x10/artifacts/kilter-7x10.v9.db.gz", "kilter-7x10/manifests/v000009.json",
-                "kilter-7x10/artifacts/kilter-7x10.v10.db.gz", "kilter-7x10/manifests/v000010.json"], "latest": 10 },
-    { "names": ["kilter-7x10/manifests/v000002.json.tmp", "kilter-7x10/artifacts/kilter-7x10.v02.db.gz",
-                "kilter-7x10/manifests/v000002.json", "other/kilter-7x10.v2.db.gz",
-                "kilter-7x10/artifacts/kilter-7x10.v0.db.gz", "kilter-7x10/manifests/v000000.json"], "latest": null }
+    {
+      "names": [],
+      "latest": null,
+      "next": null
+    },
+    {
+      "names": [
+        "kilter-7x10/artifacts/kilter-7x10.v1.db.gz",
+        "kilter-7x10/manifests/v000001.json"
+      ],
+      "latest": 1,
+      "next": 2
+    },
+    {
+      "names": [
+        "kilter-7x10/artifacts/kilter-7x10.v1.db.gz",
+        "kilter-7x10/manifests/v000001.json",
+        "kilter-7x10/artifacts/kilter-7x10.v2.db.gz"
+      ],
+      "latest": 1,
+      "next": 3
+    },
+    {
+      "names": [
+        "kilter-7x10/artifacts/kilter-7x10.v1.db.gz",
+        "kilter-7x10/manifests/v000001.json",
+        "kilter-7x10/manifests/v000003.json"
+      ],
+      "latest": 1,
+      "next": 4
+    },
+    {
+      "names": [
+        "kilter-7x10/artifacts/kilter-7x10.v9.db.gz",
+        "kilter-7x10/manifests/v000009.json",
+        "kilter-7x10/artifacts/kilter-7x10.v10.db.gz",
+        "kilter-7x10/manifests/v000010.json"
+      ],
+      "latest": 10,
+      "next": 11
+    },
+    {
+      "names": [
+        "kilter-7x10/manifests/v000002.json.tmp",
+        "kilter-7x10/artifacts/kilter-7x10.v02.db.gz",
+        "kilter-7x10/manifests/v000002.json",
+        "other/kilter-7x10.v2.db.gz",
+        "kilter-7x10/artifacts/kilter-7x10.v0.db.gz",
+        "kilter-7x10/manifests/v000000.json"
+      ],
+      "latest": null,
+      "next": 3
+    }
   ],
   "objects": [
-    { "version": 1, "artifact": "kilter-7x10/artifacts/kilter-7x10.v1.db.gz", "manifest": "kilter-7x10/manifests/v000001.json" },
-    { "version": 123456, "artifact": "kilter-7x10/artifacts/kilter-7x10.v123456.db.gz", "manifest": "kilter-7x10/manifests/v123456.json" }
+    {
+      "version": 1,
+      "artifact": "kilter-7x10/artifacts/kilter-7x10.v1.db.gz",
+      "manifest": "kilter-7x10/manifests/v000001.json"
+    },
+    {
+      "version": 123456,
+      "artifact": "kilter-7x10/artifacts/kilter-7x10.v123456.db.gz",
+      "manifest": "kilter-7x10/manifests/v123456.json"
+    }
   ]
 }

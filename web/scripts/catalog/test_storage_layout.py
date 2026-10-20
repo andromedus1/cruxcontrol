@@ -2,7 +2,7 @@ import json
 import unittest
 from pathlib import Path
 
-from catalog.storage_layout import artifact_object, latest_version, manifest_object
+from catalog.storage_layout import artifact_object, latest_version, manifest_object, next_version
 
 FIXTURE = (Path(__file__).resolve().parents[3] / "prototypes" / "firebase-vault" / "catalog-gateway"
            / "storage-layout.fixture.json")
@@ -16,6 +16,7 @@ class StorageLayoutTests(unittest.TestCase):
         for case in self.fixture["cases"]:
             with self.subTest(names=case["names"]):
                 self.assertEqual(latest_version(case["names"]), case["latest"])
+                self.assertEqual(next_version(case["names"]), case["next"])
 
     def test_object_names_match_shared_layout(self):
         for item in self.fixture["objects"]:

@@ -35,6 +35,11 @@ test('bucket IAM is exact for catalog identities and never public', () => {
   assert.match(checkBucketIam(publicRead).join(), /public member/);
   const readerWrites = { bindings: [...goodBucketIam.bindings, { role: 'roles/storage.objectCreator', members: [reader] }] };
   assert.notDeepEqual(checkBucketIam(readerWrites), []);
+  const extraReader = { bindings: [...goodBucketIam.bindings, { role: 'roles/storage.objectViewer', members: ['user:unexpected@example.com'] }] };
+  assert.match(checkBucketIam(extraReader).join(), /unexpected bucket member user:unexpected/);
+  const convenience = { bindings: [...goodBucketIam.bindings,
+    { role: 'roles/storage.legacyObjectReader', members: ['projectViewer:cruxcontrol-auth-20261010'] }] };
+  assert.deepEqual(checkBucketIam(convenience), []);
 });
 
 test('project IAM: reader may only check accounts; publisher has nothing', () => {
@@ -42,6 +47,8 @@ test('project IAM: reader may only check accounts; publisher has nothing', () =>
   assert.deepEqual(checkProjectIam(good), []);
   assert.notDeepEqual(checkProjectIam({ bindings: [...good.bindings, { role: 'roles/editor', members: [publisher] }] }), []);
   assert.notDeepEqual(checkProjectIam({ bindings: [] }), []);
+  const federatedAdmin = { bindings: [...good.bindings, { role: 'roles/storage.admin', members: [PUBLISHER_PRINCIPAL] }] };
+  assert.match(checkProjectIam(federatedAdmin).join(), /CI workload identity holds project role roles\/storage.admin/);
 });
 
 test('workload identity provider is limited to the catalog workflow on main', () => {
@@ -53,6 +60,8 @@ test('workload identity provider is limited to the catalog workflow on main', ()
   assert.deepEqual(checkProvider(good), []);
   assert.notDeepEqual(checkProvider({ ...good, attributeCondition: "assertion.repository == 'andromedus1/cruxcontrol'" }), []);
   assert.notDeepEqual(checkProvider({ ...good, oidc: { ...good.oidc, allowedAudiences: ['x'] } }), []);
+  const reordered = Object.fromEntries(Object.entries(PROVIDER_SPEC.attributeMapping).reverse());
+  assert.deepEqual(checkProvider({ ...good, attributeMapping: reordered }), []);
 });
 
 test('publisher account impersonation is limited to the workflow principal', () => {
@@ -67,4 +76,6 @@ test('catalog identities never reach the vault', () => {
   assert.deepEqual(checkVaultUntouched(vaultIam, [AUTH_READER_ROLE]), []);
   assert.notDeepEqual(checkVaultUntouched({ bindings: [...vaultIam.bindings, { role: 'roles/storage.objectViewer', members: [reader] }] }, [AUTH_READER_ROLE]), []);
   assert.notDeepEqual(checkVaultUntouched(vaultIam, [AUTH_READER_ROLE, 'roles/editor']), []);
+  assert.notDeepEqual(checkVaultUntouched({ bindings: [...vaultIam.bindings,
+    { role: 'roles/storage.objectViewer', members: [PUBLISHER_PRINCIPAL] }] }, [AUTH_READER_ROLE]), []);
 });

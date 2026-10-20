@@ -51,7 +51,10 @@ only, create + read on the catalog bucket, no delete), workload identity pool
 `github-actions` / provider `cruxcontrol-catalog`, and function `privateCatalog`
 (codebase `private-catalog`). None of them has access to the vault bucket, and
 provisioning never modifies vault resources. Catalog objects are immutable: a version
-is published once `kilter-7x10/manifests/v<NNNNNN>.json` exists beside its artifact.
+is published once `kilter-7x10/manifests/v<NNNNNN>.json` exists beside its artifact. A
+run interrupted after uploading an artifact leaves that version number unused; the next
+run skips it, and the gateway ignores artifacts without manifests. A bootstrap rerun
+reuses identical objects and refuses different ones.
 
 The scheduled workflow `.github/workflows/catalog-publish.yml` is inert until enabled.
 One-time operator setup, using the isolated Firebase CLI configuration kept outside

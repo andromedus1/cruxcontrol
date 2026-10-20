@@ -44,6 +44,16 @@ export const PROVIDER_SPEC = Object.freeze({
   oidc: { issuerUri: 'https://token.actions.githubusercontent.com' },
 });
 
+// Default convenience bindings GCS adds for project owners/editors/viewers are the only
+// other members allowed on the catalog bucket.
+export const CONVENIENCE_BINDINGS = Object.freeze({
+  'roles/storage.legacyBucketOwner': [`projectOwner:${PROJECT_ID}`, `projectEditor:${PROJECT_ID}`],
+  'roles/storage.legacyBucketReader': [`projectViewer:${PROJECT_ID}`],
+  'roles/storage.legacyObjectOwner': [`projectOwner:${PROJECT_ID}`, `projectEditor:${PROJECT_ID}`],
+  'roles/storage.legacyObjectReader': [`projectViewer:${PROJECT_ID}`],
+});
+const POOL_MARKER = `/workloadIdentityPools/${POOL_ID}/`;
+
 export const BUCKET_ROLES = Object.freeze({
   [`serviceAccount:${READER}`]: ['roles/storage.objectViewer'],
   [`serviceAccount:${PUBLISHER}`]: ['roles/storage.objectCreator', 'roles/storage.objectViewer'],
@@ -74,6 +84,11 @@ export function checkBucketIam(policy) {
   for (const binding of policy?.bindings ?? []) {
     if (binding.members?.some(member => PUBLIC.has(member))) problems.push(`public member on ${binding.role}`);
     if (binding.condition) problems.push(`unexpected conditional binding on ${binding.role}`);
+    for (const member of binding.members ?? []) {
+      const allowed = (BUCKET_ROLES[member] ?? []).includes(binding.role)
+        || (CONVENIENCE_BINDINGS[binding.role] ?? []).includes(member);
+      if (!allowed) problems.push(`unexpected bucket member ${member} on ${binding.role}`);
+    }
   }
   for (const [member, roles] of Object.entries(BUCKET_ROLES)) {
     const actual = rolesOf(policy, member);
@@ -93,6 +108,12 @@ export function checkProjectIam(policy) {
   if (JSON.stringify(reader) !== JSON.stringify([AUTH_READER_ROLE])) problems.push(`reader project roles ${reader.join(',')}`);
   const publisher = rolesOf(policy, `serviceAccount:${PUBLISHER}`);
   if (publisher.length) problems.push(`publisher has project roles ${publisher.join(',')}`);
+  // Federated identities from the CI pool must never hold project roles directly.
+  for (const binding of policy?.bindings ?? []) {
+    if (binding.members?.some(member => member.includes(POOL_MARKER))) {
+      problems.push(`CI workload identity holds project role ${binding.role}`);
+    }
+  }
   for (const member of [`serviceAccount:${READER}`, `serviceAccount:${PUBLISHER}`]) {
     if ((policy?.bindings ?? []).some(binding => binding.members?.includes(member) && binding.condition)) {
       problems.push(`conditional project binding for ${member}`);
@@ -108,7 +129,8 @@ export function checkProvider(provider) {
   if (provider.attributeCondition !== ATTRIBUTE_CONDITION) problems.push('attribute condition differs');
   if (provider.oidc?.issuerUri !== PROVIDER_SPEC.oidc.issuerUri) problems.push('issuer differs');
   if (provider.oidc?.allowedAudiences?.length) problems.push('unexpected custom audiences');
-  if (JSON.stringify(provider.attributeMapping ?? {}) !== JSON.stringify(PROVIDER_SPEC.attributeMapping)) {
+  const sorted = mapping => JSON.stringify(Object.entries(mapping ?? {}).sort(([a], [b]) => a.localeCompare(b)));
+  if (sorted(provider.attributeMapping) !== sorted(PROVIDER_SPEC.attributeMapping)) {
     problems.push('attribute mapping differs');
   }
   return problems;
@@ -126,8 +148,11 @@ export function checkPublisherAccountIam(policy) {
 /** Catalog resources must never touch the vault. */
 export function checkVaultUntouched(vaultBucketIam, vaultAccountRoles) {
   const problems = [];
-  for (const member of [`serviceAccount:${READER}`, `serviceAccount:${PUBLISHER}`, PUBLISHER_PRINCIPAL]) {
+  for (const member of [`serviceAccount:${READER}`, `serviceAccount:${PUBLISHER}`]) {
     if (rolesOf(vaultBucketIam, member).length) problems.push(`${member} has access to the vault bucket`);
+  }
+  if ((vaultBucketIam?.bindings ?? []).some(binding => binding.members?.some(member => member.includes(POOL_MARKER)))) {
+    problems.push('a CI workload identity has access to the vault bucket');
   }
   if (vaultAccountRoles?.some(role => role !== AUTH_READER_ROLE)) problems.push('vault runtime roles changed');
   return problems;

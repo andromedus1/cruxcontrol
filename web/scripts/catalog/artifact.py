@@ -164,13 +164,14 @@ def finalize(db_path: Path, out_dir: Path, version: int, generated_on: str,
 def build(inputs: SnapshotInputs, pinned: PinnedDefinition, out_dir: Path, work_dir: Path,
           version: Optional[int], generated_on: str,
           previous: Optional[PreviousArtifact] = None) -> BuildResult:
-    """Build the next artifact. Versions only increase: with a previous artifact the
-    version is previous + 1 (an explicit version must agree); a first build needs one."""
+    """Build the next artifact. Versions strictly increase: with a previous artifact the
+    version defaults to previous + 1 and may skip numbers burned by an interrupted
+    publication; a first build needs an explicit version."""
     if previous is not None:
-        expected = previous.version + 1
-        if version is not None and version != expected:
-            raise ValueError(f"version must be {expected} (previous is {previous.version})")
-        version = expected
+        if version is None:
+            version = previous.version + 1
+        elif version <= previous.version:
+            raise ValueError(f"version must exceed the previous version {previous.version}")
     if version is None or version <= 0:
         raise ValueError("a first build needs an explicit positive version")
     db_path = work_dir / "artifact.sqlite3"

@@ -28,8 +28,7 @@ def manifest_object(version: int) -> str:
     return f"{PREFIX}/manifests/v{_check(version):06d}.json"
 
 
-def latest_version(object_names: Iterable[str]) -> Optional[int]:
-    """Highest version with both its artifact and manifest present."""
+def _versions(object_names: Iterable[str]):
     artifacts, manifests = set(), set()
     for name in object_names:
         match = _ARTIFACT.match(name)
@@ -39,5 +38,19 @@ def latest_version(object_names: Iterable[str]) -> Optional[int]:
         match = _MANIFEST.match(name)
         if match and int(match.group(1)) >= 1:
             manifests.add(int(match.group(1)))
+    return artifacts, manifests
+
+
+def next_version(object_names: Iterable[str]) -> Optional[int]:
+    """First version number above every used one, including versions burned by a
+    publication that uploaded its artifact but never its manifest."""
+    artifacts, manifests = _versions(object_names)
+    used = artifacts | manifests
+    return max(used) + 1 if used else None
+
+
+def latest_version(object_names: Iterable[str]) -> Optional[int]:
+    """Highest version with both its artifact and manifest present."""
+    artifacts, manifests = _versions(object_names)
     published = artifacts & manifests
     return max(published) if published else None

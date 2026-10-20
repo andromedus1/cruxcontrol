@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync-private-publish
 kind: feature
-stage: review
+stage: done
 tags: [infra, security]
 parent: epic-catalog-sync
 depends_on: [epic-catalog-sync-append-only-guards]
@@ -255,3 +255,30 @@ script → 6. docs/runbook.
   deploy, first live WIF exchange, and live gateway auth. `shellcheck` is not installed
   locally; scripts were syntax-checked and exercised by the dry run.
 - Adjacent issues parked: none.
+
+## Review
+
+- Effective weight: standard; one independent pass.
+- Reviewer: Codex `gpt-6.1-sol` (high effort, security-first brief) via peeragent —
+  cross-model, no cloud or GitHub calls. It ran the Python, plan and contract tests and
+  the handler cases in-memory (its sandbox blocked local HTTP listen).
+- Proposed verdict: Request changes. Receiver adjudication (all accepted):
+  - **Blocker — interrupted publication blocked all later runs.** An uploaded artifact
+    without its manifest kept `latest` unchanged, so every run retried the occupied
+    version and failed create-only. Fixed: `next_version` skips burned numbers;
+    builds require versions strictly greater than the previous (gaps allowed; this
+    relaxes the guards feature's "previous + 1" to "strictly increasing"); the gateway
+    already ignores manifest-less artifacts; bootstrap reruns reuse identical objects
+    and refuse different ones. Regression: `test_publish_script.py` runs the real
+    script against a directory store — publish, unchanged, burned v3 → v4, v5.
+  - **Important — federated principal could hold project roles unnoticed.** Fixed:
+    any member from the CI identity pool holding a project role, or any access on the
+    vault bucket, is a readback problem. Test added.
+  - **Important — extra catalog bucket readers passed inspection.** Fixed: strict member
+    allowlist (catalog identities with exact roles plus GCS's default project
+    convenience bindings). Test added.
+  - **Important — order-sensitive provider mapping comparison.** Fixed: compared as
+    sorted entries. Test added.
+- Verification after fixes: Python 44 tests; provisioning plan 6; catalog gateway 10;
+  vault gateway 17; real-data dry run republished v2.
+- Closure: standard weight — blocker fixed and verified, no second pass.

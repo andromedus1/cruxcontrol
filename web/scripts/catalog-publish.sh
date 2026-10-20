@@ -7,6 +7,7 @@
 #   CATALOG_BUCKET     bucket name (CI), or
 #   CATALOG_STORE_DIR  local directory standing in for the bucket (dry run)
 #   CATALOG_FROM_DIR   optional offline Boardsesh inputs for the build (dry run)
+#   CATALOG_DEFINITION optional board-definition override (tests only)
 #   GITHUB_OUTPUT      when set, receives result=published|unchanged|held and report=PATH
 # Exit: 0 for published/unchanged/held (held is reported, not failed); nonzero otherwise.
 set -euo pipefail
@@ -34,15 +35,19 @@ fi
 output() { [[ -z "${GITHUB_OUTPUT:-}" ]] || echo "$1" >> "$GITHUB_OUTPUT"; }
 layout() { python3 "$scripts/catalog-storage.py" "$@"; }
 
-latest="$(store_ls | layout latest)"
+names="$(store_ls)"
+latest="$(layout latest <<< "$names")"
 [[ -n "$latest" ]] || { echo "No published catalog version; run the one-time bootstrap first." >&2; exit 1; }
+# Versions burned by an interrupted publication (artifact without manifest) are skipped.
+next="$(layout next <<< "$names")"
 mkdir -p "$work/previous" "$work/out"
 store_get "$(layout manifest "$latest")" "$work/previous/manifest.json"
 store_get "$(layout artifact "$latest")" "$work/previous/kilter-7x10.v$latest.db.gz"
 
 set +e
 python3 "$scripts/build-catalog-snapshot.py" --previous-dir "$work/previous" --out-dir "$work/out" \
-  --report "$report" ${CATALOG_FROM_DIR:+--from-dir "$CATALOG_FROM_DIR"}
+  --version "$next" --report "$report" ${CATALOG_FROM_DIR:+--from-dir "$CATALOG_FROM_DIR"} \
+  ${CATALOG_DEFINITION:+--definition "$CATALOG_DEFINITION"}
 code=$?
 set -e
 output "report=$report"
@@ -53,7 +58,6 @@ case "$code" in
   *) echo "Catalog build failed with exit code $code." >&2; exit "$code" ;;
 esac
 
-next=$((latest + 1))
 file="kilter-7x10.v$next.db.gz"
 expected="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["sha256"])' "$work/out/manifest.json")"
 store_put "$work/out/$file" "$(layout artifact "$next")"

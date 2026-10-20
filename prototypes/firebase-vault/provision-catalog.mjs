@@ -172,9 +172,17 @@ if (mode === 'bootstrap') {
   const names = (listing.items ?? []).map(item => item.name);
   assert.equal(latestVersion(names), null, 'A catalog version is already published; bootstrap is one-time');
   const upload = async (name, bytes) => {
+    const md5 = createHash('md5').update(bytes).digest('base64');
+    // A rerun after an interrupted bootstrap reuses an identical existing object
+    // (objects are immutable); any different existing object stops the bootstrap.
+    const existing = await api(`${bucketUrl}/o/${encodeURIComponent(name)}`, 'GET', undefined, { missing: true });
+    if (existing) {
+      assert.equal(existing.md5Hash, md5, `Existing ${name} differs from the bootstrap input`);
+      return { name, generation: existing.generation, bytes: bytes.length, reused: true };
+    }
     const created = await api(`https://storage.googleapis.com/upload/storage/v1/b/${BUCKET}/o?uploadType=media`
       + `&ifGenerationMatch=0&name=${encodeURIComponent(name)}`, 'POST', undefined, { raw: bytes });
-    assert.equal(created.md5Hash, createHash('md5').update(bytes).digest('base64'), `Readback mismatch for ${name}`);
+    assert.equal(created.md5Hash, md5, `Readback mismatch for ${name}`);
     return { name, generation: created.generation, bytes: bytes.length };
   };
   // Artifact first: a version is published only once its manifest exists.
