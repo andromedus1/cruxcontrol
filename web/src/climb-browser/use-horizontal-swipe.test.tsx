@@ -106,10 +106,71 @@ describe('useHorizontalSwipe', () => {
     render(<Zone onSwipe={onSwipe} onClick={onClick} />);
     const button = screen.getByRole('button', { name: 'Inside' });
     drag(button, { dx: -100 });
-    fireEvent.click(button);
+    // The compatibility click a touch produces carries a tap count.
+    fireEvent.click(button, { detail: 1 });
     expect(onSwipe).toHaveBeenCalledOnce();
     expect(onClick).not.toHaveBeenCalled();
-    fireEvent.click(button);
+    fireEvent.click(button, { detail: 1 });
     expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it('never swallows a fresh tap or a keyboard activation right after a swipe', () => {
+    const onClick = vi.fn();
+    render(<Zone onSwipe={vi.fn()} onClick={onClick} />);
+    const zone = screen.getByTestId('zone');
+    const button = screen.getByRole('button', { name: 'Inside' });
+    // The swipe ended off the button, so no compatibility click followed it.
+    drag(zone, { dx: -100 });
+    fireEvent.click(button, { detail: 0 });
+    expect(onClick).toHaveBeenCalledTimes(1);
+    drag(zone, { dx: -100 });
+    fireEvent.pointerDown(button, { pointerId: 8, pointerType: 'touch', isPrimary: true, clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(button, { pointerId: 8, pointerType: 'touch', clientX: 10, clientY: 10 });
+    fireEvent.click(button, { detail: 1 });
+    expect(onClick).toHaveBeenCalledTimes(2);
+  });
+
+  it('treats a second finger (pinch) as the end of the swipe', () => {
+    const onSwipe = vi.fn();
+    render(<Zone onSwipe={onSwipe} />);
+    const zone = screen.getByTestId('zone');
+    fireEvent.pointerDown(zone, { pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: 200, clientY: 300 });
+    fireEvent.pointerDown(zone, { pointerId: 9, pointerType: 'touch', isPrimary: false, clientX: 260, clientY: 300 });
+    fireEvent.pointerUp(zone, { pointerId: 7, pointerType: 'touch', clientX: 100, clientY: 300 });
+    expect(onSwipe).not.toHaveBeenCalled();
+  });
+
+  describe('while the page is pinch-zoomed', () => {
+    let scale = 1;
+    const listeners = new Set<() => void>();
+    beforeEach(() => {
+      scale = 1;
+      listeners.clear();
+      vi.stubGlobal('visualViewport', {
+        get scale() { return scale; },
+        addEventListener: (_: string, listener: () => void) => listeners.add(listener),
+        removeEventListener: (_: string, listener: () => void) => listeners.delete(listener),
+      });
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('leaves horizontal drags to the page pan and marks the zone', () => {
+      const onSwipe = vi.fn();
+      const view = render(<Zone onSwipe={onSwipe} />);
+      const zone = screen.getByTestId('zone');
+      expect(zone).not.toHaveAttribute('data-page-zoomed');
+      scale = 2;
+      listeners.forEach((listener) => listener());
+      expect(zone).toHaveAttribute('data-page-zoomed');
+      drag(zone, { dx: -100 });
+      expect(onSwipe).not.toHaveBeenCalled();
+      scale = 1;
+      listeners.forEach((listener) => listener());
+      expect(zone).not.toHaveAttribute('data-page-zoomed');
+      drag(zone, { dx: -100 });
+      expect(onSwipe).toHaveBeenCalledWith('next');
+      view.unmount();
+      expect(listeners.size).toBe(0);
+    });
   });
 });

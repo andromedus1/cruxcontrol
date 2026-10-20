@@ -198,6 +198,12 @@ button {
   touch-action: pan-y;
   touch-action: pan-y pinch-zoom;
 }
+/* While the page is pinch-zoomed, horizontal drags pan the page instead. */
+.climb-swipe-zone[data-page-zoomed],
+.climb-swipe-zone[data-page-zoomed] .board-renderer__viewport,
+.climb-swipe-zone[data-page-zoomed] .board-renderer {
+  touch-action: auto;
+}
 .climb-detail__nav {
   display: flex;
   align-items: center;

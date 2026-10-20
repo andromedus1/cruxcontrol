@@ -1,7 +1,7 @@
 ---
 id: swipe-between-climbs
 kind: feature
-stage: review
+stage: done
 tags: [ui]
 parent: null
 depends_on: []
@@ -199,3 +199,27 @@ Delivered through the three child stories (all `done`) plus docs and Playwright 
 - **Open for the phone check**: threshold feel (56 px / 0.4 px/ms flick / 1.5×
   dominance) on the real device, per the design's risk note.
 
+
+## Review
+- Effective weight: `standard` (project convention). One independent cross-model pass:
+  Codex `gpt-6.1-sol`, high effort, read-only, via peeragent. Verdict: no blockers.
+- **Accepted (fixed)** — post-swipe click suppression could swallow a fresh action: for
+  400 ms after a swipe the next click anywhere in the zone was cancelled, including a new
+  tap on the next climb's controls and keyboard activation. Suppression now clears on any
+  new pointer-down and ignores keyboard clicks (`detail === 0`).
+- **Accepted (host finding, fixed)** — page pinch-zoom: the design decision "anywhere
+  unless zoomed" was not honored while the page itself is pinch-zoomed; horizontal drags
+  navigated instead of panning. The hook now ignores gestures while
+  `visualViewport.scale > 1.01` and marks the zone `data-page-zoomed`, which restores
+  `touch-action: auto` so the browser pans.
+- **Rejected (host concern)** — a second finger during a pinch could complete a swipe:
+  the non-primary `pointerdown` already cleared the track. A guard test was added; it
+  passed before and after the change.
+- Regression tests: `use-horizontal-swipe.test.tsx` (fresh tap / keyboard activation after
+  a swipe; pinch-zoomed page; second finger). The first two fail against the pre-fix hook.
+- Verification after fixes: lint and typecheck clean; `npm test` 105 files passed (1
+  skipped), 1028 tests passed (1 skipped); build succeeded; `CI=1 npm -w web run test:e2e`
+  16 passed.
+- Not covered: real-device feel of the swipe thresholds; Codex's real-browser run was
+  blocked by its sandbox. Tune during the phone check.
+- Closure: standard weight — fixes verified, no re-review.

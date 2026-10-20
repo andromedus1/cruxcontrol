@@ -17,6 +17,10 @@ export const SWIPE_DOMINANCE_RATIO = 1.5;
 /** Vertical travel that hands the gesture to scrolling before any decision. */
 const VERTICAL_CANCEL_PX = 12;
 const CLICK_SUPPRESSION_MS = 400;
+/** Page pinch-zoom beyond this hands horizontal drags back to the browser's pan. */
+const ZOOMED_SCALE = 1.01;
+/** Set on the element while the page is pinch-zoomed (CSS restores panning). */
+export const PAGE_ZOOMED_ATTRIBUTE = 'data-page-zoomed';
 
 /** Gestures starting on these keep their own horizontal drag behavior. */
 const IGNORED_TARGETS = [
@@ -33,6 +37,10 @@ interface Track {
   readonly x: number;
   readonly y: number;
   readonly startedAt: number;
+}
+
+function pageZoomed(): boolean {
+  return (window.visualViewport?.scale ?? 1) > ZOOMED_SCALE;
 }
 
 export function swipeDirection(dx: number, dy: number, elapsedMs: number): ClimbNavigationDirection | null {
@@ -66,8 +74,11 @@ export function useHorizontalSwipe<T extends HTMLElement>(options: SwipeOptions)
     let suppressClicksUntil = Number.NEGATIVE_INFINITY;
 
     const onPointerDown = (event: PointerEvent) => {
+      // Any new touch is a fresh action: a second finger (pinch) ends the swipe,
+      // and a new tap must not be swallowed by the previous swipe's suppression.
       track = null;
-      if (!latest.current.enabled || !event.isPrimary) return;
+      suppressClicksUntil = Number.NEGATIVE_INFINITY;
+      if (!latest.current.enabled || !event.isPrimary || pageZoomed()) return;
       if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
       const target = event.target;
       if (target instanceof Element && target.closest(IGNORED_TARGETS)) return;
@@ -97,20 +108,27 @@ export function useHorizontalSwipe<T extends HTMLElement>(options: SwipeOptions)
     const onPointerCancel = (event: PointerEvent) => {
       if (track && event.pointerId === track.pointerId) track = null;
     };
-    // A swipe that ends over a button must not also activate it.
+    // A swipe that ends over a button must not also activate it. Keyboard
+    // activation (detail 0) is never a swipe's compatibility click.
     const onClickCapture = (event: MouseEvent) => {
-      if (performance.now() >= suppressClicksUntil) return;
+      if (event.detail === 0 || performance.now() >= suppressClicksUntil) return;
       suppressClicksUntil = Number.NEGATIVE_INFINITY;
       event.preventDefault();
       event.stopPropagation();
     };
 
+    const viewport = window.visualViewport;
+    const onViewportResize = () => element.toggleAttribute(PAGE_ZOOMED_ATTRIBUTE, pageZoomed());
+    onViewportResize();
+
+    viewport?.addEventListener('resize', onViewportResize);
     element.addEventListener('pointerdown', onPointerDown);
     element.addEventListener('pointermove', onPointerMove);
     element.addEventListener('pointerup', onPointerUp);
     element.addEventListener('pointercancel', onPointerCancel);
     element.addEventListener('click', onClickCapture, true);
     cleanup.current = () => {
+      viewport?.removeEventListener('resize', onViewportResize);
       element.removeEventListener('pointerdown', onPointerDown);
       element.removeEventListener('pointermove', onPointerMove);
       element.removeEventListener('pointerup', onPointerUp);
