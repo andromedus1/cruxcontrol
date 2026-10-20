@@ -69,6 +69,11 @@ function controllerWith(state: BoardLightState): BoardLightController {
   };
 }
 
+function swipe(target: Element, dx: number) {
+  fireEvent.pointerDown(target, { pointerId: 1, pointerType: 'touch', isPrimary: true, clientX: 200, clientY: 300 });
+  fireEvent.pointerUp(target, { pointerId: 1, pointerType: 'touch', clientX: 200 + dx, clientY: 300 });
+}
+
 const disconnectedState: BoardLightState = {
   transport: { status: 'disconnected', device: null },
   operation: 'idle',
@@ -235,6 +240,60 @@ describe('PlaylistPlayThrough', () => {
     );
     expect(screen.getByRole('heading', { name: 'First climb' })).toBeInTheDocument();
     expect(screen.getByText('2 of 2')).toBeInTheDocument();
+  });
+
+  it('swipes through the same order and bounds as the buttons, including unavailable entries', () => {
+    const first = entry(FIRST_ID, 'Opening climb', 0);
+    const missing = entry(SECOND_ID, '', 1, 'missing');
+    const entries = [first, missing];
+    render(<PlaylistPlayThrough playlist={playlist(entries)} entries={entries} definition={definition} compatibilityIssue={() => null} onExit={vi.fn()} />);
+    const status = () => screen.getByText(/ of 2/).closest('[role="status"]');
+
+    swipe(screen.getByRole('img', { name: 'Opening climb' }), -100);
+    expect(screen.getByText('2 of 2')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: `Missing local climb ${SECOND_ID}` })).toBeInTheDocument();
+    // Only the play-through's own controls are shown, never a second set in the detail.
+    expect(screen.queryByRole('button', { name: 'Next climb' })).not.toBeInTheDocument();
+
+    swipe(screen.getByRole('heading', { name: `Missing local climb ${SECOND_ID}` }), -100);
+    expect(screen.getByText('2 of 2')).toBeInTheDocument();
+    expect(status()).toHaveTextContent('Last climb');
+
+    swipe(screen.getByText(/local climb is missing/), 100);
+    expect(screen.getByText('1 of 2')).toBeInTheDocument();
+    expect(status()).not.toHaveTextContent('Last climb');
+    swipe(screen.getByRole('heading', { name: 'Opening climb' }), 100);
+    expect(screen.getByText('1 of 2')).toBeInTheDocument();
+    expect(status()).toHaveTextContent('First climb');
+  });
+
+  it('moves with arrow keys inside the play-through and keeps focus with the controls', () => {
+    const entries = [entry(FIRST_ID, 'Opening climb', 0), entry(SECOND_ID, 'Second climb', 1), entry(THIRD_ID, 'Third climb', 2)];
+    const onEdit = vi.fn();
+    render(<PlaylistPlayThrough playlist={playlist(entries)} entries={entries} definition={definition} compatibilityIssue={() => null} onExit={vi.fn()} onEditLocalClimb={onEdit} />);
+    const exit = screen.getByRole('button', { name: 'Exit play-through' });
+    fireEvent.keyDown(exit, { key: 'ArrowRight' });
+    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+
+    const edit = screen.getByRole('button', { name: 'Edit climb' });
+    edit.focus();
+    fireEvent.keyDown(edit, { key: 'ArrowRight' });
+    expect(screen.getByRole('heading', { name: 'Second climb' })).toBeInTheDocument();
+    // Focus leaves the remounted climb for the play-through body, so keys keep working.
+    expect(edit).not.toBeInTheDocument();
+    const body = document.activeElement!;
+    expect(body).toHaveClass('playlist-play-through__body');
+    fireEvent.keyDown(body, { key: 'ArrowRight' });
+    expect(screen.getByRole('heading', { name: 'Third climb' })).toBeInTheDocument();
+
+    // From the Previous button, the existing boundary focus rule applies to keys too.
+    const previous = screen.getByRole('button', { name: 'Previous' });
+    previous.focus();
+    fireEvent.keyDown(previous, { key: 'ArrowLeft' });
+    fireEvent.keyDown(previous, { key: 'ArrowLeft' });
+    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(previous).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveFocus();
   });
 
   it('shows board incompatibility without a preview or light action', () => {
