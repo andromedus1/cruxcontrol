@@ -24,8 +24,8 @@ compares the offered version with the installed receipt, and shows a summary pro
 existing A/B OPFS install verifies hash, sizes and schema, swaps only on success,
 keeps the current catalog on any failure, and never installs a lower version.
 
-This extends today's same-origin, install-once flow: the manifest parser accepts the
-new source and schema version, the bootstrap path gains an authenticated remote origin
+This extends today's same-origin, install-once flow (schema-3 manifest parsing lands
+earlier, in \`catalog-semantics\`): the bootstrap path gains an authenticated remote origin
 (a compiled, validated endpoint in the style of the vault config), and `service.ts`
 re-checks for offers when a catalog is already installed. The bundled older snapshot
 remains a valid offline seed. Catalog work stays fully separate from the personal

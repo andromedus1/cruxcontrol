@@ -62,3 +62,27 @@ selection and other parity filters remain in the backlog).
 None planned: the badge, scale change and attribution reuse existing catalog row,
 detail and filter-sheet components. Fall back to `/ux-ui-design:screens` during
 feature design if the badge or attribution needs a visual decision.
+
+## Design decisions
+
+- **Wording (operator, 2026-10-19)**: for a Boardsesh-sourced catalog, the source line
+  reads "Kilter community climbs via Boardsesh · updated <build date>" with
+  "Not official Kilter data · setters credited"; the badge reads "Removed upstream";
+  climbs show "set by <setter>". The existing legacy wording stays for the bundled
+  `legacy-aurora-kilter` snapshot.
+- **Rating scale comes from the installed manifest**: schema 3 declares
+  `qualityScale.max` (5 for Boardsesh); schema 2 / legacy is the three-star scale. The
+  filter's allowed range, hint text and star display follow the installed scale.
+- **Removed-upstream marker (shared contract with `append-only-guards`)**:
+  `climbs.upstream_removed_at TEXT NULL` — NULL means present upstream; a
+  `YYYY-MM-DD` date means removed upstream since that build. Carried climbs keep
+  `is_listed = 1`. Older artifacts lack the column; treat it as absent (all present).
+  Removed climbs stay searchable and playable, with the badge in results, detail and
+  playlist rows.
+- **Schema-3 manifest parsing moves here** (from `device-update`): once this feature
+  lands the app can present Boardsesh data correctly, so the same-origin install path
+  should accept schema 3 (`source: boardsesh-kilter`) as well as schema 2. Example
+  contract: `web/src/data/catalog/__fixtures__/manifest-v3.example.json` plus the
+  additional `removedUpstreamCount` and `changes` fields defined by
+  `append-only-guards`. Remote fetch, update prompts and downgrade protection stay in
+  `device-update`.
