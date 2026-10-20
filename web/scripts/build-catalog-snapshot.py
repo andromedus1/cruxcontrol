@@ -38,13 +38,14 @@ import sys
 import tempfile
 
 from catalog.artifact import GuardHold, SizeLimitError, Unchanged, build
-from catalog.boardsesh_source import SourceError, UrllibFetcher, fetch_inputs, load_inputs
+from catalog.boardsesh_source import SourceError, UpstreamUnchanged, UrllibFetcher, fetch_inputs, load_inputs
 from catalog.hardware import HardwareMismatch, load_pinned
 from catalog.normalize_climbs import NormalizationError
 from catalog.previous import PreviousArtifactError, load_previous
 
 EXIT_CODES = (
     (Unchanged, 8),
+    (UpstreamUnchanged, 8),
     (GuardHold, 7),
     (PreviousArtifactError, 9),
     (SourceError, 2),
@@ -81,7 +82,8 @@ def main() -> int:
             previous = load_previous(args.previous_dir, work) if args.previous_dir else None
             if previous is None and args.version is None:
                 parser.error("--version is required without --previous-dir")
-            inputs = load_inputs(args.from_dir, work) if args.from_dir else fetch_inputs(UrllibFetcher(), work)
+            inputs = (load_inputs(args.from_dir, work) if args.from_dir else fetch_inputs(
+                UrllibFetcher(), work, previous.source_built_at if previous else None))
             pinned = load_pinned(args.definition) if args.definition else load_pinned()
             result = build(inputs, pinned, args.out_dir, work, args.version, args.generated_on, previous)
     except tuple(error for error, _ in EXIT_CODES) as error:
@@ -89,11 +91,17 @@ def main() -> int:
         label = "unchanged" if isinstance(error, Unchanged) else "held" if isinstance(error, GuardHold) else "error"
         print(f"{label} ({type(error).__name__}): {error}",
               file=sys.stderr)
-        if isinstance(error, GuardHold) and args.report:
-            args.report.write_text(json.dumps({
-                "verdict": dataclasses.asdict(error.verdict),
-                "reconcile": dataclasses.asdict(error.reconciled),
-            }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        if args.report:
+            # Every intentional refusal gets a report so the publisher can raise the hold issue.
+            if isinstance(error, GuardHold):
+                held = {"verdict": dataclasses.asdict(error.verdict),
+                        "reconcile": dataclasses.asdict(error.reconciled)}
+            elif isinstance(error, UpstreamUnchanged):
+                held = {"verdict": {"publish": False, "unchanged": True, "reasons": [str(error)]}, "reconcile": None}
+            else:
+                held = {"verdict": {"publish": False, "unchanged": False,
+                                    "reasons": [f"{type(error).__name__}: {error}"]}, "reconcile": None}
+            args.report.write_text(json.dumps(held, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return code
 
     report = dataclasses.asdict(result.report)

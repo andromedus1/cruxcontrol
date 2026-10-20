@@ -19,7 +19,7 @@ class ReconcileReport:
     removed: int = 0            # newly marked removed upstream by this build
     restored: int = 0           # previously marked, present again
     carried: int = 0            # all climbs marked removed upstream in this build
-    stats_kept: int = 0         # present climbs whose new stats were unusable; previous stats kept
+    stats_kept: int = 0         # (climb, angle) stats of present climbs kept from the previous version
     lost: List[str] = field(default_factory=list)          # must stay empty
     case_changed: List[str] = field(default_factory=list)  # uuid reappeared with other casing
 
@@ -38,6 +38,14 @@ def _with_stats(connection: sqlite3.Connection, angles) -> set:
     return {uuid for (uuid,) in connection.execute(
         f"SELECT DISTINCT climb_uuid FROM climb_stats WHERE angle IN ({marks}) AND {USABLE_STATS}",
         tuple(angles))}
+
+
+def _usable_pairs(connection: sqlite3.Connection, angles) -> set:
+    """(uuid, angle) pairs with a usable stats row; the app resolves climbs per angle."""
+    marks = ",".join("?" * len(angles))
+    return set(connection.execute(
+        f"SELECT climb_uuid, angle FROM climb_stats WHERE angle IN ({marks}) AND {USABLE_STATS}",
+        tuple(angles)))
 
 
 def _visible(previous: sqlite3.Connection, scope: HardwareScope) -> Dict[str, dict]:
@@ -90,30 +98,38 @@ def reconcile(new: sqlite3.Connection, previous: PreviousArtifact, scope: Hardwa
         new.executemany(f"INSERT INTO climbs VALUES ({','.join('?' * len(target))})", carried_rows)
         report.carried = len(carried)
 
-        # Carried climbs keep their frozen stats; a present climb that was visible before but
-        # whose new stats are all unusable keeps its previous stats rather than vanishing.
-        present_with_stats = _with_stats(new, angles)
-        kept = [uuid for uuid in visible if uuid in current and uuid not in present_with_stats]
-        report.stats_kept = len(kept)
+        # Playlists resolve a climb at a specific angle, so preservation works per (climb, angle):
+        # carried climbs keep all their usable stats, and a present climb keeps the previous
+        # row for any angle whose new stats are missing or unusable.
+        previous_pairs = {pair for pair in _usable_pairs(old, angles) if pair[0] in visible}
+        current_pairs = _usable_pairs(new, angles)
+        carried_set = set(carried)
+        keep = sorted(pair for pair in previous_pairs
+                      if pair not in current_pairs and (pair[0] in carried_set or pair[0] in current))
+        report.stats_kept = sum(1 for uuid, _ in keep if uuid not in carried_set)
         stat_columns = _columns(new, "climb_stats")
         available = set(_columns(old, "climb_stats"))
         selected = ",".join(column if column in available else "NULL" for column in stat_columns)
-        marks = ",".join("?" * len(angles))
-        if kept:
-            new.execute(f"DELETE FROM climb_stats WHERE climb_uuid IN ({','.join('?' * len(kept))})", kept)
+        quality = stat_columns.index("quality_average")
+        # Schema-2 (Aurora-era) ratings are on 1-3; schema-3 artifacts declare 0-5.
+        scale = 5 / 3 if previous.schema_version == 2 else 1
         stats = []
-        for uuid in carried + kept:
-            stats.extend(old.execute(
-                f"SELECT {selected} FROM climb_stats WHERE climb_uuid=? AND angle IN ({marks}) "
-                f"AND {USABLE_STATS} ORDER BY angle", (uuid, *angles)))
+        for uuid, angle in keep:
+            row = old.execute(f"SELECT {selected} FROM climb_stats WHERE climb_uuid=? AND angle=?",
+                              (uuid, angle)).fetchone()
+            if scale != 1:
+                row = row[:quality] + (row[quality] * scale,) + row[quality + 1:]
+            stats.append(row)
         new.executemany(f"INSERT INTO climb_stats VALUES ({','.join('?' * len(stat_columns))})", stats)
 
-        final_visible = _with_stats(new, angles)
+        final_pairs = _usable_pairs(new, angles)
+        final_visible = {uuid for uuid, _ in final_pairs}
         present = {uuid for (uuid,) in new.execute("SELECT uuid FROM climbs WHERE upstream_removed_at IS NULL")}
         report.present = len(present & final_visible)
         report.added = len((present & final_visible) - visible.keys())
         final = {uuid for (uuid,) in new.execute("SELECT uuid FROM climbs")}
-        report.lost = sorted(uuid for uuid in visible if uuid not in final or uuid not in final_visible)
+        missing_pairs = {uuid for uuid, angle in previous_pairs if (uuid, angle) not in final_pairs}
+        report.lost = sorted(uuid for uuid in visible if uuid not in final or uuid in missing_pairs)
     finally:
         old.close()
     return report

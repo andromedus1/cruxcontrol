@@ -35,8 +35,12 @@ application server.
   active. **Later** dismisses the banner while retaining an update entry; tabs coordinate
   through a shared browser lock, and browsers without Web Locks use close-and-reopen
   recovery instructions.
-- Browse Kilter community climbs compatible with the configured Fullride from an
-  explicitly older offline snapshot, installed only after explicit download consent.
+- Browse Kilter community climbs compatible with the configured Fullride, installed only
+  after explicit consent. Signed-in Android installs a Boardsesh-derived catalog that is
+  rebuilt weekly with append-only safety checks, checks for new versions about twice a
+  week (or on demand), shows the changes, and installs only when you tap; climbs removed
+  upstream stay available with a "Removed upstream" badge. The web app and signed-out
+  devices use the bundled, explicitly older offline snapshot without live updates.
   Filter by name, angle, grade range, minimum rating, minimum distinct ascensionists
   at the selected angle, and setter; sort by rating, sends, difficulty, or name; and
   light any result on the board. Filters run over the whole installed catalog with
@@ -82,10 +86,10 @@ definition-driven schematic renderer remains the distributable fallback. The ori
 Kilter reference documents and screenshot sources are also private inputs and are not
 application assets.
 
-The Kilter catalog snapshot has unknown source freshness and receives no live updates;
-current official-app coverage, the remaining official filters (hold selection, hold
-count, personal sent/liked state), and public distribution of its catalog binary remain
-open. Invited shared libraries, publication to Kilter, logbook/session tracking, grade
+The Boardsesh-derived catalog is community data, not official Kilter data, and is
+distributed only to admitted signed-in accounts. The remaining official filters (hold
+selection, hold count, personal sent/liked state), catalog updates on the web app and
+iPhone, and public distribution of a catalog binary remain open. Invited shared libraries, publication to Kilter, logbook/session tracking, grade
 prediction, recommendations, iOS board control, and other board models remain future
 work. See [docs/VISION.md](docs/VISION.md) for the
 broader direction.

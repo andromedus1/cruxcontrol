@@ -69,12 +69,13 @@ class ReconcileBuildTests(unittest.TestCase):
         self.root = Path(tmp.name)
         self.runs = 0
 
-    def build(self, climbs, built_at, previous_dir=None, version=None, date="2026-10-19", no_stats=()):
+    def build(self, climbs, built_at, previous_dir=None, version=None, date="2026-10-19", no_stats=(),
+              stats_angles=None):
         self.runs += 1
         work = self.root / f"work{self.runs}"
         work.mkdir()
         inputs = load_inputs(fixtures.source_dir(work / "src", climbs=climbs, built_at=built_at,
-                                                 no_stats=no_stats), work)
+                                                 no_stats=no_stats, stats_angles=stats_angles), work)
         prior = load_previous(previous_dir, work) if previous_dir else None
         out = self.root / f"out{self.runs}"
         result = artifact.build(inputs, fixture_pin(inputs.catalog_db, work), out, work, version, date, prior)
@@ -116,6 +117,14 @@ class ReconcileBuildTests(unittest.TestCase):
         self.assertEqual(self.rows(v2, "SELECT climb_stats.angle, upstream_removed_at FROM climb_stats JOIN climbs "
                                        "ON uuid = climb_uuid WHERE uuid='LEGACY1'"), [(40, None)])
 
+    def test_angle_losing_its_stats_keeps_the_previous_row(self):
+        _, out1 = self.build(CLIMBS, T0, version=1)
+        # Upstream keeps LEGACY1 at 0 degrees but drops its 40-degree stats.
+        v2, _ = self.build(CLIMBS, T1, out1, date="2026-10-26", stats_angles={"LEGACY1": (0,)})
+        self.assertEqual((v2.reconciled.stats_kept, v2.reconciled.lost), (1, []))
+        self.assertEqual(self.rows(v2, "SELECT angle FROM climb_stats WHERE climb_uuid='LEGACY1' ORDER BY angle"),
+                         [(0,), (40,)])
+
     def test_legacy_previous_carries_only_app_visible_climbs(self):
         legacy = fixtures.legacy_previous(self.root / "legacy",
                                           [("LEGACY1", "p101r42p102r43"), ("OLD1", "p102r42p103r45"),
@@ -125,6 +134,9 @@ class ReconcileBuildTests(unittest.TestCase):
         self.assertEqual(self.rows(result, "SELECT uuid, upstream_frames, upstream_removed_at FROM climbs "
                                            "WHERE upstream_removed_at IS NOT NULL"),
                          [("OLD1", "p102r42p103r45", "2026-10-19")])
+        # Aurora-era 1-3 ratings are rescaled to the artifact's declared 0-5 scale.
+        (quality,), = self.rows(result, "SELECT quality_average FROM climb_stats WHERE climb_uuid='OLD1'")
+        self.assertAlmostEqual(quality, 2.5 * 5 / 3)
         self.assertEqual(result.reconciled.previous_present, 2)
         self.assertEqual(result.reconciled.lost, [])
 

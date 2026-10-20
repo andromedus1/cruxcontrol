@@ -73,10 +73,12 @@ passes; merge and delivery remain separate.
 Local saving and offline access must remain available while automatic
 protection is pending or unavailable.
 The Kilter community catalog first slice is now
-integrated in the running app: entry opens the older offline Fullride snapshot when
-available, while explicit management consent controls metadata lookup and download.
-The snapshot's source freshness is unknown and it receives no live updates; complete
-current-app coverage and public distribution permission are not established. A private
+integrated in the running app. Signed-in Android now receives a Boardsesh-derived catalog
+that is rebuilt weekly with append-only, fail-closed checks and published privately; the
+app checks about twice a week and installs a new version only on explicit confirmation.
+The web app and signed-out devices keep the explicitly older offline snapshot, which
+opens on catalog entry with explicit consent for download and receives no live updates.
+Public distribution permission is not established. A private
 Android APK has passed isolated emulator checks for consented catalog installation and
 offline worker-backed browsing of that snapshot; catalog playlist resolution has
 software/emulator coverage, while catalog-specific physical lighting remains unverified.
