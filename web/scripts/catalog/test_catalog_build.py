@@ -136,6 +136,30 @@ class NormalizeTests(unittest.TestCase):
         self.assertEqual(stats, [("0b6e-new-uuid", 40), ("LEGACY1", 40)])
         self.assertEqual(report.excluded_stats, {"unsupported_angle": 2, "missing_metric": 1})
 
+    def alias_conflict(self, rows):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        work = Path(tmp.name)
+        catalog = sqlite3.connect(fixtures.catalog_db(work / "c.db"))
+        catalog.executemany("INSERT INTO board_climb_aliases VALUES('kilter',?,?,'kilter','x','x')", rows)
+        catalog.commit()
+        return normalize(sqlite3.connect(fixtures.climbs_db(work / "k.db")), catalog, SCOPE,
+                         sqlite3.connect(":memory:"))
+
+    def test_alias_identity_conflicts_are_fatal(self):
+        cases = {
+            "case variant": [("alias1", "LEGACY1")],                 # vs fixture ALIAS1
+            "two canonicals": [("ALIAS1", "0b6e-new-uuid")],
+            "collides with climb": [("legacy1", "0b6e-new-uuid")],
+        }
+        for label, rows in cases.items():
+            with self.subTest(case=label), self.assertRaises(NormalizationError):
+                self.alias_conflict(rows)
+
+    def test_self_and_duplicate_aliases_are_ignored(self):
+        report = self.alias_conflict([("LEGACY1", "LEGACY1"), ("ALIAS1", "LEGACY1")])
+        self.assertEqual(report.aliases, 1)
+
     def test_case_only_duplicate_uuid_is_fatal(self):
         with self.assertRaises(NormalizationError):
             self.run_normalize([("abc", "p101r42", 1, 1, "x"), ("ABC", "p102r42", 1, 1, "y")])
@@ -183,6 +207,10 @@ class SourceTests(unittest.TestCase):
                 parse_climbs_entry(manifest)
         with self.assertRaises(SourceError):
             parse_catalog_entry(dict(catalog, formatVersion=2))
+        with self.assertRaises(SourceError):
+            parse_climbs_entry(dict(climbs, entries=[dict(climbs["entries"][0], schemaVersion=14)]))
+        with self.assertRaises(SourceError):
+            parse_catalog_entry(dict(catalog, artifact=dict(catalog["artifact"], schemaVersion=2)))
 
     def test_offline_inputs_require_every_file(self):
         with tempfile.TemporaryDirectory() as tmp:

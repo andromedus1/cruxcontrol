@@ -13,6 +13,10 @@ MANIFEST_GZIP_URL = "https://snapshots.boardsesh.com/board-snapshots/v1-gzip/man
 MANIFEST_CATALOG_URL = "https://snapshots.boardsesh.com/board-snapshots/v1-catalog/manifest.json"
 CLIMBS_FORMAT_VERSIONS = {2}
 CATALOG_FORMAT_VERSIONS = {1}
+# Artifact schema versions this normalizer was verified against. A new upstream schema
+# holds the build (fail closed) until the normalizer is re-verified against it.
+CLIMBS_SCHEMA_VERSIONS = {13}
+CATALOG_SCHEMA_VERSIONS = {1}
 SQLITE_HEADER = b"SQLite format 3\x00"
 GZIP_MAGIC = b"\x1f\x8b"
 MAX_BODY_BYTES = 512 * 1024 * 1024
@@ -66,7 +70,7 @@ class UrllibFetcher:
         return body
 
 
-def _entry(raw: dict, label: str) -> ArtifactEntry:
+def _entry(raw: dict, label: str, schema_versions: set) -> ArtifactEntry:
     try:
         url = raw["url"]
         size = raw["bytes"]
@@ -80,6 +84,9 @@ def _entry(raw: dict, label: str) -> ArtifactEntry:
     for name, value in (("bytes", size), ("uncompressedBytes", uncompressed), ("schemaVersion", schema_version)):
         if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
             raise SourceError(f"{label} entry has an invalid {name}")
+    if schema_version not in schema_versions:
+        raise SourceError(f"{label} schemaVersion {schema_version} is not supported "
+                          f"(expected one of {sorted(schema_versions)})")
     if not isinstance(built_at, str) or not built_at:
         raise SourceError(f"{label} entry has an invalid builtAt")
     tables = raw.get("tables") or {}
@@ -100,7 +107,7 @@ def parse_climbs_entry(manifest: dict, layout_id: int = 8) -> ArtifactEntry:
     ]
     if len(matches) != 1:
         raise SourceError(f"expected one kilter layout {layout_id} entry, found {len(matches)}")
-    return _entry(matches[0], f"kilter layout {layout_id}")
+    return _entry(matches[0], f"kilter layout {layout_id}", CLIMBS_SCHEMA_VERSIONS)
 
 
 def parse_catalog_entry(manifest: dict) -> ArtifactEntry:
@@ -109,7 +116,7 @@ def parse_catalog_entry(manifest: dict) -> ArtifactEntry:
     artifact = manifest.get("artifact")
     if not isinstance(artifact, dict):
         raise SourceError("v1-catalog manifest has no artifact")
-    return _entry(artifact, "v1-catalog")
+    return _entry(artifact, "v1-catalog", CATALOG_SCHEMA_VERSIONS)
 
 
 def materialize(body: bytes, entry: ArtifactEntry, dest: Path) -> str:

@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync-snapshot-normalize
 kind: feature
-stage: review
+stage: done
 tags: [data]
 parent: epic-catalog-sync
 depends_on: []
@@ -460,3 +460,26 @@ exit 0 = built; 2 = SourceError; 3 = HardwareMismatch; 4 = NormalizationError;
     fetched today); the identical bytes were run through `--from-dir`.
 - Adjacent issues parked: none. Note for `private-publish`: the v1-catalog artifact is
   served uncompressed (~194 MB); cache it by `builtAt` rather than re-fetching weekly.
+
+## Review
+
+- Effective weight: standard (project default); one independent pass.
+- Reviewer: Codex `gpt-6.1-sol` (medium effort) via peeragent — cross-model (host Claude).
+  Review-only; it re-ran the suite on Python 3.9.6 (green) and did not re-run real data.
+- Proposed verdict: Request changes (2 blockers). Receiver adjudication:
+  - **Blocker, accepted — artifact schema versions not pinned.** Only `formatVersion`
+    was checked, so an upstream `schemaVersion` change would normalize silently
+    despite the epic's fail-closed rule. Fixed: `CLIMBS_SCHEMA_VERSIONS = {13}`,
+    `CATALOG_SCHEMA_VERSIONS = {1}`; others raise `SourceError`; regression tests added.
+  - **Blocker, accepted — alias identity collisions skipped silently.** A case-variant
+    alias, an alias mapped to two canonicals, or an alias colliding with a climb's UUID
+    was dropped without error. Real data has none (34,859 layout-8 alias rows: 34,068
+    self-aliases, 791 genuine, no case variants or conflicts), but the invariant was
+    unenforced. Fixed: self-aliases and exact duplicates are ignored; every other
+    collision raises `NormalizationError`; regression tests added.
+- Verification after fixes: 28 tests pass; real-snapshot build unchanged (13,299
+  climbs, 791 aliases, sha256 `8bacc43f…`).
+- Closure: standard weight — blockers fixed and verified, no second pass.
+- Observed, not part of this change: `.work/bin/work-view` was rewritten (48-byte binary
+  difference) at the moment the reviewer session started; left uncommitted for the
+  operator to inspect.

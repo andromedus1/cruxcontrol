@@ -132,16 +132,26 @@ def normalize(climbs_db: sqlite3.Connection, catalog_db: sqlite3.Connection,
             climb["frames"],
         ))
 
-    known = {uuid.casefold(): uuid for uuid in folded.values()}
+    aliases: Dict[str, Tuple[str, str]] = {}  # casefold -> (exact alias, canonical)
     for alias, canonical in catalog_db.execute(
             "SELECT alias_uuid, canonical_uuid FROM board_climb_aliases "
             "WHERE board_type='kilter' ORDER BY alias_uuid, canonical_uuid"):
         if not isinstance(alias, str) or not isinstance(canonical, str):
             continue
-        target = known.get(canonical.casefold())
-        if target is None or alias.casefold() in known:
-            continue
-        known[alias.casefold()] = alias
+        target = folded.get(canonical.casefold())
+        if target is None:
+            continue  # alias of a climb on another layout
+        if alias == target:
+            continue  # self-alias: the climb row already records this identity
+        existing = folded.get(alias.casefold())
+        if existing is not None:
+            raise NormalizationError(f"alias {alias!r} of {target!r} collides with climb {existing!r}")
+        previous = aliases.get(alias.casefold())
+        if previous == (alias, target):
+            continue  # exact duplicate row
+        if previous is not None:
+            raise NormalizationError(f"alias {alias!r} -> {target!r} conflicts with {previous[0]!r} -> {previous[1]!r}")
+        aliases[alias.casefold()] = (alias, target)
         status.append((alias, "aliased", target))
         report.aliases += 1
 
