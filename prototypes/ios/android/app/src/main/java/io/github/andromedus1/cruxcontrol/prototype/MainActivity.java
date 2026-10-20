@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(LibraryBackupFilePlugin.class);
         registerPlugin(NativeAccountPlugin.class);
         registerPlugin(PrivateVaultPlugin.class);
+        registerPlugin(PrivateCatalogPlugin.class);
         super.onCreate(savedInstanceState);
         if (bridge != null) bridge.setWebViewClient(new CatalogAssetWebViewClient(bridge));
     }

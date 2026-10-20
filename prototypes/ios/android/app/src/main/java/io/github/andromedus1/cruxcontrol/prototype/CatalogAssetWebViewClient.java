@@ -15,14 +15,25 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
 
-/** Preserve exact downloadable gzip bytes across AGP's unconditional .gz merge. */
+/**
+ * Preserve exact downloadable gzip bytes across AGP's unconditional .gz merge, and serve the
+ * signed-in update's staged manifest and verified artifact at same-origin /catalog/private/.
+ */
 final class CatalogAssetWebViewClient extends BridgeWebViewClient {
     private final Bridge bridge;
     private final String catalogFile;
+    private final PrivateCatalogFiles privateFiles;
 
     CatalogAssetWebViewClient(Bridge bridge) {
         super(bridge);
         this.bridge = bridge;
+        PrivateCatalogFiles files = null;
+        try {
+            files = PrivateCatalogFiles.shared(PrivateCatalogPlugin.catalogRoot(bridge.getContext()));
+        } catch (RuntimeException ignored) {
+            // Without private storage the private paths answer 404; bundled serving is unchanged.
+        }
+        privateFiles = files;
         String file = null;
         try (InputStream input = bridge.getContext().getAssets().open("public/catalog/manifest.json")) {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -46,6 +57,11 @@ final class CatalogAssetWebViewClient extends BridgeWebViewClient {
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
         Uri url = request.getUrl();
         Uri local = Uri.parse(bridge.getLocalUrl());
+        String privateName = PrivateCatalogFiles.privateRequestName(url.getEncodedPath());
+        if (privateName != null && "GET".equals(request.getMethod()) && bridge.getServerUrl() == null
+            && local.getScheme().equals(url.getScheme()) && local.getAuthority().equals(url.getAuthority())) {
+            return privateResponse(privateName, url);
+        }
         if (catalogFile == null || !"GET".equals(request.getMethod())
             || bridge.getServerUrl() != null
             || !local.getScheme().equals(url.getScheme())
@@ -65,5 +81,20 @@ final class CatalogAssetWebViewClient extends BridgeWebViewClient {
             return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found", new HashMap<>(),
                 new ByteArrayInputStream("Bundled catalog is missing".getBytes(StandardCharsets.UTF_8)));
         }
+    }
+
+    private WebResourceResponse privateResponse(String name, Uri url) {
+        PrivateCatalogFiles.Served served = name.isEmpty() || privateFiles == null
+            || url.getEncodedQuery() != null || url.getEncodedFragment() != null
+            ? null : privateFiles.openServable(name);
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Cache-Control", "no-store");
+        if (served == null) {
+            return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found", headers,
+                new ByteArrayInputStream("Catalog update is not staged".getBytes(StandardCharsets.UTF_8)));
+        }
+        headers.put("Content-Type", served.contentType);
+        headers.put("Content-Encoding", "identity");
+        return new WebResourceResponse(served.contentType, null, 200, "OK", headers, served.stream);
     }
 }
