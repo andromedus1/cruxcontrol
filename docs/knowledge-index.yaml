@@ -6,7 +6,7 @@
 #   2 = enforce (missing v2 fields are errors)
 # Set to 2 once the project's docs are fully backfilled to v2 frontmatter.
 schema_version: 2
-generated_at: 2026-10-20T00:19:28Z
+generated_at: 2026-10-20T00:19:41Z
 generated_from: frontmatter
 total_docs: 38
 
@@ -311,7 +311,7 @@ documents:
     title: "Brief: Catalog Sync & the Kilter API (Sync Engine)"
     type: brief
     kind: historical
-    updated: 2026-06-13
+    updated: 2026-10-19
     status: superseded
     research_method: /brief
     superseded_by: .research/analysis/campaigns/kilter-current-catalog-sources/parent.md
