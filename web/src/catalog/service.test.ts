@@ -1,10 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { kilterFullride7x10Definition as definition } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
 import type { CatalogBootstrapPort, CatalogInstallResult, CatalogStorageStatus } from '../data/catalog/bootstrap-port.ts';
-import type { CatalogManifest } from '../data/catalog/manifest.ts';
+import type { BoardseshCatalogManifest, CatalogManifest } from '../data/catalog/manifest.ts';
 import type { CatalogPort } from '../data/port.ts';
 import type { CatalogReceipt } from '../data/sqlite/catalog-receipt.ts';
 import { createCatalogService } from './service.ts';
+import {
+  CatalogUpdateError,
+  memoryCatalogUpdatePreferences,
+  noCatalogUpdates,
+  type CatalogUpdateCheck,
+  type CatalogUpdateSource,
+} from './update-source.ts';
 
 const manifest: CatalogManifest = Object.freeze({
   schemaVersion: 2,
@@ -457,5 +464,360 @@ describe('createCatalogService', () => {
     expect(signal?.aborted).toBe(true);
     metadata.reject(new DOMException('Aborted', 'AbortError'));
     await Promise.all([loading, closing]);
+  });
+});
+
+describe('signed-in catalog updates', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const installedLegacy = statusReady(receipt(manifest, 'a'));
+
+  function remote(version: number, extra: Partial<BoardseshCatalogManifest> = {}): BoardseshCatalogManifest {
+    return Object.freeze({
+      ...(boardseshManifest as BoardseshCatalogManifest),
+      version,
+      file: `kilter-7x10.v${version}.db.gz`,
+      changes: Object.freeze({ added: 1261, removed: 23, restored: 0 }),
+      ...extra,
+    });
+  }
+
+  function source(result: () => Promise<CatalogUpdateCheck>) {
+    const account = { value: 'signed-in' as Awaited<ReturnType<CatalogUpdateSource['status']>> };
+    return {
+      account,
+      status: vi.fn(async () => account.value),
+      check: vi.fn(result),
+      prepare: vi.fn(async (_version: number) => undefined),
+    };
+  }
+
+  function updateFetcher(staged: () => CatalogManifest | null) {
+    return vi.fn(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/catalog/private/manifest.json')) {
+        const value = staged();
+        return value ? bodyResponse(JSON.stringify(value)) : new Response('missing', { status: 404 });
+      }
+      if (url.endsWith('/catalog/manifest.json')) return bodyResponse(JSON.stringify(manifest));
+      return bodyResponse(new Uint8Array([1, 2, 3, 4]));
+    }) as typeof fetch;
+  }
+
+  function updatingService(options: {
+    updates: CatalogUpdateSource;
+    port?: CatalogPort & CatalogBootstrapPort;
+    fetcher?: typeof fetch;
+    preferences?: ReturnType<typeof memoryCatalogUpdatePreferences>;
+    now?: () => number;
+  }) {
+    const preferences = options.preferences ?? memoryCatalogUpdatePreferences();
+    const port = options.port ?? portFor({ status: async () => installedLegacy });
+    const service = createCatalogService(definition, {
+      createPort: () => port,
+      fetcher: options.fetcher ?? updateFetcher(() => remote(3)),
+      updates: options.updates,
+      updatePreferences: preferences,
+      now: options.now ?? (() => Date.parse('2026-10-20T12:00:00.000Z')),
+    });
+    return { service, port, preferences };
+  }
+
+  it('reports the web/PWA default as unconfigured without fetching or recording a check', async () => {
+    const fetcher = vi.fn() as typeof fetch;
+    const preferences = memoryCatalogUpdatePreferences();
+    const service = createCatalogService(definition, {
+      createPort: () => portFor({ status: async () => installedLegacy }),
+      fetcher,
+      updatePreferences: preferences,
+    });
+    await service.start();
+    await service.checkForUpdate({ force: true });
+    expect(service.getSnapshot().update).toMatchObject({ availability: 'unconfigured', offer: null, error: null });
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(preferences.read().lastCheckedAt).toBeNull();
+    await expect(noCatalogUpdates.prepare(2)).rejects.toMatchObject({ code: 'unavailable' });
+    await service.close();
+  });
+
+  it('never opens storage for a check when the catalog has not been opened', async () => {
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    const createPort = vi.fn(() => portFor({ status: async () => installedLegacy }));
+    const service = createCatalogService(definition, {
+      createPort, fetcher: updateFetcher(() => remote(3)), updates, updatePreferences: memoryCatalogUpdatePreferences(),
+    });
+    await service.checkForUpdate({ force: true });
+    expect(createPort).not.toHaveBeenCalled();
+    expect(updates.check).not.toHaveBeenCalled();
+    await service.close();
+  });
+
+  it('checks at most every 3.5 days unless forced and offers newer schema-3 versions with change counts', async () => {
+    let now = Date.parse('2026-10-20T12:00:00.000Z');
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    const { service, preferences } = updatingService({ updates, now: () => now });
+    await service.start();
+
+    await service.checkForUpdate();
+    expect(updates.check).toHaveBeenCalledOnce();
+    expect(service.getSnapshot().update).toMatchObject({
+      availability: 'available',
+      offer: { version: 3, schemaVersion: 3 },
+      changes: { added: 1261, removed: 23, restored: 0 },
+      dismissed: false,
+      lastCheckedAt: now,
+      error: null,
+    });
+    expect(preferences.read()).toMatchObject({ lastCheckedAt: now, stagedVersion: 3 });
+
+    now += 3.5 * DAY - 1;
+    await service.checkForUpdate();
+    expect(updates.check).toHaveBeenCalledOnce();
+    await service.checkForUpdate({ force: true });
+    expect(updates.check).toHaveBeenCalledTimes(2);
+    now += 3.5 * DAY;
+    await service.checkForUpdate();
+    expect(updates.check).toHaveBeenCalledTimes(3);
+    await service.close();
+  });
+
+  it('hides a dismissed version until a newer one is offered', async () => {
+    let offered = 3;
+    const updates = source(async () => ({ status: 'available', version: offered }));
+    const { service, preferences } = updatingService({ updates, fetcher: updateFetcher(() => remote(offered)) });
+    await service.start();
+    await service.checkForUpdate({ force: true });
+    service.dismissUpdate();
+    expect(service.getSnapshot().update).toMatchObject({ offer: { version: 3 }, dismissed: true });
+    expect(preferences.read().dismissedVersion).toBe(3);
+
+    await service.checkForUpdate({ force: true });
+    expect(service.getSnapshot().update).toMatchObject({ offer: { version: 3 }, dismissed: true });
+    offered = 4;
+    await service.checkForUpdate({ force: true });
+    expect(service.getSnapshot().update).toMatchObject({ offer: { version: 4 }, dismissed: false });
+    await service.close();
+  });
+
+  it('never offers a version at or below the installed receipt', async () => {
+    const installed = statusReady(receipt(remote(5), 'b'));
+    for (const version of [5, 4]) {
+      const updates = source(async () => ({ status: 'available', version }));
+      const fetcher = updateFetcher(() => remote(version));
+      const { service } = updatingService({ updates, fetcher, port: portFor({ status: async () => installed }) });
+      await service.start();
+      await service.checkForUpdate({ force: true });
+      expect(service.getSnapshot().update).toMatchObject({ availability: 'current', offer: null });
+      expect(fetcher).not.toHaveBeenCalled();
+      await service.close();
+    }
+  });
+
+  it('refuses a staged manifest for another layout revision or a different version', async () => {
+    for (const staged of [remote(3, { layoutRevision: 'kilter:7:8:17:000000000000' }), remote(4)]) {
+      const updates = source(async () => ({ status: 'available', version: 3 }));
+      const { service } = updatingService({ updates, fetcher: updateFetcher(() => staged) });
+      await service.start();
+      await service.checkForUpdate({ force: true });
+      expect(service.getSnapshot().update).toMatchObject({ offer: null, error: { code: 'manifest' } });
+      await service.close();
+    }
+  });
+
+  it('reports signed-out and failed checks without recording the cadence', async () => {
+    const signedOut = updatingService({ updates: source(async () => ({ status: 'signed-out' })) });
+    await signedOut.service.start();
+    await signedOut.service.checkForUpdate();
+    expect(signedOut.service.getSnapshot().update).toMatchObject({ availability: 'signed-out', offer: null });
+    expect(signedOut.preferences.read().lastCheckedAt).toBeNull();
+    await signedOut.service.close();
+
+    const failing = updatingService({ updates: source(async () => { throw new CatalogUpdateError('network'); }) });
+    await failing.service.start();
+    await failing.service.checkForUpdate();
+    expect(failing.service.getSnapshot().update).toMatchObject({
+      availability: 'unknown',
+      checking: false,
+      error: { code: 'network', message: expect.stringMatching(/could not be reached/) },
+    });
+    expect(failing.preferences.read().lastCheckedAt).toBeNull();
+    expect(failing.service.getSnapshot().storage).toMatchObject({ status: 'ready' });
+    await failing.service.close();
+  });
+
+  it('re-offers a version staged by an earlier check without contacting the endpoint', async () => {
+    const now = Date.parse('2026-10-20T12:00:00.000Z');
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    const preferences = memoryCatalogUpdatePreferences({ lastCheckedAt: now - DAY, stagedVersion: 3, dismissedVersion: 2 });
+    const { service } = updatingService({ updates, preferences, now: () => now });
+    await service.start();
+    await service.checkForUpdate();
+    expect(updates.check).not.toHaveBeenCalled();
+    expect(service.getSnapshot().update).toMatchObject({ availability: 'available', offer: { version: 3 }, dismissed: false });
+    await service.close();
+  });
+
+  it('prepares natively, installs the staged artifact from the private path and becomes current', async () => {
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    const fetcher = updateFetcher(() => remote(3));
+    const { service, port } = updatingService({ updates, fetcher });
+    await service.start();
+    await service.checkForUpdate({ force: true });
+    const offer = service.getSnapshot().update.offer;
+    await service.installUpdate();
+
+    expect(updates.prepare).toHaveBeenCalledWith(3);
+    expect(vi.mocked(fetcher).mock.calls.map(([input]) => new URL(String(input)).pathname)).toEqual([
+      '/catalog/private/manifest.json',
+      '/catalog/private/kilter-7x10.v3.db.gz',
+    ]);
+    expect(port.installCatalog).toHaveBeenCalledWith(offer, expect.any(ArrayBuffer));
+    expect(service.getSnapshot()).toMatchObject({
+      storage: { status: 'ready', receipt: { manifest: { version: 3 } } },
+      operation: 'idle',
+      error: null,
+      update: { availability: 'current', offer: null, error: null },
+    });
+    expect(service.getSnapshot().queries?.provenance.source).toBe('Kilter community climbs via Boardsesh');
+    await service.close();
+  });
+
+  it('keeps the installed catalog active when preparation or installation fails', async () => {
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    updates.prepare.mockRejectedValueOnce(new CatalogUpdateError('integrity'));
+    const retained = receipt(manifest, 'a');
+    const port = portFor({
+      status: async () => statusReady(retained),
+      install: async () => ({ ok: false, code: 'digest', message: 'Catalog snapshot digest does not match its manifest', retained }),
+    });
+    const { service } = updatingService({ updates, port });
+    await service.start();
+    const queries = service.getSnapshot().queries;
+    await service.checkForUpdate({ force: true });
+
+    await service.installUpdate();
+    expect(port.installCatalog).not.toHaveBeenCalled();
+    expect(service.getSnapshot()).toMatchObject({
+      storage: { status: 'ready', receipt: retained },
+      operation: 'idle',
+      error: null,
+      update: { availability: 'available', offer: { version: 3 }, error: { code: 'integrity' } },
+    });
+    expect(service.getSnapshot().queries).toBe(queries);
+
+    await service.installUpdate();
+    expect(port.installCatalog).toHaveBeenCalledOnce();
+    expect(service.getSnapshot()).toMatchObject({
+      storage: { status: 'ready', receipt: retained },
+      error: null,
+      update: { offer: { version: 3 }, error: { code: 'digest' } },
+    });
+    expect(service.getSnapshot().queries?.provenance.snapshotId).toBe(retained.manifest.sha256);
+    await service.close();
+  });
+
+  it('cancels an update download before activation and keeps the installed catalog', async () => {
+    const preparing = deferred<undefined>();
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    updates.prepare.mockImplementationOnce(() => preparing.promise);
+    const { service, port } = updatingService({ updates });
+    await service.start();
+    await service.checkForUpdate({ force: true });
+    const installing = service.installUpdate();
+    expect(service.getSnapshot().operation).toBe('downloading');
+    service.cancelDownload();
+    preparing.resolve(undefined);
+    await installing;
+    expect(port.installCatalog).not.toHaveBeenCalled();
+    expect(service.getSnapshot()).toMatchObject({
+      storage: { status: 'ready' },
+      operation: 'idle',
+      update: { error: { code: 'aborted' } },
+    });
+    await service.close();
+  });
+
+  it('offers the signed-in remote catalog for a first install and installs it through preparation', async () => {
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    const fetcher = updateFetcher(() => remote(3));
+    const { service, port } = updatingService({ updates, fetcher, port: portFor() });
+    await service.loadOffer();
+    expect(service.getSnapshot().offer).toMatchObject({ schemaVersion: 3, version: 3 });
+    await service.installOffer();
+    expect(updates.prepare).toHaveBeenCalledWith(3);
+    expect(String(vi.mocked(fetcher).mock.calls.at(-1)?.[0])).toMatch(/\/catalog\/private\/kilter-7x10\.v3\.db\.gz$/);
+    expect(port.installCatalog).toHaveBeenCalledOnce();
+    expect(service.getSnapshot().storage).toMatchObject({ status: 'ready', receipt: { manifest: { version: 3 } } });
+    await service.close();
+  });
+
+  it.each([
+    ['signed out', async (): Promise<CatalogUpdateCheck> => ({ status: 'signed-out' })],
+    ['offline', async (): Promise<CatalogUpdateCheck> => { throw new CatalogUpdateError('network'); }],
+    ['unpublished', async (): Promise<CatalogUpdateCheck> => ({ status: 'none' })],
+  ])('falls back to the bundled first-install offer when %s', async (_label, check) => {
+    const updates = source(check);
+    const fetcher = updateFetcher(() => remote(3));
+    const { service } = updatingService({ updates, fetcher, port: portFor() });
+    await service.loadOffer();
+    expect(service.getSnapshot().offer).toEqual(manifest);
+    await service.installOffer();
+    expect(updates.prepare).not.toHaveBeenCalled();
+    expect(String(vi.mocked(fetcher).mock.calls.at(-1)?.[0])).toMatch(/\/catalog\/kilter-7x10\.v1\.db\.gz$/);
+    await service.close();
+  });
+
+  it('never downgrades through the first-install path after an update', async () => {
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    updates.check.mockResolvedValueOnce({ status: 'signed-out' });
+    const fetcher = updateFetcher(() => remote(3));
+    const { service, port } = updatingService({ updates, fetcher, port: portFor() });
+    await service.loadOffer();
+    expect(service.getSnapshot().offer).toEqual(manifest);
+    await service.installOffer();
+    expect(service.getSnapshot()).toMatchObject({ storage: { receipt: { manifest: { version: 1 } } }, offer: null });
+
+    await service.checkForUpdate({ force: true });
+    await service.installUpdate();
+    expect(service.getSnapshot().storage).toMatchObject({ receipt: { manifest: { version: 3 } } });
+    expect(port.installCatalog).toHaveBeenCalledTimes(2);
+
+    // Nothing consumed may be reinstalled; v1 can never replace v3.
+    await service.installOffer();
+    expect(port.installCatalog).toHaveBeenCalledTimes(2);
+    expect(service.getSnapshot().storage).toMatchObject({ receipt: { manifest: { version: 3 } } });
+    await service.close();
+  });
+
+  it('clears a cached offer on sign-out between due checks and restores it after sign-in', async () => {
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    const { service } = updatingService({ updates });
+    await service.start();
+    await service.checkForUpdate({ force: true });
+    expect(service.getSnapshot().update).toMatchObject({ availability: 'available', offer: { version: 3 } });
+
+    updates.account.value = 'signed-out';
+    await service.checkForUpdate();
+    expect(service.getSnapshot().update).toMatchObject({ availability: 'signed-out', offer: null, changes: null });
+
+    updates.account.value = 'signed-in';
+    await service.checkForUpdate();
+    expect(service.getSnapshot().update).toMatchObject({ availability: 'available', offer: { version: 3 } });
+    expect(updates.check).toHaveBeenCalledOnce(); // account changes never spend the endpoint cadence
+    await service.close();
+  });
+
+  it('drops a remote first-install offer the account can no longer prepare', async () => {
+    const updates = source(async () => ({ status: 'available', version: 3 }));
+    updates.prepare.mockRejectedValueOnce(new CatalogUpdateError('signed-out'));
+    const { service } = updatingService({ updates, port: portFor() });
+    await service.loadOffer();
+    await service.installOffer();
+    expect(service.getSnapshot()).toMatchObject({
+      storage: { status: 'empty' },
+      offer: null,
+      error: { code: 'network', message: 'Sign in to get catalog updates.' },
+      update: { availability: 'signed-out' },
+    });
+    await service.close();
   });
 });

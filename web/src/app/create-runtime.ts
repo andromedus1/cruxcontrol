@@ -11,6 +11,7 @@ import {
 import { activeInstallationId, createAppInstallationRegistry } from './installations';
 import { createCatalogService, type CatalogService } from '../catalog/service.ts';
 import { SqliteCatalogPort } from '../data/sqlite/sqlite-catalog-port.ts';
+import { noCatalogUpdates, type CatalogUpdateSource } from '../catalog/update-source.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
 import type { NativePlaylistSharing } from '../playlists/portable-transports.ts';
 import type { BackNavigationPort } from './back-navigation.ts';
@@ -51,6 +52,8 @@ export interface CruxControlRuntimeDependencies {
   readonly playlistSharing?: NativePlaylistSharing;
   readonly backNavigation?: BackNavigationPort;
   readonly createCatalog?: (definition: BoardDefinition) => CatalogService;
+  /** Signed-in catalog updates (native shells only); the web/PWA never configures them. */
+  readonly catalogUpdates?: CatalogUpdateSource;
 }
 
 export async function createCruxControlRuntime(
@@ -76,6 +79,7 @@ export async function createCruxControlRuntime(
         createCatalogService(definition, {
           createPort: () => SqliteCatalogPort.create(),
           fetcher: globalThis.fetch.bind(globalThis),
+          updates: dependencies.catalogUpdates ?? noCatalogUpdates,
         }))
     )(installation.definition);
     let closed = false;

@@ -16,6 +16,10 @@ const native = vi.hoisted(() => ({
   openLibrary: vi.fn(),
   createAutomaticBackup: vi.fn(),
   createNativePrivateVault: vi.fn(),
+  createNativePrivateCatalog: vi.fn(),
+}));
+vi.mock("./native-private-catalog.ts", () => ({
+  createNativePrivateCatalog: native.createNativePrivateCatalog,
 }));
 vi.mock("./open-native-library.ts", () => ({
   openNativeLibrary: native.openLibrary,
@@ -62,6 +66,11 @@ beforeEach(() => {
   vi.stubGlobal("window", undefined);
   native.createAutomaticBackup.mockReturnValue(automaticBackup);
   native.createNativePrivateVault.mockReturnValue({});
+  native.createNativePrivateCatalog.mockReturnValue({
+    status: vi.fn(async () => "signed-out"),
+    check: vi.fn(async () => ({ status: "signed-out" })),
+    prepare: vi.fn(async () => undefined),
+  });
   native.addListener.mockImplementation(
     async (event: string, callback: (...args: unknown[]) => void) => {
       callbacks.set(event, callback);
@@ -207,6 +216,35 @@ describe("prototype runtime composition and lifetime", () => {
     expect(native.saveFile).not.toHaveBeenCalled();
     expect(native.addListener).not.toHaveBeenCalled();
     runtime.close();
+  });
+
+  it("wires signed-in catalog updates on Android only and checks them on foreground resume", async () => {
+    native.platform.mockReturnValue("android");
+    native.openLibrary.mockResolvedValueOnce({ drafts: {}, playlists: {}, backupStore: {}, close: vi.fn() });
+    const runtime = await createPrototypeRuntime();
+    expect(native.createNativePrivateCatalog).toHaveBeenCalledOnce();
+    // Resume never opens an unopened catalog, so the native source is not consulted yet.
+    callbacks.get("resume")!();
+    await Promise.resolve();
+    const source = native.createNativePrivateCatalog.mock.results[0]!.value as { check: ReturnType<typeof vi.fn> };
+    expect(source.check).not.toHaveBeenCalled();
+    runtime.close();
+
+    const catalog = { checkForUpdate: vi.fn(async () => undefined) };
+    const dispose = await bindNativeLifecycle(new NativeBleByteTransport(null), App, undefined, undefined, catalog);
+    callbacks.get("resume")!();
+    expect(catalog.checkForUpdate).toHaveBeenCalledOnce();
+    expect(catalog.checkForUpdate).toHaveBeenCalledWith();
+    callbacks.get("pause")!();
+    dispose();
+    callbacks.get("resume")!();
+    expect(catalog.checkForUpdate).toHaveBeenCalledOnce();
+
+    native.platform.mockReturnValue("ios");
+    native.createNativePrivateCatalog.mockClear();
+    const ios = await createPrototypeRuntime();
+    expect(native.createNativePrivateCatalog).not.toHaveBeenCalled();
+    ios.close();
   });
 
   it("forwards only background/foreground events and ignores callbacks after disposal", async () => {

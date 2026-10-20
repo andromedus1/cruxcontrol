@@ -225,8 +225,9 @@ tools. Supply the catalog gzip explicitly; keep that binary and all APKs outside
 Git and public workflow uploads. The committed `web/public/catalog/manifest.json`
 is the expected artifact: 5,122,102 gzip bytes, 12,410,880 raw bytes, SHA-256
 `68d6d86aad984aca5cf9967d24c818d5bdf2984631b1fe9b9fa1fd30c0edbbbf`.
-It remains an older Legacy Kilter snapshot with unknown source freshness and no
-live updates.
+It remains an older Legacy Kilter snapshot with unknown source freshness; the
+bundled file itself never changes. Signed-in release builds can replace it with a
+newer catalog through the update flow below.
 
 ```bash
 npm --prefix prototypes/ios run build:android:catalog -- \
@@ -247,6 +248,30 @@ native alias for the exact local manifest-declared `.db.gz` URL. It serves the
 original gzip bytes with identity encoding; the normal importer retains its
 strict origin, compressed-size, SHA-256 and database validation. Other requests
 retain Capacitor's routing.
+
+### Signed-in catalog updates
+
+Release builds with configured native auth (`library-v1`) enable the `PrivateCatalog`
+plugin; debug, signed-proof, iOS and web builds report updates as unconfigured. The
+plugin calls the compiled-in `privateCatalog` endpoint with the native Firebase session
+(tokens stay native), validates the schema-3 manifest (16 KiB cap) and streams the
+artifact (at most the manifest's `bytesGzipped`, 8 MiB) through SHA-256, requiring the
+`X-Catalog-SHA256` header and any `Content-Length` to match. Files live in
+`noBackupFilesDir/catalog/`: the staged `manifest.json` and at most one verified
+`kilter-7x10.v<N>.db.gz`, renamed into place only while the same account and session
+epoch are current. `CatalogAssetWebViewClient` serves exactly those two names at
+`/catalog/private/` with identity encoding and `no-store`; any other private path
+returns 404, and bundled serving is unchanged. The web catalog service then installs
+through its usual same-origin, hash-checked A/B path. Plugin errors are bounded:
+`AUTH_REQUIRED`, `NOT_ADMITTED`, `NETWORK`, `INTEGRITY`, `UNAVAILABLE`.
+
+The automatic check runs at most every 3.5 days, on catalog open or foreground resume,
+and never downloads an artifact; Install and Check now are explicit. The update path
+never touches climbs, lists or backups. Before a phone update that exercises it, follow
+the library preservation steps (fresh validated backup, same-key update), then use
+Manage → Check now → Install and verify the catalog version and an unchanged library.
+JVM tests (`./gradlew :app:testDebugUnitTest`) cover manifest validation, header and
+hash mismatches, private path selection and cleanup.
 
 `npm --prefix prototypes/ios run test:catalog-package` uses shareable synthetic
 artifacts to test invalid inputs and final-APK regressions, including Android's

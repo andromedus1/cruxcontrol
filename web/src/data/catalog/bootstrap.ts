@@ -7,6 +7,11 @@ import {
   type CatalogManifest,
 } from './manifest.ts';
 
+/** Same-origin catalog roots: the bundled snapshot, or the native shell's verified private update. */
+export type CatalogBasePath = '/catalog/' | '/catalog/private/';
+export const BUNDLED_CATALOG_PATH: CatalogBasePath = '/catalog/';
+export const PRIVATE_CATALOG_PATH: CatalogBasePath = '/catalog/private/';
+
 function isAbort(cause: unknown, signal?: AbortSignal): boolean {
   return signal?.aborted === true || (cause instanceof Error && cause.name === 'AbortError');
 }
@@ -73,8 +78,9 @@ function rejectRedirect(response: Response, expected: string): void {
 export async function fetchCatalogManifest(
   fetcher: typeof fetch,
   signal?: AbortSignal,
+  basePath: CatalogBasePath = BUNDLED_CATALOG_PATH,
 ): Promise<CatalogManifest> {
-  const url = requestUrl('/catalog/manifest.json');
+  const url = requestUrl(`${basePath}manifest.json`);
   let response: Response;
   try {
     response = await fetcher(url, { signal, redirect: 'manual' });
@@ -104,12 +110,13 @@ export async function fetchCatalogSnapshot(
   fetcher: typeof fetch,
   onProgress: (progress: CatalogDownloadProgress) => void,
   signal?: AbortSignal,
+  basePath: CatalogBasePath = BUNDLED_CATALOG_PATH,
 ): Promise<ArrayBuffer> {
   const manifest = parseCatalogManifest(manifestValue);
   if (manifest.bytesGzipped > CATALOG_COMPRESSED_LIMIT) {
     throw new CatalogBootstrapError('size', 'Catalog snapshot exceeds the compressed size limit');
   }
-  const url = requestUrl(`/catalog/${manifest.file}`);
+  const url = requestUrl(`${basePath}${manifest.file}`);
   let response: Response;
   try {
     response = await fetcher(url, { signal, redirect: 'manual' });

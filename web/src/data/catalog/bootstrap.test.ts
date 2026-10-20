@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { CatalogBootstrapError } from './errors.ts';
-import { fetchCatalogManifest, fetchCatalogSnapshot } from './bootstrap.ts';
+import { fetchCatalogManifest, fetchCatalogSnapshot, PRIVATE_CATALOG_PATH } from './bootstrap.ts';
 import type { CatalogManifest } from './manifest.ts';
 
 const compressed = new Uint8Array([31, 139, 8, 0, 1, 2]);
@@ -46,6 +46,24 @@ describe('catalog snapshot acquisition', () => {
       expect.stringMatching(/^http:\/\/localhost\/catalog\/kilter-7x10\.v1\.db\.gz$/),
       { signal: undefined, redirect: 'manual' },
     );
+  });
+
+  it('reads a staged private update from the same-origin private base path', async () => {
+    const manifestFetcher = fetcherFor(bodyResponse(JSON.stringify(manifest)));
+    await expect(fetchCatalogManifest(manifestFetcher, undefined, PRIVATE_CATALOG_PATH)).resolves.toEqual(manifest);
+    expect(manifestFetcher).toHaveBeenCalledWith('http://localhost/catalog/private/manifest.json',
+      { signal: undefined, redirect: 'manual' });
+    const snapshotFetcher = fetcherFor(bodyResponse(compressed));
+    await fetchCatalogSnapshot(manifest, snapshotFetcher, () => {}, undefined, PRIVATE_CATALOG_PATH);
+    expect(snapshotFetcher).toHaveBeenCalledWith('http://localhost/catalog/private/kilter-7x10.v1.db.gz',
+      { signal: undefined, redirect: 'manual' });
+  });
+
+  it('rejects a private update response served from another path', async () => {
+    const response = bodyResponse(JSON.stringify(manifest));
+    Object.defineProperty(response, 'url', { value: 'http://localhost/catalog/manifest.json' });
+    await expect(fetchCatalogManifest(fetcherFor(response), undefined, PRIVATE_CATALOG_PATH))
+      .rejects.toMatchObject({ code: 'manifest' });
   });
 
   it('rejects a streamed length mismatch even when headers claim the expected size', async () => {

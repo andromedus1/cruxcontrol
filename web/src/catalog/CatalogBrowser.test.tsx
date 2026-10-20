@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createBackNavigation } from '../app/back-navigation.ts';
 import { backNavigationContext } from '../app/use-back-action.ts';
@@ -8,10 +8,15 @@ import { lightSceneFromAssignments } from '../climb-browser/light-scene.ts';
 import { providerClimbViewKey } from '../climb-browser/types.ts';
 import { kilterFullride7x10Definition as definition, KILTER_PROVIDER_ID } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
 import { providerSourceId } from '../domain/boards/identity.ts';
-import type { CatalogManifest } from '../data/catalog/manifest.ts';
+import type { BoardseshCatalogManifest, CatalogManifest } from '../data/catalog/manifest.ts';
 import type { CatalogReceipt } from '../data/sqlite/catalog-receipt.ts';
 import type { CatalogQueryPort, CatalogClimb, CatalogClimbQuery, CatalogCursor, CatalogPage, CatalogRead } from './types.ts';
-import type { CatalogService, CatalogServiceSnapshot } from './service.ts';
+import {
+  INITIAL_CATALOG_UPDATE,
+  type CatalogService,
+  type CatalogServiceSnapshot,
+  type CatalogUpdateState,
+} from './service.ts';
 import { CatalogBrowser } from './CatalogBrowser.tsx';
 
 const manifest: CatalogManifest = {
@@ -92,6 +97,7 @@ function serviceFor(adapter: CatalogQueryPort, initial?: Partial<CatalogServiceS
     progress: null,
     error: null,
     queries: adapter,
+    update: INITIAL_CATALOG_UPDATE,
     ...initial,
   };
   const listeners = new Set<() => void>();
@@ -103,6 +109,9 @@ function serviceFor(adapter: CatalogQueryPort, initial?: Partial<CatalogServiceS
     installOffer: vi.fn(async () => undefined),
     cancelDownload: vi.fn(),
     retryOpen: vi.fn(async () => undefined),
+    checkForUpdate: vi.fn(async () => undefined),
+    installUpdate: vi.fn(async () => undefined),
+    dismissUpdate: vi.fn(),
     close: vi.fn(async () => undefined),
   };
   return {
@@ -558,5 +567,115 @@ describe('CatalogBrowser with a Boardsesh-derived catalog', () => {
     expect(screen.queryByRole('button', { name: 'Remove minimum rating filter' })).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Catalog source' })).toHaveTextContent('Older offline snapshot · no live updates');
     expect(screen.getByText('★ 2.4 / 3 · 4 sends')).toBeInTheDocument();
+  });
+});
+
+describe('CatalogBrowser update banner', () => {
+  const { sourceDataThrough: _legacyOnly, ...identity } = manifest as Extract<CatalogManifest, { schemaVersion: 2 }>;
+  const updateOffer: BoardseshCatalogManifest = {
+    ...identity,
+    schemaVersion: 3,
+    version: 3,
+    file: 'kilter-7x10.v3.db.gz',
+    generatedOn: '2026-10-19',
+    source: 'boardsesh-kilter',
+    sourceBuiltAt: '2026-10-19T18:38:11.515Z',
+    sourceWatermarks: {},
+    layoutRevision: definition.layoutRevision,
+    qualityScale: { min: 0, max: 5 },
+    climbCount: 13_299,
+    removedUpstreamCount: 23,
+    changes: { added: 1261, removed: 23, restored: 0 },
+  };
+  const available: CatalogUpdateState = {
+    ...INITIAL_CATALOG_UPDATE,
+    availability: 'available',
+    offer: updateOffer,
+    changes: updateOffer.changes,
+  };
+
+  function renderWith(initial: Partial<CatalogServiceSnapshot>) {
+    const value = serviceFor(queryPort(), initial);
+    render(
+      <CatalogBrowser
+        service={value.service}
+        definition={definition}
+        defaultAngle={40}
+        controller={null}
+        onManageOpenChange={() => undefined}
+      />,
+    );
+    return value;
+  }
+
+  it('runs the cadence-gated update check after the catalog opens', async () => {
+    const value = renderWith({});
+    await waitFor(() => expect(value.service.checkForUpdate).toHaveBeenCalledOnce());
+    expect(value.service.start).toHaveBeenCalledOnce();
+    expect(value.service.checkForUpdate).toHaveBeenCalledWith();
+    expect(screen.queryByRole('region', { name: 'Catalog update' })).not.toBeInTheDocument();
+  });
+
+  it('summarizes a newer catalog as a polite status with Later and Install', async () => {
+    const value = renderWith({ update: available });
+    const banner = screen.getByRole('region', { name: 'Catalog update' });
+    expect(within(banner).getByRole('status')).toHaveTextContent('New catalog: 1,261 new climbs · 23 removed');
+    fireEvent.click(within(banner).getByRole('button', { name: 'Install' }));
+    expect(value.service.installUpdate).toHaveBeenCalledOnce();
+    fireEvent.click(within(banner).getByRole('button', { name: 'Later' }));
+    expect(value.service.dismissUpdate).toHaveBeenCalledOnce();
+
+    act(() => value.publish({ ...value.service.getSnapshot(), update: { ...available, dismissed: true } }));
+    expect(screen.queryByRole('region', { name: 'Catalog update' })).not.toBeInTheDocument();
+    await screen.findByText('No climbs match these filters');
+  });
+
+  it('shows update progress without actions, then a retryable failure that keeps the current catalog', () => {
+    const value = renderWith({
+      update: available,
+      operation: 'downloading',
+      progress: { receivedBytes: 2_550_000, totalBytes: 5_100_000 },
+    });
+    const banner = screen.getByRole('region', { name: 'Catalog update' });
+    expect(banner).toHaveTextContent('Downloading catalog version 3… 50%');
+    expect(within(banner).getByRole('progressbar', { name: 'Catalog version 3 download' })).toHaveAttribute('aria-valuenow', '50');
+    expect(within(banner).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(banner).queryByRole('status')).not.toBeInTheDocument();
+
+    act(() => value.publish({
+      ...value.service.getSnapshot(),
+      operation: 'idle',
+      progress: null,
+      update: {
+        ...available,
+        error: { code: 'network', message: 'The catalog service could not be reached.', action: 'install' },
+      },
+    }));
+    expect(within(banner).getByRole('status')).toHaveTextContent(
+      'Catalog update failed. The catalog service could not be reached. Your current catalog is still installed.',
+    );
+    fireEvent.click(within(banner).getByRole('button', { name: 'Retry' }));
+    expect(value.service.installUpdate).toHaveBeenCalledOnce();
+  });
+
+  it('shows nothing for signed-out, unconfigured or check-only states', () => {
+    for (const update of [
+      { ...INITIAL_CATALOG_UPDATE, availability: 'signed-out' as const },
+      { ...INITIAL_CATALOG_UPDATE, availability: 'unconfigured' as const },
+      { ...INITIAL_CATALOG_UPDATE, error: { code: 'network' as const, message: 'Offline.', action: 'check' as const } },
+    ]) {
+      const view = render(
+        <CatalogBrowser
+          service={serviceFor(queryPort(), { update }).service}
+          definition={definition}
+          defaultAngle={40}
+          controller={null}
+          onManageOpenChange={() => undefined}
+        />,
+      );
+      expect(screen.queryByRole('region', { name: 'Catalog update' })).not.toBeInTheDocument();
+      expect(screen.queryByText(/Sign in to get catalog updates/)).not.toBeInTheDocument();
+      view.unmount();
+    }
   });
 });
