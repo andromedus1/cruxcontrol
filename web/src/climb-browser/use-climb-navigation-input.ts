@@ -53,6 +53,8 @@ function isThenable(value: unknown): value is Promise<boolean> {
  */
 export function useClimbNavigationInput<T extends HTMLElement>(
   navigation: ClimbNavigation | null | undefined,
+  /** Identity of the climb shown; arriving at another climb clears the end message. */
+  currentKey: string | null,
 ): ClimbNavigationInput<T> {
   const latest = useRef(navigation);
   latest.current = navigation;
@@ -61,7 +63,6 @@ export function useClimbNavigationInput<T extends HTMLElement>(
   const announcementTimer = useRef<number | null>(null);
   const [nudge, setNudge] = useState<ClimbNavigationDirection | null>(null);
   const [announcement, setAnnouncement] = useState('');
-  const positionLabel = navigation?.positionLabel ?? null;
 
   useEffect(() => {
     mounted.current = true;
@@ -72,10 +73,10 @@ export function useClimbNavigationInput<T extends HTMLElement>(
     };
   }, []);
 
-  // Arriving somewhere new replaces the end message.
+  // Arriving at another climb replaces the end message.
   useEffect(() => {
     setAnnouncement('');
-  }, [positionLabel]);
+  }, [currentKey]);
 
   const signalEnd = useCallback((direction: ClimbNavigationDirection) => {
     if (!mounted.current) return;

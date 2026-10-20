@@ -38,7 +38,7 @@ function headingIdFor(climb: ClimbViewRecord): string {
  * automatic lighting exactly like selecting the climb from the list.
  */
 export function ClimbDetail({ navigation, showBoardControls = true, ...props }: ClimbDetailProps) {
-  const input = useClimbNavigationInput<HTMLElement>(navigation);
+  const input = useClimbNavigationInput<HTMLElement>(navigation, props.climb.key);
   const navigable = Boolean(navigation);
   const className = [
     'climb-detail',

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { BoardLightController } from '../board-control/light-controller.ts';
 import type { BoardDefinition } from '../domain/boards/definition.ts';
-import type { CatalogCursor, CatalogPage, CatalogSort } from './types.ts';
+import type { CatalogClimbQuery, CatalogCursor, CatalogPage, CatalogSort } from './types.ts';
 import type { CatalogClimb } from './types.ts';
 import type { CatalogService } from './service.ts';
 import type { ClimbViewKey } from '../climb-browser/types.ts';
 import { LocalClimbViewer } from '../climb-browser/LocalClimbViewer.tsx';
+import { listNavigation } from '../climb-browser/navigation.ts';
 import { CatalogManageDialog } from './CatalogManageDialog.tsx';
 import { CatalogFilterDialog, EMPTY_CATALOG_FILTERS, type CatalogFilterValues } from './CatalogFilterDialog.tsx';
 import { catalogSourceCopy, catalogUpdateSummary } from './presentation.ts';
@@ -26,9 +27,48 @@ type GradeStatus = 'idle' | 'loading' | 'ready' | 'unavailable' | 'error';
 interface PageHistory {
   readonly adapter: object | null;
   cursors: Array<CatalogCursor | null>;
+  /** Climbs shown on each visited page, for the position across pages. */
+  rowCounts: number[];
+  /** Page index after which only empty pages remain, once a move has found that out. */
+  endsAt: number | null;
+}
+
+/** A page a climb-to-climb move already read, applied with its selection by the page query. */
+interface PrimedPage {
+  readonly adapter: object;
+  readonly pageIndex: number;
+  readonly page: CatalogPage;
+  readonly selectedKey: ClimbViewKey;
 }
 
 const EMPTY_ROWS: readonly CatalogClimb[] = Object.freeze([]);
+const PAGE_SIZE = 25;
+
+function newPageHistory(adapter: object | null): PageHistory {
+  return { adapter, cursors: [null], rowCounts: [], endsAt: null };
+}
+
+function catalogQuery(input: {
+  readonly angle: number;
+  readonly name: string;
+  readonly filters: CatalogFilterValues;
+  readonly sort: CatalogSort;
+  readonly cursor?: CatalogCursor | null;
+}): CatalogClimbQuery {
+  const { filters, cursor } = input;
+  return {
+    angle: input.angle,
+    name: input.name,
+    ...(filters.minGrade === null ? {} : { minGrade: filters.minGrade }),
+    ...(filters.maxGrade === null ? {} : { maxGrade: filters.maxGrade }),
+    ...(filters.minRating === null ? {} : { minRating: filters.minRating }),
+    ...(filters.minAscents === null ? {} : { minAscents: filters.minAscents }),
+    ...(filters.setter ? { setter: filters.setter } : {}),
+    sort: input.sort,
+    limit: PAGE_SIZE,
+    ...(cursor === undefined || cursor === null ? {} : { cursor }),
+  };
+}
 
 export function CatalogBrowser({
   service,
@@ -73,7 +113,11 @@ export function CatalogBrowser({
   currentQueries.current = queries;
   const queryGeneration = useRef(0);
   const gradeGeneration = useRef(0);
-  const pageHistory = useRef<PageHistory>({ adapter: queries, cursors: [null] });
+  const pageHistory = useRef<PageHistory>(newPageHistory(queries));
+  const primedPage = useRef<PrimedPage | null>(null);
+  const pageMove = useRef(0);
+  const pageMoveActive = useRef(false);
+  const [, setHistoryRevision] = useState(0);
   const manageTrigger = useRef<HTMLButtonElement | null>(null);
   const manageButton = useRef<HTMLButtonElement | null>(null);
   const filterTrigger = useRef<HTMLButtonElement | null>(null);
@@ -83,7 +127,7 @@ export function CatalogBrowser({
   const mounted = useRef(true);
 
   if (pageHistory.current.adapter !== queries) {
-    pageHistory.current = { adapter: queries, cursors: [null] };
+    pageHistory.current = newPageHistory(queries);
   }
   const activePageNumber = queries ? Math.min(pageNumber || 1, pageHistory.current.cursors.length) : 1;
   const visibleRows = queries && rowsAdapter === queries ? rows : EMPTY_ROWS;
@@ -111,6 +155,7 @@ export function CatalogBrowser({
       gradeGeneration.current += 1;
       if (openFrame.current !== null) cancelAnimationFrame(openFrame.current);
       openFrame.current = null;
+      pageMove.current += 1;
       onManageOpenChange(false);
     };
   }, [service, onManageOpenChange]);
@@ -187,30 +232,38 @@ export function CatalogBrowser({
 
     const currentPageIndex = Math.max(0, Math.min(activePageNumber - 1, pageHistory.current.cursors.length - 1));
     const cursor = pageHistory.current.cursors[currentPageIndex] ?? undefined;
+    const primed = primedPage.current;
+    primedPage.current = null;
+    if (primed && primed.adapter === queryAdapter && primed.pageIndex === currentPageIndex) {
+      // A climb-to-climb move already read this page; show it with its climb selected
+      // so the open detail never closes between pages.
+      setRows(primed.page.climbs);
+      setRowsAdapter(queryAdapter);
+      setPage(primed.page);
+      setPageNumber(currentPageIndex + 1);
+      setQueryStatus('ready');
+      setQueryError('');
+      setSelectedKey(primed.selectedKey);
+      return () => { queryGeneration.current += 1; };
+    }
     setQueryStatus('loading');
     setQueryError('');
     setRows(EMPTY_ROWS);
     setPage(null);
     setRowsAdapter(queryAdapter);
     setSelectedKey(null);
-    void queryAdapter.query({
-      angle,
-      name: search.value,
-      ...(activeFilters.minGrade === null ? {} : { minGrade: activeFilters.minGrade }),
-      ...(activeFilters.maxGrade === null ? {} : { maxGrade: activeFilters.maxGrade }),
-      ...(activeFilters.minRating === null ? {} : { minRating: activeFilters.minRating }),
-      ...(activeFilters.minAscents === null ? {} : { minAscents: activeFilters.minAscents }),
-      ...(activeFilters.setter ? { setter: activeFilters.setter } : {}),
-      sort,
-      limit: 25,
-      ...(cursor === undefined ? {} : { cursor }),
-    }).then((result) => {
+    void queryAdapter.query(
+      catalogQuery({ angle, name: search.value, filters: activeFilters, sort, cursor }),
+    ).then((result) => {
       if (generation !== queryGeneration.current || currentQueries.current !== queryAdapter) return;
       if (result.status === 'unavailable') {
         setRows(EMPTY_ROWS);
         setPage(null);
         setQueryStatus('unavailable');
         return;
+      }
+      if (pageHistory.current.adapter === queryAdapter) {
+        pageHistory.current.rowCounts[currentPageIndex] = result.value.climbs.length;
       }
       setRows(result.value.climbs);
       setRowsAdapter(queryAdapter);
@@ -239,7 +292,14 @@ export function CatalogBrowser({
     retryCount,
   ]);
 
+  const cancelPageMove = () => {
+    pageMove.current += 1;
+    pageMoveActive.current = false;
+    primedPage.current = null;
+  };
+
   const invalidateQuery = () => {
+    cancelPageMove();
     queryGeneration.current += 1;
     setRows(EMPTY_ROWS);
     setRowsAdapter(null);
@@ -250,12 +310,101 @@ export function CatalogBrowser({
   };
 
   const resetPaging = () => {
-    pageHistory.current = { adapter: queries, cursors: [null] };
+    pageHistory.current = newPageHistory(queries);
     setPageNumber(1);
+  };
+
+  /**
+   * Moves from the first or last climb of this page to the neighboring page with
+   * climbs, skipping pages whose routes were all excluded. Resolves false when no
+   * climb exists in that direction. Query, page or source changes cancel it.
+   */
+  const movePage = async (direction: 'previous' | 'next'): Promise<boolean> => {
+    const adapter = queries;
+    const fromPage = visiblePage;
+    if (!adapter || !fromPage || pageMoveActive.current) return true;
+    const token = ++pageMove.current;
+    pageMoveActive.current = true;
+    const generation = queryGeneration.current;
+    const history = pageHistory.current;
+    const fromIndex = activePageNumber - 1;
+    const request = { angle, name: search.value, filters: activeFilters, sort };
+    const stale = () => !mounted.current
+      || pageMove.current !== token
+      || queryGeneration.current !== generation
+      || currentQueries.current !== adapter
+      || pageHistory.current !== history;
+    const commit = (next: PageHistory, pageIndex: number, page: CatalogPage, selectedKey: ClimbViewKey) => {
+      pageHistory.current = next;
+      primedPage.current = { adapter, pageIndex, page, selectedKey };
+      setPageNumber(pageIndex + 1);
+    };
+    // A read that fails mid-move falls back to an ordinary page change, which shows
+    // the existing unavailable, error and retry states for that page.
+    let reading: { readonly next: PageHistory; readonly pageIndex: number } | null = null;
+    const showPage = (next: PageHistory, pageIndex: number) => {
+      invalidateQuery();
+      pageHistory.current = next;
+      setPageNumber(pageIndex + 1);
+    };
+    try {
+      if (direction === 'next') {
+        const cursors = history.cursors.slice(0, fromIndex + 1);
+        const rowCounts = history.rowCounts.slice(0, fromIndex + 1);
+        let cursor = fromPage.nextCursor;
+        while (cursor) {
+          cursors.push(cursor);
+          const pageIndex = cursors.length - 1;
+          const next: PageHistory = { adapter, cursors, rowCounts, endsAt: null };
+          reading = { next, pageIndex };
+          const result = await adapter.query(catalogQuery({ ...request, cursor }));
+          if (stale()) return true;
+          if (result.status === 'unavailable') {
+            showPage(next, pageIndex);
+            return true;
+          }
+          rowCounts[pageIndex] = result.value.climbs.length;
+          const target = result.value.climbs[0];
+          if (target) {
+            commit(next, pageIndex, result.value, target.key);
+            return true;
+          }
+          cursor = result.value.nextCursor;
+        }
+        // Only empty pages follow: this page holds the last climb.
+        history.endsAt = fromIndex;
+        setHistoryRevision((revision) => revision + 1);
+        return false;
+      }
+      const rowCounts = [...history.rowCounts];
+      for (let pageIndex = fromIndex - 1; pageIndex >= 0; pageIndex -= 1) {
+        const next: PageHistory = { ...history, rowCounts };
+        reading = { next, pageIndex };
+        const result = await adapter.query(catalogQuery({ ...request, cursor: history.cursors[pageIndex] }));
+        if (stale()) return true;
+        if (result.status === 'unavailable') {
+          showPage(next, pageIndex);
+          return true;
+        }
+        rowCounts[pageIndex] = result.value.climbs.length;
+        const target = result.value.climbs.at(-1);
+        if (target) {
+          commit(next, pageIndex, result.value, target.key);
+          return true;
+        }
+      }
+      return false;
+    } catch {
+      if (!stale() && reading) showPage(reading.next, reading.pageIndex);
+      return true;
+    } finally {
+      if (pageMove.current === token) pageMoveActive.current = false;
+    }
   };
 
   const openManage = (event: React.MouseEvent<HTMLButtonElement>) => {
     manageTrigger.current = event.currentTarget;
+    cancelPageMove();
     setSelectedKey(null);
     if (visibleSelectedKey) {
       if (openFrame.current !== null) cancelAnimationFrame(openFrame.current);
@@ -565,7 +714,8 @@ export function CatalogBrowser({
                 const nextPage = activePageNumber;
                 const cursors = pageHistory.current.cursors.slice(0, nextPage);
                 cursors[nextPage] = visiblePage.nextCursor;
-                pageHistory.current = { adapter: queries, cursors };
+                const rowCounts = pageHistory.current.rowCounts.slice(0, nextPage);
+                pageHistory.current = { adapter: queries, cursors, rowCounts, endsAt: null };
                 setPageNumber(nextPage + 1);
               }}>Next</button>
             </div>
@@ -587,6 +737,23 @@ export function CatalogBrowser({
     </>
   );
 
+  const activePageIndex = activePageNumber - 1;
+  const rowsBefore = pageHistory.current.rowCounts
+    .slice(0, activePageIndex)
+    .reduce((sum, count) => sum + (count ?? 0), 0);
+  const morePages = Boolean(visiblePage?.nextCursor) && pageHistory.current.endsAt !== activePageIndex;
+  const navigation = queryStatus === 'ready' && visibleSelectedKey !== null
+    ? listNavigation(visibleRows.map(({ key }) => key), visibleSelectedKey, (key) => {
+        cancelPageMove();
+        setSelectedKey(key);
+      }, {
+        offset: rowsBefore,
+        more: morePages,
+        onNextBeyond: () => movePage('next'),
+        onPreviousBeyond: activePageIndex > 0 ? () => movePage('previous') : undefined,
+      })
+    : null;
+
   return (
     <>
       <LocalClimbViewer
@@ -594,10 +761,13 @@ export function CatalogBrowser({
         climbs={viewRows}
         selectedKey={visibleSelectedKey}
         onSelectedKeyChange={(key) => {
+          // Closing the detail or choosing a row ends any climb-to-climb page move.
+          cancelPageMove();
           if (key === null) setSelectedKey(null);
           else if (visibleRows.some((row) => row.key === key)) setSelectedKey(key);
         }}
         controller={controller}
+        navigationOverride={navigation}
         heading="Kilter"
         emptyTitle={emptyTitle}
         emptyDescription={emptyDescription}
