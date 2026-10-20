@@ -10,6 +10,12 @@ export interface CatalogProvenance {
   readonly coverage: string | null;
 }
 
+/** Inclusive rating range declared by the installed catalog (three stars for legacy). */
+export interface CatalogRatingScale {
+  readonly min: number;
+  readonly max: number;
+}
+
 export interface CatalogClimb extends ClimbViewRecord {
   readonly origin: 'provider';
   readonly providerClimbId: ProviderClimbId;
@@ -58,6 +64,7 @@ export type CatalogRead<T> =
 
 export interface CatalogQueryPort {
   readonly provenance: CatalogProvenance;
+  readonly ratingScale: CatalogRatingScale;
   query(input: CatalogClimbQuery): Promise<CatalogRead<CatalogPage>>;
   get(id: ProviderClimbId, angle: number): Promise<CatalogRead<CatalogClimb | null>>;
   grades(): Promise<CatalogRead<readonly CatalogGradeOption[]>>;

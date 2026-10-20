@@ -56,7 +56,21 @@ describe('projectKilterClimb', () => {
     expect(projectKilterClimb({ ...base, grade_label: null }, definition)).not.toHaveProperty('grade');
   });
 
+  it('marks a climb removed upstream only when the optional marker holds a real date', () => {
+    expect(projectKilterClimb(base, definition)).not.toHaveProperty('upstreamRemovedOn');
+    expect(projectKilterClimb({ ...base, source_upstream_removed_at: null }, definition))
+      .not.toHaveProperty('upstreamRemovedOn');
+    expect(projectKilterClimb({ ...base, source_upstream_removed_at: '2026-10-26' }, definition)).toMatchObject({
+      name: 'Synthetic climb',
+      upstreamRemovedOn: '2026-10-26',
+    });
+  });
+
   it.each([
+    ['removed-upstream marker that is not a date', { source_upstream_removed_at: 'yes' }],
+    ['removed-upstream marker with an impossible date', { source_upstream_removed_at: '2026-02-30' }],
+    ['removed-upstream marker with a timestamp', { source_upstream_removed_at: '2026-10-26T00:00:00Z' }],
+    ['numeric removed-upstream marker', { source_upstream_removed_at: 20261026 }],
     ['unknown role', { source_frames: 'p4117r99' }],
     ['unknown role after a valid hold', { source_frames: 'p4117r42p4118r99' }],
     ['legacy Original role after a valid hold', { source_frames: 'p4117r42p4118r12' }],

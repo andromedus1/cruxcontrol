@@ -15,6 +15,7 @@ import type { LocalPlaylistRepository } from './repository.ts';
 import { resolvePlaylistEntries, type ResolvedPlaylistEntry } from './resolve.ts';
 import type { LocalPlaylist, PlaylistId } from './types.ts';
 import type { ClimbViewRecord } from '../climb-browser/types.ts';
+import { UpstreamRemovedBadge } from '../climb-browser/UpstreamRemovedBadge.tsx';
 import './playlists.css';
 
 interface RetryState {
@@ -475,11 +476,15 @@ export function PlaylistLibrary({
                       <li key={entry.key}>
                         <div className="playlist-entry-copy">
                           <strong>{label}</strong>
+                          {entry.climb?.upstreamRemovedOn && <UpstreamRemovedBadge />}
                           <span
                             className={`playlist-availability playlist-availability--${unavailable ? 'unavailable' : 'available'}`}
                           >
                             {availability}
                           </span>
+                          {entry.reference.kind === 'provider' && entry.climb?.setter && (
+                            <span className="playlist-entry-detail">set by {entry.climb.setter}</span>
+                          )}
                           {issue && <span className="playlist-entry-detail">{issue}.</span>}
                           {!entry.climb && (
                             <span className="playlist-entry-detail">Reference: {entry.key}</span>

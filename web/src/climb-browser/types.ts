@@ -24,4 +24,6 @@ export interface ClimbViewRecord {
   readonly setter?: string;
   readonly description?: string;
   readonly sourceLabel?: string;
+  /** Provider build date (YYYY-MM-DD) since which the upstream source no longer lists this climb. */
+  readonly upstreamRemovedOn?: string;
 }

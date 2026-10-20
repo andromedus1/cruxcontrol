@@ -1,6 +1,8 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { useBackAction } from '../app/use-back-action.ts';
 import type { CatalogService } from './service.ts';
+import { catalogRatingScale, catalogSourceCopy, ratingScaleDescription } from './presentation.ts';
+import { formatCalendarDate } from '../climb-browser/calendar-date.ts';
 import './catalog.css';
 
 export interface CatalogManageDialogProps {
@@ -14,11 +16,6 @@ function formatSize(bytes: number): string {
   if (bytes < 1_000) return `${formatter.format(bytes)} B`;
   if (bytes < 1_000_000) return `${formatter.format(bytes / 1_000)} KB`;
   return `${formatter.format(bytes / 1_000_000)} MB`;
-}
-
-function formatGenerationDate(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' })
-    .format(new Date(`${value}T00:00:00.000Z`));
 }
 
 function formatInstalledDate(value: string): string {
@@ -56,6 +53,8 @@ export function CatalogManageDialog({ service, onClose, statusAnnouncement }: Ca
 
   const receipt = snapshot.storage?.status === 'ready' ? snapshot.storage.receipt : null;
   const details = receipt?.manifest ?? snapshot.offer;
+  const source = catalogSourceCopy(details ?? null);
+  const countFormat = new Intl.NumberFormat();
   const progress = snapshot.progress;
   const progressPercent = progress && progress.totalBytes > 0
     ? Math.min(100, Math.floor((progress.receivedBytes / progress.totalBytes) * 100))
@@ -83,7 +82,7 @@ export function CatalogManageDialog({ service, onClose, statusAnnouncement }: Ca
       <header className="catalog-manage-dialog__heading">
         <div>
           <p className="catalog-eyebrow">Catalog source</p>
-          <h2 id="catalog-manage-title" data-dialog-title tabIndex={-1}>Legacy Kilter catalog</h2>
+          <h2 id="catalog-manage-title" data-dialog-title tabIndex={-1}>{source.title}</h2>
         </div>
         <button
           className="catalog-icon-button"
@@ -103,13 +102,13 @@ export function CatalogManageDialog({ service, onClose, statusAnnouncement }: Ca
         {downloading && (
           <div className="catalog-operation">
             <div className="catalog-operation__line">
-              <strong>Downloading Legacy Kilter…</strong>
+              <strong>Downloading {source.name}…</strong>
               <span>{formatSize(progress?.receivedBytes ?? 0)} of {formatSize(progress?.totalBytes ?? details?.bytesGzipped ?? 0)}</span>
             </div>
             <div
               className="catalog-progress"
               role="progressbar"
-              aria-label="Legacy Kilter catalog download"
+              aria-label={`${source.name} catalog download`}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={progressPercent}
@@ -131,14 +130,40 @@ export function CatalogManageDialog({ service, onClose, statusAnnouncement }: Ca
         {unavailable && !busy && !unsupported && <p className="catalog-muted">The catalog could not be opened on this device. Your local climbs and lists remain usable.</p>}
 
         <div className="catalog-source-facts">
-          <p><strong>Older offline snapshot.</strong> This is not the current Kilter library and receives no live updates.</p>
-          <p>Source freshness: unknown. The generation date describes this snapshot, not how current its source data is.</p>
+          {source.kind === 'legacy' && (
+            <>
+              <p><strong>Older offline snapshot.</strong> This is not the current Kilter library and receives no live updates.</p>
+              <p>Source freshness: unknown. The generation date describes this snapshot, not how current its source data is.</p>
+            </>
+          )}
+          {details?.schemaVersion === 3 && (
+            <>
+              <p>
+                <strong>Kilter community climbs via Boardsesh.</strong> Not official Kilter data: CruxControl builds
+                this catalog from Boardsesh&apos;s public community snapshot, and each climb credits its setter.
+              </p>
+              <p>
+                Catalog version {details.version}, built {formatCalendarDate(details.generatedOn)} from the Boardsesh
+                snapshot of {formatCalendarDate(details.sourceBuiltAt)}.
+              </p>
+              <p>
+                {countFormat.format(details.climbCount)} climbs
+                {details.removedUpstreamCount
+                  ? `, including ${countFormat.format(details.removedUpstreamCount)} removed upstream and kept so your lists keep working`
+                  : ''}.
+              </p>
+              <p>
+                Ratings use a {ratingScaleDescription(catalogRatingScale(details))} scale. Sends count distinct climbers
+                and can go down as well as up between catalog versions.
+              </p>
+            </>
+          )}
           <p>Your own climbs, drafts, Trash and lists are stored separately.</p>
           {details && (
             <>
           <p>{formatSize(details.bytesGzipped)} download · {formatSize(details.bytesRaw)} catalog data per snapshot.</p>
           <p>Two slots retain the active and previous snapshots. At this size, two raw copies use {formatSize(details.bytesRaw * 2)} of storage, plus metadata and temporary installation space.</p>
-              <p>Snapshot generated: {formatGenerationDate(details.generatedOn)}.</p>
+              {details.schemaVersion === 2 && <p>Snapshot generated: {formatCalendarDate(details.generatedOn)}.</p>}
             </>
           )}
           {receipt && <p>Installed on this device: {formatInstalledDate(receipt.installedAt)}.</p>}

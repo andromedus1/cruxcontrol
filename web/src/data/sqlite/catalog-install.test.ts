@@ -53,6 +53,8 @@ interface Snapshot { manifest: CatalogManifest; compressed: ArrayBuffer; raw: Ui
 interface SnapshotOptions {
   fixtureSql?: string;
   mutate?(db: CatalogDb): Promise<unknown>;
+  /** Describe the artifact with a Boardsesh-derived schema-3 manifest. */
+  schema3?: boolean;
 }
 
 async function makeSnapshot(name: string, version: number, options: SnapshotOptions = {}): Promise<Snapshot> {
@@ -79,21 +81,37 @@ async function makeSnapshot(name: string, version: number, options: SnapshotOpti
   vfs.xDelete(source.name, 1);
   const zipped = gzipSync(raw);
   const digest = createHash('sha256').update(zipped).digest('hex');
-  const manifest: CatalogManifest = {
-    schemaVersion: 2,
+  const identity = {
     version,
-    board: 'kilter-fullride-7x10',
+    board: 'kilter-fullride-7x10' as const,
     file: `kilter-7x10.v${version}.db.gz`,
-    compression: 'gzip',
+    compression: 'gzip' as const,
     sha256: digest,
     bytesGzipped: zipped.byteLength,
     bytesRaw: raw.byteLength,
     generatedOn: '2026-06-14',
-    source: 'legacy-aurora-kilter',
-    sourceDataThrough: null,
     generatedFrom: 'synthetic bootstrap SQL',
     filter: 'layout_id=8',
   };
+  const manifest: CatalogManifest = options.schema3
+    ? {
+        schemaVersion: 3,
+        ...identity,
+        source: 'boardsesh-kilter',
+        sourceBuiltAt: '2026-06-14T08:00:00.000Z',
+        sourceWatermarks: { board_climbs: '2026-06-14T07:59:00.000000Z' },
+        layoutRevision: 'kilter:7:8:17:f0d70b3db9a6',
+        qualityScale: { min: 0, max: 5 },
+        climbCount: 1,
+        removedUpstreamCount: 1,
+        changes: { added: 0, removed: 1, restored: 0 },
+      }
+    : {
+        schemaVersion: 2,
+        ...identity,
+        source: 'legacy-aurora-kilter',
+        sourceDataThrough: null,
+      };
   return { manifest, compressed: Uint8Array.from(zipped).buffer, raw };
 }
 
@@ -283,6 +301,58 @@ describe('catalog slot installation and receipt activation', () => {
     expect(receipts.writes).toBe(writesBefore);
     expect(vfs.mapNameToFile.has(CATALOG_SLOT_FILENAMES.b)).toBe(false);
     expect(await queryActive(owner)).toBe('Still active after delete error');
+  });
+
+  it('installs a schema-3 artifact carrying removed-upstream markers over a legacy artifact without them', async () => {
+    const receipts = new MemoryReceipts();
+    const owner = context(receipts);
+    const legacy = await makeSnapshot('Legacy without markers', 1);
+    await expect(installCatalogCandidate(owner, legacy.manifest, legacy.compressed))
+      .resolves.toMatchObject({ ok: true, receipt: { slot: 'a', manifest: { schemaVersion: 2 } } });
+
+    const boardsesh = await makeSnapshot('Boardsesh with markers', 2, {
+      schema3: true,
+      async mutate(db) {
+        await db.query('ALTER TABLE climbs ADD COLUMN upstream_removed_at TEXT');
+        await db.query("UPDATE climbs SET upstream_removed_at = '2026-06-14' WHERE uuid = 'synthetic-valid'");
+      },
+    });
+    await expect(installCatalogCandidate(owner, boardsesh.manifest, boardsesh.compressed))
+      .resolves.toMatchObject({ ok: true, receipt: { slot: 'b', manifest: { schemaVersion: 3, removedUpstreamCount: 1 } } });
+    expect(receipts.current?.manifest).toEqual(boardsesh.manifest);
+    expect(await owner.active?.db.query('SELECT upstream_removed_at FROM climbs WHERE uuid = ?', ['synthetic-valid']))
+      .toEqual([{ upstream_removed_at: '2026-06-14' }]);
+    await owner.active?.db.close();
+    owner.active = null;
+  });
+
+  it('accepts a NULL-only removed-upstream column as fully present upstream', async () => {
+    const snapshot = await makeSnapshot('All present upstream', 1, {
+      schema3: true,
+      mutate: (db) => db.query('ALTER TABLE climbs ADD COLUMN upstream_removed_at TEXT'),
+    });
+    const owner = context();
+    await expect(installCatalogCandidate(owner, snapshot.manifest, snapshot.compressed))
+      .resolves.toMatchObject({ ok: true });
+    await owner.active?.db.close();
+    owner.active = null;
+  });
+
+  it.each([
+    ['a non-date marker', "'removed'"],
+    ['an impossible date marker', "'2026-02-30'"],
+    ['a timestamp marker', "'2026-06-14T00:00:00Z'"],
+    ['a numeric marker', '20260614'],
+  ])('rejects %s while retaining the active receipt', async (_label, value) => {
+    await expectCandidateRejectionPreservesActive(
+      await makeSnapshot('Malformed removed marker', 2, {
+        schema3: true,
+        async mutate(db) {
+          await db.query('ALTER TABLE climbs ADD COLUMN upstream_removed_at');
+          await db.query(`UPDATE climbs SET upstream_removed_at = ${value} WHERE uuid = 'synthetic-valid'`);
+        },
+      }),
+    );
   });
 
   it('rejects a candidate missing a consumer-required column while retaining the active receipt', async () => {

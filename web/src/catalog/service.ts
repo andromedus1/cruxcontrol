@@ -8,6 +8,7 @@ import type { CatalogPort } from '../data/port.ts';
 import type { CatalogReceipt } from '../data/sqlite/catalog-receipt.ts';
 import { createKilterCatalog } from '../data/catalog/kilter-catalog.ts';
 import type { CatalogQueryPort } from './types.ts';
+import { catalogProvenance, catalogRatingScale } from './presentation.ts';
 
 export type CatalogOperation =
   | 'idle'
@@ -41,7 +42,6 @@ export interface CatalogServiceDependencies {
   readonly fetcher: typeof fetch;
 }
 
-const LEGACY_COVERAGE = 'Older offline snapshot; current first-party coverage is unknown; no live updates';
 const INITIAL: CatalogServiceSnapshot = Object.freeze({
   storage: null,
   operation: 'idle',
@@ -86,12 +86,12 @@ function queryForReceipt(
   definition: BoardDefinition,
   receipt: CatalogReceipt,
 ): CatalogQueryPort {
-  return createKilterCatalog(port, definition, {
-    source: 'Legacy Kilter (Aurora)',
-    snapshotId: receipt.manifest.sha256,
-    retrievedAt: null,
-    coverage: LEGACY_COVERAGE,
-  });
+  return createKilterCatalog(
+    port,
+    definition,
+    catalogProvenance(receipt.manifest),
+    catalogRatingScale(receipt.manifest),
+  );
 }
 
 function installError(result: Extract<CatalogInstallResult, { ok: false }>) {
@@ -216,6 +216,9 @@ export function createCatalogService(
       try {
         const offer = await fetchCatalogManifest(dependencies.fetcher, controller.signal);
         if (disposed || currentGeneration !== generation) return;
+        if (offer.schemaVersion === 3 && offer.layoutRevision !== definition.layoutRevision) {
+          throw new CatalogBootstrapError('manifest', 'This catalog was built for a different board layout revision.');
+        }
         update({ offer, operation: 'idle', error: null });
       } catch (cause) {
         if (disposed || currentGeneration !== generation) return;

@@ -1,0 +1,21 @@
+.upstream-badge {
+  display: inline-block;
+  margin-inline-start: var(--space-2);
+  padding: 0.12rem 0.45rem;
+  border-radius: var(--radius-full);
+  color: var(--color-info);
+  background: color-mix(in srgb, var(--color-info) 12%, transparent);
+  font: var(--font-weight-semibold) var(--font-size-xs)/1.4 var(--font-mono);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.climb-detail__header .upstream-badge {
+  margin-inline-start: 0;
+}
+
+.climb-detail__upstream-note {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}

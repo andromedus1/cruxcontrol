@@ -22,6 +22,15 @@ function validNonnegative(value: number | null): value is number {
   return value !== null && value >= 0;
 }
 
+/** NULL or absent means present upstream; otherwise a real YYYY-MM-DD date, or invalid. */
+function upstreamRemovedOn(row: Row): string | null | undefined {
+  const value = row.source_upstream_removed_at;
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.valueOf()) && date.toISOString().slice(0, 10) === value ? value : undefined;
+}
+
 export function projectKilterClimb(
   row: Row,
   definition: BoardDefinition,
@@ -44,6 +53,7 @@ export function projectKilterClimb(
     : (typeof benchmarkValue === 'number' && Number.isFinite(benchmarkValue) ? benchmarkValue : NaN);
   const ascentCount = number(row, 'stat_ascensionist_count');
   const quality = number(row, 'stat_quality_average');
+  const removedOn = upstreamRemovedOn(row);
 
   if (!uuid?.trim() || !name?.trim() || frames === null || setter === null || description === null
     || layoutId !== 8 || framesCount !== 1 || isDraft !== 0 || isListed !== 1
@@ -51,7 +61,8 @@ export function projectKilterClimb(
     || !validNonnegative(display) || !validNonnegative(community)
     || (benchmark !== null && !validNonnegative(benchmark))
     || !validNonnegative(ascentCount) || !Number.isInteger(ascentCount)
-    || !validNonnegative(quality) || frames.length === 0 || frames.length > MAX_FRAME_LENGTH) {
+    || !validNonnegative(quality) || removedOn === undefined
+    || frames.length === 0 || frames.length > MAX_FRAME_LENGTH) {
     return null;
   }
 
@@ -106,5 +117,6 @@ export function projectKilterClimb(
     gradeValue,
     nativeGrades,
     statistics,
+    ...(removedOn === null ? {} : { upstreamRemovedOn: removedOn }),
   });
 }

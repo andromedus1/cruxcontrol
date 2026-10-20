@@ -12,6 +12,9 @@ import { PlaylistLibrary, type PlaylistSafetyState } from './PlaylistLibrary.tsx
 import type { PlaylistHistoryAdapter } from './portable-history.ts';
 import type { LocalPlaylistRepository } from './repository.ts';
 import type { LocalPlaylist, PlaylistContent } from './types.ts';
+import { providerClimbViewKey, type ClimbViewRecord } from '../climb-browser/types.ts';
+import { KILTER_PROVIDER_ID } from '../domain/boards/definitions/kilter-fullride-7x10.ts';
+import { providerSourceId } from '../domain/boards/identity.ts';
 
 const ACTIVE_ID = localDraftId('00000000-0000-4000-8000-000000000051');
 const TRASHED_ID = localDraftId('00000000-0000-4000-8000-000000000052');
@@ -54,6 +57,7 @@ function renderLibrary(
     readonly history?: PlaylistHistoryAdapter;
     readonly deferChanged?: boolean;
     readonly onSafetyStateChange?: (state: PlaylistSafetyState) => void;
+    readonly providerClimbs?: readonly ClimbViewRecord[];
   } = {},
 ) {
   let stored = [...initial];
@@ -108,6 +112,7 @@ function renderLibrary(
       <PlaylistLibrary
         playlists={playlists}
         localClimbs={localClimbs}
+        providerClimbs={options.providerClimbs}
         repository={repository}
         draftRepository={draftRepository}
         installation={installation}
@@ -206,6 +211,46 @@ describe('PlaylistLibrary', () => {
     fireEvent.click(within(entries).getByRole('button', { name: /Remove Missing local climb/ }));
     await waitFor(() => expect(repository.update).toHaveBeenCalledTimes(2));
     expect(getStored()[0]?.entries).toHaveLength(2);
+  });
+
+  it('credits setters and badges catalog climbs removed upstream while keeping them available', async () => {
+    const providerId = (source: string) => Object.freeze({
+      provider: KILTER_PROVIDER_ID,
+      sourceId: providerSourceId(source),
+      layoutRevision: definition.layoutRevision,
+    });
+    const removedId = providerId('0A1B2C3D4E5F60718293A4B5C6D7E8F9');
+    const listedId = providerId('listed-climb');
+    const providerClimb = (id: ReturnType<typeof providerId>, name: string, extra: Partial<ClimbViewRecord> = {}): ClimbViewRecord => ({
+      key: providerClimbViewKey(id),
+      name,
+      angle: 40,
+      assignments: [],
+      origin: 'provider',
+      setter: 'Catalog setter',
+      ...extra,
+    });
+    const playlist = storedPlaylist({
+      name: 'Catalog list',
+      notes: '',
+      entries: [{ kind: 'provider', id: removedId }, { kind: 'provider', id: listedId }],
+    });
+    renderLibrary([playlist], [], {
+      providerClimbs: [
+        providerClimb(removedId, 'Removed catalog climb', { upstreamRemovedOn: '2026-10-26' }),
+        providerClimb(listedId, 'Listed catalog climb'),
+      ],
+    });
+
+    const entries = await screen.findByRole('region', { name: 'Climbs' });
+    const [removedRow, listedRow] = within(entries).getAllByRole('listitem');
+    expect(removedRow).toHaveTextContent('Removed catalog climb');
+    expect(removedRow).toHaveTextContent('Removed upstream');
+    expect(removedRow).toHaveTextContent('Available');
+    expect(removedRow).toHaveTextContent('set by Catalog setter');
+    expect(listedRow).toHaveTextContent('Listed catalog climb');
+    expect(listedRow).toHaveTextContent('set by Catalog setter');
+    expect(listedRow).not.toHaveTextContent('Removed upstream');
   });
 
   it('refreshes repository truth and offers retry after a failed mutation', async () => {

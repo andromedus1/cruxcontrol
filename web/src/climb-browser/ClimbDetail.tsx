@@ -7,6 +7,8 @@ import { renderAnimationFrame } from '../light-effects/frame';
 import { useAnimationClock } from '../light-effects/use-animation-clock';
 import { useEditorLighting } from '../route-editor/use-editor-lighting';
 import type { ClimbViewRecord } from './types';
+import { formatCalendarDate } from './calendar-date';
+import { UpstreamRemovedBadge } from './UpstreamRemovedBadge';
 
 export interface ClimbDetailProps {
   readonly definition: BoardDefinition;
@@ -81,9 +83,16 @@ export function ClimbDetail({
         <div>
           <p className="eyebrow">{climb.sourceLabel ?? (climb.origin === 'local-draft' ? 'Local climb' : 'Climb')}</p>
           <Heading id={boardHeadingId}>{climb.name}</Heading>
+          {climb.upstreamRemovedOn && <UpstreamRemovedBadge />}
         </div>
         <span className="angle-badge">{climb.angle}°</span>
       </header>
+      {climb.upstreamRemovedOn && (
+        <p className="climb-detail__upstream-note">
+          No longer listed upstream since {formatCalendarDate(climb.upstreamRemovedOn)}. It stays
+          searchable, playable and in your lists.
+        </p>
+      )}
       <dl className="climb-meta">
         {climb.grade && (
           <>
@@ -93,7 +102,7 @@ export function ClimbDetail({
         )}
         {climb.setter && (
           <>
-            <dt>Setter</dt>
+            <dt>Set by</dt>
             <dd>{climb.setter}</dd>
           </>
         )}

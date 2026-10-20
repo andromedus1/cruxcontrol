@@ -69,6 +69,31 @@ describe('resolvePlaylistEntries', () => {
     expect(Object.isFrozen(resolved)).toBe(true);
   });
 
+  it('keeps resolving a provider climb that its upstream source no longer lists', () => {
+    const removed: ClimbViewRecord = {
+      key: providerClimbViewKey(providerReference.id),
+      name: 'Removed upstream climb',
+      angle: 40,
+      assignments: [],
+      origin: 'provider',
+      upstreamRemovedOn: '2026-10-26',
+    };
+    const playlist: LocalPlaylist = {
+      schemaVersion: 1,
+      id: playlistId('00000000-0000-4000-8000-000000000043'),
+      revision: playlistRevision(1),
+      name: 'Removed upstream',
+      notes: '',
+      entries: [providerReference],
+      createdAt: '2026-08-02T12:00:00.000Z',
+      updatedAt: '2026-08-02T12:00:00.000Z',
+    };
+    expect(resolvePlaylistEntries(playlist, [], [removed])[0]).toMatchObject({
+      availability: 'available',
+      climb: { name: 'Removed upstream climb', upstreamRemovedOn: '2026-10-26' },
+    });
+  });
+
   it('does not resolve a provider record with a different key', () => {
     const provider: ClimbViewRecord = {
       key: climbViewKey('provider:someone-else'),

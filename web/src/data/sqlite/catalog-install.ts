@@ -27,6 +27,9 @@ export const KILTER_CATALOG_REQUIRED_COLUMNS = {
   difficulty_grades: ['difficulty', 'boulder_name', 'is_listed'],
 } as const;
 
+/** Optional `climbs` column: NULL = present upstream, YYYY-MM-DD = removed upstream since. */
+export const KILTER_CATALOG_REMOVED_MARKER_COLUMN = 'upstream_removed_at';
+
 export interface CatalogInstallContext {
   vfs: SQLiteVFS;
   vfsName: string;
@@ -217,6 +220,7 @@ export async function validateCatalog(
     `SELECT name, type, sql FROM sqlite_master
      WHERE name IN ('climbs', 'climb_stats', 'difficulty_grades')`,
   );
+  let climbColumns = new Set<string>();
   for (const tableName of Object.keys(KILTER_CATALOG_REQUIRED_COLUMNS)) {
     const table = tableRows.find((row) => row.name === tableName);
     if (table?.type !== 'table' || typeof table.sql !== 'string' || /^\s*CREATE\s+VIRTUAL\s+TABLE/i.test(table.sql)) {
@@ -227,6 +231,20 @@ export async function validateCatalog(
     if (!KILTER_CATALOG_REQUIRED_COLUMNS[tableName as keyof typeof KILTER_CATALOG_REQUIRED_COLUMNS]
       .every((column) => names.has(column))) {
       throw fail('schema', `Catalog ${tableName} table is missing required columns`);
+    }
+    if (tableName === 'climbs') climbColumns = names;
+  }
+
+  if (climbColumns.has(KILTER_CATALOG_REMOVED_MARKER_COLUMN)) {
+    const markers = await db.query(
+      `SELECT COUNT(*) AS invalid FROM climbs
+       WHERE ${KILTER_CATALOG_REMOVED_MARKER_COLUMN} IS NOT NULL
+         AND (typeof(${KILTER_CATALOG_REMOVED_MARKER_COLUMN}) <> 'text'
+           OR ${KILTER_CATALOG_REMOVED_MARKER_COLUMN} NOT GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
+           OR date(${KILTER_CATALOG_REMOVED_MARKER_COLUMN}, '+0 days') IS NOT ${KILTER_CATALOG_REMOVED_MARKER_COLUMN})`,
+    );
+    if (markers.length !== 1 || markers[0].invalid !== 0) {
+      throw fail('schema', 'Catalog removed-upstream markers must be NULL or YYYY-MM-DD dates');
     }
   }
 

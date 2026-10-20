@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBackAction } from '../app/use-back-action.ts';
-import type { CatalogGradeOption } from './types.ts';
+import type { CatalogGradeOption, CatalogRatingScale } from './types.ts';
+import { ratingScaleDescription, type CatalogSourceCopy } from './presentation.ts';
 import './catalog.css';
 
 export interface CatalogFilterValues {
@@ -40,6 +41,9 @@ function draftFrom(filters: CatalogFilterValues): FilterDraft {
 export interface CatalogFilterDialogProps {
   readonly initial: CatalogFilterValues;
   readonly grades: readonly CatalogGradeOption[];
+  /** Rating range declared by the installed catalog. */
+  readonly ratingScale: CatalogRatingScale;
+  readonly source: CatalogSourceCopy;
   readonly onApply: (filters: CatalogFilterValues) => void;
   readonly onClose: () => void;
 }
@@ -47,6 +51,8 @@ export interface CatalogFilterDialogProps {
 export function CatalogFilterDialog({
   initial,
   grades,
+  ratingScale,
+  source,
   onApply,
   onClose,
 }: CatalogFilterDialogProps): React.JSX.Element {
@@ -80,10 +86,11 @@ export function CatalogFilterDialog({
     if ((minGrade !== null && !Number.isInteger(minGrade))
       || (maxGrade !== null && !Number.isInteger(maxGrade))
       || (minGrade !== null && maxGrade !== null && minGrade > maxGrade)
-      || (minRating !== null && (!Number.isFinite(minRating) || minRating < 0 || minRating > 3))
+      || (minRating !== null
+        && (!Number.isFinite(minRating) || minRating < ratingScale.min || minRating > ratingScale.max))
       || (minAscents !== null && (!Number.isSafeInteger(minAscents) || minAscents < 0))
       || draft.setter.length > 200) {
-      setError('Check the grade range, rating from 0 to 3, and whole-number send count.');
+      setError(`Check the grade range, rating from ${ratingScale.min} to ${ratingScale.max}, and whole-number send count.`);
       return;
     }
     setError('');
@@ -115,7 +122,7 @@ export function CatalogFilterDialog({
       <form className="catalog-filter-dialog__form" onSubmit={apply}>
         <header className="catalog-filter-dialog__heading">
           <div>
-            <p className="catalog-eyebrow">Legacy Kilter</p>
+            <p className="catalog-eyebrow">{source.name}</p>
             <h2 id="catalog-filter-title" data-dialog-title tabIndex={-1}>Filter climbs</h2>
           </div>
           <button
@@ -167,8 +174,8 @@ export function CatalogFilterDialog({
               <input
                 className="catalog-input"
                 type="number"
-                min="0"
-                max="3"
+                min={ratingScale.min}
+                max={ratingScale.max}
                 step="0.1"
                 inputMode="decimal"
                 placeholder="Any"
@@ -197,7 +204,8 @@ export function CatalogFilterDialog({
             </label>
           </div>
           <p className="catalog-field__help">
-            Rating uses a three-star scale. Sends count distinct climbers at this angle.
+            Rating uses a {ratingScaleDescription(ratingScale)} scale. Sends count distinct climbers at this angle
+            {source.kind === 'boardsesh' ? ' and can go down as well as up between catalog versions.' : '.'}
           </p>
           <label className="catalog-field">
             <span>Setter</span>

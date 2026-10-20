@@ -1,7 +1,7 @@
 ---
 id: epic-catalog-sync-catalog-semantics
 kind: feature
-stage: implementing
+stage: review
 tags: [ui, data]
 parent: epic-catalog-sync
 depends_on: [epic-catalog-sync-snapshot-normalize]
@@ -166,9 +166,9 @@ export function parseCatalogManifest(value: unknown): CatalogManifest;
   object, so receipts round-trip through the same parser.
 
 **Acceptance criteria**:
-- [ ] `manifest-v3.example.json` parses with `removedUpstreamCount`/`changes` null.
-- [ ] A v3 manifest with valid `removedUpstreamCount` and `changes` parses them.
-- [ ] Each malformed v3 field (source/schema mismatch, bad instant, bad scale, bad
+- [x] `manifest-v3.example.json` parses with `removedUpstreamCount`/`changes` null.
+- [x] A v3 manifest with valid `removedUpstreamCount` and `changes` parses them.
+- [x] Each malformed v3 field (source/schema mismatch, bad instant, bad scale, bad
       counts, bad `changes`, bad watermark) is rejected with code `manifest`; limits
       still yield `size`; all existing schema-2 cases behave as before.
 
@@ -206,9 +206,9 @@ export function ratingScaleDescription(scale: CatalogRatingScale): string;
   about a catalog whose manifest has not been read.
 
 **Acceptance criteria**:
-- [ ] Legacy, Boardsesh and unknown manifests select their wording; the Boardsesh
+- [x] Legacy, Boardsesh and unknown manifests select their wording; the Boardsesh
       headline contains the formatted build date.
-- [ ] Rating scale is 0–3 for schema 2 and `qualityScale` for schema 3.
+- [x] Rating scale is 0–3 for schema 2 and `qualityScale` for schema 3.
 
 ### Unit 3: Query adapter and projection
 
@@ -242,11 +242,11 @@ export function createKilterCatalog(
 - Cursor v2 shape is unchanged and still bound to `snapshotId` (manifest sha256).
 
 **Acceptance criteria**:
-- [ ] Without the column, results match today and carry no `upstreamRemovedOn`.
-- [ ] With the column, removed climbs are returned by `query` and `get` with
+- [x] Without the column, results match today and carry no `upstreamRemovedOn`.
+- [x] With the column, removed climbs are returned by `query` and `get` with
       `upstreamRemovedOn`; present climbs have none.
-- [ ] `minRating` 4.5 is accepted on a 0–5 adapter and rejected on the 0–3 adapter.
-- [ ] A cursor from one snapshot adapter is rejected by another snapshot's adapter.
+- [x] `minRating` 4.5 is accepted on a 0–5 adapter and rejected on the 0–3 adapter.
+- [x] A cursor from one snapshot adapter is rejected by another snapshot's adapter.
 
 ### Unit 4: Install-time validation
 
@@ -256,12 +256,14 @@ export function createKilterCatalog(
   `upstream_removed_at`, every non-NULL value must be text in `YYYY-MM-DD` form and a
   real date, else `schema` failure (active catalog retained).
 - A schema-3 manifest's `layoutRevision` must equal the installed Fullride definition
-  revision, else `schema` failure.
+  revision. *(Implemented in the service's offer check instead — see Implementation
+  notes.)*
 
 **Acceptance criteria**:
-- [ ] Artifacts with and without the column install; a malformed marker or foreign
-      `layoutRevision` is rejected and the previous receipt stays active.
-- [ ] A schema-3 manifest installs and its receipt re-reads through the parser.
+- [x] Artifacts with and without the column install; a malformed marker is rejected
+      and the previous receipt stays active; a foreign `layoutRevision` offer is
+      refused before download.
+- [x] A schema-3 manifest installs and its receipt re-reads through the parser.
 
 ### Unit 5: Service binding
 
@@ -270,7 +272,7 @@ export function createKilterCatalog(
 by sha256 is unchanged; legacy provenance stays identical.
 
 **Acceptance criteria**:
-- [ ] A schema-3 receipt yields Boardsesh provenance and a 0–5 adapter scale; the
+- [x] A schema-3 receipt yields Boardsesh provenance and a 0–5 adapter scale; the
       legacy receipt yields today's provenance and 0–3.
 
 ### Unit 6: UI
@@ -298,9 +300,9 @@ by sha256 is unchanged; legacy provenance stays identical.
 - Workspace list-resolution hint drops "older" ("Install the Kilter catalog …").
 
 **Acceptance criteria**:
-- [ ] A legacy receipt renders today's wording and "/ 3"; a Boardsesh receipt renders
+- [x] A legacy receipt renders today's wording and "/ 3"; a Boardsesh receipt renders
       the decided wording, "/ 5", the 0–5 hint and accepts a 4.5 minimum rating.
-- [ ] Removed climbs show the badge in rows, detail and playlist rows; present climbs
+- [x] Removed climbs show the badge in rows, detail and playlist rows; present climbs
       do not.
 
 ### Unit 7: Foundation docs
@@ -349,3 +351,73 @@ UI) and are delivered by one owner in one PR.
   that connection.
 - **Least sure**: whether "updated <date>" should use `sourceBuiltAt` rather than
   `generatedOn`; both are equal for today's builds and both are shown in Manage.
+
+## Implementation notes
+
+- **Execution capability**: inline, single owner (one cohesive type change from the
+  manifest union through the adapter to the UI); no delegation or child stories.
+- **Files changed**:
+  - Data: `web/src/data/catalog/{manifest,kilter-catalog,kilter-projection}.ts`,
+    `web/src/data/sqlite/catalog-install.ts`.
+  - Catalog/UI: `web/src/catalog/{presentation.ts (new),service.ts,types.ts,
+    CatalogBrowser.tsx,CatalogFilterDialog.tsx,CatalogManageDialog.tsx}`,
+    `web/src/climb-browser/{types.ts,ClimbDetail.tsx,LocalClimbViewer.tsx,
+    UpstreamRemovedBadge.tsx (new),upstream-badge.css (new),calendar-date.ts (new)}`,
+    `web/src/playlists/{PlaylistLibrary.tsx,playlists.css}`,
+    `web/src/app/CruxControlWorkspace.tsx`.
+  - Docs: `docs/SPEC.md` §2, `docs/ARCHITECTURE.md` Module Map 3 and the catalog
+    adapter paragraph. `README.md` needed no change (its catalog bullets describe the
+    bundled legacy snapshot, which is still what ships).
+- **Tests added/updated**: `manifest.test.ts` (v3 example, optional fields
+  present/absent/null, 26 malformed v3 cases, limits); `kilter-projection.test.ts`
+  (marker absent/null/date and 4 malformed markers); `kilter-catalog.test.ts`
+  (removed climbs searchable and resolvable by exact UUID spelling, column-absent
+  artifacts, probe retry after failure, 0–5 vs 0–3 `minRating` validation);
+  `catalog-install.test.ts` (schema-3 install over legacy with markers, NULL-only
+  column, 4 malformed-marker rejections retaining the active receipt);
+  `catalog-receipt.test.ts` (schema-3 receipt round trip); `presentation.test.ts`
+  (new); `service.test.ts` (Boardsesh provenance/scale, layout-revision offer guard);
+  `CatalogBrowser.test.tsx` (community wording, setter credit, badge in row/detail,
+  0–5 filter validation/hint/chip, legacy three-star hint, out-of-scale rating dropped
+  on catalog switch); `CatalogManageDialog.test.tsx` (Boardsesh facts);
+  `PlaylistLibrary.test.tsx` (badge + setter in playlist rows); `resolve.test.ts`
+  (removed climb stays available).
+  - Stale tests repaired (behavior changed by design, assertions kept as strong):
+    the recording-port test now expects the one-time `PRAGMA table_info(climbs)` probe
+    before the single page read; two tests that opened Manage before any manifest was
+    known now assert the neutral "Kilter catalog" wording first and the legacy facts
+    after the legacy offer arrives; the workspace hint string dropped "older".
+- **Verification** (repo root unless noted): `npm run lint` clean; `npm run typecheck`
+  clean; `npm test` 102 files passed, 1 skipped (pre-existing private-source test),
+  960 tests passed; `npm run build` + `node web/scripts/check-pwa-build.mjs` passed;
+  `python3 -m unittest discover -s web/scripts -p 'test_*.py'` 28 passed (it parses
+  `KILTER_CATALOG_REQUIRED_COLUMNS` from `catalog-install.ts`); Playwright
+  `CI=1 npm -w web run test:e2e -- --grep catalog` 1 passed, full
+  `CI=1 npm -w web run test:e2e` 14 passed, `CI=1 npm -w web run
+  test:e2e:catalog-bootstrap` 5 passed.
+- **Discrepancies from design**:
+  - The schema-3 `layoutRevision` pin moved from install-time worker validation to
+    `service.loadOffer` (refuses the offer with a `manifest` error before download).
+    Importing the board definition into `catalog-install.ts` would have pulled the
+    whole generated Fullride definition into the catalog worker bundle.
+  - Marker validation compares against `date(x, '+0 days')`: SQLite's bare `date()`
+    returns impossible dates such as `2026-02-30` unchanged.
+  - Date formatting lives in `web/src/climb-browser/calendar-date.ts`
+    (`formatCalendarDate`) so the climb detail note and the catalog presentation share
+    it; `presentation.ts` has no `formatCatalogDate`.
+  - Detail setter credit is the existing metadata row relabelled "Set by" (rows and
+    playlist rows read "set by <setter>").
+  - Before any manifest is read (nothing installed, offer not yet loaded) the source
+    row, setup copy and Manage title use neutral "Kilter catalog" wording rather than
+    assuming the legacy snapshot.
+- **Wording choices within the decisions**: climb-detail eyebrow "Kilter community via
+  Boardsesh · read only"; filter/Manage hint "Rating uses a 0–5 scale. Sends count
+  distinct climbers … and can go down as well as up between catalog versions."; detail
+  note "No longer listed upstream since <date>. It stays searchable, playable and in
+  your lists." The source line's build date is the manifest `generatedOn`; the
+  Boardsesh `sourceBuiltAt` is shown in Manage.
+- **Parked issues**: none. Notes for siblings: `climbCount` is not cross-checked
+  against the artifact's row count (its basis after append-only carry-over belongs to
+  `append-only-guards`); `changes` is parsed but only `device-update` will display it;
+  the committed same-origin `web/public/catalog/manifest.json` is still schema 2, so
+  shipping a Boardsesh artifact remains with `private-publish`/`device-update`.

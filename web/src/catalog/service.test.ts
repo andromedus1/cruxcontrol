@@ -22,6 +22,28 @@ const manifest: CatalogManifest = Object.freeze({
   filter: 'layout_id=8',
 });
 
+const boardseshManifest: CatalogManifest = Object.freeze({
+  schemaVersion: 3,
+  version: 2,
+  board: 'kilter-fullride-7x10',
+  file: 'kilter-7x10.v2.db.gz',
+  compression: 'gzip',
+  sha256: 'c'.repeat(64),
+  bytesGzipped: 4,
+  bytesRaw: 64,
+  generatedOn: '2026-10-19',
+  source: 'boardsesh-kilter',
+  sourceBuiltAt: '2026-10-19T18:38:11.515Z',
+  sourceWatermarks: Object.freeze({ board_climbs: '2026-10-19T18:31:55.490105Z' }),
+  layoutRevision: 'kilter:7:8:17:f0d70b3db9a6',
+  qualityScale: Object.freeze({ min: 0, max: 5 }),
+  climbCount: 13299,
+  removedUpstreamCount: null,
+  changes: null,
+  generatedFrom: 'test fixture',
+  filter: 'layout_id=8',
+});
+
 function receipt(value: CatalogManifest = manifest, slot: 'a' | 'b' = 'a'): CatalogReceipt {
   return {
     schemaVersion: 1,
@@ -119,10 +141,45 @@ describe('createCatalogService', () => {
       retrievedAt: null,
       coverage: 'Older offline snapshot; current first-party coverage is unknown; no live updates',
     });
+    expect(snapshot.queries?.ratingScale).toEqual({ min: 0, max: 3 });
     expect(service.getSnapshot().queries).toBe(snapshot.queries);
     expect(fetcher).not.toHaveBeenCalled();
     expect(port.catalogStatus).toHaveBeenCalledOnce();
     await service.close();
+  });
+
+  it('binds a Boardsesh receipt to community provenance and its declared rating scale', async () => {
+    const port = portFor({ status: async () => statusReady(receipt(boardseshManifest)) });
+    const service = serviceFor({ port, fetcher: vi.fn() as typeof fetch });
+    await service.start();
+
+    const queries = service.getSnapshot().queries;
+    expect(queries?.provenance).toEqual({
+      source: 'Kilter community climbs via Boardsesh',
+      snapshotId: boardseshManifest.sha256,
+      retrievedAt: '2026-10-19T18:38:11.515Z',
+      coverage: 'Community catalog derived from Boardsesh snapshots; not official Kilter data',
+    });
+    expect(queries?.ratingScale).toEqual({ min: 0, max: 5 });
+    await service.close();
+  });
+
+  it('offers a schema-3 catalog but refuses one built for another layout revision', async () => {
+    const offered = { ...boardseshManifest };
+    const fetcher = vi.fn(async () => bodyResponse(JSON.stringify(offered))) as typeof fetch;
+    const service = serviceFor({ fetcher });
+    await service.loadOffer();
+    expect(service.getSnapshot()).toMatchObject({ offer: boardseshManifest, error: null });
+    await service.close();
+
+    offered.layoutRevision = 'kilter:7:8:17:000000000000';
+    const mismatched = serviceFor({ fetcher });
+    await mismatched.loadOffer();
+    expect(mismatched.getSnapshot()).toMatchObject({
+      offer: null,
+      error: { code: 'manifest', message: 'This catalog was built for a different board layout revision.' },
+    });
+    await mismatched.close();
   });
 
   it('checks metadata without fetching a binary, then installs only the exact displayed offer', async () => {

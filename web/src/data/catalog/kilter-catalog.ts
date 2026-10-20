@@ -1,7 +1,7 @@
 import type { CatalogPort, SqlValue } from '../port.ts';
 import type {
   CatalogClimb, CatalogClimbQuery, CatalogCursor, CatalogGradeOption, CatalogPage, CatalogSort,
-  CatalogProvenance, CatalogQueryPort, CatalogRead,
+  CatalogProvenance, CatalogQueryPort, CatalogRatingScale, CatalogRead,
 } from '../../catalog/types.ts';
 import { CatalogReadError } from '../../catalog/types.ts';
 import type { BoardDefinition } from '../../domain/boards/definition.ts';
@@ -81,7 +81,11 @@ function sortExpressions(sort: CatalogSort): SortExpressions {
   }
 }
 
-function normalizeQuery(input: CatalogClimbQuery, definition: BoardDefinition): NormalizedQuery {
+function normalizeQuery(
+  input: CatalogClimbQuery,
+  definition: BoardDefinition,
+  ratingScale: CatalogRatingScale,
+): NormalizedQuery {
   if (!input || typeof input !== 'object') throw new TypeError('Catalog query must be an object');
   const { angle, minGrade, maxGrade } = input;
   if (!Number.isInteger(angle) || !definition.supportedAngles.includes(angle)) {
@@ -96,8 +100,9 @@ function normalizeQuery(input: CatalogClimbQuery, definition: BoardDefinition): 
     throw new RangeError('minGrade must not exceed maxGrade');
   }
   const { minRating, minAscents } = input;
-  if (minRating !== undefined && (!Number.isFinite(minRating) || minRating < 0 || minRating > 3)) {
-    throw new RangeError('minRating must be a finite number from 0 to 3');
+  if (minRating !== undefined
+    && (!Number.isFinite(minRating) || minRating < ratingScale.min || minRating > ratingScale.max)) {
+    throw new RangeError(`minRating must be a finite number from ${ratingScale.min} to ${ratingScale.max}`);
   }
   if (minAscents !== undefined && (!Number.isSafeInteger(minAscents) || minAscents < 0)) {
     throw new RangeError('minAscents must be a nonnegative safe integer');
@@ -179,7 +184,10 @@ async function ready(catalog: CatalogPort): Promise<boolean> {
   }
 }
 
-const PROJECT_COLUMNS = `
+const REMOVED_MARKER_COLUMN = 'upstream_removed_at';
+
+function projectColumns(hasRemovedMarker: boolean): string {
+  return `
   c.uuid AS source_uuid,
   c.name AS source_name,
   c.frames AS source_frames,
@@ -195,7 +203,9 @@ const PROJECT_COLUMNS = `
   s.benchmark_difficulty AS stat_benchmark_difficulty,
   s.ascensionist_count AS stat_ascensionist_count,
   s.quality_average AS stat_quality_average,
-  g.boulder_name AS grade_label`;
+  g.boulder_name AS grade_label,
+  ${hasRemovedMarker ? `c.${REMOVED_MARKER_COLUMN}` : 'NULL'} AS source_upstream_removed_at`;
+}
 
 const BASE_SCOPE = `
   FROM climbs c
@@ -212,6 +222,7 @@ export function createKilterCatalog(
   catalog: CatalogPort,
   definition: BoardDefinition,
   provenance: CatalogProvenance,
+  ratingScale: CatalogRatingScale,
 ): CatalogQueryPort {
   if (definition.id !== kilterFullride7x10Definition.id
     || definition.layoutRevision !== kilterFullride7x10Definition.layoutRevision) {
@@ -223,18 +234,37 @@ export function createKilterCatalog(
     || (provenance.coverage !== null && typeof provenance.coverage !== 'string')) {
     throw new TypeError('Catalog provenance requires a source, snapshot ID, and nullable retrieval metadata');
   }
+  if (!ratingScale || !Number.isFinite(ratingScale.min) || !Number.isFinite(ratingScale.max)
+    || ratingScale.min < 0 || ratingScale.max <= ratingScale.min) {
+    throw new TypeError('Catalog rating scale requires finite bounds with 0 <= min < max');
+  }
   const stableProvenance = Object.freeze({
     source: provenance.source.trim(),
     snapshotId: provenance.snapshotId.trim(),
     retrievedAt: provenance.retrievedAt,
     coverage: provenance.coverage,
   });
+  const stableScale = Object.freeze({ min: ratingScale.min, max: ratingScale.max });
+
+  // Optional column: artifacts built before append-only reconciliation lack it, which
+  // means every climb is present upstream. Probed once per snapshot adapter.
+  let removedMarkerProbe: Promise<boolean> | null = null;
+  const hasRemovedMarker = (): Promise<boolean> => {
+    removedMarkerProbe ??= catalog.query('PRAGMA table_info(climbs)')
+      .then((rows) => rows.some((row) => row.name === REMOVED_MARKER_COLUMN))
+      .catch((cause: unknown) => {
+        removedMarkerProbe = null;
+        throw cause;
+      });
+    return removedMarkerProbe;
+  };
 
   return Object.freeze({
     provenance: stableProvenance,
+    ratingScale: stableScale,
 
     async query(input: CatalogClimbQuery): Promise<CatalogRead<CatalogPage>> {
-      const normalized = normalizeQuery(input, definition);
+      const normalized = normalizeQuery(input, definition, stableScale);
       const expected = {
         snapshot: stableProvenance.snapshotId,
         revision: String(definition.layoutRevision),
@@ -296,13 +326,13 @@ export function createKilterCatalog(
         );
       }
       params.push(MAX_CANDIDATES + 1);
-      const sql = `SELECT ${PROJECT_COLUMNS},
+      try {
+        const sql = `SELECT ${projectColumns(await hasRemovedMarker())},
           (${expressions.rank}) AS cursor_sort_rank,
           (${expressions.value}) AS cursor_sort_value
         ${BASE_SCOPE} ${clauses.join('\n')}
         ORDER BY cursor_sort_rank ASC, cursor_sort_value COLLATE BINARY ${expressions.direction}, c.uuid COLLATE BINARY ASC
         LIMIT ?`;
-      try {
         const rows = await catalog.query(sql, params);
         const climbs: CatalogClimb[] = [];
         let excludedCount = 0;
@@ -349,10 +379,10 @@ export function createKilterCatalog(
         || typeof id.sourceId !== 'string' || !id.sourceId.trim()) {
         return { status: 'ready', value: null };
       }
-      const sql = `SELECT ${PROJECT_COLUMNS}${BASE_SCOPE}
+      try {
+        const sql = `SELECT ${projectColumns(await hasRemovedMarker())}${BASE_SCOPE}
         AND c.uuid = ?
         LIMIT 1`;
-      try {
         const rows = await catalog.query(sql, [8, angle, id.sourceId]);
         return { status: 'ready', value: rows[0] ? projectKilterClimb(rows[0], definition) : null };
       } catch (cause) {
