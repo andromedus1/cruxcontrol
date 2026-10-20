@@ -5,6 +5,7 @@ import {
   catalogProvenance,
   catalogRatingScale,
   catalogSourceCopy,
+  catalogUpdateSummary,
   ratingScaleDescription,
 } from './presentation.ts';
 import { formatCalendarDate as formatCatalogDate } from '../climb-browser/calendar-date.ts';
@@ -97,5 +98,11 @@ describe('catalog presentation', () => {
     expect(catalogRatingScale(boardsesh)).toEqual({ min: 0, max: 5 });
     expect(ratingScaleDescription(LEGACY_RATING_SCALE)).toBe('three-star');
     expect(ratingScaleDescription({ min: 0, max: 5 })).toBe('0–5');
+  });
+
+  it('summarizes an update offer from its change counts, or its version when none are reported', () => {
+    expect(catalogUpdateSummary(3, { added: 1261, removed: 23, restored: 0 })).toBe('1,261 new climbs · 23 removed');
+    expect(catalogUpdateSummary(3, { added: 1, removed: 0, restored: 2 })).toBe('1 new climb · 0 removed · 2 restored');
+    expect(catalogUpdateSummary(4, null)).toBe('Version 4 is available');
   });
 });

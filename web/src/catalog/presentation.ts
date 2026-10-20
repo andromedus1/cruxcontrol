@@ -1,4 +1,4 @@
-import type { CatalogManifest } from '../data/catalog/manifest.ts';
+import type { CatalogChangeSummary, CatalogManifest } from '../data/catalog/manifest.ts';
 import type { CatalogProvenance, CatalogRatingScale } from './types.ts';
 import { formatCalendarDate } from '../climb-browser/calendar-date.ts';
 
@@ -71,6 +71,21 @@ export function catalogSourceCopy(manifest: CatalogManifest | null): CatalogSour
     climbLabel: 'Kilter community via Boardsesh · read only',
     setupDescription: 'Set up the Kilter community catalog to search and preview compatible climbs.',
   });
+}
+
+/**
+ * Short description of a newer catalog for the update banner and Manage: change counts from
+ * the offered manifest ("1,261 new climbs · 23 removed"), or its version when it reports none.
+ */
+export function catalogUpdateSummary(version: number, changes: CatalogChangeSummary | null): string {
+  if (!changes) return `Version ${version} is available`;
+  const count = new Intl.NumberFormat();
+  const parts = [
+    `${count.format(changes.added)} new ${changes.added === 1 ? 'climb' : 'climbs'}`,
+    `${count.format(changes.removed)} removed`,
+  ];
+  if (changes.restored > 0) parts.push(`${count.format(changes.restored)} restored`);
+  return parts.join(' · ');
 }
 
 export function catalogProvenance(manifest: CatalogManifest): CatalogProvenance {

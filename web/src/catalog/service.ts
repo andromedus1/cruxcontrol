@@ -45,6 +45,13 @@ export type CatalogUpdateAvailability = 'unknown' | 'unconfigured' | 'signed-out
 
 export type CatalogUpdateFailureCode = CatalogUpdateErrorCode | CatalogFailureCode;
 
+export interface CatalogUpdateFailure {
+  readonly code: CatalogUpdateFailureCode;
+  readonly message: string;
+  /** Which step failed, so retry repeats the right one. */
+  readonly action: 'check' | 'install';
+}
+
 export interface CatalogUpdateState {
   readonly availability: CatalogUpdateAvailability;
   readonly checking: boolean;
@@ -56,7 +63,7 @@ export interface CatalogUpdateState {
   /** Epoch milliseconds of the last completed endpoint check on this device. */
   readonly lastCheckedAt: number | null;
   /** Last check or update-install failure; the installed catalog stays active. */
-  readonly error: Readonly<{ code: CatalogUpdateFailureCode; message: string }> | null;
+  readonly error: CatalogUpdateFailure | null;
 }
 
 export interface CatalogServiceSnapshot {
@@ -432,7 +439,7 @@ export function createCatalogService(
 
     const reportFailure = (error: Readonly<{ code: CatalogUpdateFailureCode; message: string }>, clearOffer: boolean) => {
       if (target === 'update') {
-        updateState({ error }, { operation: 'idle', progress: null });
+        updateState({ error: Object.freeze({ ...error, action: 'install' }) }, { operation: 'idle', progress: null });
       } else {
         update({
           operation: 'idle',
@@ -513,7 +520,7 @@ export function createCatalogService(
             queries: result.retained ? queriesFor(activePort, result.retained) : null,
           };
           if (target === 'update' && result.retained) {
-            updateState({ error: installError(result) }, { ...restored, error: null });
+            updateState({ error: Object.freeze({ ...installError(result), action: 'install' }) }, { ...restored, error: null });
           } else {
             update({ ...restored, error: installError(result) });
           }
@@ -659,7 +666,7 @@ export function createCatalogService(
         const error = updateFailureOf(cause, 'network', 'Catalog updates could not be checked.');
         updateState({
           checking: false,
-          error,
+          error: Object.freeze({ ...error, action: 'check' }),
           ...(error.code === 'signed-out' ? { availability: 'signed-out' as const, offer: null, changes: null } : {}),
         });
       }

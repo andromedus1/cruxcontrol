@@ -1,7 +1,7 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { useBackAction } from '../app/use-back-action.ts';
 import type { CatalogService } from './service.ts';
-import { catalogRatingScale, catalogSourceCopy, ratingScaleDescription } from './presentation.ts';
+import { catalogRatingScale, catalogSourceCopy, catalogUpdateSummary, ratingScaleDescription } from './presentation.ts';
 import { formatCalendarDate } from '../climb-browser/calendar-date.ts';
 import './catalog.css';
 
@@ -20,6 +20,10 @@ function formatSize(bytes: number): string {
 
 function formatInstalledDate(value: string): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
+}
+
+function formatCheckedAt(value: number): string {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
 export function CatalogManageDialog({ service, onClose, statusAnnouncement }: CatalogManageDialogProps): React.JSX.Element {
@@ -68,6 +72,14 @@ export function CatalogManageDialog({ service, onClose, statusAnnouncement }: Ca
   const loading = snapshot.operation === 'opening';
   const downloadFailed = snapshot.error && snapshot.storage?.status === 'empty' && snapshot.offer;
   const metadataFailed = snapshot.error && snapshot.storage?.status === 'empty' && !snapshot.offer;
+  const update = snapshot.update;
+  const updateOffer = receipt ? update.offer : null;
+  const updating = updateOffer !== null && (downloading || installing);
+  const downloadName = updating ? `catalog version ${updateOffer.version}` : source.name;
+  const downloadTotal = updating ? updateOffer.bytesGzipped : details?.bytesGzipped ?? 0;
+  const updateFailed = updateOffer !== null && update.error?.action === 'install';
+  const showUpdates = update.availability !== 'unconfigured'
+    && (receipt !== null || update.availability === 'signed-out');
 
   return (
     <dialog
@@ -102,13 +114,13 @@ export function CatalogManageDialog({ service, onClose, statusAnnouncement }: Ca
         {downloading && (
           <div className="catalog-operation">
             <div className="catalog-operation__line">
-              <strong>Downloading {source.name}…</strong>
-              <span>{formatSize(progress?.receivedBytes ?? 0)} of {formatSize(progress?.totalBytes ?? details?.bytesGzipped ?? 0)}</span>
+              <strong>Downloading {downloadName}…</strong>
+              <span>{formatSize(progress?.receivedBytes ?? 0)} of {formatSize(progress?.totalBytes ?? downloadTotal)}</span>
             </div>
             <div
               className="catalog-progress"
               role="progressbar"
-              aria-label={`${source.name} catalog download`}
+              aria-label={`${updating ? `Catalog version ${updateOffer.version}` : source.name} catalog download`}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={progressPercent}
@@ -170,6 +182,62 @@ export function CatalogManageDialog({ service, onClose, statusAnnouncement }: Ca
         </div>
 
         {receipt && <p className="catalog-ready-message">Available offline on this device.</p>}
+        {showUpdates && (
+          <section className="catalog-update" aria-labelledby="catalog-update-title">
+            <h3 id="catalog-update-title">Catalog updates</h3>
+            {update.availability === 'signed-out' ? (
+              <p>Sign in to get catalog updates.</p>
+            ) : receipt && (
+              <>
+                <p>
+                  Installed: version {receipt.manifest.version}, built {formatCalendarDate(receipt.manifest.generatedOn)}.
+                </p>
+                {updateOffer && (
+                  <p>
+                    Available: version {updateOffer.version}, built {formatCalendarDate(updateOffer.generatedOn)} ·{' '}
+                    {catalogUpdateSummary(updateOffer.version, update.changes)} · {formatSize(updateOffer.bytesGzipped)} download.
+                  </p>
+                )}
+                {!updateOffer && update.availability === 'current' && !update.checking && (
+                  <p>This catalog is up to date.</p>
+                )}
+              </>
+            )}
+            {update.checking && <p>Checking for catalog updates…</p>}
+            {update.error && !updating && update.availability !== 'signed-out' && (
+              <p className="catalog-alert" role="alert">
+                {update.error.action === 'install' ? `Catalog update failed. ${update.error.message} Your current catalog is still installed.` : update.error.message}
+              </p>
+            )}
+            {receipt && (
+              <p className="catalog-muted">
+                Last checked: {update.lastCheckedAt === null ? 'not yet on this device' : formatCheckedAt(update.lastCheckedAt)}.
+              </p>
+            )}
+            <div className="catalog-update__actions">
+              {updateOffer && !updating && (
+                <button
+                  className="catalog-button catalog-button--primary"
+                  type="button"
+                  disabled={snapshot.operation !== 'idle' || update.checking}
+                  onClick={() => void service.installUpdate()}
+                >
+                  {updateFailed ? 'Retry update' : `Install version ${updateOffer.version}`}
+                </button>
+              )}
+              {receipt && (
+                <button
+                  className="catalog-button catalog-button--secondary"
+                  type="button"
+                  disabled={snapshot.operation !== 'idle' || update.checking}
+                  onClick={() => void service.checkForUpdate({ force: true })}
+                >
+                  Check now
+                </button>
+              )}
+            </div>
+          </section>
+        )}
         {snapshot.storage?.status === 'empty' && snapshot.offer && !snapshot.error && !downloading && !installing && (
           <div className="catalog-consent">
             <h3>Download for offline climbing</h3>

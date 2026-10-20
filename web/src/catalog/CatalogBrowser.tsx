@@ -8,7 +8,7 @@ import type { ClimbViewKey } from '../climb-browser/types.ts';
 import { LocalClimbViewer } from '../climb-browser/LocalClimbViewer.tsx';
 import { CatalogManageDialog } from './CatalogManageDialog.tsx';
 import { CatalogFilterDialog, EMPTY_CATALOG_FILTERS, type CatalogFilterValues } from './CatalogFilterDialog.tsx';
-import { catalogSourceCopy } from './presentation.ts';
+import { catalogSourceCopy, catalogUpdateSummary } from './presentation.ts';
 import './catalog.css';
 
 export interface CatalogBrowserProps {
@@ -101,7 +101,10 @@ export function CatalogBrowser({
 
   useEffect(() => {
     mounted.current = true;
-    void service.start();
+    // Opening the catalog is one of the cadence-gated update check points.
+    void service.start().then(() => {
+      if (mounted.current) return service.checkForUpdate();
+    }).catch(() => undefined);
     return () => {
       mounted.current = false;
       queryGeneration.current += 1;
@@ -306,7 +309,10 @@ export function CatalogBrowser({
 
   let emptyTitle = 'Loading catalog';
   let emptyDescription = 'Checking whether the offline catalog is available on this device.';
-  if (snapshot.operation === 'installing') {
+  if (snapshot.operation === 'installing' && snapshot.storage?.status === 'ready') {
+    emptyTitle = 'Updating catalog';
+    emptyDescription = 'The new catalog version is being verified. Your current catalog stays installed unless it passes.';
+  } else if (snapshot.operation === 'installing') {
     emptyTitle = 'Finishing catalog setup';
     emptyDescription = 'The snapshot is being verified and installed before its climbs can be browsed.';
   } else if (snapshot.storage?.status === 'unavailable') {
@@ -356,6 +362,62 @@ export function CatalogBrowser({
     setFilters((current) => ({ ...current, ...change }));
   };
 
+  const update = snapshot.update;
+  const updateOffer = snapshot.storage?.status === 'ready' ? update.offer : null;
+  const updating = updateOffer !== null
+    && (snapshot.operation === 'downloading' || snapshot.operation === 'installing');
+  const updateFailed = updateOffer !== null && update.error?.action === 'install' && snapshot.operation === 'idle';
+  const updateBannerText = !updateOffer
+    ? ''
+    : updating
+      ? snapshot.operation === 'installing'
+        ? `Verifying and installing catalog version ${updateOffer.version}…`
+        : progressPercent === null
+          ? `Downloading catalog version ${updateOffer.version}…`
+          : `Downloading catalog version ${updateOffer.version}… ${progressPercent}%`
+      : updateFailed
+        ? `Catalog update failed. ${update.error!.message} Your current catalog is still installed.`
+        : `New catalog: ${catalogUpdateSummary(updateOffer.version, update.changes)}`;
+  const updateBanner = updateOffer && !update.dismissed && (
+    <section className="catalog-update-banner" aria-label="Catalog update">
+      {/* Download progress is announced by the shared status line; the banner announces offers and failures. */}
+      <p
+        className="catalog-update-banner__text"
+        role={manageOpen || updating ? undefined : 'status'}
+        aria-live={manageOpen || updating ? undefined : 'polite'}
+      >
+        {updateBannerText}
+      </p>
+      {updating && (
+        <div
+          className="catalog-progress"
+          role="progressbar"
+          aria-label={`Catalog version ${updateOffer.version} download`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={snapshot.operation === 'installing' ? 100 : progressPercent ?? 0}
+        >
+          <span style={{ width: `${snapshot.operation === 'installing' ? 100 : progressPercent ?? 0}%` }} />
+        </div>
+      )}
+      {!updating && (
+        <div className="catalog-update-banner__actions">
+          <button className="catalog-button catalog-button--ghost" type="button" onClick={() => service.dismissUpdate()}>
+            Later
+          </button>
+          <button
+            className="catalog-button catalog-button--primary"
+            type="button"
+            disabled={snapshot.operation !== 'idle' || update.checking}
+            onClick={() => void service.installUpdate()}
+          >
+            {updateFailed ? 'Retry' : 'Install'}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+
   const sourceHeader = (
     <>
       <section className="catalog-source-row" aria-label="Catalog source">
@@ -372,6 +434,7 @@ export function CatalogBrowser({
           Manage
         </button>
       </section>
+      {updateBanner}
 
       {snapshot.storage?.status === 'ready' && snapshot.queries && (
         <form className="catalog-filters" onSubmit={(event) => event.preventDefault()} aria-label={`Filter ${sourceCopy.name} climbs`}>

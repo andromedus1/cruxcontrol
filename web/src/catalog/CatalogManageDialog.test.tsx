@@ -1,7 +1,7 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { CatalogStorageStatus } from '../data/catalog/bootstrap-port.ts';
-import type { CatalogDownloadProgress, CatalogManifest } from '../data/catalog/manifest.ts';
+import type { BoardseshCatalogManifest, CatalogDownloadProgress, CatalogManifest } from '../data/catalog/manifest.ts';
 import type { CatalogReceipt } from '../data/sqlite/catalog-receipt.ts';
 import { INITIAL_CATALOG_UPDATE, type CatalogService, type CatalogServiceSnapshot } from './service.ts';
 import { CatalogManageDialog } from './CatalogManageDialog.tsx';
@@ -188,5 +188,125 @@ describe('CatalogManageDialog', () => {
     expect(screen.getByText(/Offline catalog storage is unavailable in this browser/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Retry catalog' })).not.toBeInTheDocument();
     expect(screen.getByText(/Your local climbs and lists remain usable/)).toBeInTheDocument();
+  });
+});
+
+describe('CatalogManageDialog catalog updates', () => {
+  const { sourceDataThrough: _legacyOnly, ...identity } = offer as Extract<CatalogManifest, { schemaVersion: 2 }>;
+  const updateOffer: BoardseshCatalogManifest = {
+    ...identity,
+    schemaVersion: 3,
+    version: 3,
+    file: 'kilter-7x10.v3.db.gz',
+    bytesGzipped: 6_200_000,
+    generatedOn: '2026-10-19',
+    source: 'boardsesh-kilter',
+    sourceBuiltAt: '2026-10-19T18:38:11.515Z',
+    sourceWatermarks: {},
+    layoutRevision: 'kilter:7:8:17:f0d70b3db9a6',
+    qualityScale: { min: 0, max: 5 },
+    climbCount: 13_299,
+    removedUpstreamCount: 23,
+    changes: { added: 1261, removed: 23, restored: 0 },
+  };
+  const checkedAt = Date.parse('2026-10-20T09:30:00.000Z');
+  const ready = { status: 'ready' as const, receipt: installedReceipt };
+
+  function renderDialog(initial: CatalogServiceSnapshot) {
+    const value = serviceFor(initial);
+    render(<CatalogManageDialog service={value.service} onClose={() => undefined} statusAnnouncement="" />);
+    return value;
+  }
+
+  it('compares installed and available versions and installs or re-checks on request', () => {
+    const value = renderDialog(snapshot(ready, {
+      update: {
+        ...INITIAL_CATALOG_UPDATE,
+        availability: 'available',
+        offer: updateOffer,
+        changes: updateOffer.changes,
+        dismissed: true,
+        lastCheckedAt: checkedAt,
+      },
+    }));
+    const section = screen.getByRole('region', { name: 'Catalog updates' });
+    expect(section).toHaveTextContent('Installed: version 1, built Oct 9, 2026.');
+    expect(section).toHaveTextContent('Available: version 3, built Oct 19, 2026 · 1,261 new climbs · 23 removed · 6.2 MB download.');
+    expect(section).toHaveTextContent(/Last checked: Oct 20, 2026/);
+    fireEvent.click(within(section).getByRole('button', { name: 'Install version 3' }));
+    expect(value.service.installUpdate).toHaveBeenCalledOnce();
+    fireEvent.click(within(section).getByRole('button', { name: 'Check now' }));
+    expect(value.service.checkForUpdate).toHaveBeenCalledWith({ force: true });
+  });
+
+  it('reports up-to-date, checking and check failures without offering an install', () => {
+    const value = renderDialog(snapshot(ready, {
+      update: { ...INITIAL_CATALOG_UPDATE, availability: 'current', lastCheckedAt: checkedAt },
+    }));
+    const section = screen.getByRole('region', { name: 'Catalog updates' });
+    expect(section).toHaveTextContent('This catalog is up to date.');
+    expect(within(section).queryByRole('button', { name: /Install/ })).not.toBeInTheDocument();
+
+    act(() => value.publish(snapshot(ready, {
+      update: { ...INITIAL_CATALOG_UPDATE, availability: 'current', checking: true, lastCheckedAt: checkedAt },
+    })));
+    expect(section).toHaveTextContent('Checking for catalog updates…');
+    expect(within(section).getByRole('button', { name: 'Check now' })).toBeDisabled();
+
+    act(() => value.publish(snapshot(ready, {
+      update: {
+        ...INITIAL_CATALOG_UPDATE,
+        error: { code: 'network', message: 'The catalog service could not be reached.', action: 'check' },
+      },
+    })));
+    expect(within(section).getByRole('alert')).toHaveTextContent('The catalog service could not be reached.');
+    expect(section).toHaveTextContent('Last checked: not yet on this device.');
+    expect(within(section).getByRole('button', { name: 'Check now' })).toBeEnabled();
+  });
+
+  it('shows update progress for the offered version and a retry after a failed install', () => {
+    const value = renderDialog(snapshot(ready, {
+      operation: 'downloading',
+      update: { ...INITIAL_CATALOG_UPDATE, availability: 'available', offer: updateOffer, changes: updateOffer.changes },
+    }));
+    expect(screen.getByText('Downloading catalog version 3…')).toBeInTheDocument();
+    expect(screen.getByText('0 B of 6.2 MB')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel download' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Install version 3' })).not.toBeInTheDocument();
+
+    act(() => value.publish(snapshot(ready, {
+      update: {
+        ...INITIAL_CATALOG_UPDATE,
+        availability: 'available',
+        offer: updateOffer,
+        changes: updateOffer.changes,
+        error: { code: 'integrity', message: 'The downloaded catalog did not match its manifest, so it was not installed.', action: 'install' },
+      },
+    })));
+    expect(screen.getByRole('alert')).toHaveTextContent('Catalog update failed. The downloaded catalog did not match its manifest, so it was not installed. Your current catalog is still installed.');
+    expect(screen.getByText('Available offline on this device.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry update' }));
+    expect(value.service.installUpdate).toHaveBeenCalledOnce();
+  });
+
+  it('asks signed-out users to sign in and hides updates entirely where they are unconfigured', () => {
+    const signedOut = renderDialog(snapshot(ready, {
+      update: { ...INITIAL_CATALOG_UPDATE, availability: 'signed-out' },
+    }));
+    const section = screen.getByRole('region', { name: 'Catalog updates' });
+    expect(section).toHaveTextContent('Sign in to get catalog updates.');
+    expect(section).not.toHaveTextContent('Installed: version');
+    fireEvent.click(within(section).getByRole('button', { name: 'Check now' }));
+    expect(signedOut.service.checkForUpdate).toHaveBeenCalledWith({ force: true });
+    cleanup();
+
+    renderDialog(snapshot({ status: 'empty' }, { offer, update: { ...INITIAL_CATALOG_UPDATE, availability: 'signed-out' } }));
+    expect(screen.getByRole('region', { name: 'Catalog updates' })).toHaveTextContent('Sign in to get catalog updates.');
+    expect(screen.queryByRole('button', { name: 'Check now' })).not.toBeInTheDocument();
+    cleanup();
+
+    renderDialog(snapshot(ready, { update: { ...INITIAL_CATALOG_UPDATE, availability: 'unconfigured' } }));
+    expect(screen.queryByRole('region', { name: 'Catalog updates' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Sign in to get catalog updates/)).not.toBeInTheDocument();
   });
 });
